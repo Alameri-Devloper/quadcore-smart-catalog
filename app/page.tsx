@@ -1,65 +1,117 @@
-import Image from "next/image";
+"use client";
 
+import { useState } from "react";
 export default function Home() {
+  const [search, setSearch] = useState("");
+  const products = [
+    {
+      id: 1,
+      name: "Lenovo LOQ 15",
+      cpu: "Ryzen 7 250",
+      ram: "16GB",
+      gpu: "RTX 5050",
+      price: 870,
+      type: "🎮 جيمنج",
+    },
+    {
+      id: 2,
+      name: "HP Victus",
+      cpu: "Intel i7",
+      ram: "16GB",
+      gpu: "RTX 4060",
+      price: 950,
+      type: "🎮 جيمنج",
+    },
+    {
+      id: 3,
+      name: "Dell Latitude 7420",
+      cpu: "Intel i5",
+      ram: "16GB",
+      gpu: "Intel UHD",
+      price: 600,
+      type: "💼 بزنس",
+    },
+  ];
+  const filteredProducts = products.filter((p) => {
+    const value = search.toLowerCase();
+
+    return (
+      p.name.toLowerCase().includes(value) ||
+      p.cpu.toLowerCase().includes(value) ||
+      p.gpu.toLowerCase().includes(value) ||
+      p.ram.toLowerCase().includes(value) ||
+      p.type.toLowerCase().includes(value)
+    );
+  });
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen bg-gray-100 p-4">
+      {/* Header */}
+      <div className="bg-white p-4 rounded-xl shadow">
+        <h1 className="text-2xl font-bold text-center">
+          Quadcore Smart Catalog
+        </h1>
+
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="🔍 ابحث عن جهاز... (Lenovo / RTX / i7)"
+          className="w-full mt-4 p-3 border rounded-lg"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-2 mt-4 justify-center">
+          <button className="px-3 py-1 bg-green-500 text-white rounded-full">
+            🆕 جديد
+          </button>
+          <button className="px-3 py-1 bg-gray-500 text-white rounded-full">
+            ♻️ مستخدم
+          </button>
+          <button className="px-3 py-1 bg-blue-500 text-white rounded-full">
+            🎮 جيمنج
+          </button>
+          <button className="px-3 py-1 bg-yellow-500 text-white rounded-full">
+            💼 بزنس
+          </button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+
+      {/* Products Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        {filteredProducts.map((product) => (
+          <div key={product.id} className="bg-white p-4 rounded-xl shadow">
+            <div className="h-40 bg-gray-200 rounded-lg mb-3"></div>
+
+            <h2 className="font-bold text-lg">{product.name}</h2>
+
+            <p className="text-sm text-gray-600">
+              {product.cpu} - {product.ram} - {product.gpu}
+            </p>
+
+            <p className="mt-2 font-bold text-green-600">${product.price}</p>
+
+            <p className="text-xs text-blue-500 mt-1">{product.type}</p>
+
+            <div className="flex gap-2 mt-3">
+              <a
+                href={`https://wa.me/967733733330?text=${encodeURIComponent(
+                  `السلام عليكم، أريد الاستفسار عن المنتج:\n${product.name}\nالمواصفات: ${product.cpu} - ${product.ram} - ${product.gpu}\nالسعر: $${product.price}`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-green-500 text-white py-1 rounded text-center"
+              >
+                واتساب
+              </a>
+
+              <button className="flex-1 bg-gray-700 text-white py-1 rounded">
+                تعديل
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }
