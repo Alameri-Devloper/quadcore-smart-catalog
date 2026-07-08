@@ -1,9 +1,12 @@
 "use client";
-import { products } from "@/app/domains/catalog/data/products";
-import { ProductCard } from "@/app/domains/catalog/components/ProductCard";
+
 import { useState } from "react";
+import { products } from "@/domains/catalog/mock/products";
+import { ProductCard } from "@/domains/catalog/components/ProductCard";
+import { DepartmentService } from "@/domains/catalog/services/department.service";
 export default function Home() {
   const [search, setSearch] = useState("");
+  const departments = DepartmentService.getDepartmentsByWorkspace("WS-001");
 
   const filteredProducts = products.filter((p) => {
     const value = search.toLowerCase();
@@ -23,6 +26,16 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-center">
           Quadcore Smart Catalog
         </h1>
+        <div className="mt-4 flex flex-wrap gap-2 justify-center">
+          {departments.map((department) => (
+            <span
+              key={department.id}
+              className="rounded-full bg-white px-3 py-1 text-sm shadow"
+            >
+              {department.icon} {department.name}
+            </span>
+          ))}
+        </div>
 
         {/* Search */}
         <input

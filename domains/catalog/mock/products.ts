@@ -1,4 +1,4 @@
-import { Product } from "@/app/domains/catalog/types/product";
+import { Product } from "@/domains/catalog/types/product";
 
 export const products: Product[] = [
   {
