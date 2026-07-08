@@ -1,37 +1,10 @@
 "use client";
-
+import { products } from "@/app/domains/catalog/data/products";
+import { ProductCard } from "@/app/domains/catalog/components/ProductCard";
 import { useState } from "react";
 export default function Home() {
   const [search, setSearch] = useState("");
-  const products = [
-    {
-      id: 1,
-      name: "Lenovo LOQ 15",
-      cpu: "Ryzen 7 250",
-      ram: "16GB",
-      gpu: "RTX 5050",
-      price: 870,
-      type: "🎮 جيمنج",
-    },
-    {
-      id: 2,
-      name: "HP Victus",
-      cpu: "Intel i7",
-      ram: "16GB",
-      gpu: "RTX 4060",
-      price: 950,
-      type: "🎮 جيمنج",
-    },
-    {
-      id: 3,
-      name: "Dell Latitude 7420",
-      cpu: "Intel i5",
-      ram: "16GB",
-      gpu: "Intel UHD",
-      price: 600,
-      type: "💼 بزنس",
-    },
-  ];
+
   const filteredProducts = products.filter((p) => {
     const value = search.toLowerCase();
 
@@ -80,36 +53,7 @@ export default function Home() {
       {/* Products Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         {filteredProducts.map((product) => (
-          <div key={product.id} className="bg-white p-4 rounded-xl shadow">
-            <div className="h-40 bg-gray-200 rounded-lg mb-3"></div>
-
-            <h2 className="font-bold text-lg">{product.name}</h2>
-
-            <p className="text-sm text-gray-600">
-              {product.cpu} - {product.ram} - {product.gpu}
-            </p>
-
-            <p className="mt-2 font-bold text-green-600">${product.price}</p>
-
-            <p className="text-xs text-blue-500 mt-1">{product.type}</p>
-
-            <div className="flex gap-2 mt-3">
-              <a
-                href={`https://wa.me/967733733330?text=${encodeURIComponent(
-                  `السلام عليكم، أريد الاستفسار عن المنتج:\n${product.name}\nالمواصفات: ${product.cpu} - ${product.ram} - ${product.gpu}\nالسعر: $${product.price}`,
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 bg-green-500 text-white py-1 rounded text-center"
-              >
-                واتساب
-              </a>
-
-              <button className="flex-1 bg-gray-700 text-white py-1 rounded">
-                تعديل
-              </button>
-            </div>
-          </div>
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </main>
