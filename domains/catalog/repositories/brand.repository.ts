@@ -1,12 +1,12 @@
 import { brands } from "@/domains/catalog/mock/brands";
-import { Brand } from "@/domains/catalog/types/brand";
+import { BrandEntity } from "@/domains/catalog/types/brand.entity";
 
 export const BrandRepository = {
-  getAll(): Brand[] {
-    return brands.filter((brand) => brand.active);
+  getAll(): BrandEntity[] {
+    return brands.filter((brand) => brand.isActive);
   },
 
-  getById(id: string): Brand | undefined {
+  getById(id: string): BrandEntity | undefined {
     return brands.find((brand) => brand.id === id);
   },
 };
