@@ -4,6 +4,7 @@ import { useState } from "react";
 import { products } from "@/domains/catalog/mock/products";
 import { ProductCard } from "@/domains/catalog/components/ProductCard";
 import { DepartmentService } from "@/domains/catalog/services/department.service";
+import { CatalogSelector } from "@/domains/catalog/components/CatalogSelector";
 export default function Home() {
   const [search, setSearch] = useState("");
   const departments = DepartmentService.getDepartmentsByWorkspace("WS-001");
@@ -45,7 +46,7 @@ export default function Home() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-
+        <CatalogSelector />
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mt-4 justify-center">
           <button className="px-3 py-1 bg-green-500 text-white rounded-full">
