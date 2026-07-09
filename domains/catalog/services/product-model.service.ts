@@ -9,6 +9,13 @@ export const ProductModelService = {
     return MockProductModelRepository.getByWorkspaceId(workspaceId);
   },
 
+  getProductModelsByWorkspaceAndBrand(workspaceId: string, brandId: string) {
+    return MockProductModelRepository.getByWorkspaceIdAndBrandId(
+      workspaceId,
+      brandId,
+    );
+  },
+
   getProductModelsByDepartment(departmentId: string) {
     return MockProductModelRepository.getByDepartmentId(departmentId);
   },

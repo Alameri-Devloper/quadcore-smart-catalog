@@ -7,6 +7,11 @@ export interface IProductModelRepository {
 
   getByWorkspaceId(workspaceId: string): ProductModelEntity[];
 
+  getByWorkspaceIdAndBrandId(
+    workspaceId: string,
+    brandId: string,
+  ): ProductModelEntity[];
+
   getByDepartmentId(departmentId: string): ProductModelEntity[];
 
   getByCategoryId(categoryId: string): ProductModelEntity[];

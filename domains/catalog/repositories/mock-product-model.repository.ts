@@ -18,6 +18,18 @@ export const MockProductModelRepository: IProductModelRepository = {
     );
   },
 
+  getByWorkspaceIdAndBrandId(
+    workspaceId: string,
+    brandId: string,
+  ): ProductModelEntity[] {
+    return productModels.filter(
+      (productModel) =>
+        productModel.workspaceId === workspaceId &&
+        productModel.brandId === brandId &&
+        productModel.isActive,
+    );
+  },
+
   getByDepartmentId(departmentId: string): ProductModelEntity[] {
     return productModels.filter(
       (productModel) =>
