@@ -27,6 +27,7 @@ export const departments: DepartmentEntity[] = [
 
     name: "Security",
     description: "CCTV and security systems",
+    workspaceId: "WS-001",
 
     icon: "📹",
 
@@ -45,6 +46,7 @@ export const departments: DepartmentEntity[] = [
 
     name: "Networking",
     description: "Networking equipment",
+    workspaceId: "WS-001",
 
     icon: "🌐",
 
