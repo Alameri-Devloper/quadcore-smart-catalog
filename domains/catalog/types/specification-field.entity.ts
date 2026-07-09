@@ -1,0 +1,31 @@
+export type SpecificationFieldType = "text" | "number" | "select" | "boolean";
+
+export interface SpecificationFieldEntity {
+  id: string;
+
+  code: string;
+
+  companyId: string;
+
+  workspaceId: string;
+
+  productModelId: string;
+
+  name: string;
+
+  label: string;
+
+  fieldType: SpecificationFieldType;
+
+  isRequired: boolean;
+
+  isFilterable: boolean;
+
+  sortOrder: number;
+
+  isActive: boolean;
+
+  createdAt: string;
+
+  updatedAt: string;
+}
