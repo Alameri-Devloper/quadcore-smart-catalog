@@ -11,6 +11,8 @@ export interface ProductModelEntity {
 
   categoryId: string;
 
+  deviceClassId?: string;
+
   brandId: string;
 
   name: string;

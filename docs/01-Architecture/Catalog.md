@@ -64,4 +64,22 @@ domains/catalog/
 
 The current implementation uses mock repositories. Future database integration must keep data access inside repositories and business logic inside services.
 
+## Specification Templates | قوالب المواصفات
+
+### English
+
+Category and optional Device Class determine the Specification Template. Product Models reference Category, Brand, and optional Device Class. Products only provide Specification Values for fields defined by the resolved template.
+
+Device Class is optional by Category. Laptop categories can use Gaming, Business, Personal, or Workstation. CCTV Camera categories can skip Device Class.
+
+Specification Fields are reusable workspace-level definitions. Specification Template Fields assign reusable fields to a template and define required, filterable, and sort order behavior.
+
+### العربية
+
+التصنيف وفئة الجهاز الاختيارية يحددان قالب المواصفات. نماذج المنتجات ترتبط بالتصنيف والعلامة التجارية وفئة الجهاز الاختيارية. المنتجات تقدم قيم المواصفات فقط للحقول المعرفة في القالب الذي يتم تحديده.
+
+فئة الجهاز اختيارية حسب التصنيف. يمكن لتصنيفات اللابتوب استخدام ألعاب أو أعمال أو شخصي أو محطة عمل. يمكن لتصنيفات كاميرات CCTV تخطي فئة الجهاز.
+
+حقول المواصفات تعريفات قابلة لإعادة الاستخدام على مستوى مساحة العمل. حقول قالب المواصفات تربط الحقول القابلة لإعادة الاستخدام بالقالب وتحدد هل الحقل مطلوب أو قابل للتصفية وترتيبه.
+
 يستخدم التنفيذ الحالي مستودعات وهمية. وعند إضافة قاعدة البيانات لاحقا يجب أن يبقى الوصول للبيانات داخل المستودعات ومنطق العمل داخل الخدمات.

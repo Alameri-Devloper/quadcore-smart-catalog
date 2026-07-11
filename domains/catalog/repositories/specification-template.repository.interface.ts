@@ -7,8 +7,9 @@ export interface ISpecificationTemplateRepository {
 
   getByWorkspaceId(workspaceId: string): SpecificationTemplateEntity[];
 
-  getByProductModelId(
-    productModelId: string,
+  getByCategoryIdAndDeviceClassId(
+    categoryId: string,
+    deviceClassId?: string,
   ): SpecificationTemplateEntity | undefined;
 
   getById(id: string): SpecificationTemplateEntity | undefined;

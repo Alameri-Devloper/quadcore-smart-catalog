@@ -1,11 +1,19 @@
 import { MockSpecificationFieldRepository } from "@/domains/catalog/repositories/mock-specification-field.repository";
 import { MockSpecificationTemplateFieldRepository } from "@/domains/catalog/repositories/mock-specification-template-field.repository";
 import { MockSpecificationTemplateRepository } from "@/domains/catalog/repositories/mock-specification-template.repository";
+import { SpecificationFieldEntity } from "@/domains/catalog/types/specification-field.entity";
+
+function isSpecificationField(
+  specificationField: SpecificationFieldEntity | undefined,
+): specificationField is SpecificationFieldEntity {
+  return specificationField !== undefined;
+}
 
 export const SpecificationTemplateService = {
-  getTemplateByProductModelId(productModelId: string) {
-    return MockSpecificationTemplateRepository.getByProductModelId(
-      productModelId,
+  getTemplate(categoryId: string, deviceClassId?: string) {
+    return MockSpecificationTemplateRepository.getByCategoryIdAndDeviceClassId(
+      categoryId,
+      deviceClassId,
     );
   },
 
@@ -18,9 +26,12 @@ export const SpecificationTemplateService = {
     );
   },
 
-  getFieldsByProductModelId(productModelId: string) {
+  getFields(categoryId: string, deviceClassId?: string) {
     const specificationTemplate =
-      MockSpecificationTemplateRepository.getByProductModelId(productModelId);
+      MockSpecificationTemplateRepository.getByCategoryIdAndDeviceClassId(
+        categoryId,
+        deviceClassId,
+      );
 
     if (!specificationTemplate) {
       return [];
@@ -38,6 +49,6 @@ export const SpecificationTemplateService = {
           specificationTemplateField.specificationFieldId,
         ),
       )
-      .filter((specificationField) => specificationField !== undefined);
+      .filter(isSpecificationField);
   },
 };

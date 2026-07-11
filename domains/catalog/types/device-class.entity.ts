@@ -1,4 +1,4 @@
-export interface SpecificationTemplateEntity {
+export interface DeviceClassEntity {
   id: string;
 
   code: string;
@@ -7,13 +7,13 @@ export interface SpecificationTemplateEntity {
 
   workspaceId: string;
 
-  categoryId: string;
-
-  deviceClassId?: string;
-
   name: string;
 
   description: string;
+
+  icon: string;
+
+  sortOrder: number;
 
   isActive: boolean;
 

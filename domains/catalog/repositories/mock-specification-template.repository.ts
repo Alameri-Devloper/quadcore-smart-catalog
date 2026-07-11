@@ -22,12 +22,14 @@ export const MockSpecificationTemplateRepository: ISpecificationTemplateReposito
       );
     },
 
-    getByProductModelId(
-      productModelId: string,
+    getByCategoryIdAndDeviceClassId(
+      categoryId: string,
+      deviceClassId?: string,
     ): SpecificationTemplateEntity | undefined {
       return specificationTemplates.find(
         (specificationTemplate) =>
-          specificationTemplate.productModelId === productModelId &&
+          specificationTemplate.categoryId === categoryId &&
+          specificationTemplate.deviceClassId === deviceClassId &&
           specificationTemplate.isActive,
       );
     },
