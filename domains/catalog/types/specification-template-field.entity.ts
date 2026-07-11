@@ -1,6 +1,4 @@
-export type SpecificationFieldType = "text" | "number" | "select" | "boolean";
-
-export interface SpecificationFieldEntity {
+export interface SpecificationTemplateFieldEntity {
   id: string;
 
   code: string;
@@ -9,11 +7,9 @@ export interface SpecificationFieldEntity {
 
   workspaceId: string;
 
-  name: string;
+  specificationTemplateId: string;
 
-  label: string;
-
-  fieldType: SpecificationFieldType;
+  specificationFieldId: string;
 
   isRequired: boolean;
 

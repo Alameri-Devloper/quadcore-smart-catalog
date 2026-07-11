@@ -7,11 +7,5 @@ export interface ISpecificationFieldRepository {
 
   getByWorkspaceId(workspaceId: string): SpecificationFieldEntity[];
 
-  getByProductModelId(productModelId: string): SpecificationFieldEntity[];
-
-  getFilterableByProductModelId(
-    productModelId: string,
-  ): SpecificationFieldEntity[];
-
   getById(id: string): SpecificationFieldEntity | undefined;
 }

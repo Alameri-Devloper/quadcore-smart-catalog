@@ -9,16 +9,6 @@ export const SpecificationFieldService = {
     return MockSpecificationFieldRepository.getByWorkspaceId(workspaceId);
   },
 
-  getSpecificationFieldsByProductModel(productModelId: string) {
-    return MockSpecificationFieldRepository.getByProductModelId(productModelId);
-  },
-
-  getFilterableSpecificationFieldsByProductModel(productModelId: string) {
-    return MockSpecificationFieldRepository.getFilterableByProductModelId(
-      productModelId,
-    );
-  },
-
   getSpecificationFieldById(id: string) {
     return MockSpecificationFieldRepository.getById(id);
   },

@@ -21,25 +21,6 @@ export const MockSpecificationFieldRepository: ISpecificationFieldRepository = {
     );
   },
 
-  getByProductModelId(productModelId: string): SpecificationFieldEntity[] {
-    return specificationFields.filter(
-      (specificationField) =>
-        specificationField.productModelId === productModelId &&
-        specificationField.isActive,
-    );
-  },
-
-  getFilterableByProductModelId(
-    productModelId: string,
-  ): SpecificationFieldEntity[] {
-    return specificationFields.filter(
-      (specificationField) =>
-        specificationField.productModelId === productModelId &&
-        specificationField.isFilterable &&
-        specificationField.isActive,
-    );
-  },
-
   getById(id: string): SpecificationFieldEntity | undefined {
     return specificationFields.find(
       (specificationField) => specificationField.id === id,
