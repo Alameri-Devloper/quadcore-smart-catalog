@@ -8,52 +8,114 @@ This roadmap describes the planned growth of QSC Platform while preserving Domai
 
 ## العربية
 
-توضح خارطة الطريق هذه نمو منصة QSC المخطط له مع الحفاظ على التصميم الموجه بالمجال، والمعمارية النظيفة، وحدود تعدد المستأجرين، وتجربة الجوال أولا.
+توضح هذه الخارطة نمو منصة QSC المخطط له مع الحفاظ على التصميم الموجه بالمجال، والمعمارية النظيفة، وحدود تعدد المستأجرين، وتجربة الجوال أولا.
 
-## Phase 1: Smart Catalog | المرحلة الأولى: الكتالوج الذكي
+## Completed ✅ | مكتمل ✅
 
-- Build the public catalog experience.
-- Support departments, categories, product models, and products.
-- Use mock repositories until database integration is approved.
-- Support store WhatsApp and employee WhatsApp fallback rules.
+### Sprint 01: Foundation | السبرنت 01: الأساس
 
-- بناء تجربة الكتالوج العام.
-- دعم الأقسام، والتصنيفات، ونماذج المنتجات، والمنتجات.
-- استخدام مستودعات وهمية إلى أن يتم اعتماد تكامل قاعدة البيانات.
-- دعم قواعد واتساب الخاصة بالمحل والموظف مع آلية الرجوع للرقم الافتراضي.
+#### English
 
-## Phase 2: SaaS Foundation | المرحلة الثانية: أساس SaaS
+- Established project structure and documentation structure.
+- Started the Catalog domain foundation.
+- Adopted feature branch workflow.
+
+#### العربية
+
+- تأسيس هيكل المشروع وهيكل التوثيق.
+- بدء أساس مجال الكتالوج.
+- اعتماد سير عمل فروع الميزات.
+
+### Sprint 02: Catalog Engine | السبرنت 02: محرك الكتالوج
+
+#### English
+
+- Completed the Catalog Engine foundation.
+- Added dynamic product display with specification values.
+- Added hierarchy-aware catalog selector behavior.
+- Added Device Class and Specification Template foundations.
+- Documented ADR-0002 and ADR-0003.
+
+#### العربية
+
+- إكمال أساس محرك الكتالوج.
+- إضافة عرض ديناميكي للمنتجات مع قيم المواصفات.
+- إضافة سلوك محدد كتالوج واع بالهرمية.
+- إضافة أساس فئة الجهاز وقوالب المواصفات.
+- توثيق ADR-0002 و ADR-0003.
+
+## Sprint 03: Placeholder | السبرنت 03: عنصر نائب
+
+### English
+
+Sprint 03 scope is not defined yet. It will be planned after Sprint 02 review and approval.
+
+Placeholders:
+
+- Objective: To be defined.
+- Scope: To be defined.
+- Architecture decisions: To be defined if needed.
+- Verification requirements: To be defined.
+
+### العربية
+
+لم يتم تحديد نطاق السبرنت 03 بعد. سيتم تخطيطه بعد مراجعة السبرنت 02 واعتماده.
+
+عناصر نائبة:
+
+- الهدف: سيتم تحديده.
+- النطاق: سيتم تحديده.
+- القرارات المعمارية: سيتم تحديدها عند الحاجة.
+- متطلبات التحقق: سيتم تحديدها.
+
+## Future Phases | المراحل المستقبلية
+
+### SaaS Foundation | أساس SaaS
+
+#### English
 
 - Strengthen company and workspace boundaries.
 - Prepare tenant-aware repositories and services.
 - Add authentication and authorization when approved.
-- Document architecture decisions using ADRs.
+
+#### العربية
 
 - تقوية حدود الشركة ومساحة العمل.
 - تجهيز المستودعات والخدمات لتكون واعية بالمستأجر.
 - إضافة تسجيل الدخول والصلاحيات عند اعتمادها.
-- توثيق القرارات المعمارية باستخدام ADR.
 
-## Phase 3: Database Integration | المرحلة الثالثة: تكامل قاعدة البيانات
+### Database Integration | تكامل قاعدة البيانات
+
+#### English
 
 - Introduce Supabase after architecture approval.
 - Keep database access inside repositories only.
-- Keep components free from direct database calls.
 - Preserve service-level business rules.
 
+#### العربية
+
 - إدخال Supabase بعد اعتماد المعمارية.
-- إبقاء الوصول لقاعدة البيانات داخل المستودعات فقط.
-- منع مكونات الواجهة من الاتصال المباشر بقاعدة البيانات.
+- إبقاء الوصول إلى قاعدة البيانات داخل المستودعات فقط.
 - الحفاظ على قواعد العمل داخل الخدمات.
 
-## Phase 4: Operations | المرحلة الرابعة: العمليات
+### Operations | العمليات
 
-- Add inventory workflows.
-- Add sales and employee workflows.
-- Add reporting and analytics domains.
+#### English
+
+- Add future inventory, sales, employee, reporting, and analytics workflows after approval.
 - Keep each feature inside its domain boundary.
 
-- إضافة سير عمل المخزون.
-- إضافة سير عمل المبيعات والموظفين.
-- إضافة مجالات التقارير والتحليلات.
+#### العربية
+
+- إضافة سير عمل المخزون والمبيعات والموظفين والتقارير والتحليلات مستقبلا بعد الاعتماد.
 - إبقاء كل ميزة داخل حدود مجالها.
+
+### Assisted Product Data Entry | إدخال بيانات المنتج بمساعدة
+
+#### English
+
+Future optional capability. It must support manual entry, human review, and non-blocking product creation.
+
+#### العربية
+
+قدرة مستقبلية اختيارية. يجب أن تدعم الإدخال اليدوي والمراجعة البشرية وألا تمنع إنشاء المنتج.

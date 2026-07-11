@@ -74,6 +74,24 @@ Device Class is optional by Category. Laptop categories can use Gaming, Business
 
 Specification Fields are reusable workspace-level definitions. Specification Template Fields assign reusable fields to a template and define required, filterable, and sort order behavior.
 
+## Future Assisted Product Data Entry | إدخال بيانات المنتج بمساعدة مستقبلا
+
+### English
+
+The Catalog domain may later support optional Product Data Enrichment during product creation. This capability can use Product Model lookup, part number lookup, barcode scanning, or label image scanning to suggest specification values.
+
+Suggested values must be mapped to the resolved Specification Template before review. The system must show suggestions for human review before saving, and employees must be able to edit, reject, or manually enter values.
+
+Manual entry must always remain available. Assisted enrichment is optional and must not block product creation when lookup, scanning, extraction, or suggestions are unavailable.
+
+### العربية
+
+قد يدعم مجال الكتالوج لاحقا إثراء بيانات المنتج اختياريا أثناء إنشاء المنتج. يمكن لهذه القدرة استخدام البحث عن نموذج المنتج، أو البحث برقم القطعة، أو مسح الباركود، أو مسح صورة الملصق لاقتراح قيم المواصفات.
+
+يجب ربط القيم المقترحة بقالب المواصفات الذي تم تحديده قبل المراجعة. يجب أن يعرض النظام الاقتراحات للمراجعة البشرية قبل الحفظ، ويجب أن يستطيع الموظفون تعديل القيم أو رفضها أو إدخالها يدويا.
+
+يجب أن يبقى الإدخال اليدوي متاحا دائما. الإثراء بمساعدة النظام اختياري ويجب ألا يمنع إنشاء المنتج عند عدم توفر البحث أو المسح أو الاستخراج أو الاقتراحات.
+
 ### العربية
 
 التصنيف وفئة الجهاز الاختيارية يحددان قالب المواصفات. نماذج المنتجات ترتبط بالتصنيف والعلامة التجارية وفئة الجهاز الاختيارية. المنتجات تقدم قيم المواصفات فقط للحقول المعرفة في القالب الذي يتم تحديده.
