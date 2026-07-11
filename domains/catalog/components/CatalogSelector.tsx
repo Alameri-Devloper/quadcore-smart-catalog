@@ -4,8 +4,9 @@ import { useState } from "react";
 import { SmartSelect } from "@/shared/ui/SmartSelect";
 import { DepartmentService } from "@/domains/catalog/services/department.service";
 import { CategoryService } from "@/domains/catalog/services/category.service";
-import { BrandService } from "@/domains/catalog/services/brand.service";
-import { ProductModelService } from "@/domains/catalog/services/product-model.service";
+import { CatalogSelectionService } from "@/domains/catalog/services/catalog-selection.service";
+
+const WORKSPACE_ID = "WS-001";
 
 export function CatalogSelector() {
   const [departmentId, setDepartmentId] = useState("");
@@ -13,18 +14,30 @@ export function CatalogSelector() {
   const [brandId, setBrandId] = useState("");
   const [productModelId, setProductModelId] = useState("");
 
-  const departments = DepartmentService.getDepartmentsByWorkspace("WS-001");
+  const departments = DepartmentService.getDepartmentsByWorkspace(WORKSPACE_ID);
 
   const categories = departmentId
     ? CategoryService.getCategoriesByDepartment(departmentId)
     : [];
-  const brands = categoryId ? BrandService.getBrandsByWorkspace("WS-001") : [];
-  const productModels = brandId
-    ? ProductModelService.getProductModelsByWorkspaceAndBrand(
-        "WS-001",
-        brandId,
-      )
-    : [];
+
+  const brands =
+    departmentId && categoryId
+      ? CatalogSelectionService.getBrandsBySelection({
+          workspaceId: WORKSPACE_ID,
+          departmentId,
+          categoryId,
+        })
+      : [];
+
+  const productModels =
+    departmentId && categoryId && brandId
+      ? CatalogSelectionService.getProductModelsBySelection({
+          workspaceId: WORKSPACE_ID,
+          departmentId,
+          categoryId,
+          brandId,
+        })
+      : [];
 
   return (
     <div className="rounded-xl bg-white p-4 shadow">
@@ -66,6 +79,7 @@ export function CatalogSelector() {
           label="Brand"
           value={brandId}
           placeholder="Select brand"
+          disabled={!categoryId}
           options={brands.map((brand) => ({
             label: brand.name,
             value: brand.id,

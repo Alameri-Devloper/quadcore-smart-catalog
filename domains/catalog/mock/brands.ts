@@ -66,4 +66,17 @@ export const brands: BrandEntity[] = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
+  {
+    id: "brand-006",
+    code: "BRAND-006",
+    companyId: "COMP-001",
+    workspaceId: "WS-001",
+    name: "Dahua",
+    description: "Dahua security cameras and surveillance products",
+    logoUrl: "",
+    sortOrder: 6,
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ];
