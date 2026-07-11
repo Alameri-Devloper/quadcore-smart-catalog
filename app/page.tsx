@@ -7,6 +7,7 @@ import { CatalogSelector } from "@/domains/catalog/components/CatalogSelector";
 import { ProductService } from "@/domains/catalog/services/product.service";
 import { SpecificationValueService } from "@/domains/catalog/services/specification-value.service";
 import { SpecificationFieldService } from "@/domains/catalog/services/specification-field.service";
+
 export default function Home() {
   const [search, setSearch] = useState("");
   const departments = DepartmentService.getDepartmentsByWorkspace("WS-001");
@@ -78,20 +79,28 @@ export default function Home() {
           const specifications =
             SpecificationValueService.getSpecificationValuesByProduct(
               product.id,
-            ).map((specificationValue) => {
-              const specificationField = specificationFields.find(
-                (field) =>
-                  field.id === specificationValue.specificationFieldId,
-              );
+            )
+              .map((specificationValue) => {
+                const specificationField = specificationFields.find(
+                  (field) =>
+                    field.id === specificationValue.specificationFieldId,
+                );
 
-              return {
-                id: specificationValue.id,
-                label:
-                  specificationField?.label ??
-                  specificationValue.specificationFieldId,
-                value: specificationValue.value,
-              };
-            });
+                return {
+                  id: specificationValue.id,
+                  label:
+                    specificationField?.label ??
+                    specificationValue.specificationFieldId,
+                  value: specificationValue.value,
+                  sortOrder: specificationField?.sortOrder ?? 0,
+                };
+              })
+              .sort(
+                (currentSpecification, nextSpecification) =>
+                  currentSpecification.sortOrder -
+                  nextSpecification.sortOrder,
+              )
+              .map(({ id, label, value }) => ({ id, label, value }));
 
           return (
             <ProductCard
