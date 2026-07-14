@@ -166,3 +166,43 @@ Product
   ↓
 Product Specifications
 ```
+
+---
+
+## Specification Template Architecture Update | تحديث معمارية قوالب المواصفات
+
+### English
+
+Category and optional Device Class determine the Specification Template.
+
+Device Class is optional by Category. Laptop categories may use Gaming, Business, Personal, or Workstation. CCTV Camera categories can skip Device Class.
+
+Product Models reference Category, Brand, and optional Device Class. Products only provide Specification Values for fields defined by the resolved Specification Template.
+
+Specification Fields are reusable workspace-level definitions. Template Fields connect a Specification Template to those reusable fields and define whether each field is required, filterable, and how it is sorted.
+
+```text
+Category + optional Device Class
+  -> Specification Template
+  -> Template Fields
+  -> Reusable Specification Fields
+
+Product Model
+  -> Category
+  -> optional Device Class
+  -> Brand
+
+Product
+  -> Product Model
+  -> Specification Values
+```
+
+### العربية
+
+التصنيف وفئة الجهاز الاختيارية يحددان قالب المواصفات.
+
+فئة الجهاز اختيارية حسب التصنيف. تصنيفات اللابتوب قد تستخدم ألعاب أو أعمال أو شخصي أو محطة عمل. تصنيفات كاميرات CCTV يمكنها تخطي فئة الجهاز.
+
+نماذج المنتجات ترتبط بالتصنيف والعلامة التجارية وفئة الجهاز الاختيارية. المنتجات تقدم قيم المواصفات فقط للحقول المعرفة في قالب المواصفات الذي يتم تحديده.
+
+حقول المواصفات تعريفات قابلة لإعادة الاستخدام على مستوى مساحة العمل. تربط حقول القالب بين قالب المواصفات وهذه الحقول القابلة لإعادة الاستخدام، وتحدد هل الحقل مطلوب أو قابل للتصفية وترتيبه.

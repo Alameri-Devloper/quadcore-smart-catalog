@@ -33,7 +33,7 @@ Use a numbered kebab-case filename, for example:
 استخدم اسما مرقما بصيغة kebab-case، مثل:
 
 ```text
-0001-use-supabase-for-database.md
+ADR-0001-example-decision.md
 ```
 
 Each ADR should include:
@@ -45,3 +45,15 @@ Each ADR should include:
 - Context | السياق
 - Decision | القرار
 - Consequences | النتائج
+
+## ADR Index | فهرس ADR
+
+| ADR | Title | Status |
+| --- | --- | --- |
+| [ADR-0002](./ADR-0002-Category-Device-Class-Specification-Templates.md) | Category and Device Class Specification Templates | Accepted |
+| [ADR-0003](./ADR-0003-Assisted-Product-Data-Entry.md) | Assisted Product Data Entry | Accepted for future implementation |
+
+| ADR | العنوان | الحالة |
+| --- | --- | --- |
+| [ADR-0002](./ADR-0002-Category-Device-Class-Specification-Templates.md) | قوالب المواصفات حسب التصنيف وفئة الجهاز | معتمد |
+| [ADR-0003](./ADR-0003-Assisted-Product-Data-Entry.md) | إدخال بيانات المنتج بمساعدة | معتمد للتنفيذ المستقبلي |

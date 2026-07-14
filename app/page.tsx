@@ -1,23 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { products } from "@/domains/catalog/mock/products";
 import { ProductCard } from "@/domains/catalog/components/ProductCard";
 import { DepartmentService } from "@/domains/catalog/services/department.service";
 import { CatalogSelector } from "@/domains/catalog/components/CatalogSelector";
+import { ProductService } from "@/domains/catalog/services/product.service";
+import { SpecificationValueService } from "@/domains/catalog/services/specification-value.service";
+import { SpecificationFieldService } from "@/domains/catalog/services/specification-field.service";
+
 export default function Home() {
   const [search, setSearch] = useState("");
   const departments = DepartmentService.getDepartmentsByWorkspace("WS-001");
+  const products = ProductService.getProductsByWorkspace("WS-001");
+  const specificationFields =
+    SpecificationFieldService.getSpecificationFieldsByWorkspace("WS-001");
 
   const filteredProducts = products.filter((p) => {
     const value = search.toLowerCase();
+    const specifications =
+      SpecificationValueService.getSpecificationValuesByProduct(p.id);
 
     return (
       p.name.toLowerCase().includes(value) ||
-      p.cpu.toLowerCase().includes(value) ||
-      p.gpu.toLowerCase().includes(value) ||
-      p.ram.toLowerCase().includes(value) ||
-      p.type.toLowerCase().includes(value)
+      p.description.toLowerCase().includes(value) ||
+      p.status.toLowerCase().includes(value) ||
+      specifications.some((specification) =>
+        String(specification.value).toLowerCase().includes(value),
+      )
     );
   });
   return (
@@ -66,9 +75,41 @@ export default function Home() {
 
       {/* Products Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        {filteredProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        {filteredProducts.map((product) => {
+          const specifications =
+            SpecificationValueService.getSpecificationValuesByProduct(
+              product.id,
+            )
+              .map((specificationValue) => {
+                const specificationField = specificationFields.find(
+                  (field) =>
+                    field.id === specificationValue.specificationFieldId,
+                );
+
+                return {
+                  id: specificationValue.id,
+                  label:
+                    specificationField?.label ??
+                    specificationValue.specificationFieldId,
+                  value: specificationValue.value,
+                  sortOrder: specificationField?.sortOrder ?? 0,
+                };
+              })
+              .sort(
+                (currentSpecification, nextSpecification) =>
+                  currentSpecification.sortOrder -
+                  nextSpecification.sortOrder,
+              )
+              .map(({ id, label, value }) => ({ id, label, value }));
+
+          return (
+            <ProductCard
+              key={product.id}
+              product={product}
+              specifications={specifications}
+            />
+          );
+        })}
       </div>
     </main>
   );

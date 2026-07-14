@@ -89,3 +89,25 @@ Before fixing any bug:
 5. Verify that the architecture is still respected.
 
 Never apply blind fixes.
+
+## Mandatory Task Report
+
+After every implementation task, always produce a report before stopping.
+
+The report must contain:
+
+### Files Created
+
+### Files Modified
+
+### Files Deleted
+
+### Architecture Changes
+
+### Summary
+
+### Next Recommendation
+
+Then wait for review.
+
+Never continue to another task automatically.

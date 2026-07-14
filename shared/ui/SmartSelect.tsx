@@ -10,6 +10,7 @@ type SmartSelectProps = {
   value: string;
   options: SmartSelectOption[];
   placeholder?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 };
 
@@ -18,6 +19,7 @@ export function SmartSelect({
   value,
   options,
   placeholder = "Select option",
+  disabled = false,
   onChange,
 }: SmartSelectProps) {
   return (
@@ -28,8 +30,9 @@ export function SmartSelect({
 
       <select
         value={value}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border bg-white p-3 text-sm outline-none focus:border-blue-500"
+        className="w-full rounded-lg border bg-white p-3 text-sm outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
       >
         <option value="">{placeholder}</option>
 

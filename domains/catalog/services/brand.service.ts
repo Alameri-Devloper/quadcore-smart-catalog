@@ -1,11 +1,23 @@
-import { BrandRepository } from "@/domains/catalog/repositories/brand.repository";
+import { MockBrandRepository } from "@/domains/catalog/repositories/mock-brand.repository";
 
 export const BrandService = {
+  getBrands() {
+    return MockBrandRepository.getActive();
+  },
+
   getActiveBrands() {
-    return BrandRepository.getAll();
+    return MockBrandRepository.getActive();
+  },
+
+  getBrandsByCompany(companyId: string) {
+    return MockBrandRepository.getByCompanyId(companyId);
+  },
+
+  getBrandsByWorkspace(workspaceId: string) {
+    return MockBrandRepository.getByWorkspaceId(workspaceId);
   },
 
   getBrandById(id: string) {
-    return BrandRepository.getById(id);
+    return MockBrandRepository.getById(id);
   },
 };
