@@ -79,7 +79,7 @@ Workflow Definition
 5. `back()` moves one position backward among visible, enabled steps without deleting values or completion history.
 6. `jumpTo()` permits navigation only to a visible, enabled, previously completed step.
 7. Hidden and disabled steps are not navigation targets and do not count toward progress.
-8. Optional is step metadata for consumers. It does not bypass a validator when the consumer provides one.
+8. An optional step defines how to detect an empty value through `isEmpty`. When empty, it does not block navigation. When data is supplied, its validator runs normally and invalid data blocks navigation.
 
 1. تصبح أول خطوة ظاهرة ومفعلة هي الخطوة الحالية.
 2. يتحقق `next()` من الخطوة الحالية. تبقى الخطوة غير الصالحة حالية وتعرض مشاكل التحقق.
@@ -88,7 +88,7 @@ Workflow Definition
 5. ينتقل `back()` خطوة واحدة إلى الخلف بين الخطوات الظاهرة والمفعلة دون حذف القيم أو سجل الإكمال.
 6. يسمح `jumpTo()` بالانتقال فقط إلى خطوة ظاهرة ومفعلة ومكتملة سابقا.
 7. الخطوات المخفية والمعطلة ليست أهدافا للتنقل ولا تدخل في حساب التقدم.
-8. الاختيارية هي وصف للخطوة يستخدمه المستهلك، ولا تتجاوز أداة التحقق إذا وفرها المستهلك.
+8. تحدد الخطوة الاختيارية طريقة اكتشاف القيمة الفارغة عبر `isEmpty`. عندما تكون فارغة، لا تعيق التنقل. وعندما تقدم بيانات، تعمل أداة التحقق بصورة طبيعية وتعيق البيانات غير الصالحة التنقل.
 
 ## Dynamic Step Rules | قواعد الخطوات الديناميكية
 
@@ -139,3 +139,61 @@ AI entry is not implemented. A future assisted-entry adapter may propose values 
 The same engine can drive Product Entry, Excel Import, Solution Builder, Supplier Wizard, and setup wizards. Each consumer supplies its own definition and domain rules without changing the engine.
 
 يمكن للمحرك نفسه تشغيل إدخال المنتج واستيراد Excel ومحرك بناء الحلول ومعالج المورد ومعالجات الإعداد. يوفر كل مستهلك تعريفه وقواعد مجاله دون تغيير المحرك.
+
+## Product Entry Definition | تعريف إدخال المنتج
+
+The Catalog domain defines Product Entry in `domains/catalog/product-entry/`. It depends on the shared workflow contracts, while `shared/workflow/` has no dependency on Catalog. The definition contains workflow configuration only; it creates no UI and performs no persistence or data access.
+
+يعرف مجال الكتالوج إدخال المنتج داخل `domains/catalog/product-entry/`. يعتمد على عقود سير العمل المشتركة، بينما لا يعتمد `shared/workflow/` على مجال الكتالوج. يحتوي التعريف على إعدادات سير العمل فقط؛ ولا ينشئ واجهة مستخدم ولا ينفذ حفظا أو وصولا إلى البيانات.
+
+### Product Entry Steps | خطوات إدخال المنتج
+
+1. Entry Method: currently accepts Manual Entry. Excel Import is represented as a future disabled option.
+2. Category: requires a selected Category.
+3. Device Class: appears and becomes required only when the selected Category requires Device Class.
+4. Product Model: requires a selected Product Model. Brand resolution may be supplied later by the Product Model context.
+5. Specifications: validates required fields from the resolved Specification Template by field ID, without hardcoded specification names.
+6. Commercial Details: validates product name, non-negative price and quantity, condition, and availability status.
+7. Images: optional; no image handling is implemented.
+8. Review: always last and revalidates all required previous steps.
+
+1. طريقة الإدخال: تقبل حاليا الإدخال اليدوي. يمثل استيراد Excel كخيار مستقبلي معطل.
+2. التصنيف: يتطلب اختيار تصنيف.
+3. فئة الجهاز: تظهر وتصبح مطلوبة فقط عندما يتطلب التصنيف المحدد فئة جهاز.
+4. نموذج المنتج: يتطلب اختيار نموذج منتج. ويمكن توفير تحديد العلامة التجارية لاحقا من سياق نموذج المنتج.
+5. المواصفات: تتحقق من الحقول المطلوبة في قالب المواصفات المحدد باستخدام معرف الحقل، دون أسماء مواصفات مثبتة.
+6. التفاصيل التجارية: تتحقق من اسم المنتج، وأن السعر والكمية لا يقلان عن الصفر، والحالة، وحالة التوفر.
+7. الصور: اختيارية؛ ولا توجد معالجة للصور في هذه المهمة.
+8. المراجعة: تأتي دائما أخيرا وتعيد التحقق من جميع الخطوات السابقة المطلوبة.
+
+### Dynamic Device Class Behavior | السلوك الديناميكي لفئة الجهاز
+
+`categoryRequiresDeviceClass` is supplied by Catalog context. When false, the Device Class step is hidden, excluded from navigation and progress, and its selected value is cleared as incompatible. When true, the step is visible and its validator requires a compatible selection.
+
+يوفر سياق الكتالوج قيمة `categoryRequiresDeviceClass`. عندما تكون خاطئة، تخفى خطوة فئة الجهاز وتستبعد من التنقل والتقدم وتمسح قيمتها المحددة لأنها غير متوافقة. وعندما تكون صحيحة، تظهر الخطوة وتتطلب أداة التحقق اختيار قيمة متوافقة.
+
+### Product Entry State Preservation | الحفاظ على حالة إدخال المنتج
+
+Backward navigation does not mutate Product Entry values. When Category or Device Class context changes, shared commercial values remain intact. Category, Device Class, Product Model, Brand, and specification values are retained only when the newly resolved compatibility context permits them.
+
+لا يغير التنقل إلى الخلف قيم إدخال المنتج. عند تغير سياق التصنيف أو فئة الجهاز، تبقى القيم التجارية المشتركة كما هي. ولا يحتفظ بالتصنيف وفئة الجهاز ونموذج المنتج والعلامة التجارية وقيم المواصفات إلا عندما يسمح سياق التوافق المحدد حديثا بها.
+
+### Validation Responsibility | مسؤولية التحقق
+
+Product Entry owns its step validators. The shared engine only invokes them. Required specification field IDs come from the resolved Specification Template context; validation does not know field names or query repositories. Review composes the required previous validators so it cannot complete while required Product Entry data is invalid.
+
+Review includes Device Class validation only while the Device Class step is visible. Device Class and Product Model validation also verifies that selected IDs belong to the compatibility lists supplied by Catalog context. Price and quantity accept zero and require finite, non-negative numbers.
+
+يمتلك إدخال المنتج أدوات التحقق الخاصة بخطواته، ولا يفعل المحرك المشترك سوى تشغيلها. تأتي معرفات حقول المواصفات المطلوبة من سياق قالب المواصفات المحدد؛ ولا يعرف التحقق أسماء الحقول ولا يستعلم من المستودعات. تجمع خطوة المراجعة أدوات تحقق الخطوات السابقة المطلوبة، ولذلك لا يمكن إكمالها عندما تكون بيانات إدخال المنتج المطلوبة غير صالحة.
+
+تتضمن المراجعة التحقق من فئة الجهاز فقط عندما تكون خطوة فئة الجهاز ظاهرة. ويتحقق إدخال المنتج أيضا من أن معرفي فئة الجهاز ونموذج المنتج ينتميان إلى قوائم التوافق التي يوفرها سياق الكتالوج. يقبل السعر والكمية الصفر ويجب أن يكونا رقمين محدودين وغير سالبين.
+
+The shared `WorkflowState.currentStepId` is the single source of truth for the active step. Product Entry values do not duplicate navigation state.
+
+تمثل قيمة `WorkflowState.currentStepId` المشتركة مصدر الحقيقة الوحيد للخطوة النشطة. ولا تكرر قيم إدخال المنتج حالة التنقل.
+
+### Reconciliation Behavior | سلوك التنسيق
+
+The reconciliation function receives compatibility facts already resolved by the Catalog domain. It removes specification entries whose field IDs are not compatible, clears an incompatible Device Class or Product Model, and clears Brand when its Product Model becomes incompatible. It preserves product name, price, currency, quantity, condition, availability, images references, and every compatible specification value. A future resolved Product Model Brand may be applied through context without placing Brand lookup logic in the workflow.
+
+تستقبل دالة التنسيق حقائق التوافق التي حددها مجال الكتالوج مسبقا. تزيل قيم المواصفات التي لا تتوافق معرفات حقولها، وتمسح فئة الجهاز أو نموذج المنتج غير المتوافق، وتمسح العلامة التجارية عندما يصبح نموذج المنتج غير متوافق. وتحافظ على اسم المنتج والسعر والعملة والكمية والحالة والتوفر ومراجع الصور وكل قيمة مواصفة متوافقة. ويمكن تطبيق علامة تجارية محددة مستقبلا من نموذج المنتج عبر السياق دون وضع منطق البحث عن العلامة التجارية داخل سير العمل.

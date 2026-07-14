@@ -35,6 +35,7 @@ export interface WorkflowStep<TContext, TValues> {
   id: WorkflowStepId;
   label: string;
   optional?: boolean;
+  isEmpty?: WorkflowStepPredicate<TContext, TValues>;
   isVisible?: WorkflowStepPredicate<TContext, TValues>;
   isDisabled?: WorkflowStepPredicate<TContext, TValues>;
   validator?: WorkflowStepValidator<TContext, TValues>;

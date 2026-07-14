@@ -20,6 +20,10 @@ export async function validateWorkflowStep<TContext, TValues>(
   step: WorkflowStep<TContext, TValues>,
   runtime: WorkflowStepRuntime<TContext, TValues>,
 ): Promise<WorkflowValidationResult> {
+  if (step.optional && step.isEmpty?.(runtime)) {
+    return validWorkflowStep();
+  }
+
   if (!step.validator) {
     return validWorkflowStep();
   }

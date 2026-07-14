@@ -178,5 +178,15 @@ export class WorkflowEngine<TContext, TValues> {
     if (new Set(ids).size !== ids.length) {
       throw new Error("Workflow step IDs must be unique.");
     }
+
+    const optionalStepWithoutEmptyPredicate = this.definition.steps.find(
+      (step) => step.optional && !step.isEmpty,
+    );
+
+    if (optionalStepWithoutEmptyPredicate) {
+      throw new Error(
+        `Optional workflow step "${optionalStepWithoutEmptyPredicate.id}" must define isEmpty.`,
+      );
+    }
   }
 }
