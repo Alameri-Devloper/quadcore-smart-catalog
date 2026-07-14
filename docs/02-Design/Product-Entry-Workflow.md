@@ -197,3 +197,71 @@ The shared `WorkflowState.currentStepId` is the single source of truth for the a
 The reconciliation function receives compatibility facts already resolved by the Catalog domain. It removes specification entries whose field IDs are not compatible, clears an incompatible Device Class or Product Model, and clears Brand when its Product Model becomes incompatible. It preserves product name, price, currency, quantity, condition, availability, images references, and every compatible specification value. A future resolved Product Model Brand may be applied through context without placing Brand lookup logic in the workflow.
 
 تستقبل دالة التنسيق حقائق التوافق التي حددها مجال الكتالوج مسبقا. تزيل قيم المواصفات التي لا تتوافق معرفات حقولها، وتمسح فئة الجهاز أو نموذج المنتج غير المتوافق، وتمسح العلامة التجارية عندما يصبح نموذج المنتج غير متوافق. وتحافظ على اسم المنتج والسعر والعملة والكمية والحالة والتوفر ومراجع الصور وكل قيمة مواصفة متوافقة. ويمكن تطبيق علامة تجارية محددة مستقبلا من نموذج المنتج عبر السياق دون وضع منطق البحث عن العلامة التجارية داخل سير العمل.
+
+## React Workflow Adapter | محول سير العمل لـ React
+
+### Separation of Responsibilities | فصل المسؤوليات
+
+The framework-independent core remains in `shared/workflow/`. It owns navigation, validation, completion, reconciliation, dynamic steps, progress, reset, and workflow events. It does not import React.
+
+يبقى المحرك المستقل عن إطار العمل داخل `shared/workflow/`. وهو مسؤول عن التنقل والتحقق والإكمال والتنسيق والخطوات الديناميكية والتقدم وإعادة الضبط وأحداث سير العمل. ولا يستورد React.
+
+The React adapter lives in `shared/workflow/react/`. It subscribes to engine snapshots, derives presentation-friendly state, and exposes typed actions. It contains no Catalog or Product Entry rules.
+
+يوجد محول React داخل `shared/workflow/react/`. يشترك في لقطات حالة المحرك، ويشتق حالة مناسبة للعرض، ويعرض إجراءات معرفة الأنواع. ولا يحتوي على قواعد الكتالوج أو إدخال المنتج.
+
+```text
+Domain Workflow Definition
+        ↓
+WorkflowProvider
+        ↓ delegates to
+Shared Workflow Engine
+        ↓ publishes snapshots
+useWorkflow()
+        ↓
+Future React Components
+```
+
+```text
+تعريف سير عمل المجال
+        ↓
+مزود سير العمل
+        ↓ يفوض إلى
+محرك سير العمل المشترك
+        ↓ ينشر لقطات الحالة
+خطاف سير العمل
+        ↓
+مكونات React المستقبلية
+```
+
+### WorkflowProvider | مزود سير العمل
+
+`createWorkflowReactAdapter<TContext, TValues>()` creates a private typed context and returns a matched `WorkflowProvider` and `useWorkflow` hook. Consumers cannot supply different generic arguments to the returned hook. This preserves the Provider's context and value types without an erased singleton context or caller type assertions.
+
+تنشئ `createWorkflowReactAdapter<TContext, TValues>()` سياقا خاصا محدد الأنواع، وتعيد `WorkflowProvider` وخطاف `useWorkflow` متطابقين. ولا يستطيع المستهلك توفير أنواع عامة مختلفة للخطاف المعاد. وبذلك يحافظ النظام على أنواع سياق المزود وقيمه دون سياق مفرد ممسوح الأنواع أو تأكيدات أنواع يقدمها المستهلك.
+
+`WorkflowProvider` receives the workflow definition, workflow context, an initial-values factory, initial step, optional event handler, and optional reconciliation override. It creates one engine instance and uses React's external-store subscription mechanism to keep rendering synchronized with engine state without copying workflow rules into React.
+
+يستقبل `WorkflowProvider` تعريف سير العمل وسياقه ومصنع القيم الأولية والخطوة الأولية ومعالج أحداث اختياري ومنسق قيم اختياري بديل. ينشئ نسخة واحدة من المحرك ويستخدم آلية اشتراك React في المخزن الخارجي لمزامنة العرض مع حالة المحرك دون نسخ قواعد سير العمل إلى React.
+
+The event handler is subscribed inside a React effect. The effect replays the current step to preserve initialization behavior and returns the engine unsubscribe function, so an unmounted Provider cannot receive later events.
+
+يتم الاشتراك في معالج الأحداث داخل تأثير React. يعيد التأثير إرسال الخطوة الحالية للحفاظ على سلوك التهيئة، ويعيد دالة إلغاء الاشتراك من المحرك، ولذلك لا يمكن لمزود أزيل من الصفحة استقبال أحداث لاحقة.
+
+The initial-values factory creates a fresh value object for engine initialization and every reset. Reset does not reuse an externally mutable initial-values object reference. The factory must return a new independent value graph each time.
+
+ينشئ مصنع القيم الأولية كائن قيم جديدا عند تهيئة المحرك وعند كل إعادة ضبط. ولا تعيد إعادة الضبط استخدام مرجع خارجي قابل للتغيير للقيم الأولية. ويجب أن يعيد المصنع بنية قيم جديدة ومستقلة في كل استدعاء.
+
+When values change, the Provider delegates reconciliation and dynamic-step recalculation to the engine, then revalidates completed steps. A completed step becomes incomplete if its current data is no longer valid. Back navigation continues to preserve values.
+
+عند تغير القيم، يفوض المزود تنسيق القيم وإعادة حساب الخطوات الديناميكية إلى المحرك، ثم يعيد التحقق من الخطوات المكتملة. تصبح الخطوة المكتملة غير مكتملة إذا لم تعد بياناتها الحالية صالحة. ويستمر التنقل إلى الخلف في الحفاظ على القيم.
+
+### useWorkflow Hook | خطاف useWorkflow
+
+The factory-returned `useWorkflow()` exposes current step, current step ID, visible steps, completed steps, progress, values, current validation result, and forward/back availability. It also exposes `next`, `back`, `goToStep`, `setValue`, `setValues`, `validateCurrentStep`, `completeWorkflow`, and `resetWorkflow`.
+
+يعرض `useWorkflow()` المعاد من المصنع الخطوة الحالية ومعرفها والخطوات الظاهرة والمكتملة والتقدم والقيم ونتيجة التحقق الحالية وإمكانية التقدم والرجوع. ويعرض أيضا `next` و`back` و`goToStep` و`setValue` و`setValues` و`validateCurrentStep` و`completeWorkflow` و`resetWorkflow`.
+
+The hook throws a clear error outside `WorkflowProvider`. Components consume state and invoke actions; they do not recreate navigation, validation, reconciliation, or completion logic.
+
+يعرض الخطاف خطأ واضحا عند استخدامه خارج `WorkflowProvider`. تستهلك المكونات الحالة وتستدعي الإجراءات؛ ولا تعيد إنشاء منطق التنقل أو التحقق أو التنسيق أو الإكمال.

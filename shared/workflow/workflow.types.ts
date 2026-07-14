@@ -4,6 +4,7 @@ export type WorkflowEventType =
   | "step-entered"
   | "step-completed"
   | "step-changed"
+  | "workflow-state-changed"
   | "workflow-completed";
 
 export interface WorkflowValidationIssue {
