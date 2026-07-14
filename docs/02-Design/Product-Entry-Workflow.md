@@ -265,3 +265,67 @@ The factory-returned `useWorkflow()` exposes current step, current step ID, visi
 The hook throws a clear error outside `WorkflowProvider`. Components consume state and invoke actions; they do not recreate navigation, validation, reconciliation, or completion logic.
 
 يعرض الخطاف خطأ واضحا عند استخدامه خارج `WorkflowProvider`. تستهلك المكونات الحالة وتستدعي الإجراءات؛ ولا تعيد إنشاء منطق التنقل أو التحقق أو التنسيق أو الإكمال.
+
+## Product Entry Wizard Shell | هيكل معالج إدخال المنتج
+
+Sprint 03 Task 3.4 adds the first mobile-first visual shell at `/products/new`. It demonstrates the existing Product Entry workflow without implementing Product form controls, saving, database access, Excel import, image upload, AI, or OCR.
+
+تضيف المهمة 3.4 من السبرنت 03 أول هيكل مرئي موجه للجوال على المسار `/products/new`. يعرض الهيكل سير عمل إدخال المنتج الحالي دون تنفيذ حقول نموذج المنتج أو الحفظ أو الوصول إلى قاعدة البيانات أو استيراد Excel أو رفع الصور أو الذكاء الاصطناعي أو OCR.
+
+### Shell Structure | بنية الهيكل
+
+- `ProductEntryWizard` owns composition and isolated development-only initialization.
+- `ProductEntryWizardHeader` displays the page title, current user-facing step title, and description.
+- `ProductEntryProgress` displays percentage, a progress bar, visible steps, the current step, and completed-step revisit controls.
+- `ProductEntryStepContent` displays one clear placeholder and nearby validation messages for the active step.
+- `ProductEntryNavigation` displays Back, Next, and final-step Complete actions.
+- The route page composes only the Product Entry Wizard.
+
+- يتولى `ProductEntryWizard` تركيب الواجهة والتهيئة المؤقتة المعزولة الخاصة بالتطوير.
+- يعرض `ProductEntryWizardHeader` عنوان الصفحة وعنوان الخطوة الحالية الموجه للمستخدم ووصفها.
+- يعرض `ProductEntryProgress` النسبة وشريط التقدم والخطوات الظاهرة والخطوة الحالية وأزرار العودة إلى الخطوات المكتملة.
+- يعرض `ProductEntryStepContent` عنصرا نائبا واضحا ورسائل التحقق بالقرب من محتوى الخطوة النشطة.
+- يعرض `ProductEntryNavigation` إجراءات الرجوع والتالي والإكمال في الخطوة الأخيرة.
+- تركب صفحة المسار معالج إدخال المنتج فقط.
+
+### Workflow Integration | تكامل سير العمل
+
+The Product Entry-specific adapter is created once with `createWorkflowReactAdapter<ProductEntryWorkflowContext, ProductEntryValues>()`. It exports the matched `ProductEntryWorkflowProvider` and `useProductEntryWorkflow` without caller-supplied generic arguments.
+
+ينشأ محول إدخال المنتج مرة واحدة باستخدام `createWorkflowReactAdapter<ProductEntryWorkflowContext, ProductEntryValues>()`. ويصدر `ProductEntryWorkflowProvider` و`useProductEntryWorkflow` المتطابقين دون أنواع عامة يقدمها المستهلك.
+
+UI components read workflow snapshots and call adapter actions. They do not decide validation, completion, reconciliation, dynamic visibility, or navigation eligibility. The Review step remains last, Images remains optional, future incomplete steps remain disabled, and completed previous steps can be revisited.
+
+تقرأ مكونات الواجهة لقطات سير العمل وتستدعي إجراءات المحول. ولا تقرر التحقق أو الإكمال أو التنسيق أو الظهور الديناميكي أو أهلية التنقل. تبقى المراجعة أخيرا، وتبقى الصور اختيارية، وتظل الخطوات المستقبلية غير المكتملة معطلة، ويمكن العودة إلى الخطوات السابقة المكتملة.
+
+The temporary development context and valid placeholder values are isolated inside `ProductEntryWizard`. They make every shell step reviewable without adding fake form controls or bypassing workflow validation. They must be replaced by resolved Catalog context and real employee input in later tasks.
+
+يعزل سياق التطوير المؤقت والقيم المؤقتة الصالحة داخل `ProductEntryWizard`. وهي تجعل كل خطوات الهيكل قابلة للمراجعة دون إضافة حقول نموذج وهمية أو تجاوز تحقق سير العمل. ويجب استبدالها بسياق الكتالوج المحدد وإدخال الموظف الحقيقي في المهام اللاحقة.
+
+### Dynamic Steps | الخطوات الديناميكية
+
+The progress UI renders only `visibleSteps` from the adapter. When `categoryRequiresDeviceClass` becomes false in a future real context update, Device Class disappears and progress recalculates through the core engine. The UI has no Device Class visibility condition of its own.
+
+تعرض واجهة التقدم `visibleSteps` فقط من المحول. عندما تصبح `categoryRequiresDeviceClass` خاطئة في تحديث حقيقي مستقبلي للسياق، تختفي فئة الجهاز ويعيد المحرك الأساسي حساب التقدم. ولا تحتوي الواجهة على شرط خاص بها لظهور فئة الجهاز.
+
+### Accessibility | إمكانية الوصول
+
+- Navigation actions use semantic buttons and native `disabled` attributes.
+- The active progress step uses `aria-current="step"`.
+- The progress bar exposes its current numeric value.
+- Validation messages use an alert region near the active step.
+- Buttons provide visible keyboard focus and large touch targets.
+- Step navigation includes accessible labels, while visual numbering remains concise.
+
+- تستخدم إجراءات التنقل أزرارا دلالية وخصائص `disabled` الأصلية.
+- تستخدم خطوة التقدم النشطة `aria-current="step"`.
+- يعرض شريط التقدم قيمته الرقمية الحالية لتقنيات الوصول.
+- تستخدم رسائل التحقق منطقة تنبيه قرب الخطوة النشطة.
+- توفر الأزرار تركيز لوحة مفاتيح مرئيا وأهداف لمس كبيرة.
+- يتضمن تنقل الخطوات تسميات وصول واضحة مع إبقاء الترقيم المرئي مختصرا.
+
+### Mobile-First Behavior | السلوك الموجه للجوال
+
+The shell starts as a single-column layout with horizontal step scrolling, compact spacing, full-height content, and sticky bottom navigation. At wider sizes it uses a centered maximum width, expanded spacing, grid progress steps, and non-sticky navigation. Visible text uses customer-facing labels such as “Product Details” and “Device Specifications.”
+
+يبدأ الهيكل بتخطيط عمود واحد مع تمرير أفقي للخطوات ومسافات مدمجة ومحتوى كامل الارتفاع وتنقل مثبت أسفل الشاشة. وفي الشاشات الأوسع يستخدم عرضا أقصى في المنتصف ومسافات أوسع وشبكة لخطوات التقدم وتنقلا غير مثبت. تستخدم النصوص الظاهرة تسميات موجهة للمستخدم مثل «تفاصيل المنتج» و«مواصفات الجهاز».

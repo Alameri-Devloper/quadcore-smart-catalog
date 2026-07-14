@@ -43,6 +43,8 @@ export interface ProductEntryState {
   images: string[];
 }
 
+export type ProductEntryValues = ProductEntryState;
+
 export interface ProductEntryWorkflowContext {
   categoryRequiresDeviceClass: boolean;
   requiredSpecificationFieldIds: readonly string[];
