@@ -119,3 +119,33 @@ Future optional capability. It must support manual entry, human review, and non-
 #### العربية
 
 قدرة مستقبلية اختيارية. يجب أن تدعم الإدخال اليدوي والمراجعة البشرية وألا تمنع إنشاء المنتج.
+
+### Advanced Future Version | الإصدار المستقبلي المتقدم
+
+#### English
+
+- Market Catalog Module.
+- Solution Builder Engine.
+- Smart Product Discovery.
+- Natural Language Specification Search.
+- AI Sales Assistant.
+- Product Benefit Generation.
+- Product Comparison Assistance.
+- WhatsApp Marketing Text Suggestions.
+- Manual search and traditional filters remain available at all times.
+- AI remains optional, non-blocking, based on confirmed QSC data, and subject to human review.
+
+See [Future Smart Sales Features](../04-Reference/Future-Smart-Sales-Features.md) for capability boundaries and future architecture direction.
+
+#### العربية
+
+- وحدة كتالوج السوق.
+- محرك بناء الحلول.
+- الاكتشاف الذكي للمنتجات.
+- البحث في المواصفات باللغة الطبيعية.
+- مساعد المبيعات بالذكاء الاصطناعي.
+- توليد فوائد المنتج.
+- المساعدة في مقارنة المنتجات.
+- اقتراحات النصوص التسويقية عبر واتساب.
+- يظل البحث اليدوي وعوامل التصفية التقليدية متاحين دائماً.
+- يظل الذكاء الاصطناعي اختيارياً وغير معيق، ومعتمداً على بيانات QSC المؤكدة، وخاضعاً للمراجعة البشرية.
