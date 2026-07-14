@@ -52,8 +52,14 @@ Each ADR should include:
 | --- | --- | --- |
 | [ADR-0002](./ADR-0002-Category-Device-Class-Specification-Templates.md) | Category and Device Class Specification Templates | Accepted |
 | [ADR-0003](./ADR-0003-Assisted-Product-Data-Entry.md) | Assisted Product Data Entry | Accepted for future implementation |
+| [ADR-0004](./ADR-0004-Context-Aware-Product-Entry.md) | Context-Aware Product Entry | Accepted; implementation staged |
+| [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | Product Lifecycle and Soft Delete | Accepted for future implementation |
+| [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | Impact Analysis and Safe Reconciliation | Accepted; full implementation planned |
 
 | ADR | العنوان | الحالة |
 | --- | --- | --- |
 | [ADR-0002](./ADR-0002-Category-Device-Class-Specification-Templates.md) | قوالب المواصفات حسب التصنيف وفئة الجهاز | معتمد |
 | [ADR-0003](./ADR-0003-Assisted-Product-Data-Entry.md) | إدخال بيانات المنتج بمساعدة | معتمد للتنفيذ المستقبلي |
+| [ADR-0004](./ADR-0004-Context-Aware-Product-Entry.md) | إدخال المنتج الواعي بالسياق | معتمد؛ التنفيذ مرحلي |
+| [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | دورة حياة المنتج والحذف المنطقي | معتمد للتنفيذ المستقبلي |
+| [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | تحليل التأثير والتنسيق الآمن | معتمد؛ التنفيذ الكامل مخطط له |
