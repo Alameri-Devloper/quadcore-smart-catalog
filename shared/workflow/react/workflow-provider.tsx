@@ -32,6 +32,44 @@ export interface WorkflowProviderProps<TContext, TValues extends object> {
   reconcileValues?: WorkflowValueReconciler<TContext, TValues>;
 }
 
+function valuesEqual(current: unknown, initial: unknown): boolean {
+  if (Object.is(current, initial)) {
+    return true;
+  }
+
+  if (
+    typeof current !== "object" ||
+    current === null ||
+    typeof initial !== "object" ||
+    initial === null
+  ) {
+    return false;
+  }
+
+  if (Array.isArray(current) || Array.isArray(initial)) {
+    return (
+      Array.isArray(current) &&
+      Array.isArray(initial) &&
+      current.length === initial.length &&
+      current.every((value, index) => valuesEqual(value, initial[index]))
+    );
+  }
+
+  const currentRecord = current as Record<string, unknown>;
+  const initialRecord = initial as Record<string, unknown>;
+  const currentKeys = Object.keys(currentRecord);
+  const initialKeys = Object.keys(initialRecord);
+
+  return (
+    currentKeys.length === initialKeys.length &&
+    currentKeys.every(
+      (key) =>
+        Object.hasOwn(initialRecord, key) &&
+        valuesEqual(currentRecord[key], initialRecord[key]),
+    )
+  );
+}
+
 export function createWorkflowProvider<
   TContext,
   TValues extends object,
@@ -45,6 +83,7 @@ export function createWorkflowProvider<
     onEvent,
     reconcileValues,
   }: WorkflowProviderProps<TContext, TValues>) {
+    const initialValuesRef = useRef<TValues | null>(null);
     const initialConfigurationRef = useRef({
       context,
       createInitialValues,
@@ -55,7 +94,10 @@ export function createWorkflowProvider<
         ? { ...workflow, reconcileValues }
         : workflow;
 
-      return new WorkflowEngine(definition, context, createInitialValues(), {
+      const initialValues = createInitialValues();
+      initialValuesRef.current = initialValues;
+
+      return new WorkflowEngine(definition, context, initialValues, {
         initialStepId: initialStep,
       });
     });
@@ -135,9 +177,11 @@ export function createWorkflowProvider<
 
     const resetWorkflow = useCallback(() => {
       const initial = initialConfigurationRef.current;
+      const initialValues = initial.createInitialValues();
+      initialValuesRef.current = initialValues;
       engine.reset(
         initial.context,
-        initial.createInitialValues(),
+        initialValues,
         initial.initialStep,
       );
     }, [engine]);
@@ -170,6 +214,10 @@ export function createWorkflowProvider<
         !currentStep.disabled &&
         !engineState.isCompleted,
       canGoBack: currentIndex > 0,
+      isCompleted: engineState.isCompleted,
+      isDirty:
+        initialValuesRef.current !== null &&
+        !valuesEqual(engineState.values, initialValuesRef.current),
       next,
       back,
       goToStep,

@@ -329,3 +329,55 @@ The progress UI renders only `visibleSteps` from the adapter. When `categoryRequ
 The shell starts as a single-column layout with horizontal step scrolling, compact spacing, full-height content, and sticky bottom navigation. At wider sizes it uses a centered maximum width, expanded spacing, grid progress steps, and non-sticky navigation. Visible text uses customer-facing labels such as “Product Details” and “Device Specifications.”
 
 يبدأ الهيكل بتخطيط عمود واحد مع تمرير أفقي للخطوات ومسافات مدمجة ومحتوى كامل الارتفاع وتنقل مثبت أسفل الشاشة. وفي الشاشات الأوسع يستخدم عرضا أقصى في المنتصف ومسافات أوسع وشبكة لخطوات التقدم وتنقلا غير مثبت. تستخدم النصوص الظاهرة تسميات موجهة للمستخدم مثل «تفاصيل المنتج» و«مواصفات الجهاز».
+
+## Wizard Step States and Session Actions | حالات خطوات المعالج وإجراءات الجلسة
+
+### English
+
+Every visible Product Entry step has one explicit state:
+
+- **Not Started:** The employee has not completed the step. Future Not Started steps remain disabled.
+- **Current:** The active step. It uses `aria-current="step"` and remains visually and textually distinct.
+- **Completed:** The step's current values passed its validator and remain valid.
+- **Needs Attention:** A previously completed step became invalid after a later value or context change. It loses completion, progress is recalculated, and the employee can revisit it directly.
+
+Pressing Next does not complete a step by itself. The workflow stores the current values, validates them through the step's domain validator, and marks the step Completed only after validation succeeds. Whenever values or context change, completed steps are revalidated. Invalidated completion is removed immediately; compatible values remain preserved through reconciliation.
+
+Previous Completed and Needs Attention steps are reachable. Future incomplete steps remain disabled, Back preserves values, and Review remains the final step. A completed workflow session does not allow Back navigation.
+
+Home and Cancel are visible wizard actions. When no Product Entry values differ from the initial session values, either action may leave immediately. When values changed, both actions open the same unsaved-changes confirmation with:
+
+- **Continue Editing:** Close the dialog and preserve the active session.
+- **Discard Changes:** Leave Product Entry without persistence.
+- **Save Draft:** Visible but disabled with **Coming Soon** until Draft persistence is implemented.
+
+The confirmation uses semantic dialog behavior, moves focus into the dialog, and treats Escape as Continue Editing.
+
+After Complete successfully validates every applicable step, the active editing shell closes and a completion state replaces it. Back is unavailable. The completion shell provides **Add Another Product**, **Back to Catalog**, and **Home**. Add Another Product resets the workflow to a clean initial session. This state is a UI placeholder and does not save a Product.
+
+Dirty state is derived in the React workflow adapter by comparing current workflow values with the initial session values. Presentational components do not own or duplicate Product Entry values.
+
+### العربية
+
+تملك كل خطوة ظاهرة في إدخال المنتج حالة صريحة واحدة:
+
+- **لم تبدأ:** لم يكمل الموظف الخطوة. وتبقى الخطوات المستقبلية التي لم تبدأ معطلة.
+- **الحالية:** الخطوة النشطة. تستخدم `aria-current="step"` وتبقى مميزة بصريا ونصيا.
+- **مكتملة:** اجتازت القيم الحالية للخطوة أداة التحقق وما زالت صالحة.
+- **تحتاج إلى انتباه:** أصبحت خطوة مكتملة سابقا غير صالحة بعد تغيير لاحق في القيم أو السياق. تفقد حالة الاكتمال، ويعاد حساب التقدم، ويستطيع الموظف العودة إليها مباشرة.
+
+لا يؤدي ضغط التالي وحده إلى إكمال الخطوة. يخزن سير العمل القيم الحالية ويتحقق منها عبر أداة تحقق المجال الخاصة بالخطوة، ولا يعلم الخطوة كمكتملة إلا بعد نجاح التحقق. عند تغير القيم أو السياق، يعاد التحقق من الخطوات المكتملة. تزال حالة الاكتمال غير الصالحة فورا، بينما تبقى القيم المتوافقة محفوظة من خلال التنسيق.
+
+يمكن الوصول إلى الخطوات السابقة المكتملة والخطوات التي تحتاج إلى انتباه. وتبقى الخطوات المستقبلية غير المكتملة معطلة، ويحافظ الرجوع على القيم، وتبقى المراجعة الخطوة الأخيرة. ولا تسمح جلسة سير العمل المكتملة بالرجوع.
+
+إجراءا الرئيسية والإلغاء ظاهران في المعالج. عندما لا تختلف قيم إدخال المنتج عن قيم بداية الجلسة، يمكن لأي منهما المغادرة مباشرة. وعندما تتغير القيم، يفتح الإجراءان تأكيد التغييرات غير المحفوظة نفسه، ويحتوي على:
+
+- **متابعة التعديل:** إغلاق مربع الحوار والحفاظ على الجلسة النشطة.
+- **تجاهل التغييرات:** مغادرة إدخال المنتج دون حفظ.
+- **حفظ المسودة:** ظاهر لكنه معطل ويحمل عبارة **قريبا** حتى يتم تنفيذ حفظ المسودات.
+
+يستخدم التأكيد سلوك مربع حوار دلاليا، وينقل التركيز إلى داخله، ويعامل مفتاح Escape كاختيار متابعة التعديل.
+
+بعد أن يتحقق إجراء الإكمال بنجاح من كل خطوة منطبقة، يغلق هيكل التعديل النشط وتحل محله حالة اكتمال. ولا يتوفر الرجوع. توفر حالة الاكتمال إجراءات **إضافة منتج آخر** و**العودة إلى الكتالوج** و**الرئيسية**. يعيد إجراء إضافة منتج آخر سير العمل إلى جلسة أولية نظيفة. هذه الحالة هي عنصر نائب للواجهة ولا تحفظ منتجا.
+
+تشتق حالة التغيير داخل محول React لسير العمل من مقارنة قيم سير العمل الحالية بقيم بداية الجلسة. ولا تمتلك مكونات العرض قيم إدخال المنتج ولا تكررها.

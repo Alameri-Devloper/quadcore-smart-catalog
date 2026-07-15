@@ -269,6 +269,10 @@ export class WorkflowEngine<TContext, TValues> {
   }
 
   back(): WorkflowTransitionResult<TContext, TValues> {
+    if (this.state.isCompleted) {
+      return this.result(false, null);
+    }
+
     const steps = getNavigableSteps(this.state.steps);
     const currentIndex = steps.findIndex(
       (step) => step.id === this.state.currentStepId,
@@ -288,7 +292,9 @@ export class WorkflowEngine<TContext, TValues> {
       (step) => step.id === stepId,
     );
 
-    if (!target?.completed) {
+    const needsAttention = target?.validation?.valid === false;
+
+    if (!target || (!target.completed && !needsAttention)) {
       return this.result(false, null);
     }
 

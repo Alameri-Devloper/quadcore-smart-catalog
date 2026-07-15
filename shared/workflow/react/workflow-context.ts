@@ -24,6 +24,8 @@ export interface WorkflowReactState<TContext, TValues> {
   validation: WorkflowValidationResult | null;
   canGoNext: boolean;
   canGoBack: boolean;
+  isCompleted: boolean;
+  isDirty: boolean;
 }
 
 export interface WorkflowReactActions<TValues> {

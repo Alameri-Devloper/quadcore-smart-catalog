@@ -37,22 +37,47 @@ export function ProductEntryProgress() {
         {visibleSteps.map((step, index) => {
           const isCurrent = step.id === currentStepId;
           const isCompleted = completedIds.has(step.id);
-          const canVisit = isCurrent || isCompleted;
+          const needsAttention = !isCurrent && step.validation?.valid === false;
+          const canVisit = isCurrent || isCompleted || needsAttention;
+          const stateLabel = isCurrent
+            ? "Current"
+            : isCompleted
+              ? "Completed"
+              : needsAttention
+                ? "Needs Attention"
+                : "Not Started";
+          const stateIcon = isCompleted
+            ? "✓"
+            : needsAttention
+              ? "!"
+              : index + 1;
 
           return (
             <li className="shrink-0" key={step.id}>
               <button
                 aria-current={isCurrent ? "step" : undefined}
-                aria-label={`Step ${index + 1}: ${step.label}${
-                  isCompleted ? ", completed" : ""
+                aria-label={`Step ${index + 1}: ${step.label}, ${stateLabel}`}
+                className={`flex min-h-14 min-w-24 flex-col items-center justify-center rounded-xl border-2 px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-45 sm:w-full ${
+                  isCurrent
+                    ? "border-blue-600 bg-blue-50 text-blue-800"
+                    : isCompleted
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                      : needsAttention
+                        ? "border-amber-600 bg-amber-50 text-amber-950"
+                        : "border-slate-300 bg-white text-slate-600"
                 }`}
-                className="flex min-h-11 min-w-11 items-center justify-center rounded-full border-2 px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-45 sm:w-full"
                 disabled={!canVisit}
                 onClick={() => goToStep(step.id)}
                 type="button"
               >
-                <span aria-hidden="true">{isCompleted ? "✓" : index + 1}</span>
+                <span aria-hidden="true">{stateIcon}</span>
                 <span className="sr-only">{step.label}</span>
+                <span
+                  aria-hidden="true"
+                  className="mt-0.5 text-[0.65rem] leading-tight"
+                >
+                  {stateLabel}
+                </span>
               </button>
             </li>
           );
