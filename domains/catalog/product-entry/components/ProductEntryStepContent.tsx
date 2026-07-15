@@ -5,6 +5,7 @@ import {
   PRODUCT_ENTRY_STEP_IDS,
   type ProductEntryStepId,
 } from "../product-entry.types";
+import { EntryMethodStep } from "./steps/EntryMethodStep";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -67,12 +68,16 @@ export function getProductEntryStepPresentation(stepId: string | null) {
 export function ProductEntryStepContent() {
   const { currentStepId, validation } = useProductEntryWorkflow();
   const presentation = getProductEntryStepPresentation(currentStepId);
+  const isEntryMethod = currentStepId === PRODUCT_ENTRY_STEP_IDS.entryMethod;
 
   return (
     <section
       aria-labelledby="product-entry-step-heading"
       className="min-h-72 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:min-h-80 sm:p-8"
     >
+      {isEntryMethod ? (
+        <EntryMethodStep />
+      ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
           {currentStepId
@@ -91,8 +96,9 @@ export function ProductEntryStepContent() {
           {presentation.placeholder}
         </p>
       </div>
+      )}
 
-      {validation && !validation.valid ? (
+      {!isEntryMethod && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"

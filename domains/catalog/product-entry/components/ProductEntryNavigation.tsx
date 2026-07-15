@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useProductEntryWorkflow } from "../react/product-entry-workflow-adapter";
-import { PRODUCT_ENTRY_STEP_IDS } from "../product-entry.types";
+import {
+  PRODUCT_ENTRY_STEP_IDS,
+  isProductEntryMethodEnabled,
+} from "../product-entry.types";
 
 export function ProductEntryNavigation() {
   const {
@@ -12,9 +15,13 @@ export function ProductEntryNavigation() {
     back,
     next,
     completeWorkflow,
+    values,
   } = useProductEntryWorkflow();
   const [isWorking, setIsWorking] = useState(false);
   const isReview = currentStepId === PRODUCT_ENTRY_STEP_IDS.review;
+  const hasValidEntryMethod =
+    currentStepId !== PRODUCT_ENTRY_STEP_IDS.entryMethod ||
+    isProductEntryMethodEnabled(values.entryMethod);
 
   const run = async (action: () => Promise<unknown>) => {
     setIsWorking(true);
@@ -49,7 +56,7 @@ export function ProductEntryNavigation() {
         ) : (
           <button
             className="min-h-12 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-45"
-            disabled={!canGoNext || isWorking}
+            disabled={!canGoNext || !hasValidEntryMethod || isWorking}
             onClick={() => void run(next)}
             type="button"
           >
