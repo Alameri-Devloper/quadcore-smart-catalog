@@ -186,6 +186,22 @@ export function createWorkflowProvider<
       );
     }, [engine]);
 
+    const restoreWorkflow = useCallback(
+      async (snapshot: {
+        values: TValues;
+        currentStepId: WorkflowStepId;
+        completedStepIds: WorkflowStepId[];
+      }) => {
+        await engine.restore(
+          context,
+          snapshot.values,
+          snapshot.currentStepId,
+          snapshot.completedStepIds,
+        );
+      },
+      [context, engine],
+    );
+
     const value = useMemo<WorkflowContextValue<TContext, TValues>>(() => {
     const stepViews = workflow.steps.map((definitionStep) => ({
       ...definitionStep,
@@ -226,6 +242,7 @@ export function createWorkflowProvider<
       validateCurrentStep,
       completeWorkflow,
       resetWorkflow,
+      restoreWorkflow,
     };
   }, [
     back,
@@ -234,6 +251,7 @@ export function createWorkflowProvider<
     goToStep,
     next,
     resetWorkflow,
+    restoreWorkflow,
     setValue,
     setValues,
     validateCurrentStep,

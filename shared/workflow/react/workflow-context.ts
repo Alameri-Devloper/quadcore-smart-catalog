@@ -40,6 +40,11 @@ export interface WorkflowReactActions<TValues> {
   validateCurrentStep: () => Promise<WorkflowValidationResult | null>;
   completeWorkflow: () => Promise<boolean>;
   resetWorkflow: () => void;
+  restoreWorkflow: (snapshot: {
+    values: TValues;
+    currentStepId: WorkflowStepId;
+    completedStepIds: WorkflowStepId[];
+  }) => Promise<void>;
 }
 
 export type WorkflowContextValue<TContext, TValues> = WorkflowReactState<

@@ -381,3 +381,33 @@ Dirty state is derived in the React workflow adapter by comparing current workfl
 بعد أن يتحقق إجراء الإكمال بنجاح من كل خطوة منطبقة، يغلق هيكل التعديل النشط وتحل محله حالة اكتمال. ولا يتوفر الرجوع. توفر حالة الاكتمال إجراءات **إضافة منتج آخر** و**العودة إلى الكتالوج** و**الرئيسية**. يعيد إجراء إضافة منتج آخر سير العمل إلى جلسة أولية نظيفة. هذه الحالة هي عنصر نائب للواجهة ولا تحفظ منتجا.
 
 تشتق حالة التغيير داخل محول React لسير العمل من مقارنة قيم سير العمل الحالية بقيم بداية الجلسة. ولا تمتلك مكونات العرض قيم إدخال المنتج ولا تكررها.
+
+## Local Draft Persistence | حفظ المسودة محليا
+
+### English
+
+Product Entry supports a browser-local Draft foundation. The UI calls `ProductEntryDraftService`, the service applies ownership and lifecycle rules, and a replaceable repository writes to browser storage. UI components never access browser storage directly. A future server or Supabase repository may replace the browser implementation without changing Product Entry UI components.
+
+A Draft stores company, workspace, and employee ownership; entry mode; workflow values; current step; completed step IDs; status; and created and updated timestamps. Temporary development ownership identifiers are isolated in one Product Entry configuration file.
+
+Drafts are saved after successful workflow movement, when Home is selected, and when **Save Draft and Exit** is selected from Cancel. An existing active Draft is updated instead of duplicated. Storage failure keeps the workflow open, prevents exit, and displays a clear error.
+
+Home saves automatically and navigates only after success. Cancel exits immediately only for a completely clean, unstarted session. Otherwise it offers **Save Draft and Exit**, **Discard Changes and Exit**, and **Continue Editing**. Discard marks the active Draft discarded before exit.
+
+When Product Entry opens, the most recent active Draft for the current owner is offered before new work begins. **Continue Draft** restores values, entry mode, current step, completion candidates, and timestamps; the engine then reconciles and revalidates the restored state. **Start New Product** discards the old Draft and starts clean. **Delete Draft** permanently removes it and starts clean.
+
+Successful workflow completion removes the active Draft. **Add Another Product** starts a new clean session. Draft persistence never creates or saves a Product.
+
+### العربية
+
+يدعم إدخال المنتج أساسا لحفظ المسودة محليا في المتصفح. تستدعي الواجهة `ProductEntryDraftService`، وتطبق الخدمة قواعد الملكية ودورة الحياة، ويكتب مستودع قابل للاستبدال في تخزين المتصفح. ولا تصل مكونات الواجهة إلى تخزين المتصفح مباشرة. ويمكن لمستودع خادم أو Supabase مستقبلي أن يحل محل تنفيذ المتصفح دون تغيير مكونات واجهة إدخال المنتج.
+
+تحفظ المسودة ملكية الشركة ومساحة العمل والموظف، وطريقة الإدخال، وقيم سير العمل، والخطوة الحالية، ومعرفات الخطوات المكتملة، والحالة، ووقتي الإنشاء والتحديث. وتعزل معرفات الملكية المؤقتة للتطوير في ملف إعداد واحد لإدخال المنتج.
+
+تحفظ المسودات بعد الانتقال الناجح في سير العمل، وعند اختيار الرئيسية، وعند اختيار **حفظ المسودة والخروج** من الإلغاء. تحدث المسودة النشطة الحالية بدلا من إنشاء نسخة مكررة. ويبقي فشل التخزين سير العمل مفتوحا، ويمنع الخروج، ويعرض خطأ واضحا.
+
+تحفظ الرئيسية تلقائيا ولا تنتقل إلا بعد النجاح. ويخرج الإلغاء مباشرة فقط من جلسة نظيفة تماما لم تبدأ. وإلا فإنه يوفر **حفظ المسودة والخروج** و**تجاهل التغييرات والخروج** و**متابعة التعديل**. ويعلم التجاهل المسودة النشطة كمتجاهلة قبل الخروج.
+
+عند فتح إدخال المنتج، تعرض أحدث مسودة نشطة للمالك الحالي قبل بدء عمل جديد. يعيد **متابعة المسودة** القيم وطريقة الإدخال والخطوة الحالية وحالات الاكتمال المرشحة والأوقات، ثم ينسق المحرك الحالة المستعادة ويعيد التحقق منها. ويعلم **بدء منتج جديد** المسودة القديمة كمتجاهلة ويبدأ جلسة نظيفة. ويحذف **حذف المسودة** المسودة نهائيا ويبدأ جلسة نظيفة.
+
+يزيل اكتمال سير العمل الناجح المسودة النشطة. ويبدأ **إضافة منتج آخر** جلسة نظيفة جديدة. ولا ينشئ حفظ المسودة منتجا ولا يحفظه أبدا.

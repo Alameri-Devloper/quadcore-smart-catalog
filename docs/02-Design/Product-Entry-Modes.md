@@ -198,6 +198,14 @@ Future Draft capabilities may include:
 - Draft expiration policies.
 - Shared Drafts controlled by explicit permissions.
 
+### Current Local Draft Foundation
+
+Manual Draft is now supported through replaceable browser storage. Product Entry saves the active Draft after successful step movement, automatically before Home navigation, and when the employee chooses Save Draft and Exit from Cancel. Browser-storage failure prevents navigation and keeps the current session available.
+
+On entry, the latest active Draft for the current company, workspace, and employee is offered for resume. Continuing restores workflow values, entry mode, current step, completion candidates, and timestamps, then applies current reconciliation and validation. Starting new marks the previous Draft discarded; deleting removes it permanently. Successful workflow completion removes the active Draft.
+
+This is not Product persistence. Future server persistence must implement the same repository contract, enforce authenticated tenant ownership and permissions, and add approved audit, retention, conflict, and migration behavior.
+
 ## Mode 5: Excel Import
 
 Excel Import is a future batch-oriented mode. It must not replace Standard Wizard or manual entry.
@@ -474,6 +482,14 @@ Future modes may be added without redesigning the Product Entry Engine. A new mo
 - استعادة المسودة بعد الانقطاع.
 - سياسات انتهاء صلاحية المسودة.
 - مسودات مشتركة تتحكم فيها صلاحيات صريحة.
+
+### أساس المسودة المحلية الحالي
+
+يدعم النظام الآن المسودة اليدوية من خلال تخزين متصفح قابل للاستبدال. يحفظ إدخال المنتج المسودة النشطة بعد الانتقال الناجح بين الخطوات، وتلقائيا قبل الانتقال إلى الرئيسية، وعندما يختار الموظف حفظ المسودة والخروج من الإلغاء. ويمنع فشل تخزين المتصفح التنقل ويبقي الجلسة الحالية متاحة.
+
+عند الدخول، تعرض أحدث مسودة نشطة للشركة ومساحة العمل والموظف الحاليين للاستئناف. تعيد المتابعة قيم سير العمل وطريقة الإدخال والخطوة الحالية وحالات الاكتمال المرشحة والأوقات، ثم تطبق التنسيق والتحقق الحاليين. ويعلم بدء جلسة جديدة المسودة السابقة كمتجاهلة، بينما يزيلها الحذف نهائيا. ويزيل اكتمال سير العمل الناجح المسودة النشطة.
+
+هذا ليس حفظا للمنتج. يجب أن ينفذ حفظ الخادم المستقبلي عقد المستودع نفسه، ويفرض ملكية المستأجر المصادق عليه وصلاحياته، ويضيف سلوك التدقيق والاحتفاظ وحل التعارض والترحيل المعتمد.
 
 ## الطريقة 5: استيراد Excel
 

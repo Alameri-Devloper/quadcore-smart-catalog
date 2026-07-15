@@ -1,4 +1,5 @@
 import {
+  calculateWorkflowProgress,
   createWorkflowState,
   getNavigableSteps,
   recalculateWorkflowState,
@@ -265,6 +266,51 @@ export class WorkflowEngine<TContext, TValues> {
       this.emit("step-entered", this.state.currentStepId, null);
     }
 
+    this.emit("workflow-state-changed", this.state.currentStepId, null);
+  }
+
+  async restore(
+    context: TContext,
+    values: TValues,
+    currentStepId: WorkflowStepId,
+    completedStepIds: WorkflowStepId[],
+  ): Promise<void> {
+    const reconciledValues = this.definition.reconcileValues
+      ? this.definition.reconcileValues({
+          previousValues: values,
+          nextValues: values,
+          context,
+          activeStepIds: this.definition.steps.map((step) => step.id),
+        })
+      : values;
+    const baseState = createWorkflowState(
+      this.definition,
+      context,
+      reconciledValues,
+    );
+    const restorableIds = new Set(completedStepIds);
+    const steps = baseState.steps.map((step) => ({
+      ...step,
+      completed: step.visible && !step.disabled && restorableIds.has(step.id),
+    }));
+    const restoredCurrentStepId = getNavigableSteps(steps).some(
+      (step) => step.id === currentStepId,
+    )
+      ? currentStepId
+      : (getNavigableSteps(steps).find((step) => !step.completed)?.id ??
+        getNavigableSteps(steps).at(-1)?.id ??
+        null);
+
+    this.state = {
+      ...baseState,
+      currentStepId: restoredCurrentStepId,
+      steps,
+      completedStepIds: steps.filter((step) => step.completed).map((step) => step.id),
+      progress: calculateWorkflowProgress(steps),
+    };
+
+    await this.revalidateCompletedSteps();
+    await this.validateCurrentStep();
     this.emit("workflow-state-changed", this.state.currentStepId, null);
   }
 
