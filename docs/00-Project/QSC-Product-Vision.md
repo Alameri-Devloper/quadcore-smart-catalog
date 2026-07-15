@@ -363,6 +363,8 @@ The system must transform specifications into understandable customer value.
 
 Never ask employees for information the system already knows.
 
+Never ask employees to enter information the system already knows. Templates should reduce employee effort, prevent errors, and support high-speed data entry.
+
 ### Search Everywhere
 
 Employees should never waste time looking for information.
@@ -759,6 +761,8 @@ SSD بسعة 1TB
 ### السياق أهم من التكرار
 
 لا تطلب من الموظف معلومات يعرفها النظام بالفعل.
+
+لا تطلب من الموظف إدخال معلومات يعرفها النظام بالفعل. يجب أن تقلل القوالب جهد الموظف، وتمنع الأخطاء، وتدعم الإدخال السريع للبيانات.
 
 ### البحث في كل مكان
 
