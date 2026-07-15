@@ -14,18 +14,55 @@ export const PRODUCT_ENTRY_STEP_IDS = {
 export type ProductEntryStepId =
   (typeof PRODUCT_ENTRY_STEP_IDS)[keyof typeof PRODUCT_ENTRY_STEP_IDS];
 
-export type ProductEntryMethod = "manual" | "excel-import";
+export type ProductEntryMethod =
+  | "manual"
+  | "excel-import"
+  | "product-model-lookup"
+  | "label-scan";
 
 export interface ProductEntryMethodOption {
   id: ProductEntryMethod;
   label: string;
+  description: string;
   disabled: boolean;
+  recommended?: boolean;
 }
 
 export const PRODUCT_ENTRY_METHOD_OPTIONS: ProductEntryMethodOption[] = [
-  { id: "manual", label: "Manual Entry", disabled: false },
-  { id: "excel-import", label: "Excel Import", disabled: true },
+  {
+    id: "manual",
+    label: "Manual Entry",
+    description: "Enter one Product step by step with the guided workflow.",
+    disabled: false,
+    recommended: true,
+  },
+  {
+    id: "excel-import",
+    label: "Excel Import",
+    description:
+      "Import Products with a Category and optional Device Class template.",
+    disabled: true,
+  },
+  {
+    id: "product-model-lookup",
+    label: "Product Model Lookup",
+    description: "Find a Product Model and use confirmed details as a starting point.",
+    disabled: true,
+  },
+  {
+    id: "label-scan",
+    label: "Label Scan",
+    description: "Scan a Product label to suggest reviewable information.",
+    disabled: true,
+  },
 ];
+
+export const isProductEntryMethodEnabled = (
+  method: ProductEntryMethod,
+): boolean =>
+  PRODUCT_ENTRY_METHOD_OPTIONS.some(
+    (option) => option.id === method && !option.disabled,
+  );
 
 export interface ProductEntryState {
   entryMethod: ProductEntryMethod;

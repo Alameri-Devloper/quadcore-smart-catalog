@@ -11,6 +11,7 @@ import type {
   ProductEntryState,
   ProductEntryWorkflowContext,
 } from "./product-entry.types";
+import { isProductEntryMethodEnabled } from "./product-entry.types";
 
 export type ProductEntryValidator = WorkflowStepValidator<
   ProductEntryWorkflowContext,
@@ -29,13 +30,13 @@ const resultFromIssues = (
   issues.length > 0 ? invalidWorkflowStep(issues) : validWorkflowStep();
 
 export const validateEntryMethod: ProductEntryValidator = ({ values }) =>
-  values.entryMethod === "manual"
+  isProductEntryMethodEnabled(values.entryMethod)
     ? validWorkflowStep()
     : invalidWorkflowStep([
         {
           code: "entry-method-unavailable",
           field: "entryMethod",
-          message: "Select Manual Entry. Excel Import is not available yet.",
+          message: "Select an available Product Entry method to continue.",
         },
       ]);
 

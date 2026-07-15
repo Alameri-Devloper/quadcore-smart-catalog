@@ -411,3 +411,35 @@ Successful workflow completion removes the active Draft. **Add Another Product**
 عند فتح إدخال المنتج، تعرض أحدث مسودة نشطة للمالك الحالي قبل بدء عمل جديد. يعيد **متابعة المسودة** القيم وطريقة الإدخال والخطوة الحالية وحالات الاكتمال المرشحة والأوقات، ثم ينسق المحرك الحالة المستعادة ويعيد التحقق منها. ويعلم **بدء منتج جديد** المسودة القديمة كمتجاهلة ويبدأ جلسة نظيفة. ويحذف **حذف المسودة** المسودة نهائيا ويبدأ جلسة نظيفة.
 
 يزيل اكتمال سير العمل الناجح المسودة النشطة. ويبدأ **إضافة منتج آخر** جلسة نظيفة جديدة. ولا ينشئ حفظ المسودة منتجا ولا يحفظه أبدا.
+
+## Entry Method Step | خطوة طريقة الإدخال
+
+### English
+
+Entry Method is the first real Product Entry step. It presents large semantic radio cards for:
+
+- **Manual Entry:** Enabled, recommended, and selected by default only for a fresh Standard Wizard session. It guides the employee through one Product step by step.
+- **Excel Import:** Disabled and marked Coming Soon. Its future template will be resolved from Category and optional Device Class.
+- **Product Model Lookup:** Disabled and marked Coming Soon.
+- **Label Scan:** Disabled and marked Coming Soon.
+
+Disabled methods cannot receive selection. Next remains unavailable unless the current method is enabled, and the existing Product Entry validator confirms the selection before the step becomes Completed. Validation messages appear beside the method options.
+
+The selected method lives only in workflow values. Back navigation preserves it. Draft restoration restores the saved method before rendering and does not reapply the fresh-session default over restored values.
+
+The options use a fieldset, legend, native radio inputs, visible Selected, Available, and Unavailable text, Recommended and Coming Soon badges, large touch targets, keyboard navigation, native disabled behavior, and visible focus rings. State does not depend on color alone.
+
+### العربية
+
+طريقة الإدخال هي أول خطوة حقيقية في إدخال المنتج. تعرض بطاقات اختيار دلالية وكبيرة من نوع radio للخيارات التالية:
+
+- **الإدخال اليدوي:** مفعل وموصى به، ويحدد افتراضيا فقط في جلسة جديدة للمعالج القياسي. ويرشد الموظف لإدخال منتج واحد خطوة بخطوة.
+- **استيراد Excel:** معطل ويحمل علامة قريبا. وسيحدد قالبه المستقبلي من التصنيف وفئة الجهاز الاختيارية.
+- **البحث عن نموذج المنتج:** معطل ويحمل علامة قريبا.
+- **مسح الملصق:** معطل ويحمل علامة قريبا.
+
+لا يمكن تحديد الطرق المعطلة. ويبقى التالي غير متاح ما لم تكن الطريقة الحالية مفعلة، وتؤكد أداة تحقق إدخال المنتج الحالية الاختيار قبل أن تصبح الخطوة مكتملة. وتظهر رسائل التحقق بجانب خيارات الطريقة.
+
+توجد الطريقة المحددة داخل قيم سير العمل فقط. ويحافظ عليها التنقل إلى الخلف. وتستعيد المسودة الطريقة المحفوظة قبل العرض ولا تعيد تطبيق القيمة الافتراضية للجلسة الجديدة فوق القيم المستعادة.
+
+تستخدم الخيارات مجموعة `fieldset` وعنوان `legend` ومدخلات radio أصلية ونصوصا ظاهرة للحالات محدد ومتاح وغير متاح، وعلامتي موصى به وقريبا، وأهداف لمس كبيرة، وتنقلا بلوحة المفاتيح، وسلوك التعطيل الأصلي، وحلقات تركيز ظاهرة. ولا تعتمد الحالة على اللون وحده.
