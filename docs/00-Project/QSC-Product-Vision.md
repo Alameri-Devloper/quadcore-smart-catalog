@@ -168,6 +168,137 @@ Every entry mode uses the same reusable Product Entry Engine and the same domain
 
 Manual entry remains available. Deeper context removes repeated decisions, compatible values are preserved, incompatible changes are explained, and future AI suggestions remain optional, editable, and subject to employee review.
 
+## Sales Intelligence Vision
+
+QSC should not only store Product information. It should transform confirmed Product information into Sales Intelligence that employees can understand and use.
+
+The system should help employees:
+
+- Understand Products.
+- Recommend Products.
+- Explain Products.
+- Compare Products.
+- Upsell suitable Products and configurations.
+- Cross-sell compatible accessories.
+- Learn while working.
+
+Product Data becomes Sales Knowledge.
+
+Sales Knowledge becomes better Sales Decisions.
+
+Sales Intelligence must remain explainable, tenant-aware, and grounded in confirmed QSC data. It supports employee judgment rather than replacing it.
+
+## Sales Guide
+
+Not every Product requires a Sales Guide. Each Category may determine whether Sales Guide is enabled so that QSC adds guidance only where it provides meaningful sales value.
+
+Examples where Sales Guide may be enabled include:
+
+- Gaming Laptops.
+- Business Laptops.
+- Desktop Computers.
+- Workstations.
+- CCTV Systems.
+- Fingerprint Devices.
+- Hotel Systems.
+- Enterprise Networking.
+
+Examples where Sales Guide is usually disabled include:
+
+- Network Cables.
+- HDMI Cables.
+- Mouse Pads.
+- USB Adapters.
+- Small Accessories.
+
+Simple Products normally rely on Product Specifications and confirmed Product Benefits only. Category configuration, not hardcoded UI behavior, determines whether the additional guide is applicable.
+
+## AI Assisted Sales Guide
+
+AI Assisted Sales Guide is a future optional capability. The system may generate an initial Sales Guide draft from confirmed Product data:
+
+```text
+Confirmed Product Data
+↓
+AI Draft
+↓
+Employee Review
+↓
+Approved Sales Guide
+↓
+Customer Use
+```
+
+AI suggestions must never automatically become Product Knowledge. Employees remain responsible for reviewing, editing, rejecting, and approving generated content. AI failure must not block manual Sales Guide creation or Product workflows.
+
+## Upgrade Knowledge
+
+Upgrade Knowledge is a future capability. Each Product Model may define confirmed supported upgrade paths, such as:
+
+- Maximum RAM.
+- Maximum SSD capacity.
+- Additional M.2 slots.
+- Upgradeable storage.
+- Upgradeable memory.
+- Replaceable battery.
+- Warranty considerations.
+- Supported accessories.
+
+Upgrade Knowledge should become available to:
+
+- Employees.
+- Sales Guide.
+- Future Smart Search.
+- Future Offer Generator.
+
+Upgrade guidance must come from confirmed compatibility rules. Missing information must not be treated as proof that an upgrade is supported or unsupported.
+
+## Smart Offer Generation
+
+Smart Offer Generation is a future optional capability. When preparing a quotation or WhatsApp message, QSC may generate an offer adapted to the customer's requested configuration.
+
+Example:
+
+```text
+Base Product
+16GB RAM
+↓
+Customer requests
+32GB RAM
+↓
+Generated Offer
+32GB RAM
+1TB SSD
+Updated Price
+Upgrade explanation
+```
+
+Every generated offer must be based on confirmed Product data, compatibility rules, available configuration data, and current approved pricing. The employee must review the offer before it is shared. QSC must not promise an unconfirmed upgrade, accessory, price, availability, or warranty outcome.
+
+## Sales Knowledge Layer
+
+Every Product may eventually contain applicable Sales Knowledge such as:
+
+- Specifications.
+- Benefits.
+- Suitable For.
+- Not Recommended For.
+- Sales Guide.
+- Frequently Asked Questions.
+- Comparison Notes.
+- Upgrade Knowledge.
+- Recommended Accessories.
+- Alternative Products.
+- Common Customer Questions.
+
+Only Categories that benefit from these sections should enable them. The Sales Knowledge Layer must remain traceable to confirmed Product data and approved employee knowledge. Optional or unavailable sections must not create empty work for employees.
+
+## Future Goal
+
+QSC should become a Sales Intelligence Platform.
+
+The system should help employees make better, explainable recommendations—not simply display Product information. It should connect Product facts, customer needs, compatibility, and approved sales knowledge while preserving employee control and Product Data Quality.
+
 ## 12. Future Vision
 
 These version horizons express product direction. They do not authorize implementation, select technologies, or replace sprint planning and separately approved architecture decisions.
@@ -433,6 +564,137 @@ QSC is an Employee Productivity and Sales Enablement Platform for Technology Ret
 تستخدم كل طرق الإدخال محرك إدخال المنتج القابل لإعادة الاستخدام نفسه، وتحقق المجال والتنسيق والمراجعة وحدود الحفظ المستقبلية نفسها. ويمكن لطريقة الإدخال توفير سياق أو قيم أولية أو خطوة بداية، لكنها لا تتجاوز التحقق.
 
 يبقى الإدخال اليدوي متاحا. ويزيل السياق الأعمق القرارات المتكررة، ويحافظ على القيم المتوافقة، ويشرح التغييرات غير المتوافقة، وتبقى اقتراحات الذكاء الاصطناعي المستقبلية اختيارية وقابلة للتعديل وخاضعة لمراجعة الموظف.
+
+## رؤية ذكاء المبيعات
+
+يجب ألا يقتصر QSC على تخزين معلومات المنتجات. بل يجب أن يحول معلومات المنتجات المؤكدة إلى ذكاء مبيعات يستطيع الموظفون فهمه واستخدامه.
+
+يجب أن يساعد النظام الموظفين على:
+
+- فهم المنتجات.
+- ترشيح المنتجات.
+- شرح المنتجات.
+- مقارنة المنتجات.
+- بيع منتجات وتجهيزات مناسبة بقيمة أعلى.
+- بيع الملحقات المتوافقة مع المنتج.
+- التعلم أثناء العمل.
+
+تتحول بيانات المنتجات إلى معرفة بيعية.
+
+وتتحول المعرفة البيعية إلى قرارات بيع أفضل.
+
+يجب أن يبقى ذكاء المبيعات قابلا للتفسير وواعيا بالمستأجر ومبنيا على بيانات QSC المؤكدة. وهو يدعم حكم الموظف ولا يستبدله.
+
+## دليل المبيعات
+
+لا يحتاج كل منتج إلى دليل مبيعات. يمكن لكل تصنيف تحديد ما إذا كان دليل المبيعات مفعلا، حتى يضيف QSC الإرشاد فقط عندما يقدم قيمة بيعية حقيقية.
+
+تشمل الأمثلة التي قد يفعل فيها دليل المبيعات:
+
+- لابتوبات الألعاب.
+- لابتوبات الأعمال.
+- أجهزة الكمبيوتر المكتبية.
+- محطات العمل.
+- أنظمة CCTV.
+- أجهزة البصمة.
+- أنظمة الفنادق.
+- شبكات المؤسسات.
+
+تشمل الأمثلة التي يكون فيها دليل المبيعات معطلا عادة:
+
+- كابلات الشبكة.
+- كابلات HDMI.
+- وسادات الفأرة.
+- محولات USB.
+- الملحقات الصغيرة.
+
+تعتمد المنتجات البسيطة عادة على مواصفات المنتج وفوائده المؤكدة فقط. وتحدد إعدادات التصنيف مدى انطباق الدليل الإضافي، وليس سلوكا مثبتا داخل الواجهة.
+
+## دليل المبيعات بمساعدة الذكاء الاصطناعي
+
+دليل المبيعات بمساعدة الذكاء الاصطناعي قدرة مستقبلية اختيارية. يمكن للنظام إنشاء مسودة أولية لدليل المبيعات من بيانات المنتج المؤكدة:
+
+```text
+بيانات المنتج المؤكدة
+↓
+مسودة الذكاء الاصطناعي
+↓
+مراجعة الموظف
+↓
+دليل مبيعات معتمد
+↓
+الاستخدام مع العميل
+```
+
+يجب ألا تصبح اقتراحات الذكاء الاصطناعي معرفة بالمنتج تلقائيا أبدا. يبقى الموظفون مسؤولين عن مراجعة المحتوى المولد وتعديله ورفضه واعتماده. ويجب ألا يؤدي فشل الذكاء الاصطناعي إلى تعطيل إنشاء دليل المبيعات يدويا أو سير عمل المنتج.
+
+## معرفة الترقيات
+
+معرفة الترقيات قدرة مستقبلية. يمكن لكل نموذج منتج تحديد مسارات الترقية المؤكدة المدعومة، مثل:
+
+- الحد الأقصى لذاكرة RAM.
+- الحد الأقصى لسعة SSD.
+- منافذ M.2 الإضافية.
+- قابلية ترقية التخزين.
+- قابلية ترقية الذاكرة.
+- قابلية استبدال البطارية.
+- اعتبارات الضمان.
+- الملحقات المدعومة.
+
+يجب أن تتاح معرفة الترقيات إلى:
+
+- الموظفين.
+- دليل المبيعات.
+- البحث الذكي المستقبلي.
+- مولد العروض المستقبلي.
+
+يجب أن يأتي إرشاد الترقية من قواعد توافق مؤكدة. ولا يجوز اعتبار المعلومات المفقودة دليلا على أن الترقية مدعومة أو غير مدعومة.
+
+## توليد العروض الذكية
+
+توليد العروض الذكية قدرة مستقبلية اختيارية. عند إعداد عرض سعر أو رسالة واتساب، يمكن لـ QSC إنشاء عرض متكيف مع التجهيز الذي طلبه العميل.
+
+مثال:
+
+```text
+المنتج الأساسي
+RAM بسعة 16GB
+↓
+طلب العميل
+RAM بسعة 32GB
+↓
+العرض المولد
+RAM بسعة 32GB
+SSD بسعة 1TB
+السعر المحدث
+شرح الترقية
+```
+
+يجب أن يعتمد كل عرض مولد على بيانات المنتج المؤكدة وقواعد التوافق وبيانات التجهيز المتاحة والأسعار الحالية المعتمدة. ويجب أن يراجع الموظف العرض قبل مشاركته. ولا يجوز لـ QSC أن يعد بترقية أو ملحق أو سعر أو توفر أو نتيجة ضمان غير مؤكدة.
+
+## طبقة المعرفة البيعية
+
+قد يحتوي كل منتج مستقبلا على معرفة بيعية منطبقة مثل:
+
+- المواصفات.
+- الفوائد.
+- مناسب لـ.
+- غير موصى به لـ.
+- دليل المبيعات.
+- الأسئلة المتكررة.
+- ملاحظات المقارنة.
+- معرفة الترقيات.
+- الملحقات الموصى بها.
+- المنتجات البديلة.
+- أسئلة العملاء الشائعة.
+
+يجب ألا تفعل هذه الأقسام إلا للتصنيفات التي تستفيد منها. ويجب أن تبقى طبقة المعرفة البيعية قابلة للتتبع إلى بيانات المنتجات المؤكدة ومعرفة الموظفين المعتمدة. كما يجب ألا تنشئ الأقسام الاختيارية أو غير المتاحة عملا فارغا للموظفين.
+
+## الهدف المستقبلي
+
+يجب أن يصبح QSC منصة لذكاء المبيعات.
+
+يجب أن يساعد النظام الموظفين على تقديم توصيات أفضل وقابلة للتفسير، لا أن يكتفي بعرض معلومات المنتجات. ويجب أن يربط بين حقائق المنتج واحتياجات العميل والتوافق والمعرفة البيعية المعتمدة، مع الحفاظ على تحكم الموظف وجودة بيانات المنتجات.
 
 ## 12. الرؤية المستقبلية
 
