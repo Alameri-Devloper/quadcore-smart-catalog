@@ -55,6 +55,7 @@ Each ADR should include:
 | [ADR-0004](./ADR-0004-Context-Aware-Product-Entry.md) | Context-Aware Product Entry | Accepted; implementation staged |
 | [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | Product Lifecycle and Soft Delete | Accepted for future implementation |
 | [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | Impact Analysis and Safe Reconciliation | Accepted; full implementation planned |
+| [ADR-0007](./ADR-0007-Context-Aware-Smart-Search.md) | Context-Aware Smart Search | Accepted; future implementation planned |
 
 | ADR | العنوان | الحالة |
 | --- | --- | --- |
@@ -63,3 +64,4 @@ Each ADR should include:
 | [ADR-0004](./ADR-0004-Context-Aware-Product-Entry.md) | إدخال المنتج الواعي بالسياق | معتمد؛ التنفيذ مرحلي |
 | [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | دورة حياة المنتج والحذف المنطقي | معتمد للتنفيذ المستقبلي |
 | [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | تحليل التأثير والتنسيق الآمن | معتمد؛ التنفيذ الكامل مخطط له |
+| [ADR-0007](./ADR-0007-Context-Aware-Smart-Search.md) | البحث الذكي الواعي بالسياق | معتمد؛ التنفيذ مخطط له مستقبلا |

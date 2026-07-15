@@ -376,6 +376,26 @@ Mobile workflows should prioritize clarity, large touch targets, readable labels
 
 يجب أن تركز سير العمل على الجوال على الوضوح، وأهداف لمس كبيرة، وتسميات مقروءة، وقرارات قصيرة. إذا كان سير العمل ثقيلا على الجوال، فقسمه إلى خطوات أصغر بدلا من جعله شاشة طويلة واحدة.
 
+## 8.1 Search UX
+
+Search inside a domain page must default to the current context, such as Category, Brand, Device Class, or Product Model. The active scope must be visible, and the employee must have an explicit **Search Everywhere** action.
+
+The Employee Workspace must provide the Global Search entry point. Traditional filters must remain accessible even when QSC parses a query into structured filters. Employees must be able to review, change, or clear those filters.
+
+When smart ranking is used, each result must provide a concise reason for the match based on confirmed QSC data. Search must remain useful without AI and must never present an invented specification as a match reason.
+
+On mobile, keep the active scope and query visible, use large touch targets for scope and filter controls, avoid hiding essential filters behind unclear gestures, and present short result summaries with readable match reasons.
+
+## 8.1 تجربة البحث
+
+يجب أن يكون البحث داخل صفحة المجال مقيدا افتراضيا بالسياق الحالي، مثل التصنيف أو العلامة التجارية أو فئة الجهاز أو نموذج المنتج. ويجب أن يكون النطاق النشط ظاهرا، مع توفير إجراء صريح للموظف باسم **البحث في كل مكان**.
+
+يجب أن توفر مساحة عمل الموظف نقطة الدخول للبحث الشامل. ويجب أن تبقى المرشحات التقليدية متاحة حتى عندما يحلل QSC الاستعلام إلى مرشحات منظمة. ويجب أن يستطيع الموظفون مراجعة هذه المرشحات أو تغييرها أو مسحها.
+
+عند استخدام الترتيب الذكي، يجب أن يقدم كل ناتج سببا موجزا للمطابقة مبنيا على بيانات QSC المؤكدة. ويجب أن يبقى البحث مفيدا دون ذكاء اصطناعي، وألا يعرض أبدا مواصفة مختلقة كسبب للمطابقة.
+
+على الجوال، يجب إبقاء النطاق النشط والاستعلام ظاهرين، واستخدام أهداف لمس كبيرة لعناصر التحكم في النطاق والمرشحات، وتجنب إخفاء المرشحات الأساسية خلف إيماءات غير واضحة، وعرض ملخصات قصيرة للنتائج مع أسباب مطابقة مقروءة.
+
 ## 9. Future UX Vision
 
 Future QSC workflows may include:
