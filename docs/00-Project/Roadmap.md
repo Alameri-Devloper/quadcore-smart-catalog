@@ -4,11 +4,11 @@
 
 ## English
 
-This roadmap describes the planned growth of QSC Platform while preserving Domain Driven Design, Clean Architecture, multi-tenant boundaries, and mobile-first delivery.
+This roadmap describes the planned growth of QSC Platform while preserving Domain Driven Design, Clean Architecture, multi-tenant boundaries, and Responsive First delivery for Desktop and Mobile.
 
 ## العربية
 
-توضح هذه الخارطة نمو منصة QSC المخطط له مع الحفاظ على التصميم الموجه بالمجال، والمعمارية النظيفة، وحدود تعدد المستأجرين، وتجربة الجوال أولا.
+توضح هذه الخارطة نمو منصة QSC المخطط له مع الحفاظ على التصميم الموجه بالمجال، والمعمارية النظيفة، وحدود تعدد المستأجرين، والتسليم وفق مبدأ Responsive First للكمبيوتر والجوال.
 
 ## Completed ✅ | مكتمل ✅
 

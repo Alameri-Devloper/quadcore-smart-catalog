@@ -4,11 +4,11 @@
 
 ## English
 
-Development must preserve the project architecture. Every change should be small, focused, and aligned with Domain Driven Design, Clean Architecture, TypeScript, multi-tenant rules, and mobile-first delivery.
+Development must preserve the project architecture. Every change should be small, focused, and aligned with Domain Driven Design, Clean Architecture, TypeScript, multi-tenant rules, and Responsive First delivery for Desktop and Mobile.
 
 ## العربية
 
-يجب أن يحافظ التطوير على معمارية المشروع. كل تغيير يجب أن يكون صغيرا ومركزا ومتوافقا مع التصميم الموجه بالمجال، والمعمارية النظيفة، وTypeScript، وقواعد تعدد المستأجرين، والجوال أولا.
+يجب أن يحافظ التطوير على معمارية المشروع. كل تغيير يجب أن يكون صغيرا ومركزا ومتوافقا مع التصميم الموجه بالمجال، والمعمارية النظيفة، وTypeScript، وقواعد تعدد المستأجرين، والتسليم وفق مبدأ Responsive First للكمبيوتر والجوال.
 
 ## Before Starting | قبل البدء
 

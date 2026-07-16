@@ -51,9 +51,21 @@ The system should use known information to remove unnecessary decisions while ke
 
 QSC should preserve trusted context and never ask employees to provide the same information twice.
 
-### Mobile and Desktop First
+### Responsive First
 
-QSC must support productive work on both mobile and desktop. Delivery remains mobile-first, then enhances the experience for larger screens without creating separate business rules.
+QSC must provide an excellent, equally important experience on desktop and mobile from Version 1.0. Each platform should use layouts and interactions suited to its strengths without creating separate business rules.
+
+## Responsive First Philosophy
+
+QSC is designed as a Responsive First application.
+
+Every screen should provide an excellent experience on both Desktop and Mobile devices.
+
+Desktop layouts should take advantage of larger screens to improve productivity.
+
+Mobile layouts should prioritize touch interaction, readability, and simplicity.
+
+The user should never feel that either platform is a secondary experience.
 
 ### Continuous Learning
 
@@ -305,7 +317,7 @@ These version horizons express product direction. They do not authorize implemen
 
 ### Version 1.0 — Smart Sales Foundation
 
-- Desktop and mobile employee experiences, delivered mobile-first.
+- Desktop and mobile employee experiences with equal importance from Version 1.0.
 - Smart Catalog.
 - Smart Search.
 - Smart Product Entry.
@@ -452,9 +464,21 @@ QSC is an Employee Productivity and Sales Enablement Platform for Technology Ret
 
 يجب أن يحافظ QSC على السياق الموثوق، وألا يطلب من الموظفين تقديم المعلومة نفسها مرتين.
 
-### الجوال وسطح المكتب أولا
+### Responsive First
 
-يجب أن يدعم QSC العمل المنتج على الجوال وسطح المكتب. يبقى التسليم موجها للجوال أولا، ثم يحسن التجربة للشاشات الأكبر دون إنشاء قواعد عمل منفصلة.
+يجب أن يقدم QSC تجربة ممتازة ومتساوية الأهمية على الكمبيوتر والجوال منذ الإصدار 1.0. ويجب أن تستخدم كل منصة تخطيطات وتفاعلات تناسب نقاط قوتها دون إنشاء قواعد عمل منفصلة.
+
+## فلسفة Responsive First
+
+تم تصميم QSC وفق مبدأ Responsive First.
+
+يجب أن تقدم جميع الشاشات تجربة ممتازة على أجهزة الكمبيوتر والهواتف المحمولة.
+
+يجب أن تستفيد نسخة الكمبيوتر من المساحات الكبيرة لتحسين الإنتاجية.
+
+ويجب أن تركز نسخة الجوال على سهولة اللمس والوضوح وبساطة الاستخدام.
+
+يجب ألا يشعر المستخدم أن أي منصة هي مجرد نسخة ثانوية.
 
 ### التعلم المستمر
 
@@ -706,7 +730,7 @@ SSD بسعة 1TB
 
 ### الإصدار 1.0 — أساس المبيعات الذكية
 
-- تجارب الموظف على سطح المكتب والجوال، مع التسليم الموجه للجوال أولا.
+- تجارب الموظف على الكمبيوتر والجوال بأهمية متساوية منذ الإصدار 1.0.
 - الكتالوج الذكي.
 - البحث الذكي.
 - إدخال المنتج الذكي.

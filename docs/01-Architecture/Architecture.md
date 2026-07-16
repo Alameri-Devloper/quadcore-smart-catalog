@@ -52,8 +52,8 @@ Every business entity must be designed with tenant ownership in mind. Company ow
 
 يجب تصميم كل كيان تجاري مع مراعاة ملكية المستأجر. الشركة تمتلك مساحة العمل، ومساحة العمل تمتلك القسم، والقسم يمتلك التصنيف، والتصنيف يمتلك نموذج المنتج، ونموذج المنتج يمتلك المنتج.
 
-## Mobile First | الجوال أولا
+## Responsive First | متجاوب منذ التصميم
 
-The public catalog and employee catalog must be usable on mobile screens first, then enhanced for larger screens.
+The public catalog and employee catalog must provide excellent, purpose-designed experiences on Desktop and Mobile from the beginning.
 
-يجب أن يكون الكتالوج العام وكتالوج الموظف قابلين للاستخدام على شاشات الجوال أولا، ثم يتم تحسينهما للشاشات الأكبر.
+يجب أن يقدم الكتالوج العام وكتالوج الموظف تجربتين ممتازتين ومصممتين للغرض على الكمبيوتر والجوال منذ البداية.

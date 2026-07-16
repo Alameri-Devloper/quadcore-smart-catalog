@@ -116,7 +116,7 @@ Natural-language processing is an optional interpretation layer. It may propose 
 - Context Search is the default inside domain pages.
 - Global Search is available from the Employee Workspace.
 - Smart-ranked results must explain why they matched.
-- Search behavior and result presentation must be mobile-first.
+- Search behavior and result presentation must be Responsive First, with purpose-designed Desktop and Mobile experiences.
 - Every search must respect tenant, workspace, and permission boundaries.
 
 ## Consequences

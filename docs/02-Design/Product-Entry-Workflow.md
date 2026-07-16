@@ -268,9 +268,9 @@ The hook throws a clear error outside `WorkflowProvider`. Components consume sta
 
 ## Product Entry Wizard Shell | هيكل معالج إدخال المنتج
 
-Sprint 03 Task 3.4 adds the first mobile-first visual shell at `/products/new`. It demonstrates the existing Product Entry workflow without implementing Product form controls, saving, database access, Excel import, image upload, AI, or OCR.
+Sprint 03 Task 3.4 adds the first responsive visual shell at `/products/new`. It demonstrates the existing Product Entry workflow without implementing Product form controls, saving, database access, Excel import, image upload, AI, or OCR.
 
-تضيف المهمة 3.4 من السبرنت 03 أول هيكل مرئي موجه للجوال على المسار `/products/new`. يعرض الهيكل سير عمل إدخال المنتج الحالي دون تنفيذ حقول نموذج المنتج أو الحفظ أو الوصول إلى قاعدة البيانات أو استيراد Excel أو رفع الصور أو الذكاء الاصطناعي أو OCR.
+تضيف المهمة 3.4 من السبرنت 03 أول هيكل مرئي متجاوب على المسار `/products/new`. يعرض الهيكل سير عمل إدخال المنتج الحالي دون تنفيذ حقول نموذج المنتج أو الحفظ أو الوصول إلى قاعدة البيانات أو استيراد Excel أو رفع الصور أو الذكاء الاصطناعي أو OCR.
 
 ### Shell Structure | بنية الهيكل
 
@@ -324,7 +324,7 @@ The progress UI renders only `visibleSteps` from the adapter. When `categoryRequ
 - توفر الأزرار تركيز لوحة مفاتيح مرئيا وأهداف لمس كبيرة.
 - يتضمن تنقل الخطوات تسميات وصول واضحة مع إبقاء الترقيم المرئي مختصرا.
 
-### Mobile-First Behavior | السلوك الموجه للجوال
+### Responsive Behavior | السلوك المتجاوب
 
 The shell starts as a single-column layout with horizontal step scrolling, compact spacing, full-height content, and sticky bottom navigation. At wider sizes it uses a centered maximum width, expanded spacing, grid progress steps, and non-sticky navigation. Visible text uses customer-facing labels such as “Product Details” and “Device Specifications.”
 

@@ -142,6 +142,12 @@ Internal complexity belongs inside the system. External simplicity belongs to th
 
 Services, repositories, workflow engines, parsers, validation, context resolution, template generation, and future AI adapters may coordinate complex behavior behind stable boundaries. The interface should expose only the decision, its relevant context, its consequences, and the employee's available actions.
 
+## 19. Responsive by Design
+
+Every future feature must be designed for Desktop and Mobile from the beginning instead of adapting one platform later.
+
+Do not make desktop users feel like they are using a stretched mobile application. Desktop should have layouts designed for productivity, while Mobile should remain optimized for touch interaction.
+
 ## Applying These Principles
 
 Every proposed screen, feature, or interaction should be reviewed against these questions:
@@ -152,7 +158,7 @@ Every proposed screen, feature, or interaction should be reviewed against these 
 - How is employee work preserved?
 - How is Product Data Quality protected?
 - What must the system explain?
-- How does the experience work on mobile first and scale to desktop?
+- How does the experience provide an excellent, platform-appropriate result on both Desktop and Mobile?
 - Can the employee complete the core task without AI?
 
 If a design contradicts an accepted ADR, the ADR governs until a new decision is formally approved. If a design violates these principles without an approved reason, it should not be implemented.
@@ -307,6 +313,12 @@ QSC is designed to help employees make better business decisions with less effor
 
 يمكن للخدمات والمستودعات ومحركات سير العمل والمحللات والتحقق وتحديد السياق وتوليد القوالب ومحولات الذكاء الاصطناعي المستقبلية تنسيق سلوك معقد خلف حدود مستقرة. ويجب ألا تعرض الواجهة إلا القرار وسياقه المرتبط ونتائجه والإجراءات المتاحة للموظف.
 
+## 19. متجاوب منذ التصميم
+
+يجب تصميم كل ميزة مستقبلية للكمبيوتر والجوال منذ البداية بدلا من تكييفها لاحقا لمنصة أخرى.
+
+لا تجعل مستخدم الكمبيوتر يشعر بأنه يستخدم نسخة جوال مكبرة. يجب أن تكون تخطيطات الكمبيوتر مصممة للإنتاجية، بينما يبقى الجوال محسنا للتفاعل باللمس.
+
 ## تطبيق هذه المبادئ
 
 يجب مراجعة كل شاشة أو ميزة أو تفاعل مقترح وفقا للأسئلة التالية:
@@ -317,7 +329,7 @@ QSC is designed to help employees make better business decisions with less effor
 - كيف يحفظ عمل الموظف؟
 - كيف يحمي جودة بيانات المنتجات؟
 - ما الذي يجب أن يشرحه النظام؟
-- كيف تعمل التجربة على الجوال أولا وتتوسع إلى سطح المكتب؟
+- كيف تقدم التجربة نتيجة ممتازة ومناسبة لكل من الكمبيوتر والجوال؟
 - هل يستطيع الموظف إكمال المهمة الأساسية دون ذكاء اصطناعي؟
 
 إذا تعارض التصميم مع ADR معتمد، فيحكم ADR حتى يعتمد قرار جديد رسميا. وإذا خالف التصميم هذه المبادئ دون سبب معتمد، فلا ينبغي تنفيذه.

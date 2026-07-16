@@ -32,7 +32,7 @@ QSC follows:
 - Modular Architecture
 - Feature-Based Structure
 - Multi-Tenant Design
-- Mobile First
+- Responsive First
 
 ---
 
@@ -44,7 +44,7 @@ QSC follows:
 - المعمارية القائمة على الوحدات
 - تنظيم المشروع حسب الميزات
 - دعم تعدد الشركات
-- تصميم يركز على الجوال أولاً
+- تصميم متجاوب للكمبيوتر والجوال منذ البداية
 
 ---
 

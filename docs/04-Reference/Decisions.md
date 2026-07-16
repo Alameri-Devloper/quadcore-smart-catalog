@@ -36,8 +36,8 @@ Mock data is acceptable during early development, but it must stay inside mock f
 
 البيانات الوهمية مقبولة أثناء التطوير المبكر، لكنها يجب أن تبقى داخل مجلدات mock ويتم الوصول إليها عبر المستودعات.
 
-### Mobile First | الجوال أولا
+### Responsive First | متجاوب منذ التصميم
 
-Catalog workflows must be designed for mobile screens first, then expanded for desktop.
+Catalog workflows must be designed for Desktop and Mobile from the beginning, with desktop productivity and mobile touch interaction treated as equally important.
 
-يجب تصميم سير عمل الكتالوج لشاشات الجوال أولا، ثم توسيعه لسطح المكتب.
+يجب تصميم سير عمل الكتالوج للكمبيوتر والجوال منذ البداية، مع منح إنتاجية الكمبيوتر والتفاعل باللمس على الجوال أهمية متساوية.

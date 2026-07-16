@@ -352,29 +352,49 @@ Image upload must show progress and clear failure messages.
 
 يجب أن يعرض رفع الصور التقدم ورسائل فشل واضحة.
 
-## 8. Mobile First
+## 8. Responsive First
 
-All workflows must be optimized for mobile.
+Every workflow must provide an excellent experience on both Desktop and Mobile. Neither platform is a secondary experience.
 
-Avoid long forms.
+### Desktop
 
-Prefer Wizard.
+- Use multi-column layouts where appropriate.
+- Use wide screens efficiently to improve productivity.
+- Support keyboard-friendly workflows.
+- Improve the visibility of related information.
+- Provide comfortable Excel and data-entry workflows.
+- Do not present a stretched mobile layout.
 
-Each step should contain only a small number of inputs.
+### Mobile
 
-Mobile workflows should prioritize clarity, large touch targets, readable labels, and short decisions. If a workflow feels heavy on mobile, split it into smaller steps instead of making one long screen.
+- Use large touch targets and thumb-friendly controls.
+- Prefer vertical navigation.
+- Prevent horizontal scrolling.
+- Keep interactions simple.
+- Preserve readable labels and short decisions.
+- Split heavy workflows into smaller steps when appropriate.
 
-## 8. الجوال أولا
+## 8. Responsive First
 
-يجب تحسين كل سير عمل للجوال.
+يجب أن يقدم كل سير عمل تجربة ممتازة على الكمبيوتر والجوال. ولا يجوز اعتبار أي منهما تجربة ثانوية.
 
-تجنب النماذج الطويلة.
+### الكمبيوتر
 
-فضل المعالج.
+- استخدم تخطيطات متعددة الأعمدة عندما يكون ذلك مناسبا.
+- استفد من الشاشات العريضة بكفاءة لتحسين الإنتاجية.
+- ادعم سير العمل الملائم للوحة المفاتيح.
+- حسن ظهور المعلومات المرتبطة.
+- وفر تجربة مريحة للعمل مع Excel وإدخال البيانات.
+- لا تعرض تخطيط جوال مكبرا.
 
-يجب أن تحتوي كل خطوة على عدد قليل من الحقول.
+### الجوال
 
-يجب أن تركز سير العمل على الجوال على الوضوح، وأهداف لمس كبيرة، وتسميات مقروءة، وقرارات قصيرة. إذا كان سير العمل ثقيلا على الجوال، فقسمه إلى خطوات أصغر بدلا من جعله شاشة طويلة واحدة.
+- استخدم أهداف لمس كبيرة وعناصر تحكم ملائمة للإبهام.
+- فضل التنقل العمودي.
+- امنع التمرير الأفقي.
+- حافظ على بساطة التفاعل.
+- حافظ على التسميات المقروءة والقرارات القصيرة.
+- قسم سير العمل الثقيل إلى خطوات أصغر عندما يكون ذلك مناسبا.
 
 ## 8.1 Search UX
 

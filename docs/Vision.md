@@ -77,7 +77,7 @@ QSC ليس مجرد كتالوج منتجات.
 - Multi-Tenant
 - Domain Driven Design
 - Modular Architecture
-- Mobile First
+- Responsive First
 - Configuration over Hardcoding
 - Scalability
 - Performance
