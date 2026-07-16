@@ -14,6 +14,7 @@ import type {
 import { isProductEntryMethodEnabled } from "./product-entry.types";
 import { ProductEntryCategoryService } from "./services/product-entry-category.service";
 import { ProductEntryDeviceClassService } from "./services/product-entry-device-class.service";
+import { ProductEntryProductModelService } from "./services/product-entry-product-model.service";
 
 export type ProductEntryValidator = WorkflowStepValidator<
   ProductEntryWorkflowContext,
@@ -89,28 +90,35 @@ export const validateDeviceClass: ProductEntryValidator = async ({ context, valu
     : validWorkflowStep();
 };
 
-export const validateProductModel: ProductEntryValidator = ({
-  context,
-  values,
-}) => {
-  if (!values.productModelId) {
-    return invalidWorkflowStep([
-        requiredIssue("productModelId", "Select a product model to continue."),
-      ]);
-  }
+const PRODUCT_MODEL_MESSAGES = {
+  required: "Choose a product model to continue.",
+  "product-model-unavailable": "This product model is no longer available.",
+  "product-model-workspace": "This product model belongs to another workspace.",
+  "product-model-category": "This product model does not match the selected product type.",
+  "product-model-device-class": "This product model does not match the selected device class.",
+  "brand-unavailable": "The related Brand is no longer available.",
+  "brand-mismatch": "The selected model and Brand do not match.",
+} as const;
 
-  const compatibleProductModelIds = values.categoryId
-    ? (context.productModelIdsByCategory[values.categoryId] ?? [])
-    : [];
-  return compatibleProductModelIds.includes(values.productModelId)
-    ? validWorkflowStep()
-    : invalidWorkflowStep([
-        {
-          code: "incompatible",
-          field: "productModelId",
-          message: "Select a product model compatible with the current selection.",
-        },
-      ]);
+export const validateProductModel: ProductEntryValidator = async ({ context, values }) => {
+  const code = await ProductEntryProductModelService.validateProductModelContext({
+    context: {
+      companyId: context.companyId,
+      workspaceId: context.workspaceId,
+      departmentId: values.departmentId,
+      categoryId: values.categoryId,
+      deviceClassId: values.deviceClassId,
+      categoryRequiresDeviceClass: Boolean(
+        values.categoryId &&
+          context.categoryRequiresDeviceClassByCategory[values.categoryId],
+      ),
+    },
+    productModelId: values.productModelId,
+    brandId: values.brandId,
+  });
+  return code
+    ? invalidWorkflowStep([{ code, field: "productModelId", message: PRODUCT_MODEL_MESSAGES[code] }])
+    : validWorkflowStep();
 };
 
 export const validateSpecifications: ProductEntryValidator = ({

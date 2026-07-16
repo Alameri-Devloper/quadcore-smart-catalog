@@ -3,6 +3,7 @@ import { DepartmentService } from "@/domains/catalog/services/department.service
 import { ProductModelService } from "@/domains/catalog/services/product-model.service";
 import { SpecificationTemplateService } from "@/domains/catalog/services/specification-template.service";
 import { DeviceClassService } from "@/domains/catalog/services/device-class.service";
+import { BrandService } from "@/domains/catalog/services/brand.service";
 
 export interface ProductEntryCategoryOption {
   id: string;
@@ -16,6 +17,7 @@ export interface ProductEntryCategoryQueryResult {
   categories: ProductEntryCategoryOption[];
   categoryRequiresDeviceClassByCategory: Record<string, boolean>;
   deviceClassIdsByCategory: Record<string, string[]>;
+  brandIdByProductModel: Record<string, string>;
   productModelIdsByCategory: Record<string, string[]>;
   productModelIdsByCategoryAndDeviceClass: Record<string, Record<string, string[]>>;
   specificationFieldIdsByCategory: Record<string, string[]>;
@@ -58,6 +60,11 @@ export const ProductEntryCategoryService = {
     const productModels = ProductModelService.getProductModelsByWorkspace(workspaceId);
     const deviceClasses = DeviceClassService.getDeviceClassesByWorkspace(workspaceId)
       .filter((deviceClass) => deviceClass.companyId === companyId);
+    const brandsById = new Map(
+      BrandService.getBrandsByWorkspace(workspaceId)
+        .filter((brand) => brand.companyId === companyId)
+        .map((brand) => [brand.id, brand]),
+    );
 
     const deviceClassIdsByCategory = Object.fromEntries(
       categories.map((category) => [
@@ -79,6 +86,11 @@ export const ProductEntryCategoryService = {
         ]),
       ),
       deviceClassIdsByCategory,
+      brandIdByProductModel: Object.fromEntries(
+        productModels.flatMap((model) =>
+          brandsById.has(model.brandId) ? [[model.id, model.brandId]] : [],
+        ),
+      ),
       productModelIdsByCategoryAndDeviceClass: Object.fromEntries(
         categories.map((category) => [
           category.id,

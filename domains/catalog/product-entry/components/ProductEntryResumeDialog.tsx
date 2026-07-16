@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { ProductEntryDraft } from "../drafts/product-entry-draft.entity";
 
 interface ProductEntryResumeDialogProps {
+  canContinue: boolean;
   draft: ProductEntryDraft;
   error: string | null;
   isWorking: boolean;
@@ -24,7 +25,8 @@ export function ProductEntryResumeDialog(props: ProductEntryResumeDialogProps) {
           Last updated {new Date(props.draft.updatedAt).toLocaleString()}. Choose whether to continue it or begin cleanly.
         </p>
         <div className="mt-6 grid gap-3">
-          <button className="min-h-12 rounded-xl bg-blue-600 px-4 font-semibold text-white disabled:opacity-50" disabled={props.isWorking} onClick={props.onContinue} ref={continueRef} type="button">Continue Draft</button>
+          <button className="min-h-12 rounded-xl bg-blue-600 px-4 font-semibold text-white disabled:opacity-50" disabled={props.isWorking || !props.canContinue} onClick={props.onContinue} ref={continueRef} type="button">Continue Draft</button>
+          {!props.canContinue ? <p className="text-sm text-amber-800" role="status">Current Catalog data must load before this Draft can be restored.</p> : null}
           <button className="min-h-12 rounded-xl border border-slate-300 px-4 font-semibold text-slate-800 disabled:opacity-50" disabled={props.isWorking} onClick={props.onStartNew} type="button">Start New Product</button>
           <button aria-label="Delete Product Entry Draft permanently" className="min-h-12 rounded-xl border border-red-300 px-4 font-semibold text-red-700 disabled:opacity-50" disabled={props.isWorking} onClick={props.onDelete} type="button">Delete Draft</button>
           {props.error ? <p className="text-sm font-medium text-red-700" role="alert">{props.error}</p> : null}

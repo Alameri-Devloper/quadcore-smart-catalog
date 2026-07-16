@@ -31,11 +31,17 @@ import {
   ProductEntryDeviceClassService,
   type ProductEntryDeviceClassOption,
 } from "../services/product-entry-device-class.service";
+import {
+  ProductEntryProductModelService,
+  type ProductEntryProductModelContext,
+  type ProductEntryProductModelOption,
+} from "../services/product-entry-product-model.service";
 
 const EMPTY_CATEGORY_QUERY: ProductEntryCategoryQueryResult = {
   categories: [],
   categoryRequiresDeviceClassByCategory: {},
   deviceClassIdsByCategory: {},
+  brandIdByProductModel: {},
   productModelIdsByCategory: {},
   productModelIdsByCategoryAndDeviceClass: {},
   specificationFieldIdsByCategory: {},
@@ -49,6 +55,7 @@ const createDevelopmentWorkflowContext = (
   workspaceId: PRODUCT_ENTRY_DEVELOPMENT_SCOPE.workspaceId,
   categoryRequiresDeviceClassByCategory: categoryQuery.categoryRequiresDeviceClassByCategory,
   deviceClassIdsByCategory: categoryQuery.deviceClassIdsByCategory,
+  brandIdByProductModel: categoryQuery.brandIdByProductModel,
   productModelIdsByCategory: categoryQuery.productModelIdsByCategory,
   productModelIdsByCategoryAndDeviceClass: categoryQuery.productModelIdsByCategoryAndDeviceClass,
   specificationFieldIdsByCategory: categoryQuery.specificationFieldIdsByCategory,
@@ -62,12 +69,13 @@ const createDevelopmentWorkflowContext = (
 
 interface ProductEntryWizardSessionProps {
   categories: ProductEntryCategoryQueryResult["categories"];
+  categoryRequiresDeviceClassByCategory: ProductEntryCategoryQueryResult["categoryRequiresDeviceClassByCategory"];
   categoryLoadError: string | null;
   categoriesLoading: boolean;
   onRetryCategories: () => void;
 }
 
-function ProductEntryWizardSession({ categories, categoryLoadError, categoriesLoading, onRetryCategories }: ProductEntryWizardSessionProps) {
+function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCategory, categoryLoadError, categoriesLoading, onRetryCategories }: ProductEntryWizardSessionProps) {
   const router = useRouter();
   const workflow = useProductEntryWorkflow();
   const draftService = useMemo(
@@ -87,12 +95,21 @@ function ProductEntryWizardSession({ categories, categoryLoadError, categoriesLo
     categoryId: string;
     message: string;
   } | null>(null);
+  const [productModelResult, setProductModelResult] = useState<{
+    contextKey: string;
+    options: ProductEntryProductModelOption[];
+  } | null>(null);
+  const [productModelError, setProductModelError] = useState<{
+    contextKey: string;
+    message: string;
+  } | null>(null);
   const previousStepRef = useRef(workflow.currentStepId);
   const initializedRef = useRef(false);
   const previousValuesRef = useRef(workflow.values);
   const selectedCategoryId = workflow.values.categoryId;
   const currentStepId = workflow.currentStepId;
   const validateCurrentStep = workflow.validateCurrentStep;
+  const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
 
   const loadDeviceClasses = useCallback(() => {
     if (!selectedCategoryId) return;
@@ -132,6 +149,56 @@ function ProductEntryWizardSession({ categories, categoryLoadError, categoriesLo
     workflow.values.deviceClassId &&
     deviceClasses.some((option) => option.id === workflow.values.deviceClassId),
   );
+  const categoryRequiresDeviceClass = Boolean(
+    selectedCategoryId &&
+      categoryRequiresDeviceClassByCategory[selectedCategoryId],
+  );
+  const productModelContext = useMemo<ProductEntryProductModelContext>(() => ({
+    companyId: PRODUCT_ENTRY_DEVELOPMENT_SCOPE.companyId,
+    workspaceId: PRODUCT_ENTRY_DEVELOPMENT_SCOPE.workspaceId,
+    departmentId: workflow.values.departmentId,
+    categoryId: workflow.values.categoryId,
+    deviceClassId: workflow.values.deviceClassId,
+    categoryRequiresDeviceClass,
+  }), [categoryRequiresDeviceClass, workflow.values.categoryId, workflow.values.departmentId, workflow.values.deviceClassId]);
+  const productModelContextValid = Boolean(
+    productModelContext.departmentId &&
+    productModelContext.categoryId &&
+    (!productModelContext.categoryRequiresDeviceClass || productModelContext.deviceClassId),
+  );
+  const productModelContextKey = JSON.stringify(productModelContext);
+  const loadProductModels = useCallback(() => {
+    if (!productModelContextValid) return;
+    setProductModelError(null);
+    void ProductEntryProductModelService.getAvailableProductModels(productModelContext)
+      .then((options) => setProductModelResult({ contextKey: productModelContextKey, options }))
+      .catch(() => setProductModelError({ contextKey: productModelContextKey, message: "Product models could not be loaded. Try again." }));
+  }, [productModelContext, productModelContextKey, productModelContextValid]);
+
+  useEffect(() => {
+    if (!productModelContextValid) return;
+    void ProductEntryProductModelService.getAvailableProductModels(productModelContext)
+      .then((options) => setProductModelResult({ contextKey: productModelContextKey, options }))
+      .catch(() => setProductModelError({ contextKey: productModelContextKey, message: "Product models could not be loaded. Try again." }));
+  }, [productModelContext, productModelContextKey, productModelContextValid]);
+  const productModels = useMemo(
+    () => productModelResult?.contextKey === productModelContextKey
+      ? productModelResult.options
+      : [],
+    [productModelContextKey, productModelResult],
+  );
+  const productModelsLoading = productModelContextValid &&
+    productModelResult?.contextKey !== productModelContextKey &&
+    productModelError?.contextKey !== productModelContextKey;
+  const activeProductModelError = productModelError?.contextKey === productModelContextKey
+    ? productModelError.message
+    : null;
+  const selectedDeviceClass = deviceClasses.find(
+    (deviceClass) => deviceClass.id === workflow.values.deviceClassId,
+  );
+  const productModelContextLabel = [selectedDeviceClass?.name, selectedCategory?.name]
+    .filter(Boolean)
+    .join(" · ");
 
   useEffect(() => {
     if (
@@ -141,6 +208,16 @@ function ProductEntryWizardSession({ categories, categoryLoadError, categoriesLo
     ) return;
     void validateCurrentStep();
   }, [activeDeviceClassError, currentStepId, deviceClassesLoading, deviceClasses, validateCurrentStep]);
+
+  useEffect(() => {
+    if (
+      currentStepId !== PRODUCT_ENTRY_STEP_IDS.productModel ||
+      !productModelContextValid ||
+      productModelsLoading ||
+      activeProductModelError
+    ) return;
+    void validateCurrentStep();
+  }, [activeProductModelError, currentStepId, productModelContextValid, productModels, productModelsLoading, validateCurrentStep]);
 
   const leave = useCallback((saved = false) => {
     router.push(saved ? "/?productEntryDraft=saved" : "/");
@@ -212,7 +289,7 @@ function ProductEntryWizardSession({ categories, categoryLoadError, categoriesLo
           onHome={() => void run(async () => { await saveDraft(); leave(true); })}
         />
         <ProductEntryProgress />
-        <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} />
+        <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} />
         <ProductEntryNavigation deviceClassSelectionValid={deviceClassSelectionValid} />
       </div>
       {showCloseDialog ? (
@@ -226,6 +303,7 @@ function ProductEntryWizardSession({ categories, categoryLoadError, categoriesLo
       ) : null}
       {resumeDraft ? (
         <ProductEntryResumeDialog
+          canContinue={!categoriesLoading && !categoryLoadError}
           draft={resumeDraft}
           error={error}
           isWorking={isWorking}
@@ -246,6 +324,8 @@ export interface ProductEntryInitialContext {
   categoryId?: string;
   departmentId?: string;
   deviceClassId?: string;
+  productModelId?: string;
+  brandId?: string;
 }
 
 interface ProductEntryWizardProps {
@@ -285,6 +365,8 @@ export function ProductEntryWizard({ initialContext }: ProductEntryWizardProps) 
     categoryId: initialContext?.categoryId ?? null,
     departmentId: initialContext?.departmentId ?? null,
     deviceClassId: initialContext?.deviceClassId ?? null,
+    productModelId: initialContext?.productModelId ?? null,
+    brandId: initialContext?.brandId ?? null,
   }), [initialContext]);
 
   return (
@@ -294,7 +376,7 @@ export function ProductEntryWizard({ initialContext }: ProductEntryWizardProps) 
       initialStep={PRODUCT_ENTRY_STEP_IDS.entryMethod}
       workflow={productEntryWorkflow}
     >
-      <ProductEntryWizardSession categories={categoryQuery.categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={loadCategories} />
+      <ProductEntryWizardSession categories={categoryQuery.categories} categoryRequiresDeviceClassByCategory={categoryQuery.categoryRequiresDeviceClassByCategory} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={loadCategories} />
     </ProductEntryWorkflowProvider>
   );
 }

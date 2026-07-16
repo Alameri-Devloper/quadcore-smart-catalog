@@ -98,6 +98,8 @@ Each deeper context resolves more information:
 - From Brand: preserve Category when known, preselect Brand, and do not ask for Brand again.
 - From Product Model: preselect Category, optional Device Class, Brand, and Product Model; begin at Device Specifications.
 
+Inherited Product Model and Brand values are revalidated against current tenant, workspace, Category, and optional Device Class data before the Product Model decision is treated as complete. The Product Model remains revisitable and automatically resolves its confirmed Brand.
+
 Examples:
 
 ```text
@@ -382,6 +384,8 @@ Future modes may be added without redesigning the Product Entry Engine. A new mo
 - من التصنيف: حدد التصنيف والقسم مسبقا وتحقق منهما، واعرض القرار المستوفى، واسمح للموظف بالعودة إليه وتغييره.
 - من العلامة التجارية: حافظ على التصنيف عندما يكون معروفا، وحدد العلامة التجارية مسبقا، ولا تطلبها مرة أخرى.
 - من نموذج المنتج: حدد التصنيف وفئة الجهاز الاختيارية والعلامة التجارية ونموذج المنتج مسبقا، وابدأ من مواصفات الجهاز.
+
+يعاد التحقق من قيم نموذج المنتج والعلامة التجارية الموروثة مقابل بيانات المستأجر ومساحة العمل والتصنيف وفئة الجهاز الاختيارية الحالية قبل اعتبار قرار نموذج المنتج مكتملا. ويبقى نموذج المنتج قابلا للمراجعة ويحدد علامته التجارية المؤكدة تلقائيا.
 
 أمثلة:
 

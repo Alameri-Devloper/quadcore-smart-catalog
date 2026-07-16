@@ -507,3 +507,45 @@ Responsive First cards use one column on Mobile, two columns on Tablet, and an e
 يستخدم تغيير فئة الجهاز حد التنسيق الحالي. ويزيل العلامة التجارية ونموذج المنتج وقيم المواصفات غير المتوافقة، مع الحفاظ على قيم المواصفات المتوافقة والقسم والتصنيف والقيم التجارية ومراجع الصور. وتحفظ المسودة النشطة القرار من خلال سلوك المسودة التلقائي الحالي.
 
 تستخدم بطاقات Responsive First عمودا واحدا على الجوال، وعمودين على الجهاز اللوحي، وتخطيطا فعالا متعدد الأعمدة على الكمبيوتر. وتدعم مجموعة `fieldset` والعنوان `legend` ومدخلات radio الأصلية ونص التحديد الظاهر ومؤشرات التركيز والتحقق الحي والأهداف الكبيرة التفاعل بلوحة المفاتيح والفأرة واللمس.
+
+## Product Model Decision Page | صفحة قرار نموذج المنتج
+
+### English
+
+Product Model is a business decision page that asks: **Which product model are you adding?** It follows Category and optional Device Class and shows only active models compatible with the current company, workspace, Department, Category, and applicable Device Class. Category-only Products such as Cameras do not require a Device Class before model resolution.
+
+The page obtains display-ready decision options through `ProductEntryProductModelService`, which coordinates Product Model, Brand, and Device Class services. The component does not access repositories or mock data. Each card displays confirmed Product Model name, Brand, model code, and Device Class supporting context when applicable.
+
+Brand is not a repeated employee decision. Selecting a Product Model updates `productModelId`, and the workflow resolves `brandId` from the confirmed current Product Model relationship. Brand validity, ownership, and agreement with the selected Product Model are verified outside the component.
+
+Context-provided and restored `productModelId` and `brandId` remain editable. Draft restoration waits for current Catalog context, then reconciles and revalidates the stored model against company, workspace, Department, Category, optional Device Class, and active Brand data. Fresh initial values do not replace the restored decision. Invalid inherited relationships lose completion, become Needs Attention when applicable, and require a compatible selection.
+
+Context Search filters only the already-compatible Product Model options. It matches confirmed model name, model code, and Brand name without case sensitivity or surrounding whitespace. Search never changes workflow values, preserves a valid selection, and provides clear empty and reset actions.
+
+If no compatible models exist, the page explains that no Product Models are currently available and displays a disabled **Create a New Product Model — Available in a Future Task** action. A future creation flow should preserve Department, Category, and optional Device Class, collect only unresolved Brand and Product Model information, and return with the new model selected. This task adds no creation or persistence behavior.
+
+Changing Product Model uses the existing reconciliation boundary. It resolves the new Brand, clears stale Brand relationships, preserves Specification Values only when compatible with the current resolved template, and preserves Category, Device Class, commercial values, and image references. Full destructive Impact Analysis remains future work.
+
+After selection, a compact confirmed summary shows Selected Model, Brand, and the next Specifications decision. The same decision DTO is suitable for a future Wizard title such as **Add Lenovo LOQ Gaming Laptop** without requerying or duplicating Catalog data.
+
+Responsive First behavior uses one column on Mobile, two columns on Tablet, and an efficient multi-column layout on Desktop. Search, context, cards, selected summary, loading, failure, validation, and empty states remain readable. Native radio semantics, a fieldset and legend, accessible Search labeling, live messages, visible focus, selected text, and large targets support keyboard, mouse, and touch interaction.
+
+### العربية
+
+نموذج المنتج صفحة قرار عمل تطرح السؤال: **ما نموذج المنتج الذي تضيفه؟** تأتي بعد التصنيف وفئة الجهاز الاختيارية، ولا تعرض إلا النماذج النشطة المتوافقة مع الشركة ومساحة العمل والقسم والتصنيف وفئة الجهاز المنطبقة. ولا تتطلب المنتجات المعتمدة على التصنيف فقط، مثل الكاميرات، فئة جهاز قبل تحديد النموذج.
+
+تحصل الصفحة على خيارات قرار جاهزة للعرض من خلال `ProductEntryProductModelService` التي تنسق خدمات نموذج المنتج والعلامة التجارية وفئة الجهاز. ولا يصل المكون إلى المستودعات أو البيانات الوهمية. وتعرض كل بطاقة اسم نموذج المنتج والعلامة التجارية ورمز النموذج وسياق فئة الجهاز عندما ينطبق، وجميعها من بيانات مؤكدة.
+
+العلامة التجارية ليست قرارا مكررا للموظف. يحدث اختيار نموذج المنتج `productModelId`، ويحدد سير العمل `brandId` من علاقة نموذج المنتج الحالية والمؤكدة. ويتم التحقق من صلاحية العلامة التجارية وملكيتها واتفاقها مع نموذج المنتج المحدد خارج المكون.
+
+تبقى قيمتا `productModelId` و`brandId` المقدمتان من السياق أو المستعادتان قابلتين للتعديل. تنتظر استعادة المسودة تحميل سياق الكتالوج الحالي، ثم تنسق النموذج المحفوظ وتعيد التحقق منه مقابل الشركة ومساحة العمل والقسم والتصنيف وفئة الجهاز الاختيارية والعلامة التجارية النشطة. ولا تستبدل القيم الأولية الجديدة القرار المستعاد. وتفقد العلاقات الموروثة غير الصالحة حالة الاكتمال، وتصبح بحاجة إلى انتباه عندما ينطبق، وتتطلب اختيارا متوافقا.
+
+يصفي البحث ضمن السياق خيارات نماذج المنتجات المتوافقة مسبقا فقط. ويطابق اسم النموذج المؤكد ورمزه واسم العلامة التجارية دون حساسية لحالة الأحرف أو المسافات المحيطة. ولا يغير البحث قيم سير العمل، ويحافظ على الاختيار الصالح، ويوفر حالتي فراغ وإعادة ضبط واضحتين.
+
+إذا لم توجد نماذج متوافقة، تشرح الصفحة عدم توفر نماذج منتجات حاليا وتعرض إجراء **إنشاء نموذج منتج جديد — متاح في مهمة مستقبلية** معطلا. ويجب أن يحافظ مسار الإنشاء المستقبلي على القسم والتصنيف وفئة الجهاز الاختيارية، وأن يجمع معلومات العلامة التجارية ونموذج المنتج غير المحددة فقط، ثم يعود مع تحديد النموذج الجديد. ولا تضيف هذه المهمة إنشاء أو حفظا.
+
+يستخدم تغيير نموذج المنتج حد التنسيق الحالي. ويحدد العلامة التجارية الجديدة ويمسح علاقات العلامة التجارية القديمة، ويحافظ على قيم المواصفات فقط عندما تتوافق مع القالب الحالي المحدد، ويحافظ على التصنيف وفئة الجهاز والقيم التجارية ومراجع الصور. ويبقى تحليل التأثير التدميري الكامل عملا مستقبليا.
+
+بعد الاختيار، يعرض ملخص مؤكد وموجز النموذج المحدد والعلامة التجارية وقرار المواصفات التالي. ويصلح DTO القرار نفسه لعنوان معالج مستقبلي مثل **إضافة Lenovo LOQ Gaming Laptop** دون إعادة الاستعلام أو تكرار بيانات الكتالوج.
+
+يستخدم سلوك Responsive First عمودا واحدا على الجوال، وعمودين على الجهاز اللوحي، وتخطيطا فعالا متعدد الأعمدة على الكمبيوتر. وتبقى حالات البحث والسياق والبطاقات والملخص المحدد والتحميل والفشل والتحقق والفراغ مقروءة. وتدعم دلالات radio الأصلية و`fieldset` و`legend` وتسمية البحث القابلة للوصول والرسائل الحية والتركيز الظاهر ونص التحديد والأهداف الكبيرة التفاعل بلوحة المفاتيح والفأرة واللمس.

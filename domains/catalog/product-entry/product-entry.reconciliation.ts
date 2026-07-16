@@ -51,14 +51,14 @@ export const reconcileProductEntryValues: WorkflowValueReconciler<
   const productModelChanged =
     productModelId !== previousValues.productModelId ||
     productModelId !== nextValues.productModelId;
-  const brandId = categoryChanged || deviceClassChanged
-    ? null
-    :
-    context.resolvedProductModelBrandId !== undefined
-      ? context.resolvedProductModelBrandId
-      : productModelChanged
-        ? null
-        : nextValues.brandId;
+  const resolvedBrandId = productModelId
+    ? (context.brandIdByProductModel[productModelId] ?? null)
+    : null;
+  const brandId = productModelId
+    ? resolvedBrandId
+    : categoryChanged || deviceClassChanged || productModelChanged
+      ? null
+      : nextValues.brandId;
 
   return {
     ...nextValues,

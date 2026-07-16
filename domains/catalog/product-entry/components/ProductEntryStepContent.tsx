@@ -10,6 +10,8 @@ import { CategoryStep } from "./steps/CategoryStep";
 import type { ProductEntryCategoryOption } from "../services/product-entry-category.service";
 import type { ProductEntryDeviceClassOption } from "../services/product-entry-device-class.service";
 import { DeviceClassStep } from "./steps/DeviceClassStep";
+import type { ProductEntryProductModelOption } from "../services/product-entry-product-model.service";
+import { ProductModelStep } from "./steps/ProductModelStep";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -78,14 +80,21 @@ interface ProductEntryStepContentProps {
   deviceClassLoadError: string | null;
   deviceClassesLoading: boolean;
   onRetryDeviceClasses: () => void;
+  productModels: ProductEntryProductModelOption[];
+  productModelContextLabel: string;
+  productModelContextValid: boolean;
+  productModelLoadError: string | null;
+  productModelsLoading: boolean;
+  onRetryProductModels: () => void;
 }
 
-export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses }: ProductEntryStepContentProps) {
+export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels }: ProductEntryStepContentProps) {
   const { currentStepId, validation } = useProductEntryWorkflow();
   const presentation = getProductEntryStepPresentation(currentStepId);
   const isEntryMethod = currentStepId === PRODUCT_ENTRY_STEP_IDS.entryMethod;
   const isCategory = currentStepId === PRODUCT_ENTRY_STEP_IDS.category;
   const isDeviceClass = currentStepId === PRODUCT_ENTRY_STEP_IDS.deviceClass;
+  const isProductModel = currentStepId === PRODUCT_ENTRY_STEP_IDS.productModel;
 
   return (
     <section
@@ -98,6 +107,8 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
         <CategoryStep categories={categories} loadError={categoryLoadError} loading={categoriesLoading} onRetry={onRetryCategories} />
       ) : isDeviceClass ? (
         <DeviceClassStep deviceClasses={deviceClasses} loadError={deviceClassLoadError} loading={deviceClassesLoading} onRetry={onRetryDeviceClasses} />
+      ) : isProductModel ? (
+        <ProductModelStep contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} onRetry={onRetryProductModels} productModels={productModels} />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -119,7 +130,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       </div>
       )}
 
-      {!isEntryMethod && !isCategory && !isDeviceClass && validation && !validation.valid ? (
+      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"

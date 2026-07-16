@@ -88,6 +88,7 @@ export interface ProductEntryWorkflowContext {
   workspaceId: string;
   categoryRequiresDeviceClassByCategory: Readonly<Record<string, boolean>>;
   deviceClassIdsByCategory: Readonly<Record<string, readonly string[]>>;
+  brandIdByProductModel: Readonly<Record<string, string>>;
   productModelIdsByCategory: Readonly<Record<string, readonly string[]>>;
   productModelIdsByCategoryAndDeviceClass: Readonly<
     Record<string, Readonly<Record<string, readonly string[]>>>
