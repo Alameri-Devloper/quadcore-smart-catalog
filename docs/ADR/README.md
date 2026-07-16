@@ -57,6 +57,7 @@ Each ADR should include:
 | [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | Impact Analysis and Safe Reconciliation | Accepted; full implementation planned |
 | [ADR-0007](./ADR-0007-Context-Aware-Smart-Search.md) | Context-Aware Smart Search | Accepted; future implementation planned |
 | [ADR-0008](./ADR-0008-Dynamic-Context-Aware-Template-Generation-Engine.md) | Dynamic Context-Aware Template Generation Engine | Accepted; future implementation planned |
+| [ADR-0009](./ADR-0009-Sales-Intelligence-Engine-Architecture.md) | Sales Intelligence Engine Architecture | Accepted; future implementation planned |
 
 | ADR | العنوان | الحالة |
 | --- | --- | --- |
@@ -67,3 +68,4 @@ Each ADR should include:
 | [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | تحليل التأثير والتنسيق الآمن | معتمد؛ التنفيذ الكامل مخطط له |
 | [ADR-0007](./ADR-0007-Context-Aware-Smart-Search.md) | البحث الذكي الواعي بالسياق | معتمد؛ التنفيذ مخطط له مستقبلا |
 | [ADR-0008](./ADR-0008-Dynamic-Context-Aware-Template-Generation-Engine.md) | محرك توليد القوالب الديناميكي الواعي بالسياق | معتمد؛ التنفيذ مخطط له مستقبلا |
+| [ADR-0009](./ADR-0009-Sales-Intelligence-Engine-Architecture.md) | معمارية محرك Sales Intelligence | معتمد؛ التنفيذ مخطط له مستقبلا |
