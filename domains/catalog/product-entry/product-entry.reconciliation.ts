@@ -13,29 +13,47 @@ export const reconcileProductEntryValues: WorkflowValueReconciler<
   ProductEntryWorkflowContext,
   ProductEntryState
 > = ({ previousValues, nextValues, context }) => {
-  const compatibleSpecificationIds = new Set(
-    context.compatibleSpecificationFieldIds,
+  const categoryChanged = previousValues.categoryId !== nextValues.categoryId;
+  const deviceClassChanged = previousValues.deviceClassId !== nextValues.deviceClassId;
+  const compatibleDeviceClassIds = nextValues.categoryId
+    ? (context.deviceClassIdsByCategory[nextValues.categoryId] ?? [])
+    : [];
+  const categoryRequiresDeviceClass = Boolean(
+    nextValues.categoryId &&
+      context.categoryRequiresDeviceClassByCategory[nextValues.categoryId],
   );
+  const compatibleProductModelIds = nextValues.categoryId && nextValues.deviceClassId
+    ? (context.productModelIdsByCategoryAndDeviceClass[nextValues.categoryId]?.[nextValues.deviceClassId] ?? [])
+    : nextValues.categoryId
+      ? (context.productModelIdsByCategory[nextValues.categoryId] ?? [])
+    : [];
+  const compatibleSpecificationIds = new Set(nextValues.categoryId && nextValues.deviceClassId
+    ? (context.specificationFieldIdsByCategoryAndDeviceClass[nextValues.categoryId]?.[nextValues.deviceClassId] ?? [])
+    : nextValues.categoryId
+      ? (context.specificationFieldIdsByCategory[nextValues.categoryId] ?? [])
+    : context.compatibleSpecificationFieldIds);
   const specificationValues = Object.fromEntries(
     Object.entries(nextValues.specificationValues).filter(([fieldId]) =>
       compatibleSpecificationIds.has(fieldId),
     ),
   );
-  const deviceClassId = context.categoryRequiresDeviceClass
-    ? isCompatible(nextValues.deviceClassId, context.compatibleDeviceClassIds)
+  const deviceClassId = categoryRequiresDeviceClass
+    ? isCompatible(nextValues.deviceClassId, compatibleDeviceClassIds)
       ? nextValues.deviceClassId
       : null
     : null;
   const productModelId = isCompatible(
     nextValues.productModelId,
-    context.compatibleProductModelIds,
+    compatibleProductModelIds,
   )
     ? nextValues.productModelId
     : null;
   const productModelChanged =
     productModelId !== previousValues.productModelId ||
     productModelId !== nextValues.productModelId;
-  const brandId =
+  const brandId = categoryChanged || deviceClassChanged
+    ? null
+    :
     context.resolvedProductModelBrandId !== undefined
       ? context.resolvedProductModelBrandId
       : productModelChanged

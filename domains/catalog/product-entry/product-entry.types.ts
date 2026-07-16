@@ -66,6 +66,7 @@ export const isProductEntryMethodEnabled = (
 
 export interface ProductEntryState {
   entryMethod: ProductEntryMethod;
+  departmentId: string | null;
   categoryId: string | null;
   deviceClassId: string | null;
   brandId: string | null;
@@ -83,7 +84,18 @@ export interface ProductEntryState {
 export type ProductEntryValues = ProductEntryState;
 
 export interface ProductEntryWorkflowContext {
-  categoryRequiresDeviceClass: boolean;
+  companyId: string;
+  workspaceId: string;
+  categoryRequiresDeviceClassByCategory: Readonly<Record<string, boolean>>;
+  deviceClassIdsByCategory: Readonly<Record<string, readonly string[]>>;
+  productModelIdsByCategory: Readonly<Record<string, readonly string[]>>;
+  productModelIdsByCategoryAndDeviceClass: Readonly<
+    Record<string, Readonly<Record<string, readonly string[]>>>
+  >;
+  specificationFieldIdsByCategory: Readonly<Record<string, readonly string[]>>;
+  specificationFieldIdsByCategoryAndDeviceClass: Readonly<
+    Record<string, Readonly<Record<string, readonly string[]>>>
+  >;
   requiredSpecificationFieldIds: readonly string[];
   compatibleSpecificationFieldIds: readonly string[];
   compatibleDeviceClassIds: readonly string[];
@@ -93,6 +105,7 @@ export interface ProductEntryWorkflowContext {
 
 export const createInitialProductEntryState = (): ProductEntryState => ({
   entryMethod: "manual",
+  departmentId: null,
   categoryId: null,
   deviceClassId: null,
   brandId: null,

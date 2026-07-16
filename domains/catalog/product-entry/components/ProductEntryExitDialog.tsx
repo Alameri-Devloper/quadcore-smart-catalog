@@ -49,13 +49,13 @@ export function ProductEntryExitDialog({
           className="text-xl font-bold text-slate-950"
           id="product-entry-exit-title"
         >
-          Leave Product Entry?
+          Close Product Entry?
         </h2>
         <p
           className="mt-2 text-sm leading-6 text-slate-600"
           id="product-entry-exit-description"
         >
-          Save your current work as a Draft, discard it, or continue editing.
+          Save your current work as a Draft and close, discard your changes and close, or continue editing.
         </p>
         <div className="mt-6 grid gap-3">
           <button
@@ -65,7 +65,7 @@ export function ProductEntryExitDialog({
             ref={continueButtonRef}
             type="button"
           >
-            {isSaving ? "Saving Draft…" : "Save Draft and Exit"}
+            {isSaving ? "Saving Draft…" : "Save Draft and Close"}
           </button>
           <button
             className="min-h-12 rounded-xl border border-red-300 bg-white px-4 font-semibold text-red-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200"
@@ -73,7 +73,7 @@ export function ProductEntryExitDialog({
             onClick={onDiscardChanges}
             type="button"
           >
-            Discard Changes and Exit
+            Discard Changes and Close
           </button>
           <button
             className="min-h-12 rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"

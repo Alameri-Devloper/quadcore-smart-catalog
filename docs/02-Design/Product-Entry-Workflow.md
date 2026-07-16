@@ -345,11 +345,11 @@ Pressing Next does not complete a step by itself. The workflow stores the curren
 
 Previous Completed and Needs Attention steps are reachable. Future incomplete steps remain disabled, Back preserves values, and Review remains the final step. A completed workflow session does not allow Back navigation.
 
-Home and Cancel are visible wizard actions. When no Product Entry values differ from the initial session values, either action may leave immediately. When values changed, both actions open the same unsaved-changes confirmation with:
+Home and Close are visible wizard actions. When no Product Entry values differ from the initial session values, Close may leave immediately. Home continues to save automatically before navigation. When work exists, Close opens the safe-exit confirmation with:
 
-- **Continue Editing:** Close the dialog and preserve the active session.
-- **Discard Changes:** Leave Product Entry without persistence.
-- **Save Draft:** Visible but disabled with **Coming Soon** until Draft persistence is implemented.
+- **Save Draft and Close:** Saves the active Draft before navigation.
+- **Discard Changes and Close:** Discards the active Draft before navigation.
+- **Continue Editing:** Returns to Product Entry without losing work.
 
 The confirmation uses semantic dialog behavior, moves focus into the dialog, and treats Escape as Continue Editing.
 
@@ -370,11 +370,11 @@ Dirty state is derived in the React workflow adapter by comparing current workfl
 
 يمكن الوصول إلى الخطوات السابقة المكتملة والخطوات التي تحتاج إلى انتباه. وتبقى الخطوات المستقبلية غير المكتملة معطلة، ويحافظ الرجوع على القيم، وتبقى المراجعة الخطوة الأخيرة. ولا تسمح جلسة سير العمل المكتملة بالرجوع.
 
-إجراءا الرئيسية والإلغاء ظاهران في المعالج. عندما لا تختلف قيم إدخال المنتج عن قيم بداية الجلسة، يمكن لأي منهما المغادرة مباشرة. وعندما تتغير القيم، يفتح الإجراءان تأكيد التغييرات غير المحفوظة نفسه، ويحتوي على:
+إجراءا الرئيسية والإغلاق ظاهران في المعالج. يمكن للإغلاق المغادرة مباشرة من جلسة نظيفة تماما، بينما تستمر الرئيسية في حفظ المسودة تلقائيا قبل التنقل. وعندما يوجد عمل، يفتح الإغلاق تأكيد الخروج الآمن، ويحتوي على:
 
-- **متابعة التعديل:** إغلاق مربع الحوار والحفاظ على الجلسة النشطة.
-- **تجاهل التغييرات:** مغادرة إدخال المنتج دون حفظ.
-- **حفظ المسودة:** ظاهر لكنه معطل ويحمل عبارة **قريبا** حتى يتم تنفيذ حفظ المسودات.
+- **حفظ المسودة والإغلاق:** يحفظ المسودة النشطة قبل التنقل.
+- **تجاهل التغييرات والإغلاق:** يتجاهل المسودة النشطة قبل التنقل.
+- **متابعة التعديل:** يعود إلى إدخال المنتج دون فقدان العمل.
 
 يستخدم التأكيد سلوك مربع حوار دلاليا، وينقل التركيز إلى داخله، ويعامل مفتاح Escape كاختيار متابعة التعديل.
 
@@ -390,9 +390,9 @@ Product Entry supports a browser-local Draft foundation. The UI calls `ProductEn
 
 A Draft stores company, workspace, and employee ownership; entry mode; workflow values; current step; completed step IDs; status; and created and updated timestamps. Temporary development ownership identifiers are isolated in one Product Entry configuration file.
 
-Drafts are saved after successful workflow movement, when Home is selected, and when **Save Draft and Exit** is selected from Cancel. An existing active Draft is updated instead of duplicated. Storage failure keeps the workflow open, prevents exit, and displays a clear error.
+Drafts are saved after successful workflow movement, when Home is selected, and when **Save Draft and Close** is selected from Close. An existing active Draft is updated instead of duplicated. Storage failure keeps the workflow open, prevents closing, and displays a clear error.
 
-Home saves automatically and navigates only after success. Cancel exits immediately only for a completely clean, unstarted session. Otherwise it offers **Save Draft and Exit**, **Discard Changes and Exit**, and **Continue Editing**. Discard marks the active Draft discarded before exit.
+Home saves automatically and navigates only after success. Close navigates immediately only for a completely clean, unstarted session. Otherwise it offers **Save Draft and Close**, **Discard Changes and Close**, and **Continue Editing**. Discard marks the active Draft discarded before closing.
 
 When Product Entry opens, the most recent active Draft for the current owner is offered before new work begins. **Continue Draft** restores values, entry mode, current step, completion candidates, and timestamps; the engine then reconciles and revalidates the restored state. **Start New Product** discards the old Draft and starts clean. **Delete Draft** permanently removes it and starts clean.
 
@@ -404,9 +404,9 @@ Successful workflow completion removes the active Draft. **Add Another Product**
 
 تحفظ المسودة ملكية الشركة ومساحة العمل والموظف، وطريقة الإدخال، وقيم سير العمل، والخطوة الحالية، ومعرفات الخطوات المكتملة، والحالة، ووقتي الإنشاء والتحديث. وتعزل معرفات الملكية المؤقتة للتطوير في ملف إعداد واحد لإدخال المنتج.
 
-تحفظ المسودات بعد الانتقال الناجح في سير العمل، وعند اختيار الرئيسية، وعند اختيار **حفظ المسودة والخروج** من الإلغاء. تحدث المسودة النشطة الحالية بدلا من إنشاء نسخة مكررة. ويبقي فشل التخزين سير العمل مفتوحا، ويمنع الخروج، ويعرض خطأ واضحا.
+تحفظ المسودات بعد الانتقال الناجح في سير العمل، وعند اختيار الرئيسية، وعند اختيار **حفظ المسودة والإغلاق** من الإغلاق. تحدث المسودة النشطة الحالية بدلا من إنشاء نسخة مكررة. ويبقي فشل التخزين سير العمل مفتوحا، ويمنع الإغلاق، ويعرض خطأ واضحا.
 
-تحفظ الرئيسية تلقائيا ولا تنتقل إلا بعد النجاح. ويخرج الإلغاء مباشرة فقط من جلسة نظيفة تماما لم تبدأ. وإلا فإنه يوفر **حفظ المسودة والخروج** و**تجاهل التغييرات والخروج** و**متابعة التعديل**. ويعلم التجاهل المسودة النشطة كمتجاهلة قبل الخروج.
+تحفظ الرئيسية تلقائيا ولا تنتقل إلا بعد النجاح. ويغلق إجراء الإغلاق مباشرة فقط جلسة نظيفة تماما لم تبدأ. وإلا فإنه يوفر **حفظ المسودة والإغلاق** و**تجاهل التغييرات والإغلاق** و**متابعة التعديل**. ويعلم التجاهل المسودة النشطة كمتجاهلة قبل الإغلاق.
 
 عند فتح إدخال المنتج، تعرض أحدث مسودة نشطة للمالك الحالي قبل بدء عمل جديد. يعيد **متابعة المسودة** القيم وطريقة الإدخال والخطوة الحالية وحالات الاكتمال المرشحة والأوقات، ثم ينسق المحرك الحالة المستعادة ويعيد التحقق منها. ويعلم **بدء منتج جديد** المسودة القديمة كمتجاهلة ويبدأ جلسة نظيفة. ويحذف **حذف المسودة** المسودة نهائيا ويبدأ جلسة نظيفة.
 
@@ -419,27 +419,91 @@ Successful workflow completion removes the active Draft. **Add Another Product**
 Entry Method is the first real Product Entry step. It presents large semantic radio cards for:
 
 - **Manual Entry:** Enabled, recommended, and selected by default only for a fresh Standard Wizard session. It guides the employee through one Product step by step.
-- **Excel Import:** Disabled and marked Coming Soon. Its future template will be resolved from Category and optional Device Class.
-- **Product Model Lookup:** Disabled and marked Coming Soon.
-- **Label Scan:** Disabled and marked Coming Soon.
+- **Excel Import:** Disabled and marked Available in a Future Version. Its future template will be resolved from Category and optional Device Class.
+- **Product Model Lookup:** Disabled and marked Available in a Future Version.
+- **Label Scan:** Disabled and marked Available in a Future Version.
 
 Disabled methods cannot receive selection. Next remains unavailable unless the current method is enabled, and the existing Product Entry validator confirms the selection before the step becomes Completed. Validation messages appear beside the method options.
 
 The selected method lives only in workflow values. Back navigation preserves it. Draft restoration restores the saved method before rendering and does not reapply the fresh-session default over restored values.
 
-The options use a fieldset, legend, native radio inputs, visible Selected, Available, and Unavailable text, Recommended and Coming Soon badges, large touch targets, keyboard navigation, native disabled behavior, and visible focus rings. State does not depend on color alone.
+The options use a fieldset, legend, native radio inputs, visible Selected, Available, and Unavailable text, Recommended and Available in a Future Version badges, large touch targets, keyboard navigation, native disabled behavior, and visible focus rings. State does not depend on color alone.
 
 ### العربية
 
 طريقة الإدخال هي أول خطوة حقيقية في إدخال المنتج. تعرض بطاقات اختيار دلالية وكبيرة من نوع radio للخيارات التالية:
 
 - **الإدخال اليدوي:** مفعل وموصى به، ويحدد افتراضيا فقط في جلسة جديدة للمعالج القياسي. ويرشد الموظف لإدخال منتج واحد خطوة بخطوة.
-- **استيراد Excel:** معطل ويحمل علامة قريبا. وسيحدد قالبه المستقبلي من التصنيف وفئة الجهاز الاختيارية.
-- **البحث عن نموذج المنتج:** معطل ويحمل علامة قريبا.
-- **مسح الملصق:** معطل ويحمل علامة قريبا.
+- **استيراد Excel:** معطل ويحمل علامة متاح في إصدار مستقبلي. وسيحدد قالبه المستقبلي من التصنيف وفئة الجهاز الاختيارية.
+- **البحث عن نموذج المنتج:** معطل ويحمل علامة متاح في إصدار مستقبلي.
+- **مسح الملصق:** معطل ويحمل علامة متاح في إصدار مستقبلي.
 
 لا يمكن تحديد الطرق المعطلة. ويبقى التالي غير متاح ما لم تكن الطريقة الحالية مفعلة، وتؤكد أداة تحقق إدخال المنتج الحالية الاختيار قبل أن تصبح الخطوة مكتملة. وتظهر رسائل التحقق بجانب خيارات الطريقة.
 
 توجد الطريقة المحددة داخل قيم سير العمل فقط. ويحافظ عليها التنقل إلى الخلف. وتستعيد المسودة الطريقة المحفوظة قبل العرض ولا تعيد تطبيق القيمة الافتراضية للجلسة الجديدة فوق القيم المستعادة.
 
-تستخدم الخيارات مجموعة `fieldset` وعنوان `legend` ومدخلات radio أصلية ونصوصا ظاهرة للحالات محدد ومتاح وغير متاح، وعلامتي موصى به وقريبا، وأهداف لمس كبيرة، وتنقلا بلوحة المفاتيح، وسلوك التعطيل الأصلي، وحلقات تركيز ظاهرة. ولا تعتمد الحالة على اللون وحده.
+تستخدم الخيارات مجموعة `fieldset` وعنوان `legend` ومدخلات radio أصلية ونصوصا ظاهرة للحالات محدد ومتاح وغير متاح، وعلامتي موصى به ومتاح في إصدار مستقبلي، وأهداف لمس كبيرة، وتنقلا بلوحة المفاتيح، وسلوك التعطيل الأصلي، وحلقات تركيز ظاهرة. ولا تعتمد الحالة على اللون وحده.
+
+## Category Decision Page | صفحة قرار نوع المنتج
+
+### English
+
+Category is the first Catalog decision page and asks one business question: **What would you like to add?** It displays active Categories from the current workspace as reusable semantic radio cards. Each card shows the Category name and its Department as supporting context. The employee selects only the Product Category; QSC resolves and stores `departmentId` from the confirmed Category relationship.
+
+The page obtains data through the Product Entry Category service, which coordinates Category, Department, Product Model, and Specification Template services. The component does not access repositories or mock data. Loading, empty Catalog, query failure, and retry states remain explicit even while the current repositories are synchronous.
+
+Context-provided `categoryId` and `departmentId` appear as selected but remain editable. Workflow validation confirms that the Category and Department exist, are active, belong to the active company and workspace, and match each other. Stale, unavailable, cross-workspace, or mismatched context marks the step Needs Attention and requires another selection. Draft restoration restores both IDs before validation; fresh defaults never replace them.
+
+Context Search is limited to available Categories in the active workspace. It matches Category name, Category code, and Department name without case sensitivity or surrounding whitespace. Search changes only the displayed cards, preserves workflow selection, provides a reset action, and never changes Product Entry values until the employee selects a card.
+
+Selecting a different Category updates `categoryId` and the resolved `departmentId` together through workflow values. The existing reconciliation boundary removes incompatible Device Class, Product Model, Brand, and Specification relationships while preserving compatible Specification values and commercial values. Selecting the current card creates no workflow update or redundant Draft write. The active Draft is updated after a value change and after successful navigation.
+
+The step becomes Completed only after Next runs successful validation. Missing or invalid selection keeps the step Current. A previously completed selection that becomes invalid loses Completed state and becomes Needs Attention when revalidated.
+
+The Responsive First layout uses one column and large touch targets on Mobile, two columns where comfortable on Tablet, and an efficient three-column maximum-width layout on Desktop. Native radio semantics, a fieldset and legend, accessible search labeling, visible focus, selected text, live status messages, and mouse, keyboard, and touch interaction are supported.
+
+Recently Used, Favorites, and Frequently Used Categories may later group the same reusable cards. This task adds no fake history, ranking, storage, or services for those future features.
+
+### العربية
+
+التصنيف هو أول صفحة قرار فعلية في الكتالوج، ويطرح سؤال عمل واحدا: **ما نوع المنتج الذي تريد إضافته؟** تعرض الصفحة التصنيفات النشطة في مساحة العمل الحالية كبطاقات radio دلالية قابلة لإعادة الاستخدام. وتعرض كل بطاقة اسم التصنيف والقسم كسياق مساعد. يختار الموظف تصنيف المنتج فقط، ويحدد QSC قيمة `departmentId` ويحفظها من علاقة التصنيف المؤكدة.
+
+تحصل الصفحة على البيانات من خلال خدمة تصنيفات إدخال المنتج التي تنسق خدمات التصنيف والقسم ونموذج المنتج وقالب المواصفات. ولا يصل المكون إلى المستودعات أو البيانات الوهمية. وتبقى حالات التحميل والكتالوج الفارغ وفشل الاستعلام وإعادة المحاولة واضحة حتى مع كون المستودعات الحالية متزامنة.
+
+تظهر قيمتا `categoryId` و`departmentId` المقدمتان من السياق كمحددتين، لكنهما تبقيان قابلتين للتغيير. ويتحقق سير العمل من وجود التصنيف والقسم ونشاطهما وانتمائهما إلى الشركة ومساحة العمل النشطتين وتطابقهما. ويجعل السياق القديم أو غير المتاح أو التابع لمساحة عمل أخرى أو غير المتطابق الخطوة بحاجة إلى انتباه، ويتطلب اختيارا آخر. وتستعيد المسودة المعرفين قبل التحقق، ولا تستبدلهما القيم الافتراضية الجديدة.
+
+يقتصر البحث ضمن السياق على التصنيفات المتاحة في مساحة العمل النشطة. ويطابق اسم التصنيف ورمزه واسم القسم دون حساسية لحالة الأحرف أو المسافات المحيطة. ويغير البحث البطاقات المعروضة فقط، ويحافظ على اختيار سير العمل، ويوفر إجراء لإعادة الضبط، ولا يغير قيم إدخال المنتج حتى يحدد الموظف بطاقة.
+
+يحدث اختيار تصنيف مختلف `categoryId` و`departmentId` المحدد تلقائيا معا من خلال قيم سير العمل. ويزيل حد التنسيق الحالي علاقات فئة الجهاز ونموذج المنتج والعلامة التجارية والمواصفات غير المتوافقة، مع الحفاظ على قيم المواصفات المتوافقة والقيم التجارية. ولا ينشئ اختيار البطاقة الحالية تحديثا لسير العمل أو كتابة مسودة مكررة. وتحدث المسودة النشطة بعد تغير القيمة وبعد التنقل الناجح.
+
+لا تصبح الخطوة مكتملة إلا بعد أن يشغل زر التالي تحققا ناجحا. ويبقي الاختيار المفقود أو غير الصالح الخطوة حالية. وإذا أصبح اختيار مكتمل سابقا غير صالح، تفقد الخطوة حالة مكتملة وتصبح بحاجة إلى انتباه عند إعادة التحقق.
+
+يستخدم تخطيط Responsive First عمودا واحدا وأهداف لمس كبيرة على الجوال، وعمودين عندما تكون المساحة مريحة على الجهاز اللوحي، وتخطيطا فعالا بحد أقصى ثلاثة أعمدة وعرض مريح على الكمبيوتر. وتدعم الصفحة دلالات radio الأصلية و`fieldset` و`legend` وتسمية بحث قابلة للوصول وتركيزا ظاهرا ونصا يوضح التحديد ورسائل حالة حية والتفاعل بالفأرة ولوحة المفاتيح واللمس.
+
+يمكن مستقبلا تجميع البطاقات القابلة لإعادة الاستخدام نفسها ضمن المستخدمة مؤخرا والمفضلة والتصنيفات كثيرة الاستخدام. ولا تضيف هذه المهمة سجلا أو ترتيبا أو تخزينا أو خدمات وهمية لهذه الميزات المستقبلية.
+
+## Device Class Decision Page | صفحة قرار فئة الجهاز
+
+### English
+
+Device Class is a conditional decision page that asks: **What type of device is this?** It appears only when the selected Category has active Device Class-specific Specification Templates. This follows ADR-0002 and avoids inventing a separate Category-to-Device-Class mapping. Categories with a Category-only template omit the step, remove it from progress, clear stale `deviceClassId` through reconciliation, and continue without blocking.
+
+The page loads active Device Class records for the current company and workspace through the Product Entry Device Class service and `DeviceClassService`. It shows only classes with a confirmed active Specification Template for the selected Category. Cards display the real name and description, use native radio semantics, and never contain hardcoded Device Class records.
+
+Context and Draft values appear selected when valid and remain editable. Validation confirms presence when required, existence, active status, company and workspace ownership, and compatibility with the selected Category. Missing, stale, cross-workspace, or incompatible values cannot complete the step and become Needs Attention after revalidation.
+
+Changing Device Class uses the existing reconciliation boundary. It removes incompatible Brand, Product Model, and Specification values while preserving compatible Specification values, Department, Category, commercial values, and image references. The active Draft persists the decision through the existing automatic Draft behavior.
+
+Responsive First cards use one column on Mobile, two columns on Tablet, and an efficient multi-column layout on Desktop. The fieldset, legend, native radios, visible Selected text, focus indicators, live validation, and large targets support keyboard, mouse, and touch interaction.
+
+### العربية
+
+فئة الجهاز صفحة قرار شرطية تطرح السؤال: **ما نوع هذا الجهاز؟** ولا تظهر إلا عندما يملك التصنيف المحدد قوالب مواصفات نشطة خاصة بفئات الأجهزة. يتبع ذلك ADR-0002 ويتجنب اختراع علاقة منفصلة بين التصنيف وفئة الجهاز. أما التصنيفات التي تملك قالب تصنيف فقط فتتخطى الخطوة، وتحذفها من التقدم، وتمسح قيمة `deviceClassId` القديمة من خلال التنسيق، وتتابع دون تعطيل.
+
+تحمل الصفحة سجلات فئات الأجهزة النشطة للشركة ومساحة العمل الحاليتين من خلال خدمة فئات أجهزة إدخال المنتج و`DeviceClassService`. ولا تعرض إلا الفئات التي تملك قالب مواصفات نشطا ومؤكدا للتصنيف المحدد. تعرض البطاقات الاسم والوصف الحقيقيين، وتستخدم دلالات radio الأصلية، ولا تحتوي على سجلات فئات أجهزة ثابتة.
+
+تظهر قيم السياق والمسودة كمحددة عندما تكون صالحة وتبقى قابلة للتعديل. ويتحقق النظام من وجود القيمة عندما تكون مطلوبة، ووجود فئة الجهاز ونشاطها وملكيتها للشركة ومساحة العمل وتوافقها مع التصنيف المحدد. ولا تستطيع القيم المفقودة أو القديمة أو التابعة لمساحة عمل أخرى أو غير المتوافقة إكمال الخطوة، وتصبح بحاجة إلى انتباه بعد إعادة التحقق.
+
+يستخدم تغيير فئة الجهاز حد التنسيق الحالي. ويزيل العلامة التجارية ونموذج المنتج وقيم المواصفات غير المتوافقة، مع الحفاظ على قيم المواصفات المتوافقة والقسم والتصنيف والقيم التجارية ومراجع الصور. وتحفظ المسودة النشطة القرار من خلال سلوك المسودة التلقائي الحالي.
+
+تستخدم بطاقات Responsive First عمودا واحدا على الجوال، وعمودين على الجهاز اللوحي، وتخطيطا فعالا متعدد الأعمدة على الكمبيوتر. وتدعم مجموعة `fieldset` والعنوان `legend` ومدخلات radio الأصلية ونص التحديد الظاهر ومؤشرات التركيز والتحقق الحي والأهداف الكبيرة التفاعل بلوحة المفاتيح والفأرة واللمس.

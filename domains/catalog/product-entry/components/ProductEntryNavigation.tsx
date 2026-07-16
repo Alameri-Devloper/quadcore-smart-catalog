@@ -7,7 +7,11 @@ import {
   isProductEntryMethodEnabled,
 } from "../product-entry.types";
 
-export function ProductEntryNavigation() {
+interface ProductEntryNavigationProps {
+  deviceClassSelectionValid: boolean;
+}
+
+export function ProductEntryNavigation({ deviceClassSelectionValid }: ProductEntryNavigationProps) {
   const {
     currentStepId,
     canGoBack,
@@ -22,6 +26,9 @@ export function ProductEntryNavigation() {
   const hasValidEntryMethod =
     currentStepId !== PRODUCT_ENTRY_STEP_IDS.entryMethod ||
     isProductEntryMethodEnabled(values.entryMethod);
+  const hasValidCurrentDecision =
+    currentStepId !== PRODUCT_ENTRY_STEP_IDS.deviceClass ||
+    deviceClassSelectionValid;
 
   const run = async (action: () => Promise<unknown>) => {
     setIsWorking(true);
@@ -56,7 +63,7 @@ export function ProductEntryNavigation() {
         ) : (
           <button
             className="min-h-12 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-45"
-            disabled={!canGoNext || !hasValidEntryMethod || isWorking}
+            disabled={!canGoNext || !hasValidEntryMethod || !hasValidCurrentDecision || isWorking}
             onClick={() => void run(next)}
             type="button"
           >

@@ -94,7 +94,7 @@ Add Product
 Each deeper context resolves more information:
 
 - From Catalog: start the standard guided path.
-- From Category: preselect Category and skip Category selection.
+- From Category: preselect and validate Category and Department, show the satisfied decision, and allow the employee to revisit and change it.
 - From Brand: preserve Category when known, preselect Brand, and do not ask for Brand again.
 - From Product Model: preselect Category, optional Device Class, Brand, and Product Model; begin at Device Specifications.
 
@@ -102,7 +102,7 @@ Examples:
 
 ```text
 Category already selected
--> Skip Category
+-> Validate and show Category as selected
 -> Continue with the next unresolved decision
 ```
 
@@ -200,7 +200,7 @@ Future Draft capabilities may include:
 
 ### Current Local Draft Foundation
 
-Manual Draft is now supported through replaceable browser storage. Product Entry saves the active Draft after successful step movement, automatically before Home navigation, and when the employee chooses Save Draft and Exit from Cancel. Browser-storage failure prevents navigation and keeps the current session available.
+Manual Draft is now supported through replaceable browser storage. Product Entry saves the active Draft after successful step movement, automatically before Home navigation, and when the employee chooses Save Draft and Close from Close. Browser-storage failure prevents navigation and keeps the current session available.
 
 On entry, the latest active Draft for the current company, workspace, and employee is offered for resume. Continuing restores workflow values, entry mode, current step, completion candidates, and timestamps, then applies current reconciliation and validation. Starting new marks the previous Draft discarded; deleting removes it permanently. Successful workflow completion removes the active Draft.
 
@@ -379,7 +379,7 @@ Future modes may be added without redesigning the Product Entry Engine. A new mo
 يحدد كل مستوى أعمق معلومات أكثر:
 
 - من الكتالوج: ابدأ المسار الموجه القياسي.
-- من التصنيف: حدد التصنيف مسبقا وتخط اختيار التصنيف.
+- من التصنيف: حدد التصنيف والقسم مسبقا وتحقق منهما، واعرض القرار المستوفى، واسمح للموظف بالعودة إليه وتغييره.
 - من العلامة التجارية: حافظ على التصنيف عندما يكون معروفا، وحدد العلامة التجارية مسبقا، ولا تطلبها مرة أخرى.
 - من نموذج المنتج: حدد التصنيف وفئة الجهاز الاختيارية والعلامة التجارية ونموذج المنتج مسبقا، وابدأ من مواصفات الجهاز.
 
@@ -387,7 +387,7 @@ Future modes may be added without redesigning the Product Entry Engine. A new mo
 
 ```text
 التصنيف محدد مسبقا
--> تخط التصنيف
+-> تحقق من التصنيف واعرضه كمحدد
 -> تابع إلى القرار التالي غير المحدد
 ```
 
@@ -485,7 +485,7 @@ Future modes may be added without redesigning the Product Entry Engine. A new mo
 
 ### أساس المسودة المحلية الحالي
 
-يدعم النظام الآن المسودة اليدوية من خلال تخزين متصفح قابل للاستبدال. يحفظ إدخال المنتج المسودة النشطة بعد الانتقال الناجح بين الخطوات، وتلقائيا قبل الانتقال إلى الرئيسية، وعندما يختار الموظف حفظ المسودة والخروج من الإلغاء. ويمنع فشل تخزين المتصفح التنقل ويبقي الجلسة الحالية متاحة.
+يدعم النظام الآن المسودة اليدوية من خلال تخزين متصفح قابل للاستبدال. يحفظ إدخال المنتج المسودة النشطة بعد الانتقال الناجح بين الخطوات، وتلقائيا قبل الانتقال إلى الرئيسية، وعندما يختار الموظف حفظ المسودة والإغلاق من إجراء الإغلاق. ويمنع فشل تخزين المتصفح التنقل ويبقي الجلسة الحالية متاحة.
 
 عند الدخول، تعرض أحدث مسودة نشطة للشركة ومساحة العمل والموظف الحاليين للاستئناف. تعيد المتابعة قيم سير العمل وطريقة الإدخال والخطوة الحالية وحالات الاكتمال المرشحة والأوقات، ثم تطبق التنسيق والتحقق الحاليين. ويعلم بدء جلسة جديدة المسودة السابقة كمتجاهلة، بينما يزيلها الحذف نهائيا. ويزيل اكتمال سير العمل الناجح المسودة النشطة.
 

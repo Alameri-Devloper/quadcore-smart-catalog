@@ -36,7 +36,11 @@ export const productEntryWorkflow: WorkflowDefinition<
     {
       id: PRODUCT_ENTRY_STEP_IDS.deviceClass,
       label: "Device Class",
-      isVisible: ({ context }) => context.categoryRequiresDeviceClass,
+      isVisible: ({ context, values }) =>
+        Boolean(
+          values.categoryId &&
+            context.categoryRequiresDeviceClassByCategory[values.categoryId],
+        ),
       validator: validateDeviceClass,
     },
     {

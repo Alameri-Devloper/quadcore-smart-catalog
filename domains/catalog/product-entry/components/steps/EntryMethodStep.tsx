@@ -60,7 +60,7 @@ export function EntryMethodStep() {
                 ) : null}
                 {option.disabled ? (
                   <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700">
-                    Coming Soon
+                    Available in a Future Version
                   </span>
                 ) : null}
               </span>

@@ -20,8 +20,8 @@ function evaluateStep<TContext, TValues>(
     visible,
     disabled: visible && (step.isDisabled?.(runtime) ?? false),
     optional: step.optional ?? false,
-    completed: previous?.completed ?? false,
-    validation: previous?.validation ?? null,
+    completed: visible ? (previous?.completed ?? false) : false,
+    validation: visible ? (previous?.validation ?? null) : null,
   };
 }
 

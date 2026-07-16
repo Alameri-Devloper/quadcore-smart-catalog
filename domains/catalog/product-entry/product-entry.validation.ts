@@ -12,6 +12,8 @@ import type {
   ProductEntryWorkflowContext,
 } from "./product-entry.types";
 import { isProductEntryMethodEnabled } from "./product-entry.types";
+import { ProductEntryCategoryService } from "./services/product-entry-category.service";
+import { ProductEntryDeviceClassService } from "./services/product-entry-device-class.service";
 
 export type ProductEntryValidator = WorkflowStepValidator<
   ProductEntryWorkflowContext,
@@ -40,39 +42,51 @@ export const validateEntryMethod: ProductEntryValidator = ({ values }) =>
         },
       ]);
 
-export const validateCategory: ProductEntryValidator = ({ values }) =>
-  values.categoryId
-    ? validWorkflowStep()
-    : invalidWorkflowStep([
-        requiredIssue("categoryId", "Select a category to continue."),
-      ]);
+const CATEGORY_MESSAGES = {
+  required: "Choose a product type to continue.",
+  "category-unavailable": "This product type is no longer available. Choose another one.",
+  "category-workspace": "This product type does not belong to the current workspace.",
+  "department-unavailable": "The related department is no longer available.",
+  "department-workspace": "The related department does not belong to the current workspace.",
+  "department-mismatch": "The selected product type and department do not match.",
+} as const;
 
-export const validateDeviceClass: ProductEntryValidator = ({
-  context,
-  values,
-}) => {
-  if (!context.categoryRequiresDeviceClass) {
-    return validWorkflowStep();
-  }
+export const validateCategory: ProductEntryValidator = async ({ context, values }) => {
+  const code = await ProductEntryCategoryService.validateSelection({
+    categoryId: values.categoryId,
+    departmentId: values.departmentId,
+    companyId: context.companyId,
+    workspaceId: context.workspaceId,
+  });
 
-  if (!values.deviceClassId) {
-    return invalidWorkflowStep([
-        requiredIssue(
-          "deviceClassId",
-          "Select a device class for this category.",
-        ),
-      ]);
-  }
+  return code
+    ? invalidWorkflowStep([{ code, field: "categoryId", message: CATEGORY_MESSAGES[code] }])
+    : validWorkflowStep();
+};
 
-  return context.compatibleDeviceClassIds.includes(values.deviceClassId)
-    ? validWorkflowStep()
-    : invalidWorkflowStep([
-        {
-          code: "incompatible",
-          field: "deviceClassId",
-          message: "Select a device class compatible with this category.",
-        },
-      ]);
+const DEVICE_CLASS_MESSAGES = {
+  required: "Choose a device class to continue.",
+  "device-class-unavailable": "This device class is no longer available.",
+  "device-class-workspace": "The selected device class does not belong to the current workspace.",
+  "device-class-incompatible": "This device class is not valid for the selected product type.",
+} as const;
+
+export const validateDeviceClass: ProductEntryValidator = async ({ context, values }) => {
+  const categoryRequiresDeviceClass = Boolean(
+    values.categoryId &&
+      context.categoryRequiresDeviceClassByCategory[values.categoryId],
+  );
+  if (!categoryRequiresDeviceClass) return validWorkflowStep();
+
+  const code = await ProductEntryDeviceClassService.validateSelection({
+    categoryId: values.categoryId,
+    deviceClassId: values.deviceClassId,
+    companyId: context.companyId,
+    workspaceId: context.workspaceId,
+  });
+  return code
+    ? invalidWorkflowStep([{ code, field: "deviceClassId", message: DEVICE_CLASS_MESSAGES[code] }])
+    : validWorkflowStep();
 };
 
 export const validateProductModel: ProductEntryValidator = ({
@@ -85,7 +99,10 @@ export const validateProductModel: ProductEntryValidator = ({
       ]);
   }
 
-  return context.compatibleProductModelIds.includes(values.productModelId)
+  const compatibleProductModelIds = values.categoryId
+    ? (context.productModelIdsByCategory[values.categoryId] ?? [])
+    : [];
+  return compatibleProductModelIds.includes(values.productModelId)
     ? validWorkflowStep()
     : invalidWorkflowStep([
         {
@@ -168,7 +185,8 @@ export const validateReview: ProductEntryValidator = async (runtime) => {
   const requiredPreviousValidators: ProductEntryValidator[] = [
     validateEntryMethod,
     validateCategory,
-    ...(runtime.context.categoryRequiresDeviceClass
+    ...(runtime.values.categoryId &&
+    runtime.context.categoryRequiresDeviceClassByCategory[runtime.values.categoryId]
       ? [validateDeviceClass]
       : []),
     validateProductModel,

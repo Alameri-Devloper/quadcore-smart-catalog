@@ -6,6 +6,10 @@ import {
   type ProductEntryStepId,
 } from "../product-entry.types";
 import { EntryMethodStep } from "./steps/EntryMethodStep";
+import { CategoryStep } from "./steps/CategoryStep";
+import type { ProductEntryCategoryOption } from "../services/product-entry-category.service";
+import type { ProductEntryDeviceClassOption } from "../services/product-entry-device-class.service";
+import { DeviceClassStep } from "./steps/DeviceClassStep";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -65,10 +69,23 @@ export function getProductEntryStepPresentation(stepId: string | null) {
   return STEP_PRESENTATION[stepId as ProductEntryStepId];
 }
 
-export function ProductEntryStepContent() {
+interface ProductEntryStepContentProps {
+  categories: ProductEntryCategoryOption[];
+  categoryLoadError: string | null;
+  categoriesLoading: boolean;
+  onRetryCategories: () => void;
+  deviceClasses: ProductEntryDeviceClassOption[];
+  deviceClassLoadError: string | null;
+  deviceClassesLoading: boolean;
+  onRetryDeviceClasses: () => void;
+}
+
+export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses }: ProductEntryStepContentProps) {
   const { currentStepId, validation } = useProductEntryWorkflow();
   const presentation = getProductEntryStepPresentation(currentStepId);
   const isEntryMethod = currentStepId === PRODUCT_ENTRY_STEP_IDS.entryMethod;
+  const isCategory = currentStepId === PRODUCT_ENTRY_STEP_IDS.category;
+  const isDeviceClass = currentStepId === PRODUCT_ENTRY_STEP_IDS.deviceClass;
 
   return (
     <section
@@ -77,6 +94,10 @@ export function ProductEntryStepContent() {
     >
       {isEntryMethod ? (
         <EntryMethodStep />
+      ) : isCategory ? (
+        <CategoryStep categories={categories} loadError={categoryLoadError} loading={categoriesLoading} onRetry={onRetryCategories} />
+      ) : isDeviceClass ? (
+        <DeviceClassStep deviceClasses={deviceClasses} loadError={deviceClassLoadError} loading={deviceClassesLoading} onRetry={onRetryDeviceClasses} />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -98,7 +119,7 @@ export function ProductEntryStepContent() {
       </div>
       )}
 
-      {!isEntryMethod && validation && !validation.valid ? (
+      {!isEntryMethod && !isCategory && !isDeviceClass && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"

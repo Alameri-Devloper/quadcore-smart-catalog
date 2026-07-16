@@ -4,12 +4,12 @@ import { useProductEntryWorkflow } from "../react/product-entry-workflow-adapter
 import { getProductEntryStepPresentation } from "./ProductEntryStepContent";
 
 interface ProductEntryWizardHeaderProps {
-  onCancel: () => void;
+  onClose: () => void;
   onHome: () => void;
 }
 
 export function ProductEntryWizardHeader({
-  onCancel,
+  onClose,
   onHome,
 }: ProductEntryWizardHeaderProps) {
   const { currentStepId } = useProductEntryWorkflow();
@@ -36,10 +36,11 @@ export function ProductEntryWizardHeader({
           </button>
           <button
             className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
-            onClick={onCancel}
+            aria-label="Close Product Entry"
+            onClick={onClose}
             type="button"
           >
-            Cancel
+            Close
           </button>
         </div>
       </div>
