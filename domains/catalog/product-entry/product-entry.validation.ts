@@ -16,6 +16,11 @@ import { ProductEntryCategoryService } from "./services/product-entry-category.s
 import { ProductEntryDeviceClassService } from "./services/product-entry-device-class.service";
 import { ProductEntryProductModelService } from "./services/product-entry-product-model.service";
 import { ProductEntrySpecificationsService } from "./services/product-entry-specifications.service";
+import {
+  isApprovedProductAvailability,
+  isApprovedProductCondition,
+  isApprovedProductEntryCurrency,
+} from "./product-entry-commercial-options";
 
 export type ProductEntryValidator = WorkflowStepValidator<
   ProductEntryWorkflowContext,
@@ -158,40 +163,72 @@ export const validateCommercialDetails: ProductEntryValidator = ({ values }) => 
   }
 
   if (
-    values.price === null ||
-    !Number.isFinite(values.price) ||
-    values.price < 0
+    values.retailPrice === null ||
+    !Number.isFinite(values.retailPrice) ||
+    values.retailPrice < 0
   ) {
     issues.push({
-      code: "non-negative",
-      field: "price",
-      message: "Enter a price of zero or greater.",
+      code: "retail-price",
+      field: "retailPrice",
+      message: "Enter a valid retail price.",
     });
+  }
+
+  if (
+    values.wholesalePrice !== null &&
+    (!Number.isFinite(values.wholesalePrice) || values.wholesalePrice < 0)
+  ) {
+    issues.push({
+      code: "wholesale-price",
+      field: "wholesalePrice",
+      message: "Wholesale price cannot be negative or invalid.",
+    });
+  }
+
+  if (!values.currency || !isApprovedProductEntryCurrency(values.currency)) {
+    issues.push(requiredIssue("currency", "Choose a currency."));
   }
 
   if (
     values.quantity === null ||
     !Number.isFinite(values.quantity) ||
-    values.quantity < 0
+    values.quantity < 0 ||
+    !Number.isInteger(values.quantity)
   ) {
     issues.push({
-      code: "non-negative",
+      code: "whole-quantity",
       field: "quantity",
-      message: "Enter a quantity of zero or greater.",
+      message: "Enter a whole quantity of zero or greater.",
     });
   }
 
-  if (!values.condition) {
-    issues.push(requiredIssue("condition", "Select the product condition."));
+  if (!isApprovedProductCondition(values.condition)) {
+    issues.push(requiredIssue("condition", "Choose whether the product is new or used."));
   }
 
-  if (!values.availabilityStatus) {
+  if (!isApprovedProductAvailability(values.availabilityStatus)) {
     issues.push(
       requiredIssue(
         "availabilityStatus",
-        "Select an availability status.",
+        "Choose the availability status.",
       ),
     );
+  }
+
+  if (values.availabilityStatus === "available" && values.quantity === 0) {
+    issues.push({
+      code: "in-stock-quantity",
+      field: "quantity",
+      message: "An in-stock product must have an available quantity.",
+    });
+  }
+
+  if (typeof values.isFeatured !== "boolean") {
+    issues.push({ code: "featured-boolean", field: "isFeatured", message: "Choose whether to feature this product." });
+  }
+
+  if (typeof values.isActive !== "boolean") {
+    issues.push({ code: "active-boolean", field: "isActive", message: "Choose whether to show this product in the Catalog." });
   }
 
   return resultFromIssues(issues);

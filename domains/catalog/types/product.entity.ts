@@ -1,4 +1,12 @@
-export type ProductStatus = "available" | "reserved" | "sold" | "hidden";
+export type ProductStatus =
+  | "available"
+  | "arrived-at-port"
+  | "on-the-way"
+  | "reserved"
+  | "sold"
+  | "hidden";
+
+export type ProductCondition = "new" | "used";
 
 export interface ProductEntity {
   id: string;

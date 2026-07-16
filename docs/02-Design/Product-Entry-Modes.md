@@ -580,3 +580,12 @@ Standard Entry, Context Entry, and Draft Entry use the same live Specification T
 ### العربية
 
 تستخدم مسارات الإدخال القياسي والإدخال من السياق وإدخال المسودة حد حل قالب المواصفات الحي والتحقق نفسه. ويمكن للإدخال من السياق تجاوز القرارات السابقة المؤكدة، بينما يحافظ إدخال المسودة فقط على القيم المتوافقة مع القالب المحلول حالياً. ويجب أن ترسل مسارات الإدخال الدفعي واستيراد Excel المستقبلية القيم الديناميكية عبر الحد نفسه، ولا يجوز لها إنشاء خصائص منتج ثابتة خاصة بالتصنيف أو تجاوز التحقق من القالب.
+## Commercial Values Across Entry Modes
+
+### English
+
+Standard Entry initializes only the isolated safe defaults `isFeatured = false` and `isActive = true`. Context Entry may later provide approved commercial context without replacing employee edits. Draft Entry restores Product Name, Product Code, separate prices, Currency, Quantity, Condition, Availability, Featured, and Catalog visibility; legacy Draft `price` values migrate to Retail Price. Future Batch Entry and Excel Import may reuse Currency, Condition, and Availability through the same validation boundary but must not create Inventory or accounting transactions.
+
+### العربية
+
+يهيئ الإدخال القياسي فقط القيم الافتراضية الآمنة والمعزولة `isFeatured = false` و`isActive = true`. ويمكن للإدخال من السياق مستقبلاً توفير سياق تجاري معتمد دون استبدال تعديلات الموظف. يستعيد إدخال المسودة اسم المنتج ورمزه والسعرين المنفصلين والعملة والكمية والحالة والتوفر والتمييز والظهور في الكتالوج، وتُنقل قيمة `price` القديمة في المسودة إلى سعر التجزئة. ويمكن للإدخال الدفعي واستيراد Excel مستقبلاً إعادة استخدام العملة والحالة والتوفر عبر حد التحقق نفسه، لكن لا يجوز لهما إنشاء حركات مخزون أو معاملات محاسبية.

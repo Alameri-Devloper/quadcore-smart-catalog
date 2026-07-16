@@ -1,4 +1,6 @@
 import type { SpecificationValue } from "../types/specification-value.entity";
+import type { ProductCondition, ProductStatus } from "../types/product.entity";
+import { PRODUCT_ENTRY_COMMERCIAL_DEFAULTS } from "./product-entry-commercial-options";
 
 export const PRODUCT_ENTRY_STEP_IDS = {
   entryMethod: "entry-method",
@@ -73,11 +75,15 @@ export interface ProductEntryState {
   productModelId: string | null;
   specificationValues: Record<string, SpecificationValue>;
   productName: string;
-  price: number | null;
+  productCode: string;
+  retailPrice: number | null;
+  wholesalePrice: number | null;
   currency: string;
   quantity: number | null;
-  condition: string | null;
-  availabilityStatus: string | null;
+  condition: ProductCondition | null;
+  availabilityStatus: ProductStatus | null;
+  isFeatured: boolean;
+  isActive: boolean;
   images: string[];
 }
 
@@ -116,10 +122,33 @@ export const createInitialProductEntryState = (): ProductEntryState => ({
   productModelId: null,
   specificationValues: {},
   productName: "",
-  price: null,
+  productCode: "",
+  retailPrice: null,
+  wholesalePrice: null,
   currency: "",
   quantity: null,
   condition: null,
   availabilityStatus: null,
+  isFeatured: PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isFeatured,
+  isActive: PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isActive,
   images: [],
 });
+
+type LegacyProductEntryValues = Partial<ProductEntryValues> & {
+  price?: number | null;
+};
+
+export const migrateProductEntryValues = (
+  values: LegacyProductEntryValues,
+): ProductEntryValues => {
+  const { price: legacyPrice, ...currentValues } = values;
+  return {
+    ...createInitialProductEntryState(),
+    ...currentValues,
+    productCode: values.productCode ?? "",
+    retailPrice: values.retailPrice ?? legacyPrice ?? null,
+    wholesalePrice: values.wholesalePrice ?? null,
+    isFeatured: values.isFeatured ?? PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isFeatured,
+    isActive: values.isActive ?? PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isActive,
+  };
+};

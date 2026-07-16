@@ -153,7 +153,7 @@ The Catalog domain defines Product Entry in `domains/catalog/product-entry/`. It
 3. Device Class: appears and becomes required only when the selected Category requires Device Class.
 4. Product Model: requires a selected Product Model. Brand resolution may be supplied later by the Product Model context.
 5. Specifications: validates required fields from the resolved Specification Template by field ID, without hardcoded specification names.
-6. Commercial Details: validates product name, non-negative price and quantity, condition, and availability status.
+6. Commercial Details: validates identity, separate retail and wholesale prices, currency, whole Catalog quantity, condition, availability, and Catalog presentation settings.
 7. Images: optional; no image handling is implemented.
 8. Review: always last and revalidates all required previous steps.
 
@@ -194,7 +194,7 @@ The shared `WorkflowState.currentStepId` is the single source of truth for the a
 
 ### Reconciliation Behavior | سلوك التنسيق
 
-The reconciliation function receives compatibility facts already resolved by the Catalog domain. It removes specification entries whose field IDs are not compatible, clears an incompatible Device Class or Product Model, and clears Brand when its Product Model becomes incompatible. It preserves product name, price, currency, quantity, condition, availability, images references, and every compatible specification value. A future resolved Product Model Brand may be applied through context without placing Brand lookup logic in the workflow.
+The reconciliation function receives compatibility facts already resolved by the Catalog domain. It removes specification entries whose field IDs are not compatible, clears an incompatible Device Class or Product Model, and clears Brand when its Product Model becomes incompatible. It preserves product name, product code, retail and wholesale prices, currency, quantity, condition, availability, Featured and active Catalog settings, image references, and every compatible specification value. A future resolved Product Model Brand may be applied through context without placing Brand lookup logic in the workflow.
 
 تستقبل دالة التنسيق حقائق التوافق التي حددها مجال الكتالوج مسبقا. تزيل قيم المواصفات التي لا تتوافق معرفات حقولها، وتمسح فئة الجهاز أو نموذج المنتج غير المتوافق، وتمسح العلامة التجارية عندما يصبح نموذج المنتج غير متوافق. وتحافظ على اسم المنتج والسعر والعملة والكمية والحالة والتوفر ومراجع الصور وكل قيمة مواصفة متوافقة. ويمكن تطبيق علامة تجارية محددة مستقبلا من نموذج المنتج عبر السياق دون وضع منطق البحث عن العلامة التجارية داخل سير العمل.
 
@@ -595,3 +595,36 @@ Draft restoration re-resolves active scoped Option Sets. A saved select value is
 تظهر سعة RAM ونوع RAM كقرارين مستقلين في جميع قوالب اللابتوب الحالية. فعلى سبيل المثال تخزن السعة `16` ويخزن النوع `DDR5`. ويمكن لملخص مستقبلي عرض `16 GB DDR5`، بينما يستمر التحقق والمسودات والبحث والمقارنة وExcel وقواعد الترقية ومحرك Sales Intelligence في استخدام القيمتين بصورة مستقلة.
 
 تعيد استعادة المسودة حل مجموعات الخيارات النشطة ومحددة النطاق. ولا تُحفظ قيمة اختيار مخزنة إلا إذا بقي حقلها في القالب وبقيت قيمتها المعيارية نشطة في مجموعة الخيارات الحالية. وتُحذف القيمة المحذوفة أو غير النشطة أو التابعة لمساحة أخرى دون اختيار بديل، ثم تصبح الحقول المطلوبة بحاجة إلى انتباه. وتعالج المصالحة كل حقل بصورة مستقلة وتحافظ على التفاصيل التجارية والصور.
+## Commercial Details Decision Step
+
+### English
+
+Commercial Details asks one coherent business question: how should this Product be presented and tracked commercially? The Responsive First page groups values into Identity, Pricing, Availability, and progressively disclosed Additional Settings without creating extra Workflow steps.
+
+Identity contains the required editable Product Name and optional Product Code. Both values trim surrounding whitespace when editing finishes. Product Code remains employee-entered, preserves casing, performs no duplicate lookup, and is ready for future lookup, barcode association, or approved code generation. This task intentionally leaves fresh Product Name empty rather than introducing an unapproved naming rule.
+
+Pricing stores required `retailPrice` and optional `wholesalePrice` separately. Both reject negative and non-finite values; the page provides only a non-blocking review warning when wholesale exceeds retail. Currency is required and comes from one Product Entry configuration boundary. The currently confirmed development currency is USD; no exchange rates, conversion, tax, discount, margin, or accounting rules are applied.
+
+Availability contains a required whole non-negative Catalog quantity, New or Used condition, and the canonical Product statuses displayed as In Stock, Arrived at Port, and On the Way. In Stock with zero quantity blocks completion because it would mislead employees. Zero remains valid for Arrived at Port and On the Way, and neither status creates shipments, Inventory movements, or expected dates.
+
+Additional Settings contains **Feature this product** and **Show this product in the Catalog**. Fresh sessions default Featured to No and future Catalog visibility to Yes. A Product Entry Draft remains incomplete work and never becomes an active Catalog Product. Draft restoration preserves all commercial values and migrates the former single `price` value to `retailPrice`; approved option changes revalidate the step and remove completion without changing unaffected values.
+
+Mobile uses one large touch-friendly control per row. Tablet uses readable two-column groups, while Desktop aligns Pricing and Availability into efficient three-column rows. Product Name remains full width. Native text, number, select, radio, fieldset, legend, required, invalid, described-by, focus, keyboard, mouse, and touch behaviors support accessible and productive entry. The compact summary reports confirmed prices, condition, status, and quantity without calculating commercial derivatives.
+
+The commercial values remain available beside confirmed Product context and Specifications for future Batch Entry defaults, dynamic Excel columns, Product positioning, availability-aware recommendations, and Sales Intelligence. Those capabilities are not implemented here.
+
+### العربية
+
+تطرح التفاصيل التجارية سؤال عمل مترابطاً واحداً: كيف يجب عرض هذا المنتج ومتابعته تجارياً؟ تجمع صفحة Responsive First القيم ضمن الهوية والتسعير والتوفر والإعدادات الإضافية القابلة للكشف التدريجي دون إنشاء خطوات سير عمل إضافية.
+
+تحتوي الهوية على اسم المنتج المطلوب والقابل للتعديل ورمز المنتج الاختياري. وتُزال المسافات المحيطة من القيمتين عند انتهاء التحرير. يبقى رمز المنتج مدخلاً بواسطة الموظف ويحافظ على حالة الأحرف ولا ينفذ فحص التكرار، مع جاهزيته للبحث المستقبلي أو ربط الباركود أو توليد الرموز المعتمد. وتترك هذه المهمة اسم المنتج الجديد فارغاً بدلاً من إدخال قاعدة تسمية غير معتمدة.
+
+يخزن التسعير `retailPrice` المطلوب و`wholesalePrice` الاختياري بصورة منفصلة. ترفض القيمتان الأرقام السالبة وغير المحدودة، وتعرض الصفحة تنبيهاً غير مانع للمراجعة فقط عندما يتجاوز سعر الجملة سعر التجزئة. العملة مطلوبة وتأتي من حد إعداد واحد لإدخال المنتج. العملة المؤكدة حالياً للتطوير هي USD، ولا تُطبق أسعار صرف أو تحويل أو ضرائب أو خصومات أو هوامش أو قواعد محاسبية.
+
+يحتوي التوفر على كمية كتالوج صحيحة وغير سالبة ومطلوبة، وحالة جديد أو مستخدم، وحالات المنتج الأساسية المعروضة بصيغة متوفر في المخزون ووصل إلى الميناء وفي الطريق. يمنع وجود حالة متوفر في المخزون مع كمية صفر إكمال الخطوة لأنه يضلل الموظفين. وتبقى الكمية صفر صالحة لحالتي وصل إلى الميناء وفي الطريق، ولا تنشئ أي منهما شحنات أو حركات مخزون أو تواريخ وصول.
+
+تحتوي الإعدادات الإضافية على **تمييز هذا المنتج** و**عرض هذا المنتج في الكتالوج**. تبدأ الجلسات الجديدة بحالة غير مميز وبظهور مستقبلي في الكتالوج. وتبقى مسودة إدخال المنتج عملاً غير مكتمل ولا تصبح منتجاً نشطاً في الكتالوج. تحافظ استعادة المسودة على كل القيم التجارية وتنقل قيمة `price` المنفردة السابقة إلى `retailPrice`؛ كما تعيد تغييرات الخيارات المعتمدة التحقق من الخطوة وتزيل اكتمالها دون تغيير القيم السليمة الأخرى.
+
+يستخدم الجوال عنصراً كبيراً مناسباً للمس في كل صف. ويستخدم الجهاز اللوحي مجموعات مقروءة بعمودين، بينما يصطف التسعير والتوفر في صفوف فعالة من ثلاثة أعمدة على الكمبيوتر. ويبقى اسم المنتج بعرض كامل. تدعم عناصر النص والرقم والاختيار والراديو ومجموعات الحقول وعناوينها والحالة المطلوبة وغير الصالحة والوصف والتركيز الأصلية الإدخال المتاح والفعال بلوحة المفاتيح والفأرة واللمس. ويعرض الملخص المدمج الأسعار والحالة والتوفر والكمية المؤكدة دون حساب مشتقات تجارية.
+
+تبقى القيم التجارية متاحة بجانب سياق المنتج ومواصفاته المؤكدة لدعم إعدادات الإدخال الدفعي وأعمدة Excel الديناميكية وتموضع المنتج والتوصيات الواعية بالتوفر ومحرك Sales Intelligence مستقبلاً. ولا تنفذ هذه القدرات هنا.

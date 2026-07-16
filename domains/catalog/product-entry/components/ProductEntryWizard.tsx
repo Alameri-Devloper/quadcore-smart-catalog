@@ -270,6 +270,24 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     void validateCurrentStep();
   }, [activeSpecificationsError, currentStepId, specificationsLoading, specificationsResolution, validateCurrentStep, workflow.values.specificationValues]);
 
+  useEffect(() => {
+    if (currentStepId !== PRODUCT_ENTRY_STEP_IDS.commercialDetails) return;
+    void validateCurrentStep();
+  }, [
+    currentStepId,
+    validateCurrentStep,
+    workflow.values.productName,
+    workflow.values.productCode,
+    workflow.values.retailPrice,
+    workflow.values.wholesalePrice,
+    workflow.values.currency,
+    workflow.values.quantity,
+    workflow.values.condition,
+    workflow.values.availabilityStatus,
+    workflow.values.isFeatured,
+    workflow.values.isActive,
+  ]);
+
   const leave = useCallback((saved = false) => {
     router.push(saved ? "/?productEntryDraft=saved" : "/");
   }, [router]);

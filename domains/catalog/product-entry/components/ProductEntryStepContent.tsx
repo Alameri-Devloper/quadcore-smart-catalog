@@ -14,6 +14,7 @@ import type { ProductEntryProductModelOption } from "../services/product-entry-p
 import { ProductModelStep } from "./steps/ProductModelStep";
 import type { ProductEntrySpecificationsResolution } from "../services/product-entry-specifications.service";
 import { SpecificationsStep } from "./steps/SpecificationsStep";
+import { CommercialDetailsStep } from "./steps/CommercialDetailsStep";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -102,6 +103,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
   const isDeviceClass = currentStepId === PRODUCT_ENTRY_STEP_IDS.deviceClass;
   const isProductModel = currentStepId === PRODUCT_ENTRY_STEP_IDS.productModel;
   const isSpecifications = currentStepId === PRODUCT_ENTRY_STEP_IDS.specifications;
+  const isCommercialDetails = currentStepId === PRODUCT_ENTRY_STEP_IDS.commercialDetails;
 
   return (
     <section
@@ -118,6 +120,8 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
         <ProductModelStep contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} onRetry={onRetryProductModels} productModels={productModels} />
       ) : isSpecifications ? (
         <SpecificationsStep loadError={specificationsLoadError} loading={specificationsLoading} onRetry={onRetrySpecifications} resolution={specificationsResolution} />
+      ) : isCommercialDetails ? (
+        <CommercialDetailsStep />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -139,7 +143,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       </div>
       )}
 
-      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && validation && !validation.valid ? (
+      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && !isCommercialDetails && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"
