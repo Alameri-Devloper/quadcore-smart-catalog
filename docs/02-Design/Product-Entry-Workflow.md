@@ -628,3 +628,32 @@ The commercial values remain available beside confirmed Product context and Spec
 يستخدم الجوال عنصراً كبيراً مناسباً للمس في كل صف. ويستخدم الجهاز اللوحي مجموعات مقروءة بعمودين، بينما يصطف التسعير والتوفر في صفوف فعالة من ثلاثة أعمدة على الكمبيوتر. ويبقى اسم المنتج بعرض كامل. تدعم عناصر النص والرقم والاختيار والراديو ومجموعات الحقول وعناوينها والحالة المطلوبة وغير الصالحة والوصف والتركيز الأصلية الإدخال المتاح والفعال بلوحة المفاتيح والفأرة واللمس. ويعرض الملخص المدمج الأسعار والحالة والتوفر والكمية المؤكدة دون حساب مشتقات تجارية.
 
 تبقى القيم التجارية متاحة بجانب سياق المنتج ومواصفاته المؤكدة لدعم إعدادات الإدخال الدفعي وأعمدة Excel الديناميكية وتموضع المنتج والتوصيات الواعية بالتوفر ومحرك Sales Intelligence مستقبلاً. ولا تنفذ هذه القدرات هنا.
+## Product Identity Card and Decision Summary
+
+### English
+
+The Product Identity Card is the reusable presentation boundary for the Product Entry Decision Summary. A Product Entry identity presenter combines current Workflow values, resolved Catalog labels, existing validation state, resolved Specification completion, and existing Draft state into a read-only view model. The card owns no Product data, form state, validation state, or Draft storage and performs no Catalog resolution.
+
+The Product Type section shows only confirmed Category, optional Device Class, Brand, and Product Model decisions. The Specifications section reuses the Product Entry Specifications completion calculation and reports completed required fields as `x / y Required`, adding **Needs Attention** when the resolved step is incomplete or invalid. The Commercial section shows only confirmed Retail Price, optional Wholesale Price, Condition, Availability, and Quantity. Missing values are omitted rather than replaced with placeholders.
+
+The Draft section compares current workflow values with the existing active Draft and reports **Draft Saved** or **Unsaved Changes**. It does not create another Draft status, persistence mechanism, or browser-storage dependency. Category, Device Class, Product Model, Specification, Commercial, and reconciliation updates flow through the existing workflow values and therefore update the live summary without copying them into component state.
+
+The progressive card title uses the confirmed Product Name when valid. Otherwise, it uses confirmed Product Model or Catalog labels without inventing marketing language or modifying Product Name. When no identity decision is confirmed, a neutral message explains that identity will appear progressively. Failed Catalog presentation resolution produces a review message rather than stale or invented identity.
+
+On Mobile, the card uses compact vertically stacked content before the current decision page. Tablet layouts retain a compact readable card above or beside content according to available width. On Desktop, it occupies a dedicated sticky sidebar while the decision page uses the wider primary column. Semantic headings, definition lists, explicit status text, and logical reading order communicate state without relying on color. The card intentionally avoids a live region around changing commercial values so normal typing does not trigger excessive announcements.
+
+The same Product Identity view-model concept may later support final Review. Future context-specific adapters may support smaller Search cards or customer-facing WhatsApp previews; those presentations must apply their own disclosure rules, such as excluding wholesale price and Draft status. Sales Intelligence may consume confirmed identity and Specifications through its application boundary, but neither the card nor presenter generates knowledge, recommendations, or marketing content.
+
+### العربية
+
+بطاقة هوية المنتج هي حد العرض القابل لإعادة الاستخدام لملخص قرارات إدخال المنتج. يجمع مقدم هوية إدخال المنتج قيم سير العمل الحالية وتسميات الكتالوج المحلولة وحالة التحقق الموجودة واكتمال المواصفات المحلول وحالة المسودة الموجودة في نموذج عرض للقراءة فقط. ولا تمتلك البطاقة بيانات المنتج أو حالة النموذج أو حالة التحقق أو تخزين المسودة، ولا تحل علاقات الكتالوج بنفسها.
+
+يعرض قسم نوع المنتج فقط قرارات التصنيف وفئة الجهاز الاختيارية والعلامة التجارية وموديل المنتج المؤكدة. ويعيد قسم المواصفات استخدام حساب اكتمال مواصفات إدخال المنتج ويعرض الحقول المطلوبة المكتملة بصيغة `x / y مطلوبة`، مع إضافة **يحتاج إلى انتباه** عندما تكون الخطوة المحلولة غير مكتملة أو غير صالحة. ويعرض القسم التجاري فقط سعر التجزئة وسعر الجملة الاختياري والحالة والتوفر والكمية المؤكدة. وتُحذف القيم المفقودة بدلاً من عرض عناصر نائبة.
+
+يقارن قسم المسودة قيم سير العمل الحالية بالمسودة النشطة الموجودة ويعرض **تم حفظ المسودة** أو **تغييرات غير محفوظة**. ولا ينشئ حالة مسودة أخرى أو آلية حفظ أو اعتماداً جديداً على تخزين المتصفح. تمر تغييرات التصنيف وفئة الجهاز وموديل المنتج والمواصفات والتفاصيل التجارية والمصالحة عبر قيم سير العمل الحالية، ولذلك تحدث الملخص مباشرة دون نسخها إلى حالة المكون.
+
+يستخدم عنوان البطاقة التدريجي اسم المنتج المؤكد عندما يكون صالحاً. وإلا فإنه يستخدم موديل المنتج المؤكد أو تسميات الكتالوج دون اختراع لغة تسويقية أو تعديل اسم المنتج. وعندما لا توجد هوية مؤكدة، توضح رسالة محايدة أن الهوية ستظهر تدريجياً. كما يؤدي فشل إعداد عرض الهوية إلى رسالة مراجعة بدلاً من إظهار هوية قديمة أو مخترعة.
+
+تستخدم البطاقة على الجوال محتوى مدمجاً متتابعاً رأسياً قبل صفحة القرار الحالي. وتحافظ تخطيطات الجهاز اللوحي على بطاقة مقروءة فوق المحتوى أو بجانبه حسب المساحة. وعلى الكمبيوتر تشغل البطاقة شريطاً جانبياً ثابتاً بينما تستخدم صفحة القرار العمود الأساسي الأوسع. وتنقل العناوين الدلالية وقوائم التعريف ونصوص الحالة الصريحة الحالة دون الاعتماد على اللون. وتتجنب البطاقة عمداً وضع القيم التجارية المتغيرة داخل منطقة حية حتى لا تعلن تقنيات المساعدة كل ضغطة مفتاح.
+
+يمكن لمفهوم نموذج عرض هوية المنتج نفسه دعم المراجعة النهائية مستقبلاً. وقد تستخدم محولات مستقبلية مخصصة للسياق بطاقات بحث أصغر أو معاينات WhatsApp موجهة للعملاء، ويجب أن تطبق هذه العروض قواعد الإفصاح الخاصة بها مثل استبعاد سعر الجملة وحالة المسودة. ويمكن لمحرك Sales Intelligence استهلاك الهوية والمواصفات المؤكدة عبر حد التطبيق الخاص به، لكن البطاقة ومقدم العرض لا يولدان معرفة أو توصيات أو محتوى تسويقياً.

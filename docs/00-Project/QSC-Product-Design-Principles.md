@@ -148,6 +148,14 @@ Every future feature must be designed for Desktop and Mobile from the beginning 
 
 Do not make desktop users feel like they are using a stretched mobile application. Desktop should have layouts designed for productivity, while Mobile should remain optimized for touch interaction.
 
+## 20. Product Identity First
+
+Every Product Entry session should progressively build a clear Product Identity.
+
+The employee should always understand which Product is currently being created without navigating backwards.
+
+Product Identity is a read-only representation of confirmed Workflow decisions and must never duplicate Workflow state.
+
 ## Applying These Principles
 
 Every proposed screen, feature, or interaction should be reviewed against these questions:
@@ -318,6 +326,14 @@ QSC is designed to help employees make better business decisions with less effor
 يجب تصميم كل ميزة مستقبلية للكمبيوتر والجوال منذ البداية بدلا من تكييفها لاحقا لمنصة أخرى.
 
 لا تجعل مستخدم الكمبيوتر يشعر بأنه يستخدم نسخة جوال مكبرة. يجب أن تكون تخطيطات الكمبيوتر مصممة للإنتاجية، بينما يبقى الجوال محسنا للتفاعل باللمس.
+
+## 20. هوية المنتج أولاً
+
+يجب أن تبني كل جلسة إدخال منتج هوية واضحة للمنتج بشكل تدريجي.
+
+يجب أن يعرف الموظف دائماً ما هو المنتج الذي يقوم بإنشائه دون الحاجة للرجوع إلى الخطوات السابقة.
+
+هوية المنتج هي عرض للقرارات المؤكدة فقط، وليست مصدراً جديداً للبيانات أو تكراراً لحالة الـ Workflow.
 
 ## تطبيق هذه المبادئ
 

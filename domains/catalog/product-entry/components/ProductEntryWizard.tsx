@@ -40,6 +40,8 @@ import {
   ProductEntrySpecificationsService,
   type ProductEntrySpecificationsResolution,
 } from "../services/product-entry-specifications.service";
+import { ProductIdentityCard } from "./ProductIdentityCard";
+import { ProductEntryIdentityService } from "../services/product-entry-identity.service";
 
 const EMPTY_CATEGORY_QUERY: ProductEntryCategoryQueryResult = {
   categories: [],
@@ -210,6 +212,11 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
   const selectedDeviceClass = deviceClasses.find(
     (deviceClass) => deviceClass.id === workflow.values.deviceClassId,
   );
+  const selectedProductModel = productModels.find(
+    (productModel) =>
+      productModel.productModelId === workflow.values.productModelId &&
+      productModel.brandId === workflow.values.brandId,
+  );
   const productModelContextLabel = [selectedDeviceClass?.name, selectedCategory?.name]
     .filter(Boolean)
     .join(" · ");
@@ -336,6 +343,22 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     finally { setIsWorking(false); }
   };
   const startClean = () => { workflow.resetWorkflow(); setActiveDraft(null); setResumeDraft(null); previousStepRef.current = PRODUCT_ENTRY_STEP_IDS.entryMethod; };
+  const productIdentity = ProductEntryIdentityService.createViewModel({
+    values: workflow.values,
+    steps: workflow.visibleSteps,
+    categoryName: selectedCategory?.name,
+    deviceClassName: selectedDeviceClass?.name,
+    brandName: selectedProductModel?.brandName,
+    productModelName: selectedProductModel?.name,
+    specificationsResolution,
+    draftSaved: Boolean(
+      activeDraft &&
+        JSON.stringify(activeDraft.workflowValues) === JSON.stringify(workflow.values),
+    ),
+    identityError: Boolean(
+      categoryLoadError || activeDeviceClassError || activeProductModelError,
+    ),
+  });
 
   if (workflow.isCompleted) {
     return (
@@ -349,7 +372,7 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <ProductEntryWizardHeader
           onClose={() => {
             const started = workflow.completedSteps.length > 0 || workflow.isDirty || workflow.currentStepId !== PRODUCT_ENTRY_STEP_IDS.entryMethod;
@@ -358,7 +381,14 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
           onHome={() => void run(async () => { await saveDraft(); leave(true); })}
         />
         <ProductEntryProgress />
-        <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={activeSpecificationsError} specificationsLoading={specificationsLoading} specificationsResolution={specificationsResolution} onRetrySpecifications={loadSpecifications} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="order-2 min-w-0 lg:order-1">
+            <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={activeSpecificationsError} specificationsLoading={specificationsLoading} specificationsResolution={specificationsResolution} onRetrySpecifications={loadSpecifications} />
+          </div>
+          <div className="order-1 lg:order-2">
+            <ProductIdentityCard identity={productIdentity} />
+          </div>
+        </div>
         <ProductEntryNavigation deviceClassSelectionValid={deviceClassSelectionValid} />
       </div>
       {showCloseDialog ? (

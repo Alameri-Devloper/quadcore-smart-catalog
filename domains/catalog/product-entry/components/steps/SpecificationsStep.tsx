@@ -2,7 +2,7 @@
 
 import type { SpecificationValue } from "@/domains/catalog/types/specification-value.entity";
 import { useProductEntryWorkflow } from "../../react/product-entry-workflow-adapter";
-import type { ProductEntrySpecificationsResolution } from "../../services/product-entry-specifications.service";
+import { ProductEntrySpecificationsService, type ProductEntrySpecificationsResolution } from "../../services/product-entry-specifications.service";
 
 interface SpecificationsStepProps {
   loadError: string | null;
@@ -22,13 +22,10 @@ export function SpecificationsStep({ loadError, loading, onRetry, resolution }: 
         : [];
     }),
   );
-  const requiredFields = fields.filter((field) => field.required);
-  const completedRequired = requiredFields.filter((field) => {
-    const value = values.specificationValues[field.specificationFieldId];
-    return value !== undefined &&
-      (typeof value !== "string" || value.trim().length > 0) &&
-      !issuesByField.has(field.specificationFieldId);
-  }).length;
+  const requiredCompletion = ProductEntrySpecificationsService.getRequiredCompletion(
+    resolution,
+    values.specificationValues,
+  );
 
   const updateValue = (fieldId: string, value: SpecificationValue | undefined) => {
     const specificationValues = { ...values.specificationValues };
@@ -77,7 +74,7 @@ export function SpecificationsStep({ loadError, loading, onRetry, resolution }: 
         </div>
       ) : null}
 
-      {resolution?.status === "resolved" ? <p className="mt-7 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-950" aria-live="polite">{completedRequired} of {requiredFields.length} required specifications completed</p> : null}
+      {requiredCompletion ? <p className="mt-7 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm font-semibold text-blue-950" aria-live="polite">{requiredCompletion.completed} of {requiredCompletion.required} required specifications completed</p> : null}
     </div>
   );
 }

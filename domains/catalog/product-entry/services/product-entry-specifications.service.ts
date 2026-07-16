@@ -51,6 +51,11 @@ export interface ProductEntrySpecificationValidationIssue {
   message: string;
 }
 
+export interface ProductEntryRequiredSpecificationsCompletion {
+  completed: number;
+  required: number;
+}
+
 const hasValue = (value: SpecificationValue | undefined): boolean =>
   value !== undefined &&
   (typeof value !== "string" || value.trim().length > 0);
@@ -236,5 +241,24 @@ export const ProductEntrySpecificationsService = {
     });
 
     return issues;
+  },
+
+  getRequiredCompletion(
+    resolution: ProductEntrySpecificationsResolution | null,
+    values: Readonly<Record<string, SpecificationValue>>,
+  ): ProductEntryRequiredSpecificationsCompletion | null {
+    if (resolution?.status !== "resolved") return null;
+    const requiredFields = resolution.fields.filter((field) => field.required);
+    const invalidFieldIds = new Set(
+      this.validateValues(resolution, values)
+        .flatMap((issue) => issue.specificationFieldId ? [issue.specificationFieldId] : []),
+    );
+    return {
+      completed: requiredFields.filter((field) =>
+        hasValue(values[field.specificationFieldId]) &&
+        !invalidFieldIds.has(field.specificationFieldId),
+      ).length,
+      required: requiredFields.length,
+    };
   },
 };
