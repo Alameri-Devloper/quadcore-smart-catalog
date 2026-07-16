@@ -154,7 +154,7 @@ The Catalog domain defines Product Entry in `domains/catalog/product-entry/`. It
 4. Product Model: requires a selected Product Model. Brand resolution may be supplied later by the Product Model context.
 5. Specifications: validates required fields from the resolved Specification Template by field ID, without hardcoded specification names.
 6. Commercial Details: validates identity, separate retail and wholesale prices, currency, whole Catalog quantity, condition, availability, and Catalog presentation settings.
-7. Images: optional; no image handling is implemented.
+7. Images: optional local selection, preview, primary selection, ordering, removal, and provider-neutral background-processing decisions are implemented; upload and permanent storage remain future work.
 8. Review: always last and revalidates all required previous steps.
 
 1. طريقة الإدخال: تقبل حاليا الإدخال اليدوي. يمثل استيراد Excel كخيار مستقبلي معطل.
@@ -163,7 +163,7 @@ The Catalog domain defines Product Entry in `domains/catalog/product-entry/`. It
 4. نموذج المنتج: يتطلب اختيار نموذج منتج. ويمكن توفير تحديد العلامة التجارية لاحقا من سياق نموذج المنتج.
 5. المواصفات: تتحقق من الحقول المطلوبة في قالب المواصفات المحدد باستخدام معرف الحقل، دون أسماء مواصفات مثبتة.
 6. التفاصيل التجارية: تتحقق من اسم المنتج، وأن السعر والكمية لا يقلان عن الصفر، والحالة، وحالة التوفر.
-7. الصور: اختيارية؛ ولا توجد معالجة للصور في هذه المهمة.
+7. الصور: اختيارية؛ وتدعم الاختيار المحلي والمعاينة والصورة الرئيسية والترتيب والإزالة والاستعداد المستقبلي لتوحيد الخلفية، دون رفع دائم أو معالجة فعلية.
 8. المراجعة: تأتي دائما أخيرا وتعيد التحقق من جميع الخطوات السابقة المطلوبة.
 
 ### Dynamic Device Class Behavior | السلوك الديناميكي لفئة الجهاز
@@ -657,3 +657,34 @@ The same Product Identity view-model concept may later support final Review. Fut
 تستخدم البطاقة على الجوال محتوى مدمجاً متتابعاً رأسياً قبل صفحة القرار الحالي. وتحافظ تخطيطات الجهاز اللوحي على بطاقة مقروءة فوق المحتوى أو بجانبه حسب المساحة. وعلى الكمبيوتر تشغل البطاقة شريطاً جانبياً ثابتاً بينما تستخدم صفحة القرار العمود الأساسي الأوسع. وتنقل العناوين الدلالية وقوائم التعريف ونصوص الحالة الصريحة الحالة دون الاعتماد على اللون. وتتجنب البطاقة عمداً وضع القيم التجارية المتغيرة داخل منطقة حية حتى لا تعلن تقنيات المساعدة كل ضغطة مفتاح.
 
 يمكن لمفهوم نموذج عرض هوية المنتج نفسه دعم المراجعة النهائية مستقبلاً. وقد تستخدم محولات مستقبلية مخصصة للسياق بطاقات بحث أصغر أو معاينات WhatsApp موجهة للعملاء، ويجب أن تطبق هذه العروض قواعد الإفصاح الخاصة بها مثل استبعاد سعر الجملة وحالة المسودة. ويمكن لمحرك Sales Intelligence استهلاك الهوية والمواصفات المؤكدة عبر حد التطبيق الخاص به، لكن البطاقة ومقدم العرض لا يولدان معرفة أو توصيات أو محتوى تسويقياً.
+## Product Images and White-Background Readiness
+
+### English
+
+The optional Images step accepts non-empty JPG, PNG, and WebP files; SVG and other types are rejected. It supports multiple previews, exactly one Main Product Image, contiguous explicit ordering, keyboard-accessible Move Earlier and Move Later actions, and removal that releases temporary browser resources. Duplicate selection is rejected when file name, type, size, and last-modified metadata identify the same file safely. Each reference keeps Original and optional Processed preview URLs separate, plus display choice, lifecycle status, error, Main state, order, file metadata, preview availability, and an optional future image-purpose seam.
+
+The approved future flow is `Original Image -> Background Removal -> pure white (#FFFFFF) composition -> Employee Preview -> Use Processed or Keep Original`. Original references are never overwritten or destroyed. A ready result remains unapproved and keeps Original selected until the employee explicitly chooses the Processed version. Employees may compare Before and After, retry, keep Original, use Processed, or skip processing independently for each image.
+
+The UI calls the Product Entry Images service, which depends on a replaceable Image Background Processing port. No processor is connected, so Prepare White Background is disabled and labelled **Available in a Future Version**; no fake processing state or Processed image is created. The boundary adds no provider, AI service, image library, server processing, upload, or cloud storage. A future adapter must return a pure-white preview without changing Product Entry UI. Failure remains non-blocking while a valid Original exists.
+
+Serializable image metadata participates in the Draft workflow, but temporary preview URLs and raw browser `File` objects are removed before Draft storage. Ordering, Main selection, file metadata, employee choice, and lifecycle remain. A restored image is marked for reselection; choosing the same identifiable file reconnects its session preview. Missing previews do not block unrelated Product Entry work. True cross-session recovery requires future temporary upload, IndexedDB/file persistence, or Cloud Storage. Permanent upload should remove EXIF metadata, including location data.
+
+Standardized Catalog Product Images use pure white `#FFFFFF`, never off-white, gray, gradient, or transparency. Future composition should leave configurable safe-area padding so the Product does not touch the frame, may preserve a subtle natural shadow, and should support an employee-reviewed 1:1 square result without destructive cropping or changing the Original aspect ratio.
+
+Background standardization is primarily for a Catalog Product Image. It is not forced onto detail, ports/interface, packaging, lifestyle/usage, installation, diagram, or specification images where surroundings, labels, topology, or usage context matter. The model is ready for optional image-purpose metadata; the full taxonomy UI remains future work.
+
+Mobile uses one column with large controls and no horizontal scrolling, Tablet uses two readable columns, and Desktop uses an efficient three-column grid. A future ready comparison uses two columns where space permits. Native multiple file input, explicit buttons, ordered-list semantics, textual Main and status states, visible focus, live add/remove/reorder feedback, and predictable focus after removal support keyboard, touch, and assistive technology. Images are not uploaded externally, SVG/HTML is not rendered, local paths are not exposed, and EXIF is not inspected.
+
+### العربية
+
+تقبل خطوة الصور الاختيارية ملفات JPG وPNG وWebP غير الفارغة، وترفض SVG والأنواع الأخرى. وتدعم عدة صور وصورة منتج رئيسية واحدة وترتيباً متصلاً بأزرار تقديم وتأخير قابلة للاستخدام بلوحة المفاتيح وإزالة تحرر موارد المعاينة المؤقتة. ويُرفض التكرار عندما تسمح بيانات الملف بالتعرف عليه بأمان. ويحافظ المرجع على الأصل والمعالجة بصورة منفصلة مع الاختيار والحالة والترتيب وبيانات الملف وتوفر المعاينة وموضع اختياري لغرض الصورة مستقبلاً.
+
+المسار المستقبلي المعتمد هو `الصورة الأصلية -> إزالة الخلفية -> التركيب على أبيض نقي (#FFFFFF) -> معاينة الموظف -> استخدام المعالجة أو الاحتفاظ بالأصل`. لا تُستبدل المراجع الأصلية ولا تُدمر أبداً. وتبقى النتيجة الجاهزة غير معتمدة مع تحديد الأصل حتى يختار الموظف النسخة المعالجة صراحة. ويمكن للموظف مقارنة قبل وبعد وإعادة المحاولة والاحتفاظ بالأصل واستخدام المعالجة أو تخطي المعالجة بصورة مستقلة لكل صورة.
+
+تستدعي الواجهة خدمة صور إدخال المنتج التي تعتمد على منفذ قابل للاستبدال لمعالجة الخلفية. لا توجد معالجة متصلة حالياً، لذلك يظهر إجراء تجهيز الخلفية البيضاء معطلاً مع عبارة **متاح في إصدار مستقبلي**، ولا تُنشأ معالجة أو صورة وهمية. ولا توجد خدمة ذكاء اصطناعي أو مكتبة صور أو رفع أو تخزين سحابي. ويبقى الفشل غير مانع ما دام الأصل صالحاً.
+
+تشارك بيانات الصور القابلة للتسلسل في المسودة، لكن روابط المعاينة المؤقتة وملف المتصفح الخام لا يُخزنان. وتبقى بيانات الملف والترتيب والصورة الرئيسية والاختيار والحالة. وعند الاستعادة تظهر الحاجة إلى إعادة تحديد الملف، ولا يمنع غياب المعاينة الحقول الأخرى. ويتطلب الاسترجاع الحقيقي بين الجلسات رفعاً مؤقتاً أو IndexedDB أو تخزين ملفات معتمداً، مع إزالة EXIF عند الرفع الدائم.
+
+تستخدم صورة الكتالوج المعيارية خلفية بيضاء نقية `#FFFFFF` ومساحة آمنة قابلة للضبط حتى لا يلامس المنتج الحواف. ويمكن مستقبلاً الحفاظ على ظل طبيعي خفيف ودعم تكوين مربع 1:1 بعد معاينة الموظف دون قص مدمر أو تغيير نسبة أبعاد الأصل. ولا يُفرض توحيد الخلفية على صور التفاصيل والمنافذ والتغليف ونمط الحياة والاستخدام والتركيب والمخططات والمواصفات عندما يكون السياق مهماً.
+
+يعرض الجوال عموداً واحداً وإجراءات كبيرة دون تمرير أفقي، ويستخدم الجهاز اللوحي عمودين مقروءين، ويستخدم الكمبيوتر شبكة فعالة من ثلاثة أعمدة. وتدعم مدخلات الملفات المتعددة والأزرار الصريحة والقائمة المرتبة والنص الواضح للصورة الرئيسية والحالة ومؤشرات التركيز والإعلانات الحية والتركيز المتوقع بعد الإزالة لوحة المفاتيح واللمس وتقنيات المساعدة. ولا تُرفع الصور خارجياً ولا يُعرض SVG أو HTML ولا تُكشف المسارات المحلية ولا تُفحص EXIF.

@@ -15,11 +15,20 @@ The following remain future capabilities and are not implemented by the Product 
 - Final Product Review and submission.
 - Search-result card reuse through a smaller context-specific presentation.
 - Customer-facing WhatsApp previews with disclosure rules that exclude wholesale and Draft information.
-- Image entry and preview.
+- Approved background-removal adapter, durable Original/Processed upload, and permanent image storage. Basic local image entry and preview are current Version 1 work.
+- Provider-independent background removal and pure `#FFFFFF` white composition.
+- Configurable safe-area padding and optional natural-shadow preservation or removal.
+- Employee-reviewed 1:1 square composition without destructive Original cropping.
+- Image-purpose classification for Catalog, detail, ports, packaging, lifestyle, installation, diagram, and specification images.
+- Camera capture, Cloud upload, EXIF removal, image optimization, thumbnail generation, and stronger duplicate-image detection.
 - Product persistence.
 - AI, OCR, Excel Import, Sales Guide, and Sales Intelligence generation.
 
 Future Review may reuse the Product Identity view-model concepts, while Search and WhatsApp should use dedicated adapters and appropriately smaller components. No future consumer may turn the read-only card into a second Workflow state store or expose internal employee-only information in customer-facing channels.
+
+### Image Processing Future Direction — التوجه المستقبلي لمعالجة الصور
+
+تشمل الأعمال المستقبلية إزالة الخلفية بصورة مستقلة عن المزود، والتركيب على خلفية بيضاء نقية `#FFFFFF`، ومساحة آمنة قابلة للضبط، والحفاظ الاختياري على الظل الطبيعي أو إزالته، وتكويناً مربعاً 1:1 يراجعه الموظف دون قص الأصل بصورة مدمرة. وتشمل أيضاً تصنيف غرض الصورة، والتقاط الكاميرا، والرفع السحابي، وإزالة EXIF، وتحسين الصور، وإنشاء الصور المصغرة، والكشف الأقوى عن الصور المكررة. ولا يعتمد أي من ذلك على مزود بعينه، ولا يُنفذ في المهمة الحالية.
 
 ---
 
@@ -38,7 +47,7 @@ Future Review may reuse the Product Identity view-model concepts, while Search a
 - مراجعة المنتج النهائية وإرساله.
 - إعادة الاستخدام في بطاقات نتائج البحث من خلال عرض أصغر ومخصص للسياق.
 - معاينات WhatsApp موجهة للعملاء مع قواعد إفصاح تستبعد سعر الجملة ومعلومات المسودة.
-- إدخال الصور ومعاينتها.
+- محول معتمد لإزالة الخلفية ورفع دائم للنسختين الأصلية والمعالجة وتخزين دائم للصور. أصبح الإدخال المحلي الأساسي للصور ومعاينتها من عمل الإصدار الأول الحالي.
 - حفظ المنتج.
 - الذكاء الاصطناعي وOCR واستيراد Excel ودليل المبيعات وتوليد Sales Intelligence.
 

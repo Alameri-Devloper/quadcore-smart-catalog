@@ -6,6 +6,7 @@ import type {
 } from "./product-entry-draft.entity";
 import { migrateProductEntryValues } from "../product-entry.types";
 import type { ProductEntryDraftRepository } from "./product-entry-draft.repository.interface";
+import { productEntryImagesService } from "../services/product-entry-images.service";
 
 interface SaveDraftInput {
   existingDraft: ProductEntryDraft | null;
@@ -21,7 +22,11 @@ export class ProductEntryDraftService {
   async findActive(scope: ProductEntryDraftScope) {
     const draft = await this.repository.findMostRecentActive(scope);
     if (!draft) return null;
-    const workflowValues = migrateProductEntryValues(draft.workflowValues);
+    const migratedValues = migrateProductEntryValues(draft.workflowValues);
+    const workflowValues = {
+      ...migratedValues,
+      images: productEntryImagesService.prepareForDraft(migratedValues.images),
+    };
     const migrated = JSON.stringify(workflowValues) !== JSON.stringify(draft.workflowValues);
     if (!migrated) return draft;
     const nextDraft = { ...draft, workflowValues, updatedAt: new Date().toISOString() };
@@ -44,7 +49,13 @@ export class ProductEntryDraftService {
       createdAt: input.existingDraft?.createdAt ?? now,
       updatedAt: now,
     };
-    await this.repository.save(draft);
+    await this.repository.save({
+      ...draft,
+      workflowValues: {
+        ...draft.workflowValues,
+        images: productEntryImagesService.prepareForDraft(draft.workflowValues.images),
+      },
+    });
     return draft;
   }
 

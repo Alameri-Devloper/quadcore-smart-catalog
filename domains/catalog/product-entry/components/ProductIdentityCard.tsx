@@ -23,6 +23,8 @@ export function ProductIdentityCard({ identity }: ProductIdentityCardProps) {
 
       <section className="mt-5 border-t border-slate-200 pt-4" aria-labelledby="identity-commercial"><h3 className="text-sm font-semibold text-slate-800" id="identity-commercial">Commercial Details</h3>{identity.commercial.values.length > 0 ? <IdentityValues values={identity.commercial.values} /> : null}<p className="mt-2 text-sm font-semibold text-slate-700">{identity.commercial.status}</p></section>
 
+      <section className="mt-5 border-t border-slate-200 pt-4" aria-labelledby="identity-images"><h3 className="text-sm font-semibold text-slate-800" id="identity-images">Images</h3><dl className="mt-2 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-slate-500">Images</dt><dd className="font-semibold text-slate-900">{identity.images.count} added</dd></div><div><dt className="text-slate-500">Main Image</dt><dd className="font-semibold text-slate-900">{identity.images.mainSelected ? "Selected" : "Not selected"}</dd></div></dl></section>
+
       <section className="mt-5 border-t border-slate-200 pt-4" aria-labelledby="identity-work-status"><h3 className="text-sm font-semibold text-slate-800" id="identity-work-status">Work Status</h3><p className="mt-2 text-sm font-semibold text-slate-900">{identity.workStatus}</p></section>
     </aside>
   );

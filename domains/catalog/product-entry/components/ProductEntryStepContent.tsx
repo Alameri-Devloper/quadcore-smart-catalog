@@ -15,6 +15,7 @@ import { ProductModelStep } from "./steps/ProductModelStep";
 import type { ProductEntrySpecificationsResolution } from "../services/product-entry-specifications.service";
 import { SpecificationsStep } from "./steps/SpecificationsStep";
 import { CommercialDetailsStep } from "./steps/CommercialDetailsStep";
+import { ProductImagesStep } from "./steps/ProductImagesStep";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -51,9 +52,9 @@ const STEP_PRESENTATION: Record<
     placeholder: "Commercial product details will appear here.",
   },
   [PRODUCT_ENTRY_STEP_IDS.images]: {
-    title: "Images",
-    description: "Product images are optional and can be added later.",
-    placeholder: "Optional product images will appear here in a future task.",
+    title: "Add product images",
+    description: "Add clear product images, choose the main image, and prepare them for a consistent Catalog appearance.",
+    placeholder: "Product images are optional.",
   },
   [PRODUCT_ENTRY_STEP_IDS.review]: {
     title: "Review",
@@ -104,6 +105,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
   const isProductModel = currentStepId === PRODUCT_ENTRY_STEP_IDS.productModel;
   const isSpecifications = currentStepId === PRODUCT_ENTRY_STEP_IDS.specifications;
   const isCommercialDetails = currentStepId === PRODUCT_ENTRY_STEP_IDS.commercialDetails;
+  const isImages = currentStepId === PRODUCT_ENTRY_STEP_IDS.images;
 
   return (
     <section
@@ -122,6 +124,8 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
         <SpecificationsStep loadError={specificationsLoadError} loading={specificationsLoading} onRetry={onRetrySpecifications} resolution={specificationsResolution} />
       ) : isCommercialDetails ? (
         <CommercialDetailsStep />
+      ) : isImages ? (
+        <ProductImagesStep />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -143,7 +147,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       </div>
       )}
 
-      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && !isCommercialDetails && validation && !validation.valid ? (
+      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && !isCommercialDetails && !isImages && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"

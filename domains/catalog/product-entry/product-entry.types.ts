@@ -22,6 +22,33 @@ export type ProductEntryMethod =
   | "product-model-lookup"
   | "label-scan";
 
+export type ProductEntryImageDisplayVersion = "original" | "processed";
+export type ProductEntryImageProcessingStatus =
+  | "pending"
+  | "processing"
+  | "ready"
+  | "failed"
+  | "skipped";
+
+export interface ProductEntryImageReference {
+  id: string;
+  originalPreviewUrl: string;
+  processedPreviewUrl?: string;
+  selectedDisplayVersion: ProductEntryImageDisplayVersion;
+  processingStatus: ProductEntryImageProcessingStatus;
+  processingError?: string;
+  isPrimary: boolean;
+  sortOrder: number;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  lastModified?: number;
+  imagePurpose?: "catalog-product";
+  previewAvailability: "available" | "reselection-required";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ProductEntryMethodOption {
   id: ProductEntryMethod;
   label: string;
@@ -84,7 +111,7 @@ export interface ProductEntryState {
   availabilityStatus: ProductStatus | null;
   isFeatured: boolean;
   isActive: boolean;
-  images: string[];
+  images: ProductEntryImageReference[];
 }
 
 export type ProductEntryValues = ProductEntryState;
@@ -136,6 +163,53 @@ export const createInitialProductEntryState = (): ProductEntryState => ({
 
 type LegacyProductEntryValues = Partial<ProductEntryValues> & {
   price?: number | null;
+  images?: ProductEntryImageReference[] | string[];
+};
+
+const migrateProductEntryImages = (
+  images: ProductEntryImageReference[] | string[] | undefined,
+): ProductEntryImageReference[] => {
+  const migrated = (images ?? []).map<ProductEntryImageReference>((image, index) =>
+    typeof image === "string"
+      ? {
+          id: `legacy-image-${index + 1}`,
+          originalPreviewUrl: image,
+          selectedDisplayVersion: "original",
+          processingStatus: "skipped",
+          isPrimary: index === 0,
+          sortOrder: index + 1,
+          fileName: image.split("/").at(-1) || `Image ${index + 1}`,
+          mimeType: "image/unknown",
+          sizeBytes: 0,
+          previewAvailability: image ? "available" : "reselection-required",
+        }
+      : image.processingStatus === "processing"
+        ? {
+            ...image,
+            selectedDisplayVersion: "original",
+            processingStatus: "failed",
+            processingError: "Background processing was interrupted. Retry processing or keep the original image.",
+          }
+        : {
+            ...image,
+            previewAvailability:
+              image.previewAvailability ??
+              (image.originalPreviewUrl ? "available" : "reselection-required"),
+            selectedDisplayVersion:
+              image.selectedDisplayVersion === "processed" &&
+              image.processingStatus === "ready" &&
+              image.processedPreviewUrl
+                ? "processed"
+                : "original",
+          },
+  );
+  const ordered = [...migrated].sort((left, right) => left.sortOrder - right.sortOrder);
+  const primaryId = ordered.find((image) => image.isPrimary)?.id ?? ordered[0]?.id;
+  return ordered.map((image, index) => ({
+    ...image,
+    isPrimary: image.id === primaryId,
+    sortOrder: index + 1,
+  }));
 };
 
 export const migrateProductEntryValues = (
@@ -150,5 +224,6 @@ export const migrateProductEntryValues = (
     wholesalePrice: values.wholesalePrice ?? null,
     isFeatured: values.isFeatured ?? PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isFeatured,
     isActive: values.isActive ?? PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isActive,
+    images: migrateProductEntryImages(values.images),
   };
 };

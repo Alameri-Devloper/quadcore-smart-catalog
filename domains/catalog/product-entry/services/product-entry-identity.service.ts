@@ -27,6 +27,10 @@ export interface ProductEntryIdentityViewModel {
     status: ProductIdentityStatus;
     values: ProductIdentityValue[];
   };
+  images: {
+    count: number;
+    mainSelected: boolean;
+  };
   workStatus: "Draft Saved" | "Unsaved Changes";
 }
 
@@ -134,6 +138,10 @@ export const ProductEntryIdentityService = {
           availability ? { label: "Availability", value: quantity ? `${availability} — ${quantity}` : availability } : null,
           !availability && quantity ? { label: "Quantity", value: quantity } : null,
         ].filter((value): value is ProductIdentityValue => value !== null),
+      },
+      images: {
+        count: input.values.images.length,
+        mainSelected: input.values.images.some((image) => image.isPrimary),
       },
       workStatus: input.draftSaved ? "Draft Saved" : "Unsaved Changes",
     };
