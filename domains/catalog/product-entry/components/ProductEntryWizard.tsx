@@ -36,6 +36,10 @@ import {
   type ProductEntryProductModelContext,
   type ProductEntryProductModelOption,
 } from "../services/product-entry-product-model.service";
+import {
+  ProductEntrySpecificationsService,
+  type ProductEntrySpecificationsResolution,
+} from "../services/product-entry-specifications.service";
 
 const EMPTY_CATEGORY_QUERY: ProductEntryCategoryQueryResult = {
   categories: [],
@@ -46,6 +50,7 @@ const EMPTY_CATEGORY_QUERY: ProductEntryCategoryQueryResult = {
   productModelIdsByCategoryAndDeviceClass: {},
   specificationFieldIdsByCategory: {},
   specificationFieldIdsByCategoryAndDeviceClass: {},
+  selectOptionValuesBySpecificationField: {},
 };
 
 const createDevelopmentWorkflowContext = (
@@ -60,6 +65,7 @@ const createDevelopmentWorkflowContext = (
   productModelIdsByCategoryAndDeviceClass: categoryQuery.productModelIdsByCategoryAndDeviceClass,
   specificationFieldIdsByCategory: categoryQuery.specificationFieldIdsByCategory,
   specificationFieldIdsByCategoryAndDeviceClass: categoryQuery.specificationFieldIdsByCategoryAndDeviceClass,
+  selectOptionValuesBySpecificationField: categoryQuery.selectOptionValuesBySpecificationField,
   compatibleDeviceClassIds: [],
   compatibleProductModelIds: [],
   compatibleSpecificationFieldIds: [],
@@ -100,6 +106,14 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     options: ProductEntryProductModelOption[];
   } | null>(null);
   const [productModelError, setProductModelError] = useState<{
+    contextKey: string;
+    message: string;
+  } | null>(null);
+  const [specificationsResult, setSpecificationsResult] = useState<{
+    contextKey: string;
+    resolution: ProductEntrySpecificationsResolution;
+  } | null>(null);
+  const [specificationsError, setSpecificationsError] = useState<{
     contextKey: string;
     message: string;
   } | null>(null);
@@ -199,6 +213,34 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
   const productModelContextLabel = [selectedDeviceClass?.name, selectedCategory?.name]
     .filter(Boolean)
     .join(" · ");
+  const specificationsContext = useMemo(() => ({
+    companyId: PRODUCT_ENTRY_DEVELOPMENT_SCOPE.companyId,
+    workspaceId: PRODUCT_ENTRY_DEVELOPMENT_SCOPE.workspaceId,
+    categoryId: workflow.values.categoryId,
+    deviceClassId: workflow.values.deviceClassId,
+    categoryRequiresDeviceClass,
+  }), [categoryRequiresDeviceClass, workflow.values.categoryId, workflow.values.deviceClassId]);
+  const specificationsContextKey = JSON.stringify(specificationsContext);
+  const loadSpecifications = useCallback(() => {
+    setSpecificationsError(null);
+    void ProductEntrySpecificationsService.resolve(specificationsContext)
+      .then((resolution) => setSpecificationsResult({ contextKey: specificationsContextKey, resolution }))
+      .catch(() => setSpecificationsError({ contextKey: specificationsContextKey, message: "Product specification fields could not be loaded. Try again." }));
+  }, [specificationsContext, specificationsContextKey]);
+
+  useEffect(() => {
+    void ProductEntrySpecificationsService.resolve(specificationsContext)
+      .then((resolution) => setSpecificationsResult({ contextKey: specificationsContextKey, resolution }))
+      .catch(() => setSpecificationsError({ contextKey: specificationsContextKey, message: "Product specification fields could not be loaded. Try again." }));
+  }, [specificationsContext, specificationsContextKey]);
+  const specificationsResolution = specificationsResult?.contextKey === specificationsContextKey
+    ? specificationsResult.resolution
+    : null;
+  const specificationsLoading = specificationsResult?.contextKey !== specificationsContextKey &&
+    specificationsError?.contextKey !== specificationsContextKey;
+  const activeSpecificationsError = specificationsError?.contextKey === specificationsContextKey
+    ? specificationsError.message
+    : null;
 
   useEffect(() => {
     if (
@@ -218,6 +260,15 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     ) return;
     void validateCurrentStep();
   }, [activeProductModelError, currentStepId, productModelContextValid, productModels, productModelsLoading, validateCurrentStep]);
+
+  useEffect(() => {
+    if (
+      currentStepId !== PRODUCT_ENTRY_STEP_IDS.specifications ||
+      specificationsLoading ||
+      activeSpecificationsError
+    ) return;
+    void validateCurrentStep();
+  }, [activeSpecificationsError, currentStepId, specificationsLoading, specificationsResolution, validateCurrentStep, workflow.values.specificationValues]);
 
   const leave = useCallback((saved = false) => {
     router.push(saved ? "/?productEntryDraft=saved" : "/");
@@ -289,7 +340,7 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
           onHome={() => void run(async () => { await saveDraft(); leave(true); })}
         />
         <ProductEntryProgress />
-        <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} />
+        <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={activeSpecificationsError} specificationsLoading={specificationsLoading} specificationsResolution={specificationsResolution} onRetrySpecifications={loadSpecifications} />
         <ProductEntryNavigation deviceClassSelectionValid={deviceClassSelectionValid} />
       </div>
       {showCloseDialog ? (

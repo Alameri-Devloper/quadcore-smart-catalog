@@ -206,3 +206,27 @@ Product
 نماذج المنتجات ترتبط بالتصنيف والعلامة التجارية وفئة الجهاز الاختيارية. المنتجات تقدم قيم المواصفات فقط للحقول المعرفة في قالب المواصفات الذي يتم تحديده.
 
 حقول المواصفات تعريفات قابلة لإعادة الاستخدام على مستوى مساحة العمل. تربط حقول القالب بين قالب المواصفات وهذه الحقول القابلة لإعادة الاستخدام، وتحدد هل الحقل مطلوب أو قابل للتصفية وترتيبه.
+## Reusable Specification Option Sets
+
+### English
+
+A select-type Specification Field may reference one reusable Specification Option Set through `specificationOptionSetId`. Each Option Set owns ordered Specification Options with stable normalized values and employee-facing labels. Option Sets and Options belong to one Company and Workspace; inactive or cross-workspace records are not valid Catalog choices.
+
+```text
+Specification Field (select)
+  -> optional Specification Option Set reference
+  -> ordered active Specification Options
+  -> stable normalized Specification Value
+```
+
+Text, number, and boolean fields do not reference Option Sets. A select field without an active, correctly scoped Option Set and at least one active Option is a Catalog configuration error. Options are not duplicated inside the Specification Field.
+
+RAM Capacity and RAM Type are separate reusable Specification Fields and reference separate Option Sets. Capacity stores a normalized gigabyte number, such as `16`, while Type stores a stable technology value, such as `DDR5`. A presentation service may later display `16 GB DDR5`, but that combined string is not canonical Product data.
+
+### العربية
+
+يمكن لحقل المواصفات من نوع الاختيار أن يرتبط بمجموعة خيارات مواصفات قابلة لإعادة الاستخدام من خلال `specificationOptionSetId`. وتمتلك كل مجموعة خيارات مرتبة بقيم معيارية مستقرة وتسميات موجهة للموظف. تنتمي مجموعات الخيارات وخياراتها إلى شركة ومساحة عمل واحدة، ولا تعد السجلات غير النشطة أو التابعة لمساحة عمل أخرى خيارات صالحة في الكتالوج.
+
+لا ترتبط الحقول النصية والرقمية والمنطقية بمجموعات خيارات. ويعد حقل الاختيار الذي لا يملك مجموعة نشطة وصحيحة النطاق وخياراً نشطاً واحداً على الأقل خطأ في إعداد الكتالوج. ولا تُكرر الخيارات داخل حقل المواصفات.
+
+سعة RAM ونوع RAM حقلان منفصلان قابلان لإعادة الاستخدام ويرتبط كل منهما بمجموعة خيارات مستقلة. تخزن السعة رقماً معيارياً بالجيجابايت مثل `16`، بينما يخزن النوع قيمة تقنية مستقرة مثل `DDR5`. ويمكن لخدمة عرض مستقبلية إظهار `16 GB DDR5`، لكن هذه العبارة المدمجة ليست بيانات المنتج الأساسية.

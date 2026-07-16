@@ -33,8 +33,12 @@ export const reconcileProductEntryValues: WorkflowValueReconciler<
       ? (context.specificationFieldIdsByCategory[nextValues.categoryId] ?? [])
     : context.compatibleSpecificationFieldIds);
   const specificationValues = Object.fromEntries(
-    Object.entries(nextValues.specificationValues).filter(([fieldId]) =>
-      compatibleSpecificationIds.has(fieldId),
+    Object.entries(nextValues.specificationValues).filter(([fieldId, value]) =>
+      compatibleSpecificationIds.has(fieldId) &&
+      (!(fieldId in context.selectOptionValuesBySpecificationField) ||
+        context.selectOptionValuesBySpecificationField[fieldId].some(
+          (optionValue) => Object.is(optionValue, value),
+        )),
     ),
   );
   const deviceClassId = categoryRequiresDeviceClass

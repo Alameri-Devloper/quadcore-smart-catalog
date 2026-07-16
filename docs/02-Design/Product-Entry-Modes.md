@@ -571,3 +571,12 @@ Future modes may be added without redesigning the Product Entry Engine. A new mo
 يصبح إدخال المنتج منصة قابلة لإعادة الاستخدام لبدء إنشاء المنتجات وتوجيهه وإيقافه وتسريعه ومراجعته.
 
 يمكن إضافة طرق مستقبلية دون إعادة تصميم محرك إدخال المنتج. يجب أن توفر الطريقة الجديدة السياق والسلوك من خلال حدود سير العمل والمجال المعتمدة، بدلا من تكرار تحقق المنتج أو منطق التنقل.
+## Dynamic Specifications Across Entry Modes
+
+### English
+
+Standard Entry, Context Entry, and Draft Entry use the same live Specification Template resolution and validation boundary. Context Entry may skip already confirmed upstream decisions, while Draft Entry preserves only values compatible with the currently resolved Template. Future Batch Entry and Excel Import must submit dynamic values through this same boundary and may not create fixed Category-specific Product properties or bypass Template validation.
+
+### العربية
+
+تستخدم مسارات الإدخال القياسي والإدخال من السياق وإدخال المسودة حد حل قالب المواصفات الحي والتحقق نفسه. ويمكن للإدخال من السياق تجاوز القرارات السابقة المؤكدة، بينما يحافظ إدخال المسودة فقط على القيم المتوافقة مع القالب المحلول حالياً. ويجب أن ترسل مسارات الإدخال الدفعي واستيراد Excel المستقبلية القيم الديناميكية عبر الحد نفسه، ولا يجوز لها إنشاء خصائص منتج ثابتة خاصة بالتصنيف أو تجاوز التحقق من القالب.

@@ -12,6 +12,8 @@ import type { ProductEntryDeviceClassOption } from "../services/product-entry-de
 import { DeviceClassStep } from "./steps/DeviceClassStep";
 import type { ProductEntryProductModelOption } from "../services/product-entry-product-model.service";
 import { ProductModelStep } from "./steps/ProductModelStep";
+import type { ProductEntrySpecificationsResolution } from "../services/product-entry-specifications.service";
+import { SpecificationsStep } from "./steps/SpecificationsStep";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -86,15 +88,20 @@ interface ProductEntryStepContentProps {
   productModelLoadError: string | null;
   productModelsLoading: boolean;
   onRetryProductModels: () => void;
+  specificationsLoadError: string | null;
+  specificationsLoading: boolean;
+  specificationsResolution: ProductEntrySpecificationsResolution | null;
+  onRetrySpecifications: () => void;
 }
 
-export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels }: ProductEntryStepContentProps) {
+export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications }: ProductEntryStepContentProps) {
   const { currentStepId, validation } = useProductEntryWorkflow();
   const presentation = getProductEntryStepPresentation(currentStepId);
   const isEntryMethod = currentStepId === PRODUCT_ENTRY_STEP_IDS.entryMethod;
   const isCategory = currentStepId === PRODUCT_ENTRY_STEP_IDS.category;
   const isDeviceClass = currentStepId === PRODUCT_ENTRY_STEP_IDS.deviceClass;
   const isProductModel = currentStepId === PRODUCT_ENTRY_STEP_IDS.productModel;
+  const isSpecifications = currentStepId === PRODUCT_ENTRY_STEP_IDS.specifications;
 
   return (
     <section
@@ -109,6 +116,8 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
         <DeviceClassStep deviceClasses={deviceClasses} loadError={deviceClassLoadError} loading={deviceClassesLoading} onRetry={onRetryDeviceClasses} />
       ) : isProductModel ? (
         <ProductModelStep contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} onRetry={onRetryProductModels} productModels={productModels} />
+      ) : isSpecifications ? (
+        <SpecificationsStep loadError={specificationsLoadError} loading={specificationsLoading} onRetry={onRetrySpecifications} resolution={specificationsResolution} />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -130,7 +139,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       </div>
       )}
 
-      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && validation && !validation.valid ? (
+      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"

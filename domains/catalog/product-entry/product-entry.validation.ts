@@ -15,6 +15,7 @@ import { isProductEntryMethodEnabled } from "./product-entry.types";
 import { ProductEntryCategoryService } from "./services/product-entry-category.service";
 import { ProductEntryDeviceClassService } from "./services/product-entry-device-class.service";
 import { ProductEntryProductModelService } from "./services/product-entry-product-model.service";
+import { ProductEntrySpecificationsService } from "./services/product-entry-specifications.service";
 
 export type ProductEntryValidator = WorkflowStepValidator<
   ProductEntryWorkflowContext,
@@ -121,21 +122,30 @@ export const validateProductModel: ProductEntryValidator = async ({ context, val
     : validWorkflowStep();
 };
 
-export const validateSpecifications: ProductEntryValidator = ({
+export const validateSpecifications: ProductEntryValidator = async ({
   context,
   values,
 }) => {
-  const issues = context.requiredSpecificationFieldIds
-    .filter((fieldId) => {
-      const value = values.specificationValues[fieldId];
-      return value === undefined || value === null || value === "";
-    })
-    .map((fieldId) =>
-      requiredIssue(
-        `specificationValues.${fieldId}`,
-        "Enter a value for this required specification.",
-      ),
-    );
+  const resolution = await ProductEntrySpecificationsService.resolve({
+    companyId: context.companyId,
+    workspaceId: context.workspaceId,
+    categoryId: values.categoryId,
+    deviceClassId: values.deviceClassId,
+    categoryRequiresDeviceClass: Boolean(
+      values.categoryId &&
+        context.categoryRequiresDeviceClassByCategory[values.categoryId],
+    ),
+  });
+  const issues = ProductEntrySpecificationsService.validateValues(
+    resolution,
+    values.specificationValues,
+  ).map((issue) => ({
+    code: issue.code,
+    field: issue.specificationFieldId
+      ? `specificationValues.${issue.specificationFieldId}`
+      : "specificationValues",
+    message: issue.message,
+  }));
 
   return resultFromIssues(issues);
 };

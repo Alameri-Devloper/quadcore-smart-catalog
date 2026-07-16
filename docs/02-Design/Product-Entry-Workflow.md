@@ -549,3 +549,49 @@ Responsive First behavior uses one column on Mobile, two columns on Tablet, and 
 بعد الاختيار، يعرض ملخص مؤكد وموجز النموذج المحدد والعلامة التجارية وقرار المواصفات التالي. ويصلح DTO القرار نفسه لعنوان معالج مستقبلي مثل **إضافة Lenovo LOQ Gaming Laptop** دون إعادة الاستعلام أو تكرار بيانات الكتالوج.
 
 يستخدم سلوك Responsive First عمودا واحدا على الجوال، وعمودين على الجهاز اللوحي، وتخطيطا فعالا متعدد الأعمدة على الكمبيوتر. وتبقى حالات البحث والسياق والبطاقات والملخص المحدد والتحميل والفشل والتحقق والفراغ مقروءة. وتدعم دلالات radio الأصلية و`fieldset` و`legend` وتسمية البحث القابلة للوصول والرسائل الحية والتركيز الظاهر ونص التحديد والأهداف الكبيرة التفاعل بلوحة المفاتيح والفأرة واللمس.
+## Dynamic Specifications Decision Step
+
+### English
+
+The Specifications step resolves its active field set through `Category + optional Device Class -> Specification Template -> Template Fields -> Specification Fields`. Product Entry UI never assigns fixed technical fields to a Category. The Product Entry Specifications service verifies company and workspace ownership, resolves the active Template, orders active Template Fields, and returns presentation-ready field decisions.
+
+The step supports the approved text, number, select, and boolean field types. Required and optional status comes from the resolved Template Field. Required text is trimmed, numbers must be finite, select values must belong to confirmed configured options, and both `true` and `false` are valid explicit boolean decisions. When a select field has no confirmed options, QSC reports a configuration error and does not invent choices.
+
+A missing Template blocks completion and is different from a valid active Template with no fields. An intentionally empty Template displays that no additional specifications are required and completes successfully. Completion is based on live Template validation, not merely on pressing Next. The step summarizes progress using required fields only.
+
+Draft Entry restores `specificationValues`, re-resolves the Template from live Catalog data, preserves compatible field IDs, removes incompatible values, and revalidates completion and Needs Attention. Category, Device Class, and Product Model changes use the same reconciliation boundary; shared compatible fields remain while unrelated fields are removed. Commercial Details and Images remain untouched.
+
+The Responsive First layout uses one comfortable field group per row on Mobile, up to two readable columns on Tablet, and an efficient multi-column layout on Desktop. Native inputs, connected labels, semantic required state, fieldsets and legends for Yes/No decisions, visible focus, field-level messages, and live loading/error states support keyboard, touch, and assistive technology use.
+
+Confirmed dynamic Specification values remain in Product Entry workflow state together with Category, optional Device Class, Brand, and Product Model context. This creates a future application boundary for Sales Intelligence without implementing Sales Intelligence or generating sales content in this step.
+
+### العربية
+
+تحدد خطوة المواصفات مجموعة الحقول النشطة من خلال المسار: `التصنيف + فئة الجهاز الاختيارية -> قالب المواصفات -> حقول القالب -> حقول المواصفات`. ولا تحدد واجهة إدخال المنتج حقولاً تقنية ثابتة لأي تصنيف. تتحقق خدمة مواصفات إدخال المنتج من ملكية الشركة ومساحة العمل، وتحل القالب النشط، وترتب حقول القالب النشطة، ثم تعيد قرارات حقول جاهزة للعرض.
+
+تدعم الخطوة أنواع الحقول المعتمدة: النص والرقم والاختيار والقيمة المنطقية. وتأتي حالة الإلزام أو الاختيار من حقل القالب المحلول. تُزال المسافات من النص المطلوب عند التحقق، ويجب أن تكون الأرقام محدودة وصحيحة، ويجب أن تنتمي قيم الاختيار إلى الخيارات المؤكدة والمهيأة، وتُعد القيمتان `true` و`false` قرارين صريحين صالحين للحقول المنطقية. وإذا لم تتوفر خيارات مؤكدة لحقل اختيار، يعرض QSC خطأ إعداد ولا يخترع قيماً.
+
+يمنع غياب القالب إكمال الخطوة، وهو يختلف عن وجود قالب نشط وصالح بلا حقول. يعرض القالب الفارغ المقصود أن المنتج لا يحتاج إلى مواصفات إضافية ويسمح بإكمال الخطوة. يعتمد الإكمال على التحقق الحي من القالب، وليس على الضغط على زر التالي فقط. ويحسب ملخص التقدم الحقول المطلوبة فقط.
+
+يعيد مسار المسودة قيم `specificationValues`، ثم يعيد حل القالب من بيانات الكتالوج الحية، ويحافظ على معرفات الحقول المتوافقة، ويحذف القيم غير المتوافقة، ويعيد حساب الاكتمال وحالة يحتاج إلى انتباه. وتستخدم تغييرات التصنيف أو فئة الجهاز أو موديل المنتج حد المصالحة نفسه؛ فتبقى الحقول المشتركة المتوافقة وتُحذف الحقول غير المرتبطة. وتبقى التفاصيل التجارية والصور دون تغيير.
+
+يستخدم تصميم Responsive First مجموعة حقل مريحة واحدة في كل صف على الجوال، وحتى عمودين مقروءين على الجهاز اللوحي، وتخطيطاً فعالاً متعدد الأعمدة على الكمبيوتر. وتدعم المدخلات الأصلية والتسميات المرتبطة والحالة الإلزامية الدلالية ومجموعات الحقول وعناوينها لقرارات نعم أو لا والتركيز المرئي ورسائل الحقول وحالات التحميل والخطأ الحية استخدام لوحة المفاتيح واللمس وتقنيات المساعدة.
+
+تبقى قيم المواصفات الديناميكية المؤكدة في حالة سير عمل إدخال المنتج مع سياق التصنيف وفئة الجهاز الاختيارية والعلامة التجارية وموديل المنتج. ويوفر ذلك حداً تطبيقياً مستقبلياً لمحرك Sales Intelligence دون تنفيذ المحرك أو توليد محتوى مبيعات في هذه الخطوة.
+## Normalized Specification Select Decisions
+
+### English
+
+Dynamic Specifications resolves every select field through its optional Specification Option Set relationship and returns active ordered Options as presentation DTOs. Product Entry stores each selected Option's stable normalized value, not its array index, display label, Option ID, or a combined presentation string.
+
+RAM Capacity and RAM Type appear as independent decisions in every current Laptop Template. For example, Capacity stores `16` and Type stores `DDR5`. A future summary may display `16 GB DDR5`, while validation, Drafts, Search, comparison, Excel, upgrade rules, and Sales Intelligence continue using both values independently.
+
+Draft restoration re-resolves active scoped Option Sets. A saved select value is preserved only while its field remains in the Template and its normalized value remains active in the current Option Set. A removed, inactive, or cross-workspace value is deleted without choosing a replacement; required fields then become Needs Attention. Reconciliation treats each field independently and preserves Commercial Details and Images.
+
+### العربية
+
+تحل المواصفات الديناميكية كل حقل اختيار من خلال علاقته الاختيارية بمجموعة خيارات المواصفات، ثم تعيد الخيارات النشطة والمرتبة ضمن DTO للعرض. يخزن إدخال المنتج القيمة المعيارية المستقرة للخيار المحدد، وليس فهرس المصفوفة أو تسمية العرض أو معرف الخيار أو عبارة عرض مدمجة.
+
+تظهر سعة RAM ونوع RAM كقرارين مستقلين في جميع قوالب اللابتوب الحالية. فعلى سبيل المثال تخزن السعة `16` ويخزن النوع `DDR5`. ويمكن لملخص مستقبلي عرض `16 GB DDR5`، بينما يستمر التحقق والمسودات والبحث والمقارنة وExcel وقواعد الترقية ومحرك Sales Intelligence في استخدام القيمتين بصورة مستقلة.
+
+تعيد استعادة المسودة حل مجموعات الخيارات النشطة ومحددة النطاق. ولا تُحفظ قيمة اختيار مخزنة إلا إذا بقي حقلها في القالب وبقيت قيمتها المعيارية نشطة في مجموعة الخيارات الحالية. وتُحذف القيمة المحذوفة أو غير النشطة أو التابعة لمساحة أخرى دون اختيار بديل، ثم تصبح الحقول المطلوبة بحاجة إلى انتباه. وتعالج المصالحة كل حقل بصورة مستقلة وتحافظ على التفاصيل التجارية والصور.

@@ -101,3 +101,20 @@ Manual entry must always remain available. Assisted enrichment is optional and m
 حقول المواصفات تعريفات قابلة لإعادة الاستخدام على مستوى مساحة العمل. حقول قالب المواصفات تربط الحقول القابلة لإعادة الاستخدام بالقالب وتحدد هل الحقل مطلوب أو قابل للتصفية وترتيبه.
 
 يستخدم التنفيذ الحالي مستودعات وهمية. وعند إضافة قاعدة البيانات لاحقا يجب أن يبقى الوصول للبيانات داخل المستودعات ومنطق العمل داخل الخدمات.
+## Specification Option Catalog
+
+### English
+
+Reusable Specification Option Sets are the Catalog source of truth for controlled select fields. Access follows `mock -> repository -> service -> application service -> UI`. Read repositories and services enforce Company, Workspace, active-state, and sort-order boundaries. Product Entry receives normalized values and display labels through its Specifications service and never reads option mocks or repositories.
+
+The initial confirmed sets cover RAM Capacity, RAM Type, Operating System, and Camera Resolution because current active select fields reference them. RAM Capacity uses numeric gigabyte values; Camera Resolution uses numeric megapixel values; RAM Type and Operating System use stable string values. Current Storage remains a reusable text field until a separately confirmed normalized Storage Capacity and Storage Type model is approved.
+
+Normalized options prepare future Smart Search, Product comparison, upgrade compatibility, dynamic Excel columns, and Sales Intelligence. Future consumers must use the same scoped Catalog services. They may combine labels for display but must preserve separate canonical values.
+
+### العربية
+
+تعد مجموعات خيارات المواصفات القابلة لإعادة الاستخدام مصدر الحقيقة في الكتالوج لحقول الاختيار المقيدة. يتبع الوصول المسار `mock -> repository -> service -> application service -> UI`. وتفرض مستودعات القراءة والخدمات حدود الشركة ومساحة العمل والحالة النشطة والترتيب. يستقبل إدخال المنتج القيم المعيارية وتسميات العرض من خلال خدمة المواصفات ولا يقرأ بيانات mock أو المستودعات مباشرة.
+
+تغطي المجموعات المؤكدة الأولية سعة RAM ونوع RAM ونظام التشغيل ودقة الكاميرا لأن حقول الاختيار النشطة الحالية ترتبط بها. تستخدم سعة RAM أرقاماً معيارية بالجيجابايت، وتستخدم دقة الكاميرا أرقاماً معيارية بالميجابكسل، بينما يستخدم نوع RAM ونظام التشغيل قيماً نصية مستقرة. يبقى التخزين الحالي حقلاً نصياً قابلاً لإعادة الاستخدام إلى أن يُعتمد نموذج معياري منفصل لسعة التخزين ونوعه.
+
+تهيئ الخيارات المعيارية البحث الذكي ومقارنة المنتجات وتوافق الترقيات وأعمدة Excel الديناميكية ومحرك Sales Intelligence مستقبلاً. ويجب على المستهلكين المستقبليين استخدام خدمات الكتالوج محددة النطاق نفسها. ويمكنهم دمج التسميات للعرض مع الحفاظ على القيم الأساسية منفصلة.

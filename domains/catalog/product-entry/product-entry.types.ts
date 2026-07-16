@@ -97,6 +97,9 @@ export interface ProductEntryWorkflowContext {
   specificationFieldIdsByCategoryAndDeviceClass: Readonly<
     Record<string, Readonly<Record<string, readonly string[]>>>
   >;
+  selectOptionValuesBySpecificationField: Readonly<
+    Record<string, readonly SpecificationValue[]>
+  >;
   requiredSpecificationFieldIds: readonly string[];
   compatibleSpecificationFieldIds: readonly string[];
   compatibleDeviceClassIds: readonly string[];

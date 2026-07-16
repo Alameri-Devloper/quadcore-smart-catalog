@@ -4,6 +4,10 @@ import { ProductModelService } from "@/domains/catalog/services/product-model.se
 import { SpecificationTemplateService } from "@/domains/catalog/services/specification-template.service";
 import { DeviceClassService } from "@/domains/catalog/services/device-class.service";
 import { BrandService } from "@/domains/catalog/services/brand.service";
+import { SpecificationFieldService } from "@/domains/catalog/services/specification-field.service";
+import { SpecificationOptionSetService } from "@/domains/catalog/services/specification-option-set.service";
+import { SpecificationOptionService } from "@/domains/catalog/services/specification-option.service";
+import type { SpecificationValue } from "@/domains/catalog/types/specification-value.entity";
 
 export interface ProductEntryCategoryOption {
   id: string;
@@ -22,6 +26,7 @@ export interface ProductEntryCategoryQueryResult {
   productModelIdsByCategoryAndDeviceClass: Record<string, Record<string, string[]>>;
   specificationFieldIdsByCategory: Record<string, string[]>;
   specificationFieldIdsByCategoryAndDeviceClass: Record<string, Record<string, string[]>>;
+  selectOptionValuesBySpecificationField: Record<string, SpecificationValue[]>;
 }
 
 export type ProductEntryCategoryValidationCode =
@@ -65,6 +70,20 @@ export const ProductEntryCategoryService = {
         .filter((brand) => brand.companyId === companyId)
         .map((brand) => [brand.id, brand]),
     );
+    const selectOptionValuesBySpecificationField = Object.fromEntries(
+      SpecificationFieldService.getSpecificationFieldsByWorkspace(workspaceId)
+        .filter((field) => field.companyId === companyId && field.fieldType === "select")
+        .map((field) => {
+          const optionSet = field.specificationOptionSetId
+            ? SpecificationOptionSetService.getActiveById(field.specificationOptionSetId, companyId, workspaceId)
+            : undefined;
+          const values = optionSet
+            ? SpecificationOptionService.getActiveByOptionSetId(optionSet.id, companyId, workspaceId)
+                .map((option) => option.value)
+            : [];
+          return [field.id, values];
+        }),
+    );
 
     const deviceClassIdsByCategory = Object.fromEntries(
       categories.map((category) => [
@@ -86,6 +105,7 @@ export const ProductEntryCategoryService = {
         ]),
       ),
       deviceClassIdsByCategory,
+      selectOptionValuesBySpecificationField,
       brandIdByProductModel: Object.fromEntries(
         productModels.flatMap((model) =>
           brandsById.has(model.brandId) ? [[model.id, model.brandId]] : [],

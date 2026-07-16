@@ -15,6 +15,8 @@ export interface SpecificationFieldEntity {
 
   fieldType: SpecificationFieldType;
 
+  specificationOptionSetId?: string;
+
   isRequired: boolean;
 
   isFilterable: boolean;
