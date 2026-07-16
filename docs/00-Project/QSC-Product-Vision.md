@@ -345,6 +345,8 @@ Every feature should save time, reduce mistakes, teach something useful, protect
 
 These founding principles define the standards that every future feature, design decision, UX improvement, architecture change, and implementation must respect.
 
+The mandatory application of these principles is defined in [QSC Product Design Principles](./QSC-Product-Design-Principles.md).
+
 ### Employee First
 
 Every design decision must reduce employee effort, improve productivity, or increase sales effectiveness.
@@ -743,6 +745,8 @@ SSD بسعة 1TB
 ## 15. المبادئ التأسيسية
 
 تحدد هذه المبادئ التأسيسية المعايير التي يجب أن تحترمها كل ميزة مستقبلية وقرار تصميم وتحسين لتجربة المستخدم وتغيير معماري وتنفيذ.
+
+يحدد مستند [مبادئ تصميم منتج QSC](./QSC-Product-Design-Principles.md) التطبيق الإلزامي لهذه المبادئ.
 
 ### الموظف أولا
 
