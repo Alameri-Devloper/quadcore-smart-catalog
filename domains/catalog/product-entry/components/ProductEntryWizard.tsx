@@ -42,6 +42,7 @@ import {
 } from "../services/product-entry-specifications.service";
 import { ProductIdentityCard } from "./ProductIdentityCard";
 import { ProductEntryIdentityService } from "../services/product-entry-identity.service";
+import { ProductEntryReviewService } from "../services/product-entry-review.service";
 
 const EMPTY_CATEGORY_QUERY: ProductEntryCategoryQueryResult = {
   categories: [],
@@ -332,11 +333,6 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     void saveDraft().catch(() => setError("The Draft could not be saved after this change. Your work remains open."));
   }, [resumeDraft, saveDraft, workflow.values]);
 
-  useEffect(() => {
-    if (!workflow.isCompleted || !activeDraft) return;
-    void draftService.delete(activeDraft.id).then(() => setActiveDraft(null)).catch(() => setError("The completed Draft could not be removed from browser storage."));
-  }, [activeDraft, draftService, workflow.isCompleted]);
-
   const run = async (action: () => Promise<void>) => {
     setIsWorking(true); setError(null);
     try { await action(); } catch { setError("Browser storage is unavailable. Your work remains open and no navigation occurred."); }
@@ -359,12 +355,25 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
       categoryLoadError || activeDeviceClassError || activeProductModelError,
     ),
   });
+  const review = ProductEntryReviewService.createViewModel({
+    values: workflow.values,
+    steps: workflow.visibleSteps,
+    specificationsResolution,
+    categoryRequiresDeviceClass,
+    names: {
+      department: selectedCategory?.departmentName,
+      category: selectedCategory?.name,
+      deviceClass: selectedDeviceClass?.name,
+      brand: selectedProductModel?.brandName,
+      productModel: selectedProductModel?.name,
+    },
+  });
 
   if (workflow.isCompleted) {
     return (
       <ProductEntryCompletion
-        onAddAnother={startClean}
-        onBackToCatalog={() => leave()}
+        onReturnToReview={() => workflow.goToStep(PRODUCT_ENTRY_STEP_IDS.review)}
+        onEditProduct={() => workflow.goToStep(PRODUCT_ENTRY_STEP_IDS.category)}
         onHome={() => leave()}
       />
     );
@@ -383,13 +392,13 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
         <ProductEntryProgress />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <div className="order-2 min-w-0 lg:order-1">
-            <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={activeSpecificationsError} specificationsLoading={specificationsLoading} specificationsResolution={specificationsResolution} onRetrySpecifications={loadSpecifications} />
+            <ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={activeSpecificationsError} specificationsLoading={specificationsLoading} specificationsResolution={specificationsResolution} onRetrySpecifications={loadSpecifications} review={review} />
           </div>
           <div className="order-1 lg:order-2">
             <ProductIdentityCard identity={productIdentity} />
           </div>
         </div>
-        <ProductEntryNavigation deviceClassSelectionValid={deviceClassSelectionValid} />
+        <ProductEntryNavigation deviceClassSelectionValid={deviceClassSelectionValid} reviewReadyToSave={review.readyToSave} />
       </div>
       {showCloseDialog ? (
         <ProductEntryExitDialog

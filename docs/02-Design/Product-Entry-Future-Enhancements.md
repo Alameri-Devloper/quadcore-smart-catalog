@@ -52,3 +52,12 @@ Future Review may reuse the Product Identity view-model concepts, while Search a
 - الذكاء الاصطناعي وOCR واستيراد Excel ودليل المبيعات وتوليد Sales Intelligence.
 
 يمكن للمراجعة المستقبلية إعادة استخدام مفاهيم نموذج عرض هوية المنتج، بينما يجب أن يستخدم البحث وWhatsApp محولات مخصصة ومكونات أصغر مناسبة. ولا يجوز لأي مستهلك مستقبلي تحويل البطاقة المخصصة للقراءة فقط إلى مخزن ثان لحالة سير العمل أو كشف معلومات الموظفين الداخلية في القنوات الموجهة للعملاء.
+# Review Evolution | تطور المراجعة
+
+## English
+
+Future approved work may add Workspace-configurable Quality policies, Category-specific scoring, Sales Intelligence readiness contribution, automated image-quality checks, AI-assisted customer-presentation assessment, Product comparison quality, manager approval workflows, audit history, and Review comments. These capabilities require separate architecture and governance decisions and must not replace confirmed Product validation or employee control.
+
+## العربية
+
+قد يضيف العمل المستقبلي المعتمد سياسات جودة قابلة للإعداد لكل مساحة عمل، ودرجات خاصة بالتصنيفات، ومساهمة جاهزية ذكاء المبيعات، وفحصاً آلياً لجودة الصور، وتقييماً مساعداً بالذكاء الاصطناعي لجاهزية العرض للعميل، وجودة مقارنة المنتجات، ومسارات اعتماد المدير، وسجل التدقيق، وتعليقات المراجعة. تتطلب هذه القدرات قرارات منفصلة للمعمارية والحوكمة، ولا يجوز أن تستبدل تحقق المنتج المؤكد أو تحكم الموظف.

@@ -276,6 +276,7 @@ export const validateReview: ProductEntryValidator = async (runtime) => {
     validateProductModel,
     validateSpecifications,
     validateCommercialDetails,
+    validateImages,
   ];
   const results = await Promise.all(
     requiredPreviousValidators.map((validator) => validator(runtime)),

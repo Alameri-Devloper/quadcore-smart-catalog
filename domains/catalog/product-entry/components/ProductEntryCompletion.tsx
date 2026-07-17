@@ -1,14 +1,14 @@
 "use client";
 
 interface ProductEntryCompletionProps {
-  onAddAnother: () => void;
-  onBackToCatalog: () => void;
+  onReturnToReview: () => void;
+  onEditProduct: () => void;
   onHome: () => void;
 }
 
 export function ProductEntryCompletion({
-  onAddAnother,
-  onBackToCatalog,
+  onReturnToReview,
+  onEditProduct,
   onHome,
 }: ProductEntryCompletionProps) {
   return (
@@ -21,26 +21,25 @@ export function ProductEntryCompletion({
           ✓
         </span>
         <h1 className="mt-5 text-3xl font-bold text-slate-950">
-          Product Entry Complete
+          Review Completed
         </h1>
         <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600 sm:text-base">
-          The workflow passed validation. Product saving will be added in a
-          future task; no Product was persisted.
+          Review completed. Product saving will be available in the next implementation step.
         </p>
         <div className="mt-8 grid w-full max-w-sm gap-3">
           <button
             className="min-h-12 rounded-xl bg-blue-600 px-5 font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
-            onClick={onAddAnother}
+            onClick={onReturnToReview}
             type="button"
           >
-            Add Another Product
+            Return to Review
           </button>
           <button
             className="min-h-12 rounded-xl border border-slate-300 bg-white px-5 font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
-            onClick={onBackToCatalog}
+            onClick={onEditProduct}
             type="button"
           >
-            Back to Catalog
+            Edit Product
           </button>
           <button
             className="min-h-12 rounded-xl border border-slate-300 bg-white px-5 font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
@@ -49,6 +48,10 @@ export function ProductEntryCompletion({
           >
             Home
           </button>
+          <button className="min-h-12 cursor-not-allowed rounded-xl bg-slate-200 px-5 font-semibold text-slate-500" disabled title="Available in a Future Task" type="button">
+            Continue to Save
+          </button>
+          <p className="text-xs font-medium text-slate-500">Available in a Future Task</p>
         </div>
       </section>
     </main>

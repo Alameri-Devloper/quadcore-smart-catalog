@@ -688,3 +688,30 @@ Mobile uses one column with large controls and no horizontal scrolling, Tablet u
 تستخدم صورة الكتالوج المعيارية خلفية بيضاء نقية `#FFFFFF` ومساحة آمنة قابلة للضبط حتى لا يلامس المنتج الحواف. ويمكن مستقبلاً الحفاظ على ظل طبيعي خفيف ودعم تكوين مربع 1:1 بعد معاينة الموظف دون قص مدمر أو تغيير نسبة أبعاد الأصل. ولا يُفرض توحيد الخلفية على صور التفاصيل والمنافذ والتغليف ونمط الحياة والاستخدام والتركيب والمخططات والمواصفات عندما يكون السياق مهماً.
 
 يعرض الجوال عموداً واحداً وإجراءات كبيرة دون تمرير أفقي، ويستخدم الجهاز اللوحي عمودين مقروءين، ويستخدم الكمبيوتر شبكة فعالة من ثلاثة أعمدة. وتدعم مدخلات الملفات المتعددة والأزرار الصريحة والقائمة المرتبة والنص الواضح للصورة الرئيسية والحالة ومؤشرات التركيز والإعلانات الحية والتركيز المتوقع بعد الإزالة لوحة المفاتيح واللمس وتقنيات المساعدة. ولا تُرفع الصور خارجياً ولا يُعرض SVG أو HTML ولا تُكشف المسارات المحلية ولا تُفحص EXIF.
+# Final Product Review Dashboard | لوحة المراجعة النهائية للمنتج
+
+## English
+
+The Review step is a read-only, employee-facing dashboard built from current Product Entry values, resolved Catalog decisions, authoritative step validation, Specification resolution, image state, and Draft state. It contains Overall Status, Product Identity, Specifications, Commercial Details, Images, blocking problems, optional improvements, a transparent Product Quality Score, Ready to Save, and Ready for Customer.
+
+Overall Status is **Ready to Save** when no blocking error exists, **Needs Attention** when only optional improvements remain, and **Cannot Save** when an authoritative Product Entry validation fails. Each problem identifies its section, gives a correction instruction, and returns the employee through the existing Workflow navigation. Warnings never block Finish Review.
+
+Quality policy version 1 allocates 20 points to Product Identity, 30 to proportionally completed required Specifications, 25 to Commercial Details, 15 to Images, and 10 to Presentation Readiness. The UI displays every category score and explanation. Score labels are Excellent (90–100), Good (75–89), Needs Improvement (60–74), and Incomplete (below 60). A score never overrides validation.
+
+Ready to Save is determined by blocking validation. Ready for Customer is a separate presentation assessment requiring save readiness, Catalog visibility, valid name and price/currency, complete required Specifications, a valid Main Product Image, and no image reselection requirement. Sales Intelligence is not required in version 1 and may only enrich Review later from confirmed Specifications.
+
+Finish Review validates the complete visible Workflow and does not persist a Product. Success displays “Review completed. Product saving will be available in the next implementation step.” The active Draft remains retained. Returning to Review or editing a prior section invalidates stale completion and recalculates validation, score, and readiness.
+
+Mobile stacks status, sections, and large Edit actions without horizontal scrolling. Tablet uses available two-column section content. Desktop uses a main review column and a sticky status/quality side column. Semantic headings, definition lists, problem lists, text status, progressbar semantics, keyboard-accessible Edit actions, and predictable heading focus support accessibility.
+
+## العربية
+
+خطوة المراجعة هي لوحة قراءة فقط موجهة للموظف، وتُبنى من قيم إدخال المنتج الحالية وقرارات الكتالوج المؤكدة ونتائج التحقق المعتمدة وحل قالب المواصفات وحالة الصور والمسودة. تعرض الحالة العامة وهوية المنتج والمواصفات والتفاصيل التجارية والصور والمشكلات المانعة والتحسينات الاختيارية ودرجة جودة شفافة وحالتي الجاهزية للحفظ والجاهزية للعميل.
+
+تكون الحالة **جاهزاً للحفظ** عند عدم وجود أخطاء مانعة، و**يحتاج إلى انتباه** عند بقاء تحسينات اختيارية فقط، و**لا يمكن حفظه** عند فشل تحقق معتمد. يوضح كل خطأ القسم وطريقة التصحيح ويعيد الموظف إلى الخطوة المناسبة عبر تنقل سير العمل الحالي. التحذيرات لا تمنع إنهاء المراجعة.
+
+توزع سياسة الجودة الإصدار 1 النقاط كالتالي: 20 لهوية المنتج، و30 للمواصفات المطلوبة بشكل نسبي، و25 للتفاصيل التجارية، و15 للصور، و10 لجاهزية العرض. تُعرض نتيجة كل فئة وشرحها، ولا تتجاوز الدرجة قواعد التحقق أبداً.
+
+الجاهزية للحفظ تعتمد على الأخطاء المانعة. أما الجاهزية للعميل فهي تقييم مستقل يتطلب صلاحية الحفظ والظهور في الكتالوج واسماً وسعراً وعملة صحيحة واكتمال المواصفات المطلوبة وصورة رئيسية صالحة وعدم الحاجة إلى إعادة اختيار صورة. ذكاء المبيعات غير مطلوب في الإصدار الأول ويمكنه إثراء المراجعة مستقبلاً فقط من المواصفات المؤكدة.
+
+إنهاء المراجعة لا يحفظ المنتج ولا يحذف المسودة. عند العودة للمراجعة أو تعديل خطوة سابقة تُلغى نتيجة الإكمال القديمة ويعاد حساب التحقق والدرجة والجاهزية. التصميم متجاوب للجوال والجهاز اللوحي وسطح المكتب، ويستخدم عناوين دلالية وقوائم تعريف ونصوص حالة وشريط تقدم وأزرار تعديل قابلة للاستخدام بلوحة المفاتيح وإدارة متوقعة للتركيز.

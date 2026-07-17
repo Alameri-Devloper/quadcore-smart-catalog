@@ -9,9 +9,10 @@ import {
 
 interface ProductEntryNavigationProps {
   deviceClassSelectionValid: boolean;
+  reviewReadyToSave: boolean;
 }
 
-export function ProductEntryNavigation({ deviceClassSelectionValid }: ProductEntryNavigationProps) {
+export function ProductEntryNavigation({ deviceClassSelectionValid, reviewReadyToSave }: ProductEntryNavigationProps) {
   const {
     currentStepId,
     canGoBack,
@@ -54,11 +55,11 @@ export function ProductEntryNavigation({ deviceClassSelectionValid }: ProductEnt
         {isReview ? (
           <button
             className="min-h-12 rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-45"
-            disabled={!canGoNext || isWorking}
+            disabled={!canGoNext || !reviewReadyToSave || isWorking}
             onClick={() => void run(completeWorkflow)}
             type="button"
           >
-            {isWorking ? "Checking…" : "Complete"}
+            {isWorking ? "Checking…" : "Finish Review"}
           </button>
         ) : (
           <button

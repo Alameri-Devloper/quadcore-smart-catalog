@@ -16,6 +16,8 @@ import type { ProductEntrySpecificationsResolution } from "../services/product-e
 import { SpecificationsStep } from "./steps/SpecificationsStep";
 import { CommercialDetailsStep } from "./steps/CommercialDetailsStep";
 import { ProductImagesStep } from "./steps/ProductImagesStep";
+import { ProductReviewStep } from "./steps/ProductReviewStep";
+import type { ProductEntryReviewViewModel } from "../services/product-entry-review.service";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -94,9 +96,10 @@ interface ProductEntryStepContentProps {
   specificationsLoading: boolean;
   specificationsResolution: ProductEntrySpecificationsResolution | null;
   onRetrySpecifications: () => void;
+  review: ProductEntryReviewViewModel;
 }
 
-export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications }: ProductEntryStepContentProps) {
+export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications, review }: ProductEntryStepContentProps) {
   const { currentStepId, validation } = useProductEntryWorkflow();
   const presentation = getProductEntryStepPresentation(currentStepId);
   const isEntryMethod = currentStepId === PRODUCT_ENTRY_STEP_IDS.entryMethod;
@@ -106,6 +109,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
   const isSpecifications = currentStepId === PRODUCT_ENTRY_STEP_IDS.specifications;
   const isCommercialDetails = currentStepId === PRODUCT_ENTRY_STEP_IDS.commercialDetails;
   const isImages = currentStepId === PRODUCT_ENTRY_STEP_IDS.images;
+  const isReview = currentStepId === PRODUCT_ENTRY_STEP_IDS.review;
 
   return (
     <section
@@ -126,6 +130,8 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
         <CommercialDetailsStep />
       ) : isImages ? (
         <ProductImagesStep />
+      ) : isReview ? (
+        <ProductReviewStep review={review} />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -147,7 +153,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       </div>
       )}
 
-      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && !isCommercialDetails && !isImages && validation && !validation.valid ? (
+      {!isEntryMethod && !isCategory && !isDeviceClass && !isProductModel && !isSpecifications && !isCommercialDetails && !isImages && !isReview && validation && !validation.valid ? (
         <div
           className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4"
           role="alert"
