@@ -41,7 +41,7 @@ export function ProductModelStep({ contextLabel, contextValid, loadError, loadin
         Which product model are you adding?
       </legend>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600" id="product-model-help">
-        Choose the matching model. QSC will identify its Brand and prepare the correct product specifications.
+        Choose the official manufacturer model for this product, for example Dahua IPC-HFW1230S1. QSC will identify its Brand and prepare the correct specifications. You can customize the customer-facing Product Name later.
       </p>
       {contextLabel ? <p className="mt-3 text-sm font-semibold text-blue-800">Current product type: {contextLabel}</p> : null}
 
@@ -59,11 +59,12 @@ export function ProductModelStep({ contextLabel, contextValid, loadError, loadin
         {loadError ? <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900" role="alert"><p>{loadError}</p><button className="mt-3 min-h-11 rounded-lg border border-red-300 bg-white px-4 font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200" onClick={onRetry} type="button">Try again</button></div> : null}
         {contextValid && !loading && !loadError && productModels.length === 0 ? (
           <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
-            <p className="font-semibold text-slate-950">No product models are available for this product type.</p>
-            <button className="mt-4 min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-500" disabled type="button">Create a New Product Model — Available in a Future Task</button>
+            <p className="font-semibold text-slate-950">Can&apos;t find the model?</p>
+            <p className="mt-1">Creating new Product Models will be available in a future implementation step.</p>
+            <button className="mt-4 min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-500" disabled type="button">Create New Product Model</button>
           </div>
         ) : null}
-        {!loading && !loadError && productModels.length > 0 && filteredModels.length === 0 ? <div className="mt-6 rounded-xl bg-slate-100 p-4 text-sm text-slate-700"><p>No matching product model was found.</p><p className="mt-1">Check the model name or clear the search.</p><button className="mt-3 min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200" onClick={() => setQuery("")} type="button">Reset Search</button></div> : null}
+        {!loading && !loadError && productModels.length > 0 && filteredModels.length === 0 ? <div className="mt-6 rounded-xl bg-slate-100 p-4 text-sm text-slate-700"><p className="font-semibold text-slate-950">Can&apos;t find the model?</p><p className="mt-1">Check the official manufacturer model or clear the search. Creating new Product Models will be available in a future implementation step.</p><div className="mt-3 flex flex-wrap gap-2"><button className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200" onClick={() => setQuery("")} type="button">Reset Search</button><button className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 font-semibold text-slate-500" disabled type="button">Create New Product Model</button></div></div> : null}
       </div>
 
       {!loading && !loadError && filteredModels.length > 0 ? (

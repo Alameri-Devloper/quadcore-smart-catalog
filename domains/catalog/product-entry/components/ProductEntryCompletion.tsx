@@ -24,7 +24,7 @@ export function ProductEntryCompletion({
           Review Completed
         </h1>
         <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600 sm:text-base">
-          Review completed. Product saving will be available in the next implementation step.
+          The product review is complete. The product is still stored as a Draft until Product saving is implemented.
         </p>
         <div className="mt-8 grid w-full max-w-sm gap-3">
           <button
@@ -48,10 +48,12 @@ export function ProductEntryCompletion({
           >
             Home
           </button>
-          <button className="min-h-12 cursor-not-allowed rounded-xl bg-slate-200 px-5 font-semibold text-slate-500" disabled title="Available in a Future Task" type="button">
+          <button className="min-h-12 cursor-not-allowed rounded-xl bg-slate-200 px-5 font-semibold text-slate-500" disabled title="Available in Task 3.14" type="button">
             Continue to Save
           </button>
-          <p className="text-xs font-medium text-slate-500">Available in a Future Task</p>
+          <p className="text-xs font-medium text-slate-500">Available in Task 3.14</p>
+          <button className="min-h-12 cursor-not-allowed rounded-xl border border-slate-200 bg-white px-5 font-semibold text-slate-400" disabled title="Multiple Product Drafts are not supported yet" type="button">Start Another Draft</button>
+          <p className="text-xs font-medium text-slate-500">Multiple Product Drafts are not supported yet.</p>
         </div>
       </section>
     </main>

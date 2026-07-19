@@ -1,0 +1,32 @@
+warning: in the working copy of 'docs/00-Project/QSC-Product-Design-Principles.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/02-Design/Product-Entry-Future-Enhancements.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/02-Design/Product-Entry-Workflow.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/mock/product-models.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/mock/specification-fields.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/mock/specification-option-sets.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/mock/specification-options.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/mock/specification-template-fields.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/components/ProductEntryCompletion.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/components/ProductEntryNavigation.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/components/steps/CommercialDetailsStep.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/components/steps/ProductImagesStep.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/components/steps/ProductModelStep.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/components/steps/SpecificationsStep.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/services/product-entry-review.service.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'domains/catalog/product-entry/services/product-entry-specifications.service.ts', LF will be replaced by CRLF the next time Git touches it
+docs/00-Project/QSC-Product-Design-Principles.md
+docs/02-Design/Product-Entry-Future-Enhancements.md
+docs/02-Design/Product-Entry-Workflow.md
+domains/catalog/mock/product-models.ts
+domains/catalog/mock/specification-fields.ts
+domains/catalog/mock/specification-option-sets.ts
+domains/catalog/mock/specification-options.ts
+domains/catalog/mock/specification-template-fields.ts
+domains/catalog/product-entry/components/ProductEntryCompletion.tsx
+domains/catalog/product-entry/components/ProductEntryNavigation.tsx
+domains/catalog/product-entry/components/steps/CommercialDetailsStep.tsx
+domains/catalog/product-entry/components/steps/ProductImagesStep.tsx
+domains/catalog/product-entry/components/steps/ProductModelStep.tsx
+domains/catalog/product-entry/components/steps/SpecificationsStep.tsx
+domains/catalog/product-entry/services/product-entry-review.service.ts
+domains/catalog/product-entry/services/product-entry-specifications.service.ts

@@ -177,6 +177,10 @@ QSC is not designed to build forms.
 
 QSC is designed to help employees make better business decisions with less effort and higher confidence.
 
+## 21. Guided Data Entry
+
+The system must not assume that every employee understands technical Product specifications. Applicable fields communicate whether they are required or optional, the expected input type and format, the measurement unit, a realistic example, a concise explanation, and clear validation feedback. Guidance remains visible after input and does not depend only on placeholders. The objective is high-quality Product data, not merely completed fields.
+
 ---
 
 ## العربية
@@ -355,3 +359,6 @@ QSC is designed to help employees make better business decisions with less effor
 لم يصمم QSC لبناء النماذج.
 
 صمم QSC لمساعدة الموظفين على اتخاذ قرارات عمل أفضل بجهد أقل وثقة أعلى.
+## 21. الإدخال الموجّه للبيانات
+
+لا يفترض النظام أن كل موظف يفهم المواصفات التقنية للمنتجات. توضح الحقول المناسبة ما إذا كانت مطلوبة أو اختيارية، ونوع الإدخال وتنسيقه المتوقع، ووحدة القياس، ومثالاً واقعياً، وشرحاً موجزاً، ورسائل تحقق واضحة. تبقى الإرشادات ظاهرة بعد الإدخال ولا تعتمد على النصوص المؤقتة وحدها. الهدف هو بيانات منتج عالية الجودة وليس مجرد تعبئة الحقول.

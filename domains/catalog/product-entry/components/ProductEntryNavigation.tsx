@@ -24,6 +24,8 @@ export function ProductEntryNavigation({ deviceClassSelectionValid, reviewReadyT
   } = useProductEntryWorkflow();
   const [isWorking, setIsWorking] = useState(false);
   const isReview = currentStepId === PRODUCT_ENTRY_STEP_IDS.review;
+  const isImages = currentStepId === PRODUCT_ENTRY_STEP_IDS.images;
+  const hasValidImage = values.images.some((image) => image.previewAvailability === "available" && Boolean(image.originalPreviewUrl));
   const hasValidEntryMethod =
     currentStepId !== PRODUCT_ENTRY_STEP_IDS.entryMethod ||
     isProductEntryMethodEnabled(values.entryMethod);
@@ -68,10 +70,11 @@ export function ProductEntryNavigation({ deviceClassSelectionValid, reviewReadyT
             onClick={() => void run(next)}
             type="button"
           >
-            {isWorking ? "Checking…" : "Next"}
+            {isWorking ? "Checking…" : isImages && !hasValidImage ? "Continue Without Images" : "Next"}
           </button>
         )}
       </div>
+      {isImages && !hasValidImage ? <p className="mt-2 text-right text-xs text-slate-600">Images are optional for saving in the current version, but adding images improves customer presentation.</p> : null}
     </footer>
   );
 }

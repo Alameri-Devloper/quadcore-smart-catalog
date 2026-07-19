@@ -1,5 +1,14 @@
 export type SpecificationFieldType = "text" | "number" | "select" | "boolean";
 
+export interface SpecificationFieldGuidance {
+  readonly description?: string;
+  readonly placeholder?: string;
+  readonly exampleValue?: string;
+  readonly unitLabel?: string;
+  readonly inputHint?: string;
+  readonly invalidExample?: string;
+}
+
 export interface SpecificationFieldEntity {
   id: string;
 
@@ -16,6 +25,8 @@ export interface SpecificationFieldEntity {
   fieldType: SpecificationFieldType;
 
   specificationOptionSetId?: string;
+
+  guidance?: SpecificationFieldGuidance;
 
   isRequired: boolean;
 

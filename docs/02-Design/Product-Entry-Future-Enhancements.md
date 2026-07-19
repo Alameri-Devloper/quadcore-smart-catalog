@@ -61,3 +61,16 @@ Future approved work may add Workspace-configurable Quality policies, Category-s
 ## العربية
 
 قد يضيف العمل المستقبلي المعتمد سياسات جودة قابلة للإعداد لكل مساحة عمل، ودرجات خاصة بالتصنيفات، ومساهمة جاهزية ذكاء المبيعات، وفحصاً آلياً لجودة الصور، وتقييماً مساعداً بالذكاء الاصطناعي لجاهزية العرض للعميل، وجودة مقارنة المنتجات، ومسارات اعتماد المدير، وسجل التدقيق، وتعليقات المراجعة. تتطلب هذه القدرات قرارات منفصلة للمعمارية والحوكمة، ولا يجوز أن تستبدل تحقق المنتج المؤكد أو تحكم الموظف.
+# Guided Entry Future Boundaries | حدود الإدخال الموجّه المستقبلية
+
+## English
+
+Future separately approved work may add Product Model creation and lookup, dependent Option Sets such as Lens Type limiting Lens Size, Catalog-owned context-aware rules, dynamic visibility and required status, multiple active Drafts, temporary Cloud Draft images, Workspace-managed and Arabic Specification guidance, Camera Purpose taxonomy, barcode scanning, and Knowledge Engine relationships.
+
+Context-aware rules may eventually show, hide, require, make optional, change an Option Set, limit options, auto-fill, suggest, disable, or provide context help. For example, IP may prioritize PoE/ONVIF/network fields while Analog HD may prioritize CVI/TVI/AHD. Rules must belong to Catalog metadata; hidden inactive fields must not validate or affect Quality Score. This task does not introduce a rules engine or dependent-option architecture.
+
+## العربية
+
+قد يضيف عمل مستقبلي معتمد بصورة منفصلة إنشاء نماذج المنتجات والبحث عنها، ومجموعات الخيارات التابعة مثل تقييد حجم العدسة بحسب نوعها، وقواعد سياقية يملكها الكتالوج، والظهور والمتطلبات الديناميكية، ومسودات متعددة، وصور مسودات سحابية مؤقتة، وإرشادات مواصفات تديرها مساحة العمل وباللغة العربية، وتصنيف غرض الكاميرا، ومسح الباركود، وعلاقات محرك المعرفة.
+
+يمكن للقواعد السياقية مستقبلاً إظهار الحقول أو إخفاءها أو جعلها مطلوبة أو اختيارية أو تغيير مجموعة الخيارات أو تقييدها أو تعبئة قيمة أو اقتراحها أو تعطيل الحقل أو تقديم مساعدة سياقية. يجب أن تنتمي القواعد إلى بيانات الكتالوج، وألا تولد الحقول المخفية أخطاء أو تؤثر في درجة الجودة. لا تنفذ هذه المهمة محرك قواعد أو بنية خيارات تابعة.

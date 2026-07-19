@@ -2,7 +2,7 @@ import { SpecificationFieldService } from "@/domains/catalog/services/specificat
 import { SpecificationTemplateService } from "@/domains/catalog/services/specification-template.service";
 import { SpecificationOptionSetService } from "@/domains/catalog/services/specification-option-set.service";
 import { SpecificationOptionService } from "@/domains/catalog/services/specification-option.service";
-import type { SpecificationFieldType } from "@/domains/catalog/types/specification-field.entity";
+import type { SpecificationFieldGuidance, SpecificationFieldType } from "@/domains/catalog/types/specification-field.entity";
 import type { SpecificationOptionValue } from "@/domains/catalog/types/specification-option.entity";
 import type { SpecificationValue } from "@/domains/catalog/types/specification-value.entity";
 
@@ -32,7 +32,7 @@ export interface ProductEntrySpecificationFieldDecision {
   sortOrder: number;
   specificationOptionSetId?: string;
   options: readonly ProductEntrySpecificationOptionDecision[];
-  helpText?: string;
+  guidance?: SpecificationFieldGuidance;
   configurationError?: string;
 }
 
@@ -143,6 +143,7 @@ export const ProductEntrySpecificationsService = {
           sortOrder: templateField.sortOrder,
           specificationOptionSetId: optionSet?.id,
           options,
+          guidance: field.guidance,
           configurationError:
             invalidNonSelectRelationship || invalidSelectRelationship
               ? `${field.label} is not configured correctly.`

@@ -81,7 +81,9 @@ const displaySpecificationValue = (
 ) => {
   if (field.fieldType === "select") return field.options.find((option) => Object.is(option.value, value))?.label ?? "Invalid selection";
   if (field.fieldType === "boolean") return value === true ? "Yes" : value === false ? "No" : "Not entered";
-  return String(value);
+  return field.fieldType === "number" && field.guidance?.unitLabel
+    ? `${String(value)} ${field.guidance.unitLabel}`
+    : String(value);
 };
 
 export const ProductEntryReviewService = {

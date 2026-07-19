@@ -715,3 +715,26 @@ Mobile stacks status, sections, and large Edit actions without horizontal scroll
 الجاهزية للحفظ تعتمد على الأخطاء المانعة. أما الجاهزية للعميل فهي تقييم مستقل يتطلب صلاحية الحفظ والظهور في الكتالوج واسماً وسعراً وعملة صحيحة واكتمال المواصفات المطلوبة وصورة رئيسية صالحة وعدم الحاجة إلى إعادة اختيار صورة. ذكاء المبيعات غير مطلوب في الإصدار الأول ويمكنه إثراء المراجعة مستقبلاً فقط من المواصفات المؤكدة.
 
 إنهاء المراجعة لا يحفظ المنتج ولا يحذف المسودة. عند العودة للمراجعة أو تعديل خطوة سابقة تُلغى نتيجة الإكمال القديمة ويعاد حساب التحقق والدرجة والجاهزية. التصميم متجاوب للجوال والجهاز اللوحي وسطح المكتب، ويستخدم عناوين دلالية وقوائم تعريف ونصوص حالة وشريط تقدم وأزرار تعديل قابلة للاستخدام بلوحة المفاتيح وإدارة متوقعة للتركيز.
+# Guided Product Entry Refinements | تحسينات إدخال المنتج الموجّه
+
+## English
+
+Specification guidance is Catalog-owned metadata resolved with each Workspace-scoped Specification Field. Product Entry renders descriptions, examples, units, input hints, required/optional status, and separate validation feedback generically. Select options come only from existing Specification Option Sets; employee-facing labels are resolved while normalized values remain canonical. Numeric measurements such as Night Vision Distance store a number with separate unit metadata. Product Name, Product Code, CPU/GPU identifiers, and Sensor Model remain free text where standardization is not reliable.
+
+Laptop controlled fields include separate RAM Capacity and RAM Type, Storage Capacity and Storage Type, Screen Size, Refresh Rate, Keyboard Layout, and Operating System. Camera classification keeps Camera Technology, Camera Form Factor, and Installation Environment separate. The Version 1 Camera Template includes those decisions plus Resolution, Lens Type, Lens Size, numeric Night Vision Distance, Microphone, Speaker, PoE, Wi-Fi, Weather Protection Rating, and optional Sensor Model. CCTV remains a Category label and is not a Camera Technology value.
+
+Product Model means the official manufacturer model identifier. It is not the customer-facing Product Name, Product Code, marketing title, or a Specification. Product Model creation remains disabled because no approved creation aggregate/write flow exists. Product Name remains employee-editable customer-facing Catalog text; Product Code remains an optional internal lookup code. Highlight Product is optional, non-blocking, separate from visibility and availability, and does not contribute directly to the Quality Score.
+
+Browser-local image object URLs do not survive a restarted session. Draft restoration keeps filename, order, identity, and Main status while marking unavailable sources Requires Reselection. Reselection validates the file and restores the same metadata record when its fingerprint matches. Removing images remains on the Images step and normalizes order and Main selection. When no valid image exists, Continue Without Images reaches Review while retaining the missing-image warning and incomplete customer readiness. Use Original Image means no background change; Prepare White Background remains unavailable and creates no processed metadata.
+
+Review Completed means validation and review finished, not Product saving. The Product remains one active Draft. Continue to Save is disabled until Task 3.14, and Start Another Draft is disabled while multiple active Drafts are unsupported. Editing a prior step invalidates stale completion through the existing Workflow and reconciliation boundaries, then recalculates Review, Quality Score, Ready to Save, and Ready for Customer.
+
+## العربية
+
+إرشادات المواصفات بيانات وصفية يملكها الكتالوج وتُحل مع كل حقل مواصفة ضمن مساحة العمل. تعرض شاشة إدخال المنتج الوصف والأمثلة والوحدات وتلميحات الإدخال وحالة مطلوب أو اختياري ورسائل التحقق المنفصلة بصورة عامة. تأتي خيارات الاختيار من مجموعات خيارات المواصفات الحالية فقط، وتُعرض التسميات للموظف مع بقاء القيم المعيارية هي البيانات الأساسية. تُخزن القياسات مثل مسافة الرؤية الليلية كرقم مع وحدة منفصلة. تبقى أسماء المنتجات وأكوادها ومعرّفات المعالج والرسوميات ونموذج المستشعر نصوصاً حرة عندما لا يمكن توحيدها بصورة موثوقة.
+
+تفصل حقول الحاسوب المحمول بين سعة ونوع الذاكرة، وسعة ونوع التخزين، وحجم الشاشة، ومعدل التحديث، وتخطيط لوحة المفاتيح، ونظام التشغيل. ويفصل تصنيف الكاميرا بين التقنية والشكل وبيئة التركيب. يتضمن قالب الكاميرا أيضاً الدقة ونوع العدسة وحجمها ومسافة الرؤية الليلية الرقمية والميكروفون والسماعة وPoE وWi-Fi وتصنيف الحماية ونموذج المستشعر الاختياري. CCTV اسم تصنيف تجاري وليس قيمة دقيقة لتقنية الكاميرا.
+
+نموذج المنتج هو المعرّف الرسمي من الشركة المصنعة، وليس اسم المنتج الموجّه للعميل أو كود المنتج أو عنواناً تسويقياً أو مواصفة. يبقى إنشاء نموذج جديد معطلاً لعدم وجود مسار كتابة معتمد. اسم المنتج قابل للتحرير وموجّه للعميل، وكود المنتج اختياري للبحث الداخلي. إبراز المنتج اختياري وغير مانع ومنفصل عن الظهور والتوفر ولا يضيف نقاطاً مباشرة إلى درجة الجودة.
+
+لا تستمر روابط معاينة الصور المحلية بعد إعادة تشغيل المتصفح. تحفظ المسودة اسم الملف والترتيب والهوية وحالة الصورة الرئيسية وتطلب إعادة الاختيار عند فقدان المصدر. إزالة الصور تبقي الموظف في خطوة الصور وتعيد ترتيب الصور وتحديد الرئيسية بأمان. يتيح زر المتابعة بدون صور الوصول إلى المراجعة مع بقاء التحذير وعدم اكتمال الجاهزية للعميل. تعني عبارة استخدام الصورة الأصلية عدم تغيير الخلفية، وتبقى تهيئة الخلفية البيضاء غير متاحة دون إنشاء بيانات معالجة وهمية.
