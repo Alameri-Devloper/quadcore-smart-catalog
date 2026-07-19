@@ -1,5 +1,11 @@
 # Sprint 01 - Foundation
 
+> **Historical Reference | مرجع تاريخي**
+>
+> This document records the Sprint 01 outcome and must not override current architecture sources.
+>
+> تسجل هذه الوثيقة نتائج Sprint 01 ولا تتقدم على مصادر المعمارية الحالية.
+
 ## Status
 
 ✅ Completed

@@ -25,7 +25,8 @@ Do not change the architecture unless explicitly requested.
 - Use TypeScript only.
 - Code language must be English.
 - Documentation must be English + Arabic.
-- Mobile First.
+- Responsive First: Mobile, Tablet, and Desktop are equally first-class.
+- Functional QA must verify touch, mouse, and keyboard interaction.
 - Multi-Tenant from day one.
 - No hardcoded business logic.
 - Do not call database directly inside components.

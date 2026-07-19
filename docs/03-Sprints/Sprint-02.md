@@ -1,5 +1,11 @@
 # Sprint 02
 
+> **Historical Reference | مرجع تاريخي**
+>
+> This document records the Sprint 02 outcome and must not override current architecture sources.
+>
+> تسجل هذه الوثيقة نتائج Sprint 02 ولا تتقدم على مصادر المعمارية الحالية.
+
 # السبرنت 02
 
 ## Status | الحالة

@@ -2,6 +2,12 @@
 
 # سجلات قرارات المعمارية
 
+> **Historical Reference | مرجع تاريخي**
+>
+> This index preserves the original four-digit ADR series. New ADRs are registered in the [current authoritative ADR index](../01-Architecture/ADR/README.md). Individual records retain the status shown below; ADR-0005 is Superseded.
+>
+> يحفظ هذا الفهرس سلسلة ADR الأصلية ذات الأرقام الأربعة. تسجل القرارات الجديدة في [فهرس ADR الحالي المعتمد](../01-Architecture/ADR/README.md). يحتفظ كل سجل بالحالة الموضحة أدناه، وقد تم استبدال ADR-0005.
+
 ## What ADR Means | معنى ADR
 
 ADR stands for Architecture Decision Record.
@@ -53,7 +59,7 @@ Each ADR should include:
 | [ADR-0002](./ADR-0002-Category-Device-Class-Specification-Templates.md) | Category and Device Class Specification Templates | Accepted |
 | [ADR-0003](./ADR-0003-Assisted-Product-Data-Entry.md) | Assisted Product Data Entry | Accepted for future implementation |
 | [ADR-0004](./ADR-0004-Context-Aware-Product-Entry.md) | Context-Aware Product Entry | Accepted; implementation staged |
-| [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | Product Lifecycle and Soft Delete | Accepted for future implementation |
+| [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | Product Lifecycle and Soft Delete | Superseded by ADR-001 |
 | [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | Impact Analysis and Safe Reconciliation | Accepted; full implementation planned |
 | [ADR-0007](./ADR-0007-Context-Aware-Smart-Search.md) | Context-Aware Smart Search | Accepted; future implementation planned |
 | [ADR-0008](./ADR-0008-Dynamic-Context-Aware-Template-Generation-Engine.md) | Dynamic Context-Aware Template Generation Engine | Accepted; future implementation planned |
@@ -64,7 +70,7 @@ Each ADR should include:
 | [ADR-0002](./ADR-0002-Category-Device-Class-Specification-Templates.md) | قوالب المواصفات حسب التصنيف وفئة الجهاز | معتمد |
 | [ADR-0003](./ADR-0003-Assisted-Product-Data-Entry.md) | إدخال بيانات المنتج بمساعدة | معتمد للتنفيذ المستقبلي |
 | [ADR-0004](./ADR-0004-Context-Aware-Product-Entry.md) | إدخال المنتج الواعي بالسياق | معتمد؛ التنفيذ مرحلي |
-| [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | دورة حياة المنتج والحذف المنطقي | معتمد للتنفيذ المستقبلي |
+| [ADR-0005](./ADR-0005-Product-Lifecycle-and-Soft-Delete.md) | دورة حياة المنتج والحذف المنطقي | تم استبداله بواسطة ADR-001 |
 | [ADR-0006](./ADR-0006-Impact-Analysis-and-Safe-Reconciliation.md) | تحليل التأثير والتنسيق الآمن | معتمد؛ التنفيذ الكامل مخطط له |
 | [ADR-0007](./ADR-0007-Context-Aware-Smart-Search.md) | البحث الذكي الواعي بالسياق | معتمد؛ التنفيذ مخطط له مستقبلا |
 | [ADR-0008](./ADR-0008-Dynamic-Context-Aware-Template-Generation-Engine.md) | محرك توليد القوالب الديناميكي الواعي بالسياق | معتمد؛ التنفيذ مخطط له مستقبلا |

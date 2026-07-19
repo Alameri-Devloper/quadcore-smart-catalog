@@ -60,7 +60,8 @@ Milestone validation must confirm:
 - Conditional, context-aware, Draft, reconciliation, and recovery paths remain consistent.
 - Tenant and workspace isolation is preserved.
 - Product Data Quality rules are applied consistently.
-- Desktop and Mobile experiences are both intentional and complete.
+- Mobile, Tablet, and Desktop experiences are intentional, complete, and equally first-class.
+- Touch, mouse, and keyboard navigation are functionally verified where applicable.
 - Documentation describes the delivered behavior accurately in English and Arabic.
 - Known limitations and deferred work are explicit.
 
@@ -121,7 +122,7 @@ One feature may require more than one commit when review corrections are needed,
 
 ## 7. Responsive Review
 
-Responsive review is mandatory because QSC is Responsive First. Desktop and Mobile have equal importance from Version 1.0.
+Responsive review is mandatory because QSC is Responsive First. Mobile, Tablet, and Desktop have equal importance from Version 1.0; Desktop and Tablet are not secondary environments.
 
 Review must confirm:
 
@@ -129,10 +130,11 @@ Review must confirm:
 - Tablet layouts use available space without becoming overly dense.
 - Desktop uses wider screens for productivity, related information, keyboard-friendly workflows, and comfortable data entry.
 - Desktop does not appear to be a stretched Mobile layout.
+- Touch, mouse, and keyboard navigation are each verified across applicable environments.
 - Sticky navigation, dialogs, validation, loading states, and empty states work at supported sizes.
 - Responsive behavior does not create different business rules between platforms.
 
-Responsive acceptance must use code review and, when available, direct visual and interaction verification at representative viewport sizes.
+Responsive acceptance must use code review and direct functional verification at representative Mobile, Tablet, and Desktop viewport sizes. QA evidence must cover touch, mouse, and keyboard navigation, or document why a method is not applicable.
 
 ## 8. UX Review
 
@@ -258,7 +260,8 @@ This approach preserves speed, reviewability, Product Data Quality, Responsive F
 - اتساق مسارات الشروط والسياق والمسودات والتنسيق والاستعادة.
 - الحفاظ على عزل المستأجر ومساحة العمل.
 - تطبيق قواعد جودة بيانات المنتجات بصورة متسقة.
-- تصميم تجربتي الكمبيوتر والجوال وإكمالهما بصورة مقصودة.
+- تصميم تجارب الجوال والجهاز اللوحي والكمبيوتر وإكمالها بصورة مقصودة كبيئات أساسية ومتساوية.
+- التحقق الوظيفي من اللمس والفأرة والتنقل بلوحة المفاتيح عند انطباقها.
 - وصف الوثائق للسلوك المسلم بدقة بالإنجليزية والعربية.
 - توضيح القيود المعروفة والعمل المؤجل.
 
