@@ -9,6 +9,7 @@ export class ProductId {
 
   private constructor(value: string) {
     this.internalValue = value;
+    Object.freeze(this);
   }
 
   static create(value: string): ProductId {
@@ -26,6 +27,7 @@ export class WorkspaceId {
 
   private constructor(value: string) {
     this.internalValue = value;
+    Object.freeze(this);
   }
 
   static create(value: string): WorkspaceId {
@@ -43,6 +45,7 @@ export class CatalogId {
 
   private constructor(value: string) {
     this.internalValue = value;
+    Object.freeze(this);
   }
 
   static create(value: string): CatalogId {
@@ -74,6 +77,7 @@ export class ProductIdentity {
     this.internalProductId = productId;
     this.internalWorkspaceId = workspaceId;
     this.internalCatalogId = catalogId;
+    Object.freeze(this);
   }
 
   static create(input: ProductIdentityInput): ProductIdentity {

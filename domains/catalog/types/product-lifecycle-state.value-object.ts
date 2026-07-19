@@ -17,6 +17,7 @@ export class ProductLifecycleState {
 
   private constructor(value: ProductLifecycleStateValue) {
     this.internalValue = value;
+    Object.freeze(this);
   }
 
   static draft(): ProductLifecycleState {
