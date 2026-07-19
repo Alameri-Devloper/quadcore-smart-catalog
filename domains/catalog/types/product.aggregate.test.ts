@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import "./product-publication.test";
 import { Money, ProductPricing } from "./money.value-object";
 import { ProductTypeId } from "./product-classification.value-object";
 import { ProductCreated } from "./product-created.event";
@@ -97,6 +98,7 @@ describe("Product rehydration", () => {
       const product = Product.rehydrate({
         ...identity(),
         lifecycleState,
+        revision: 4,
         createdAt,
         updatedAt,
       });
@@ -117,6 +119,7 @@ describe("Product rehydration", () => {
         Product.rehydrate({
           ...identity(),
           lifecycleState: "Deleted" as never,
+          revision: 4,
           createdAt,
           updatedAt,
         }),
@@ -130,6 +133,7 @@ describe("Product rehydration", () => {
         Product.rehydrate({
           ...identity(),
           lifecycleState: PRODUCT_LIFECYCLE_STATES.draft,
+          revision: 4,
           createdAt: updatedAt,
           updatedAt: createdAt,
         }),
@@ -141,6 +145,7 @@ describe("Product rehydration", () => {
     const product = Product.rehydrate({
       ...identity(),
       lifecycleState: PRODUCT_LIFECYCLE_STATES.published,
+      revision: 4,
       createdAt,
       updatedAt,
     });
@@ -319,6 +324,7 @@ describe("Canonical Product Type classification", () => {
     const rehydrated = Product.rehydrate({
       ...identity(),
       lifecycleState: PRODUCT_LIFECYCLE_STATES.draft,
+      revision: 0,
       createdAt: new Date("2026-07-19T08:00:00.000Z"),
       updatedAt: new Date("2026-07-19T09:00:00.000Z"),
       classification: {
@@ -681,6 +687,7 @@ describe("Product composition rehydration and updates", () => {
     const product = Product.rehydrate({
       ...identity(),
       lifecycleState: PRODUCT_LIFECYCLE_STATES.archived,
+      revision: 7,
       createdAt,
       updatedAt,
       classification: { categoryId: "category-001" },

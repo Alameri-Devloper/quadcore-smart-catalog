@@ -24,6 +24,14 @@ export class ProductLifecycleState {
     return new ProductLifecycleState(PRODUCT_LIFECYCLE_STATES.draft);
   }
 
+  static published(): ProductLifecycleState {
+    return new ProductLifecycleState(PRODUCT_LIFECYCLE_STATES.published);
+  }
+
+  static archived(): ProductLifecycleState {
+    return new ProductLifecycleState(PRODUCT_LIFECYCLE_STATES.archived);
+  }
+
   static rehydrate(value: string): ProductLifecycleState {
     if (!isProductLifecycleStateValue(value)) {
       throw new Error(`Invalid Product lifecycle state: "${value}".`);
