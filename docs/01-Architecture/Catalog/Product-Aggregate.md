@@ -16,11 +16,27 @@ Product
 
 Product is the Aggregate Root. Intended Value Objects include `ProductIdentity`, `ProductLifecycleState`, `Money`, `ProductPricing`, `ProductSpecificationValue`, and Product Image identity/metadata; exact implementations require later approval.
 
+The Task 3.14.1 foundation implements controlled `Product.create` and `Product.rehydrate` paths, typed `ProductId`, `WorkspaceId`, and `CatalogId`, deterministic timestamps supplied by callers, Draft initialization, and a lightweight read-only Domain Event collection containing `ProductCreated`. Commercial details, specification values, and images remain outside this initial code foundation until their approved Aggregate integration tasks. Legacy Product DTOs, mocks, and Product Entry Draft remain compatibility models and are not the canonical Aggregate.
+
+### Version scope and Workspace boundary
+
+V1 is Single-Workspace and Multi-Branch. Exactly one active `WorkspaceId` is supplied automatically from trusted Application context; it remains part of Product Identity as the future-ready ownership boundary and is never entered or selected by an end user. V1 has no Workspace selector, company switching, tenant provisioning, multi-company user membership, or cross-tenant administration. These operational Multi-Tenant capabilities belong to V2, which is Multi-Workspace and Multi-Tenant.
+
+A Branch is not a Workspace. Product belongs to the Workspace Catalog, so `BranchId` is not part of Product Identity. Future Branch- and Warehouse-specific quantities belong to the Inventory Domain and must not be stored in Product. Task 3.14.1-R1 documents this boundary only; it implements no Workspace, Branch, Warehouse, or tenant operation.
+
 Outside Product: inventory quantity, warehouses, stock movements, persisted Quality Score, persisted Ready for Customer, specification and Option Set definitions, file-storage implementation, React state, and repository implementation.
 
 ## العربية
 
 المنتج هو Aggregate Root ويضم الهوية ودورة الحياة والتفاصيل التجارية وقيم المواصفات والصور وأحداث المجال. الكائنات القيمية المقصودة تشمل الهوية والحالة والمال والتسعير وقيمة المواصفة وهوية الصورة وبياناتها، دون تثبيت تفاصيل تنفيذ غير معتمدة. تبقى الكميات والمستودعات وحركات المخزون ومؤشرات الجاهزية المحسوبة والتعريفات وتخزين الملفات وحالة React وتنفيذ المستودع خارج المنتج.
+
+ينفذ أساس Task 3.14.1 مساري `Product.create` و`Product.rehydrate` المضبوطين، والمعرفات typed، والطوابع الزمنية التي يمررها المستدعي لضمان الحتمية، وحالة Draft الأولية، ومجموعة أحداث مجال للقراءة فقط تحتوي `ProductCreated`. تبقى التفاصيل التجارية وقيم المواصفات والصور خارج أساس الشفرة الأولي حتى مهام دمجها المعتمدة. وتظل DTOs والبيانات الوهمية وProduct Entry Draft نماذج توافق وليست التجميع المعتمد.
+
+### نطاق الإصدارات وحد Workspace
+
+الإصدار V1 هو Single-Workspace وMulti-Branch. يمرر سياق Application الموثوق `WorkspaceId` النشط الوحيد تلقائياً، ويبقى المعرف جزءاً من هوية المنتج كحد ملكية جاهز للمستقبل ولا يدخله المستخدم أو يختاره. لا يحتوي V1 على محدد Workspace أو تبديل الشركات أو تهيئة المستأجرين أو عضوية المستخدم في شركات متعددة أو إدارة عابرة للمستأجرين. تنتمي قدرات Multi-Tenant التشغيلية هذه إلى V2، وهو Multi-Workspace وMulti-Tenant.
+
+الفرع ليس Workspace. ينتمي المنتج إلى كتالوج Workspace، ولذلك لا يدخل `BranchId` في هوية المنتج. تنتمي كميات الفروع والمستودعات المستقبلية إلى مجال Inventory ولا تخزن داخل Product. توثق Task 3.14.1-R1 هذا الحد فقط ولا تنفذ أي سلوك تشغيلي لمساحة العمل أو الفرع أو المستودع أو المستأجر.
 
 ## Related Documents | الوثائق المرتبطة
 
