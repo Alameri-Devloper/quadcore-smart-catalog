@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "tsc --outDir .next/domain-tests --rootDir . --module commonjs --moduleResolution node --target ES2022 --noEmit false --isolatedModules false --incremental false --esModuleInterop true --strict true --skipLibCheck true domains/catalog/types/product.aggregate.test.ts && node --test .next/domain-tests/domains/catalog/types/product.aggregate.test.js"
   },
   "dependencies": {
     "next": "16.2.10",
