@@ -1,5 +1,11 @@
 # ADR-0002: Category and Device Class Specification Templates
 
+> **Partial supersession | استبدال جزئي**
+>
+> The V1 template-selection key in this historical decision is superseded by [ADR-006: Product Classification Taxonomy](../01-Architecture/ADR/ADR-006-Product-Classification-Taxonomy.md). Its reusable Specification Field and Template rationale remains accepted.
+>
+> استبدل [ADR-006: تصنيف المنتج المعتمد](../01-Architecture/ADR/ADR-006-Product-Classification-Taxonomy.md) مفتاح اختيار القالب في V1 الوارد في هذا القرار التاريخي. وتبقى أسباب حقول المواصفات والقوالب القابلة لإعادة الاستخدام معتمدة.
+
 # ADR-0002: قوالب المواصفات حسب التصنيف وفئة الجهاز
 
 ## Title | العنوان
@@ -10,9 +16,9 @@ Category and Device Class Specification Templates
 
 ## Status | الحالة
 
-Accepted
+Accepted; V1 template-selection key superseded by ADR-006.
 
-معتمد
+معتمد؛ استبدل ADR-006 مفتاح اختيار القالب في V1.
 
 ## Context | السياق
 

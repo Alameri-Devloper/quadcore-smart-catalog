@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { Money, ProductPricing } from "./money.value-object";
+import { ProductTypeId } from "./product-classification.value-object";
 import { ProductCreated } from "./product-created.event";
 import { CatalogId, ProductId, WorkspaceId } from "./product-identity.value-object";
 import { Product } from "./product.aggregate";
@@ -276,6 +277,161 @@ describe("Product Draft composition", () => {
     });
 
     assert.equal(Object.isFrozen(product.classification), true);
+  });
+});
+
+describe("Canonical Product Type classification", () => {
+  it("creates a valid immutable ProductTypeId", () => {
+    const productTypeId = ProductTypeId.create("product-type-standard-laptop");
+
+    assert.equal(productTypeId.value, "product-type-standard-laptop");
+    assert.equal(Object.isFrozen(productTypeId), true);
+  });
+
+  it("rejects an empty ProductTypeId", () => {
+    assert.throws(
+      () => ProductTypeId.create("   "),
+      /ProductTypeId cannot be empty/,
+    );
+  });
+
+  it("allows a Draft without ProductTypeId", () => {
+    const product = Product.create({
+      ...identity(),
+      createdAt: new Date("2026-07-19T08:00:00.000Z"),
+      classification: { categoryId: "category-laptops" },
+    });
+
+    assert.equal(product.classification?.productTypeId, undefined);
+  });
+
+  it("creates and rehydrates ProductTypeId without conflating Device Class", () => {
+    const productTypeId = ProductTypeId.create("product-type-standard-laptop");
+    const created = Product.create({
+      ...identity(),
+      createdAt: new Date("2026-07-19T08:00:00.000Z"),
+      classification: {
+        categoryId: "category-laptops",
+        productTypeId,
+        deviceClassId: "device-class-gaming",
+      },
+    });
+    const rehydrated = Product.rehydrate({
+      ...identity(),
+      lifecycleState: PRODUCT_LIFECYCLE_STATES.draft,
+      createdAt: new Date("2026-07-19T08:00:00.000Z"),
+      updatedAt: new Date("2026-07-19T09:00:00.000Z"),
+      classification: {
+        categoryId: "category-cctv",
+        productTypeId: ProductTypeId.create("product-type-camera"),
+        deviceClassId: "device-class-commercial",
+      },
+    });
+
+    assert.equal(created.classification?.productTypeId?.value, productTypeId.value);
+    assert.equal(created.classification?.deviceClassId, "device-class-gaming");
+    assert.equal(
+      rehydrated.classification?.productTypeId?.value,
+      "product-type-camera",
+    );
+    assert.equal(
+      rehydrated.classification?.deviceClassId,
+      "device-class-commercial",
+    );
+  });
+
+  it("adds and changes ProductTypeId through controlled classification updates", () => {
+    const product = Product.create({
+      ...identity(),
+      createdAt: new Date("2026-07-19T08:00:00.000Z"),
+      classification: { categoryId: "category-laptops" },
+    });
+
+    assert.equal(
+      product.updateClassification(
+        {
+          categoryId: "category-laptops",
+          productTypeId: ProductTypeId.create("product-type-standard-laptop"),
+        },
+        new Date("2026-07-19T09:00:00.000Z"),
+      ),
+      true,
+    );
+    assert.equal(
+      product.classification?.productTypeId?.value,
+      "product-type-standard-laptop",
+    );
+
+    assert.equal(
+      product.updateClassification(
+        {
+          categoryId: "category-laptops",
+          productTypeId: ProductTypeId.create("product-type-convertible-laptop"),
+        },
+        new Date("2026-07-19T10:00:00.000Z"),
+      ),
+      true,
+    );
+    assert.equal(
+      product.classification?.productTypeId?.value,
+      "product-type-convertible-laptop",
+    );
+  });
+
+  it("treats an equivalent ProductTypeId update as a no-op", () => {
+    const product = Product.create({
+      ...identity(),
+      createdAt: new Date("2026-07-19T08:00:00.000Z"),
+      classification: {
+        categoryId: "category-laptops",
+        productTypeId: ProductTypeId.create("product-type-standard-laptop"),
+      },
+    });
+    const updatedAtBeforeNoOp = product.updatedAt.toISOString();
+
+    const changed = product.updateClassification(
+      {
+        categoryId: "category-laptops",
+        productTypeId: ProductTypeId.create("product-type-standard-laptop"),
+      },
+      new Date("2026-07-19T09:00:00.000Z"),
+    );
+
+    assert.equal(changed, false);
+    assert.equal(product.updatedAt.toISOString(), updatedAtBeforeNoOp);
+  });
+
+  it("rejects an invalid ProductTypeId update without changing Product", () => {
+    const originalProductTypeId = ProductTypeId.create(
+      "product-type-standard-laptop",
+    );
+    const product = Product.create({
+      ...identity(),
+      createdAt: new Date("2026-07-19T08:00:00.000Z"),
+      classification: {
+        categoryId: "category-laptops",
+        productTypeId: originalProductTypeId,
+      },
+    });
+    const updatedAtBeforeUpdate = product.updatedAt.toISOString();
+
+    assert.throws(
+      () =>
+        product.updateClassification(
+          {
+            categoryId: "category-laptops",
+            productTypeId: " " as never,
+          },
+          new Date("2026-07-19T09:00:00.000Z"),
+        ),
+      /ProductTypeId must be a valid typed identifier/,
+    );
+
+    assert.equal(
+      product.classification?.productTypeId?.value,
+      originalProductTypeId.value,
+    );
+    assert.equal(product.updatedAt.toISOString(), updatedAtBeforeUpdate);
   });
 });
 

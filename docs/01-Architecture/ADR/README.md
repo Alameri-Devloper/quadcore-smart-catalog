@@ -16,7 +16,7 @@ When sources overlap, select the current source of truth in this order: Constitu
 
 | Original ADR | Current relationship | Current source of truth |
 |---|---|---|
-| ADR-0002 — Specification Templates | Complementary; no replacement | ADR-0002 for template selection; ADR-002 only for Product Aggregate ownership |
+| ADR-0002 — Specification Templates | Partially superseded by ADR-006 for the V1 template key | ADR-006 for taxonomy and V1 resolution; ADR-0002 retains reusable-field rationale |
 | ADR-0003 — Assisted Product Entry | Complementary future direction | ADR-0003 within its future scope; ADR-003 only for Product Domain Events |
 | ADR-0004 — Context-Aware Product Entry | Complementary | ADR-0004 for contextual entry; ADR-004 only for invisible lifecycle UX |
 | ADR-0005 — Lifecycle and Soft Delete | Conflicts and is Superseded | [ADR-001 Product Lifecycle](ADR-001-Product-Lifecycle.md); deletion/Trash/retention remain deferred |
@@ -29,13 +29,14 @@ When sources overlap, select the current source of truth in this order: Constitu
 
 A Superseded ADR keeps all historical content, changes its status to `Superseded`, adds a bilingual notice, and links directly to the replacement. The replacement should identify the superseded record when relevant. Do not rename, renumber, reuse, or delete either identifier.
 
-The four-digit series is frozen for new decisions. Future ADRs continue in this current directory using the next unused three-digit identifier: `ADR-006`, then `ADR-007`, and so on. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
+The four-digit series is frozen for new decisions. Future ADRs continue in this current directory using the next unused three-digit identifier: `ADR-007`, then `ADR-008`, and so on. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
 
 - [ADR-001 Product Lifecycle](ADR-001-Product-Lifecycle.md)
 - [ADR-002 Product Aggregate](ADR-002-Product-Aggregate.md)
 - [ADR-003 Product Domain Events](ADR-003-Product-Domain-Events.md)
 - [ADR-004 Invisible Lifecycle UX](ADR-004-Invisible-Product-Lifecycle-UX.md)
 - [ADR-005 Catalog–Inventory Boundary](ADR-005-Catalog-Inventory-Domain-Boundary.md)
+- [ADR-006 Product Classification Taxonomy](ADR-006-Product-Classification-Taxonomy.md)
 
 ## العربية
 
@@ -51,7 +52,7 @@ The four-digit series is frozen for new decisions. Future ADRs continue in this 
 
 | ADR الأصلي | العلاقة الحالية | المرجع الحالي |
 |---|---|---|
-| ADR-0002 — قوالب المواصفات | مكمل ولا يوجد بديل | ADR-0002 لاختيار القالب؛ وADR-002 لملكية تجميع المنتج فقط |
+| ADR-0002 — قوالب المواصفات | استبدله ADR-006 جزئياً لمفتاح القالب في V1 | ADR-006 للتصنيف والحل في V1؛ ويحتفظ ADR-0002 بأسباب الحقول القابلة لإعادة الاستخدام |
 | ADR-0003 — الإدخال بمساعدة | اتجاه مستقبلي مكمل | ADR-0003 ضمن نطاقه؛ وADR-003 لأحداث المنتج فقط |
 | ADR-0004 — الإدخال السياقي | مكمل | ADR-0004 للإدخال السياقي؛ وADR-004 لإخفاء دورة الحياة فقط |
 | ADR-0005 — دورة الحياة والحذف | متعارض وتم استبداله | [ADR-001](ADR-001-Product-Lifecycle.md)؛ ويبقى الحذف والسلة والاحتفاظ مؤجلاً |
@@ -64,4 +65,4 @@ The four-digit series is frozen for new decisions. Future ADRs continue in this 
 
 يحتفظ ADR المستبدل بكل محتواه التاريخي، وتتغير حالته إلى `Superseded`، وتضاف ملاحظة ثنائية اللغة ورابط مباشر إلى البديل. ويشير البديل إلى السجل المستبدل عند الحاجة. لا يُعاد تسمية أي رقم أو ترقيمه أو استخدامه أو حذف ملفه.
 
-تُجمّد السلسلة ذات الأرقام الأربعة للقرارات الجديدة. تستمر القرارات المستقبلية في هذا المجلد بالرقم الثلاثي التالي غير المستخدم: `ADR-006` ثم `ADR-007`. يجب فحص المجلدين قبل تخصيص الرقم؛ القيم الرقمية المتشابهة بصيغ مختلفة معرفات مستقلة، لكن يجب ذكر العنوان والرابط دائماً لمنع الالتباس.
+تُجمّد السلسلة ذات الأرقام الأربعة للقرارات الجديدة. تستمر القرارات المستقبلية في هذا المجلد بالرقم الثلاثي التالي غير المستخدم: `ADR-007` ثم `ADR-008`. يجب فحص المجلدين قبل تخصيص الرقم؛ القيم الرقمية المتشابهة بصيغ مختلفة معرفات مستقلة، لكن يجب ذكر العنوان والرابط دائماً لمنع الالتباس.

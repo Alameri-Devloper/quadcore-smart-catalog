@@ -20,6 +20,8 @@ The Task 3.14.1 foundation implements controlled `Product.create` and `Product.r
 
 Task 3.14.2 composes the Aggregate from optional Catalog classification references, optional commercial details and minor-unit pricing, Product-owned specification values, and Product image metadata. An incomplete Draft remains structurally valid; missing content is a future publication concern, not a Draft-preservation failure. Catalog availability is an opaque Catalog configuration reference and is never a Product lifecycle state. Controlled content replacements require an effective time, preserve identity, lifecycle, and `CreatedAt`, and update `UpdatedAt` only when content changes.
 
+Product classification includes an optional immutable `ProductTypeId` reference. Product Type is the functional or structural subtype inside Category; it remains independent from Device Class and Specification Values. Catalog owns Product Type definitions, while Product stores only the opaque identifier. See [ADR-006](../ADR/ADR-006-Product-Classification-Taxonomy.md).
+
 ### Version scope and Workspace boundary
 
 V1 is Single-Workspace and Multi-Branch. Exactly one active `WorkspaceId` is supplied automatically from trusted Application context; it remains part of Product Identity as the future-ready ownership boundary and is never entered or selected by an end user. V1 has no Workspace selector, company switching, tenant provisioning, multi-company user membership, or cross-tenant administration. These operational Multi-Tenant capabilities belong to V2, which is Multi-Workspace and Multi-Tenant.
@@ -36,6 +38,8 @@ Outside Product: inventory quantity, warehouses, stock movements, persisted Qual
 
 تركب Task 3.14.2 التجميع من مراجع تصنيف Catalog الاختيارية، والتفاصيل التجارية والتسعير بالوحدات النقدية الصغرى، وقيم المواصفات المملوكة للمنتج، وبيانات صور المنتج. تبقى المسودة غير المكتملة صالحة بنيوياً؛ فغياب المحتوى يتعلق بالنشر مستقبلاً ولا يمنع حفظ Draft. تمثل حالة التوفر مرجع تهيئة مبهم من Catalog وليست حالة في دورة حياة Product. تتطلب استبدالات المحتوى المضبوطة وقتاً فعالاً، وتحافظ على الهوية ودورة الحياة و`CreatedAt`، ولا تحدث `UpdatedAt` إلا عند تغير المحتوى.
 
+يتضمن تصنيف Product مرجع `ProductTypeId` ثابتاً واختيارياً. يمثل Product Type النوع الوظيفي أو البنيوي داخل Category، ويبقى مستقلاً عن Device Class وقيم المواصفات. يملك Catalog تعريفات Product Type، بينما يخزن Product المعرف المبهم فقط. راجع [ADR-006](../ADR/ADR-006-Product-Classification-Taxonomy.md).
+
 ### نطاق الإصدارات وحد Workspace
 
 الإصدار V1 هو Single-Workspace وMulti-Branch. يمرر سياق Application الموثوق `WorkspaceId` النشط الوحيد تلقائياً، ويبقى المعرف جزءاً من هوية المنتج كحد ملكية جاهز للمستقبل ولا يدخله المستخدم أو يختاره. لا يحتوي V1 على محدد Workspace أو تبديل الشركات أو تهيئة المستأجرين أو عضوية المستخدم في شركات متعددة أو إدارة عابرة للمستأجرين. تنتمي قدرات Multi-Tenant التشغيلية هذه إلى V2، وهو Multi-Workspace وMulti-Tenant.
@@ -47,4 +51,5 @@ Outside Product: inventory quantity, warehouses, stock movements, persisted Qual
 - [ADR-002](../ADR/ADR-002-Product-Aggregate.md)
 - [Specifications](Product-Specifications.md)
 - [Images](Product-Images.md)
+- [ADR-006: Product Classification Taxonomy](../ADR/ADR-006-Product-Classification-Taxonomy.md)
 

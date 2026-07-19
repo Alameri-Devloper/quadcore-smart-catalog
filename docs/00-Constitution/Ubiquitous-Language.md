@@ -7,6 +7,8 @@
 - **Product:** persisted commercial item and Catalog Aggregate Root.
 - **Product Entry:** workflow that collects and validates Product data.
 - **Product Model:** reusable model connecting classification and applicable definitions.
+- **Product Type:** Catalog-owned functional or structural subtype inside a Category; Product stores an optional `ProductTypeId` reference only.
+- **Device Class:** intended use or market segment, distinct from Product Type.
 - **Product Name / Product Code:** human-facing name / workspace-relevant identifier.
 - **Draft:** persisted internal Product not published; never merely unsaved UI state.
 - **Published / Archived:** customer-eligible / retained but unavailable lifecycle states.
@@ -24,6 +26,8 @@
 - **Product:** عنصر تجاري محفوظ والجذر التجميعي للكتالوج.
 - **Product Entry:** مسار جمع بيانات المنتج والتحقق منها.
 - **Product Model:** نموذج قابل لإعادة الاستخدام يربط التصنيف بالتعريفات المناسبة.
+- **Product Type:** نوع وظيفي أو بنيوي يملكه Catalog داخل Category؛ ويخزن Product مرجع `ProductTypeId` الاختياري فقط.
+- **Device Class:** الاستخدام المقصود أو الشريحة السوقية، وهو مستقل عن Product Type.
 - **Product Name / Product Code:** الاسم الظاهر والمعرف المرتبط بمساحة العمل.
 - **Draft:** منتج داخلي محفوظ وغير منشور، وليس حالة واجهة غير محفوظة.
 - **Published / Archived:** منتج متاح للعميل أو محفوظ لكنه غير متاح.
