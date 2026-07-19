@@ -29,7 +29,7 @@ When sources overlap, select the current source of truth in this order: Constitu
 
 A Superseded ADR keeps all historical content, changes its status to `Superseded`, adds a bilingual notice, and links directly to the replacement. The replacement should identify the superseded record when relevant. Do not rename, renumber, reuse, or delete either identifier.
 
-The four-digit series is frozen for new decisions. Future ADRs continue in this current directory using the next unused three-digit identifier: `ADR-007`, then `ADR-008`, and so on. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
+The four-digit series is frozen for new decisions. Future ADRs continue in this current directory using the next unused three-digit identifier: `ADR-008`, then `ADR-009`, and so on. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
 
 - [ADR-001 Product Lifecycle](ADR-001-Product-Lifecycle.md)
 - [ADR-002 Product Aggregate](ADR-002-Product-Aggregate.md)
@@ -37,6 +37,7 @@ The four-digit series is frozen for new decisions. Future ADRs continue in this 
 - [ADR-004 Invisible Lifecycle UX](ADR-004-Invisible-Product-Lifecycle-UX.md)
 - [ADR-005 Catalog–Inventory Boundary](ADR-005-Catalog-Inventory-Domain-Boundary.md)
 - [ADR-006 Product Classification Taxonomy](ADR-006-Product-Classification-Taxonomy.md)
+- [ADR-007 Product Revision and Publication Decision Integrity](ADR-007-Product-Revision-and-Publication-Decision-Integrity.md)
 
 ## العربية
 
@@ -65,4 +66,4 @@ The four-digit series is frozen for new decisions. Future ADRs continue in this 
 
 يحتفظ ADR المستبدل بكل محتواه التاريخي، وتتغير حالته إلى `Superseded`، وتضاف ملاحظة ثنائية اللغة ورابط مباشر إلى البديل. ويشير البديل إلى السجل المستبدل عند الحاجة. لا يُعاد تسمية أي رقم أو ترقيمه أو استخدامه أو حذف ملفه.
 
-تُجمّد السلسلة ذات الأرقام الأربعة للقرارات الجديدة. تستمر القرارات المستقبلية في هذا المجلد بالرقم الثلاثي التالي غير المستخدم: `ADR-007` ثم `ADR-008`. يجب فحص المجلدين قبل تخصيص الرقم؛ القيم الرقمية المتشابهة بصيغ مختلفة معرفات مستقلة، لكن يجب ذكر العنوان والرابط دائماً لمنع الالتباس.
+تُجمّد السلسلة ذات الأرقام الأربعة للقرارات الجديدة. تستمر القرارات المستقبلية في هذا المجلد بالرقم الثلاثي التالي غير المستخدم: `ADR-008` ثم `ADR-009`. يجب فحص المجلدين قبل تخصيص الرقم؛ القيم الرقمية المتشابهة بصيغ مختلفة معرفات مستقلة، لكن يجب ذكر العنوان والرابط دائماً لمنع الالتباس.

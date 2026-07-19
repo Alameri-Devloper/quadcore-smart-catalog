@@ -10,6 +10,8 @@ A Draft may omit classification, commercial content, pricing, specifications, an
 
 `ProductTypeId` is an optional immutable Catalog reference. Product Type remains distinct from Category, Device Class, and Specification Values; Product never owns its definition. The V1 template-resolution order is governed by [ADR-006](../01-Architecture/ADR/ADR-006-Product-Classification-Taxonomy.md) and is not an Aggregate behavior.
 
+Product Revision starts at 0, including initial composition. Each effective content mutation and successful lifecycle transition increments it once; no-op, failed, rejected, and event-read operations do not. Rehydration requires an explicit non-negative safe integer Revision. Publish and restore require an immutable policy-issued approved decision bound to the same Product ID and current pre-transition Revision. Wrong-Product, stale, denied, or fabricated decisions and invalid transitions leave the complete Aggregate and event collection unchanged. Archive is valid only from Published; restoration is valid only from Archived and requires fresh evaluation after archive.
+
 ## العربية
 
 هوية المنتج ثابتة ومقيدة بالمستأجر. يجب أن تطابق قيم المواصفات التعريفات المحلولة. تتبع انتقالات الحالة السياسات المعتمدة، ولا توجد أكثر من صورة رئيسية. المخزون خارج المنتج، والجاهزية المحسوبة ليست مصدراً مخزناً للحقيقة، وتحفظ المسودة الصالحة عند تعذر النشر.
@@ -17,4 +19,6 @@ A Draft may omit classification, commercial content, pricing, specifications, an
 يجوز أن تخلو Draft من التصنيف والمحتوى التجاري والتسعير والمواصفات والصور. يجب ألا تكون المراجع والنصوص المقدمة فارغة. يستخدم Money وحدات صغرى صحيحة غير سالبة ورمز عملة normalized. تكون معرفات حقول المواصفات ومعرفات الصور وترتيباتها فريدة، وتحتوي مجموعة الصور غير الفارغة صورة رئيسية واحدة بالضبط. تبقى حالة توفر Catalog منفصلة عن دورة الحياة. تحافظ تغييرات المحتوى المضبوطة على الهوية ودورة الحياة و`CreatedAt`، ولا تغير العملية غير المؤثرة `UpdatedAt`.
 
 يمثل `ProductTypeId` مرجع Catalog ثابتاً واختيارياً. يبقى Product Type مستقلاً عن Category وDevice Class وقيم المواصفات، ولا يملك Product تعريفه. يحكم [ADR-006](../01-Architecture/ADR/ADR-006-Product-Classification-Taxonomy.md) ترتيب حل القالب في V1، ولا يعد ذلك سلوكاً داخل Aggregate.
+
+تبدأ Product Revision من 0 وتشمل التركيب الأولي. تزيد مرة واحدة مع كل تغيير محتوى مؤثر وكل انتقال ناجح في دورة الحياة، ولا تزيدها العملية غير المؤثرة أو الفاشلة أو المرفوضة ولا قراءة الأحداث. تتطلب إعادة البناء مراجعة صريحة تكون عدداً صحيحاً آمناً وغير سالب. يتطلب النشر والاستعادة قراراً ثابتاً ومعتمداً صادراً عن السياسة ومرتبطاً بمعرف Product نفسه والمراجعة الحالية قبل الانتقال. تترك القرارات الخاصة بمنتج آخر أو القديمة أو المرفوضة أو المصطنعة والانتقالات غير الصالحة Aggregate كاملاً ومجموعة أحداثه دون تغيير. لا تصح الأرشفة إلا من Published، ولا تصح الاستعادة إلا من Archived وبعد تقييم جديد تالٍ للأرشفة.
 

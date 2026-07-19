@@ -1,4 +1,5 @@
 import type { DomainEvent } from "./domain-event";
+import { ProductArchived } from "./product-archived.event";
 import { ProductCreated } from "./product-created.event";
 import {
   ProductClassification,
@@ -18,9 +19,17 @@ import {
   type ProductImageInput,
 } from "./product-image.value-object";
 import {
+  PRODUCT_LIFECYCLE_STATES,
   ProductLifecycleState,
   type ProductLifecycleStateValue,
 } from "./product-lifecycle-state.value-object";
+import {
+  assertCurrentApprovedPublicationDecision,
+  type ProductPublicationDecision,
+} from "./product-publication-policy";
+import { ProductPublished } from "./product-published.event";
+import { ProductRestored } from "./product-restored.event";
+import { ProductRevision } from "./product-revision.value-object";
 import {
   createProductSpecificationValues,
   type ProductSpecificationValue,
@@ -37,6 +46,7 @@ export interface CreateProductInput extends ProductIdentityInput {
 
 export interface RehydrateProductInput extends ProductIdentityInput {
   lifecycleState: ProductLifecycleStateValue;
+  revision: number;
   createdAt: Date;
   updatedAt: Date;
   classification?: ProductClassificationInput;
@@ -52,6 +62,7 @@ interface ProductState {
   commercialDetails?: ProductCommercialDetails;
   specificationValues: ProductSpecificationValue[];
   images: ProductImage[];
+  revision: ProductRevision;
   createdAtEpoch: number;
   updatedAtEpoch: number;
 }
@@ -88,6 +99,7 @@ export class Product {
         input.specificationValues ?? [],
       ),
       images: createProductImages(input.images ?? []),
+      revision: ProductRevision.initial(),
       createdAtEpoch,
       updatedAtEpoch: createdAtEpoch,
     });
@@ -125,6 +137,7 @@ export class Product {
         input.specificationValues ?? [],
       ),
       images: createProductImages(input.images ?? []),
+      revision: ProductRevision.rehydrate(input.revision),
       createdAtEpoch,
       updatedAtEpoch,
     });
@@ -152,6 +165,10 @@ export class Product {
 
   get images(): readonly ProductImage[] {
     return [...this.state.images];
+  }
+
+  get revision(): ProductRevision {
+    return this.state.revision;
   }
 
   get createdAt(): Date {
@@ -185,8 +202,10 @@ export class Product {
       return false;
     }
 
+    const resultingRevision = this.state.revision.next();
     this.state.classification = classification;
     this.state.updatedAtEpoch = updatedAtEpoch;
+    this.state.revision = resultingRevision;
     return true;
   }
 
@@ -201,8 +220,10 @@ export class Product {
       return false;
     }
 
+    const resultingRevision = this.state.revision.next();
     this.state.commercialDetails = commercialDetails;
     this.state.updatedAtEpoch = updatedAtEpoch;
+    this.state.revision = resultingRevision;
     return true;
   }
 
@@ -217,8 +238,10 @@ export class Product {
       return false;
     }
 
+    const resultingRevision = this.state.revision.next();
     this.state.specificationValues = specificationValues;
     this.state.updatedAtEpoch = updatedAtEpoch;
+    this.state.revision = resultingRevision;
     return true;
   }
 
@@ -233,9 +256,103 @@ export class Product {
       return false;
     }
 
+    const resultingRevision = this.state.revision.next();
     this.state.images = images;
     this.state.updatedAtEpoch = updatedAtEpoch;
+    this.state.revision = resultingRevision;
     return true;
+  }
+
+  publish(
+    decision: ProductPublicationDecision,
+    effectiveTime: Date,
+  ): void {
+    if (this.state.lifecycleState.value !== PRODUCT_LIFECYCLE_STATES.draft) {
+      throw new Error("Only a Draft Product can be published.");
+    }
+
+    const effectiveTimeEpoch = this.getValidUpdateTime(effectiveTime);
+    assertCurrentApprovedPublicationDecision(
+      decision,
+      this.state.identity.productId,
+      this.state.revision,
+    );
+
+    const resultingRevision = this.state.revision.next();
+    const lifecycleState = ProductLifecycleState.published();
+    const event = new ProductPublished(
+      this.state.identity.productId,
+      this.state.identity.workspaceId,
+      this.state.identity.catalogId,
+      new Date(effectiveTimeEpoch),
+      this.state.lifecycleState.value,
+      lifecycleState.value,
+      resultingRevision.value,
+    );
+
+    this.state.lifecycleState = lifecycleState;
+    this.state.updatedAtEpoch = effectiveTimeEpoch;
+    this.state.revision = resultingRevision;
+    this.recordEvent(event);
+  }
+
+  archive(effectiveTime: Date): void {
+    if (
+      this.state.lifecycleState.value !== PRODUCT_LIFECYCLE_STATES.published
+    ) {
+      throw new Error("Only a Published Product can be archived.");
+    }
+
+    const effectiveTimeEpoch = this.getValidUpdateTime(effectiveTime);
+    const resultingRevision = this.state.revision.next();
+    const lifecycleState = ProductLifecycleState.archived();
+    const event = new ProductArchived(
+      this.state.identity.productId,
+      this.state.identity.workspaceId,
+      this.state.identity.catalogId,
+      new Date(effectiveTimeEpoch),
+      this.state.lifecycleState.value,
+      lifecycleState.value,
+      resultingRevision.value,
+    );
+
+    this.state.lifecycleState = lifecycleState;
+    this.state.updatedAtEpoch = effectiveTimeEpoch;
+    this.state.revision = resultingRevision;
+    this.recordEvent(event);
+  }
+
+  restore(
+    decision: ProductPublicationDecision,
+    effectiveTime: Date,
+  ): void {
+    if (this.state.lifecycleState.value !== PRODUCT_LIFECYCLE_STATES.archived) {
+      throw new Error("Only an Archived Product can be restored.");
+    }
+
+    const effectiveTimeEpoch = this.getValidUpdateTime(effectiveTime);
+    assertCurrentApprovedPublicationDecision(
+      decision,
+      this.state.identity.productId,
+      this.state.revision,
+    );
+
+    const resultingRevision = this.state.revision.next();
+    const lifecycleState = ProductLifecycleState.published();
+    const event = new ProductRestored(
+      this.state.identity.productId,
+      this.state.identity.workspaceId,
+      this.state.identity.catalogId,
+      new Date(effectiveTimeEpoch),
+      this.state.lifecycleState.value,
+      lifecycleState.value,
+      resultingRevision.value,
+    );
+
+    this.state.lifecycleState = lifecycleState;
+    this.state.updatedAtEpoch = effectiveTimeEpoch;
+    this.state.revision = resultingRevision;
+    this.recordEvent(event);
   }
 
   private getValidUpdateTime(updatedAt: Date): number {
