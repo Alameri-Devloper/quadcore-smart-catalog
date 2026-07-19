@@ -1,5 +1,17 @@
 # QSC Knowledge Engine Vision
 
+> **Historical Document — Superseded**
+>
+> This document is preserved for project history and is not the current authoritative source.
+>
+> Authoritative replacement: [Current Knowledge Engine Vision](Knowledge/QSC-Knowledge-Engine-Vision.md)
+>
+> **وثيقة تاريخية — تم استبدالها**
+>
+> تم الاحتفاظ بهذه الوثيقة لحفظ تاريخ المشروع، لكنها ليست المرجع الحالي المعتمد.
+>
+> الوثيقة المعتمدة البديلة: [رؤية محرك المعرفة الحالية](Knowledge/QSC-Knowledge-Engine-Vision.md)
+
 ## English
 
 ### Purpose and boundary

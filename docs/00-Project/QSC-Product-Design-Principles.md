@@ -6,7 +6,7 @@
 
 This document defines how every future screen, workflow, feature, Wizard, search experience, AI capability, and interaction inside QSC must be designed.
 
-These principles are mandatory. They translate the QSC Product Vision into design behavior and apply across mobile and desktop experiences, every tenant and workspace, and every current or future domain. They do not replace approved Architecture Decision Records; design must satisfy both this document and the applicable ADRs.
+These principles are mandatory. They translate the QSC Product Vision into design behavior and apply across Mobile, Tablet, and Desktop experiences, every tenant and workspace, and every current or future domain. They do not replace approved Architecture Decision Records; design must satisfy both this document and the applicable ADRs.
 
 ## 1. Employee First
 
@@ -144,7 +144,7 @@ Services, repositories, workflow engines, parsers, validation, context resolutio
 
 ## 19. Responsive by Design
 
-Every future feature must be designed for Desktop and Mobile from the beginning instead of adapting one platform later.
+Every future feature must be purpose-designed for Mobile, Tablet, and Desktop from the beginning as equally first-class environments instead of adapting one environment later.
 
 Do not make desktop users feel like they are using a stretched mobile application. Desktop should have layouts designed for productivity, while Mobile should remain optimized for touch interaction.
 
@@ -166,7 +166,7 @@ Every proposed screen, feature, or interaction should be reviewed against these 
 - How is employee work preserved?
 - How is Product Data Quality protected?
 - What must the system explain?
-- How does the experience provide an excellent, platform-appropriate result on both Desktop and Mobile?
+- How does the experience provide an excellent, environment-appropriate result on Mobile, Tablet, and Desktop and support touch, mouse, and keyboard navigation?
 - Can the employee complete the core task without AI?
 
 If a design contradicts an accepted ADR, the ADR governs until a new decision is formally approved. If a design violates these principles without an approved reason, it should not be implemented.
@@ -189,7 +189,7 @@ The system must not assume that every employee understands technical Product spe
 
 تحدد هذه الوثيقة كيفية تصميم كل شاشة وسير عمل وميزة ومعالج وتجربة بحث وقدرة ذكاء اصطناعي وتفاعل مستقبلي داخل QSC.
 
-هذه المبادئ إلزامية. وهي تحول رؤية منتج QSC إلى سلوك تصميمي، وتنطبق على تجارب الجوال وسطح المكتب، وعلى كل مستأجر ومساحة عمل، وعلى كل مجال حالي أو مستقبلي. ولا تستبدل سجلات القرارات المعمارية المعتمدة؛ بل يجب أن يطابق التصميم هذه الوثيقة وسجلات ADR المنطبقة معا.
+هذه المبادئ إلزامية. وهي تحول رؤية منتج QSC إلى سلوك تصميمي، وتنطبق على تجارب الجوال والجهاز اللوحي والكمبيوتر، وعلى كل مستأجر ومساحة عمل، وعلى كل مجال حالي أو مستقبلي. ولا تستبدل سجلات القرارات المعمارية المعتمدة؛ بل يجب أن يطابق التصميم هذه الوثيقة وسجلات ADR المنطبقة معا.
 
 ## 1. الموظف أولا
 
@@ -327,7 +327,7 @@ The system must not assume that every employee understands technical Product spe
 
 ## 19. متجاوب منذ التصميم
 
-يجب تصميم كل ميزة مستقبلية للكمبيوتر والجوال منذ البداية بدلا من تكييفها لاحقا لمنصة أخرى.
+يجب تصميم كل ميزة مستقبلية للجوال والجهاز اللوحي والكمبيوتر منذ البداية كبيئات أساسية ومتساوية بدلا من تكييفها لاحقا لبيئة أخرى.
 
 لا تجعل مستخدم الكمبيوتر يشعر بأنه يستخدم نسخة جوال مكبرة. يجب أن تكون تخطيطات الكمبيوتر مصممة للإنتاجية، بينما يبقى الجوال محسنا للتفاعل باللمس.
 
@@ -349,7 +349,7 @@ The system must not assume that every employee understands technical Product spe
 - كيف يحفظ عمل الموظف؟
 - كيف يحمي جودة بيانات المنتجات؟
 - ما الذي يجب أن يشرحه النظام؟
-- كيف تقدم التجربة نتيجة ممتازة ومناسبة لكل من الكمبيوتر والجوال؟
+- كيف تقدم التجربة نتيجة ممتازة ومناسبة للجوال والجهاز اللوحي والكمبيوتر وتدعم اللمس والفأرة والتنقل بلوحة المفاتيح؟
 - هل يستطيع الموظف إكمال المهمة الأساسية دون ذكاء اصطناعي؟
 
 إذا تعارض التصميم مع ADR معتمد، فيحكم ADR حتى يعتمد قرار جديد رسميا. وإذا خالف التصميم هذه المبادئ دون سبب معتمد، فلا ينبغي تنفيذه.

@@ -1,5 +1,11 @@
 # Changelog
 
+> **Historical Reference | مرجع تاريخي**
+>
+> This document records prior delivery history and is not a current architecture source.
+>
+> تسجل هذه الوثيقة تاريخ التسليم السابق وليست مرجعاً للمعمارية الحالية.
+
 # سجل التغييرات
 
 ## Sprint 02

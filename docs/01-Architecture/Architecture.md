@@ -54,6 +54,6 @@ Every business entity must be designed with tenant ownership in mind. Company ow
 
 ## Responsive First | متجاوب منذ التصميم
 
-The public catalog and employee catalog must provide excellent, purpose-designed experiences on Desktop and Mobile from the beginning.
+The public catalog and employee catalog must provide excellent, purpose-designed experiences on Mobile, Tablet, and Desktop from the beginning. All are equally first-class and support touch, mouse, and keyboard navigation where applicable.
 
-يجب أن يقدم الكتالوج العام وكتالوج الموظف تجربتين ممتازتين ومصممتين للغرض على الكمبيوتر والجوال منذ البداية.
+يجب أن يقدم الكتالوج العام وكتالوج الموظف تجربتين ممتازتين ومصممتين للغرض على الجوال والجهاز اللوحي والكمبيوتر منذ البداية. جميعها بيئات أساسية ومتساوية وتدعم اللمس والفأرة والتنقل بلوحة المفاتيح عند انطباقها.

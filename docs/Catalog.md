@@ -1,5 +1,17 @@
 # Catalog Engine
 
+> **Historical Document — Superseded**
+>
+> This document is preserved for project history and is not the current authoritative source.
+>
+> Authoritative replacement: [Catalog Architecture](01-Architecture/Catalog/README.md)
+>
+> **وثيقة تاريخية — تم استبدالها**
+>
+> تم الاحتفاظ بهذه الوثيقة لحفظ تاريخ المشروع، لكنها ليست المرجع الحالي المعتمد.
+>
+> الوثيقة المعتمدة البديلة: [معمارية الكتالوج](01-Architecture/Catalog/README.md)
+
 ## Hierarchy
 
 Workspace

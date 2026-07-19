@@ -4,11 +4,11 @@
 
 ## English
 
-Development must preserve the project architecture. Every change should be small, focused, and aligned with Domain Driven Design, Clean Architecture, TypeScript, multi-tenant rules, and Responsive First delivery for Desktop and Mobile.
+Development must preserve the project architecture. Every change should be small, focused, and aligned with Domain Driven Design, Clean Architecture, TypeScript, multi-tenant rules, and Responsive First delivery for Mobile, Tablet, and Desktop as equally first-class environments. Functional QA verifies touch, mouse, and keyboard navigation.
 
 ## العربية
 
-يجب أن يحافظ التطوير على معمارية المشروع. كل تغيير يجب أن يكون صغيرا ومركزا ومتوافقا مع التصميم الموجه بالمجال، والمعمارية النظيفة، وTypeScript، وقواعد تعدد المستأجرين، والتسليم وفق مبدأ Responsive First للكمبيوتر والجوال.
+يجب أن يحافظ التطوير على معمارية المشروع. كل تغيير يجب أن يكون صغيرا ومركزا ومتوافقا مع التصميم الموجه بالمجال، والمعمارية النظيفة، وTypeScript، وقواعد تعدد المستأجرين، والتسليم وفق Responsive First للجوال والجهاز اللوحي والكمبيوتر كبيئات أساسية ومتساوية. يتحقق QA الوظيفي من اللمس والفأرة والتنقل بلوحة المفاتيح.
 
 ## Before Starting | قبل البدء
 

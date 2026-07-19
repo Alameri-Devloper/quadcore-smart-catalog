@@ -354,7 +354,7 @@ Image upload must show progress and clear failure messages.
 
 ## 8. Responsive First
 
-Every workflow must provide an excellent experience on both Desktop and Mobile. Neither platform is a secondary experience.
+Every workflow must provide an excellent, purpose-designed experience on Mobile, Tablet, and Desktop. All three are equally first-class environments; Desktop and Tablet are not secondary experiences. Functional QA must verify touch, mouse, and keyboard navigation where applicable.
 
 ### Desktop
 
@@ -374,9 +374,15 @@ Every workflow must provide an excellent experience on both Desktop and Mobile. 
 - Preserve readable labels and short decisions.
 - Split heavy workflows into smaller steps when appropriate.
 
+### Tablet
+
+- Use available space deliberately in relevant orientations.
+- Preserve touch-friendly targets, readable density, and keyboard support.
+- Do not present either a stretched Mobile layout or a reduced Desktop layout.
+
 ## 8. Responsive First
 
-يجب أن يقدم كل سير عمل تجربة ممتازة على الكمبيوتر والجوال. ولا يجوز اعتبار أي منهما تجربة ثانوية.
+يجب أن يقدم كل سير عمل تجربة ممتازة ومصممة للغرض على الجوال والجهاز اللوحي والكمبيوتر. البيئات الثلاث أساسية ومتساوية، ولا يجوز اعتبار الكمبيوتر أو الجهاز اللوحي تجربة ثانوية. يجب أن يتحقق QA الوظيفي من اللمس والفأرة والتنقل بلوحة المفاتيح عند انطباقها.
 
 ### الكمبيوتر
 

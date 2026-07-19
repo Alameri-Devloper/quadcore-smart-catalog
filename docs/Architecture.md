@@ -1,5 +1,17 @@
 # QSC Platform Architecture
 
+> **Historical Document — Superseded**
+>
+> This document is preserved for project history and is not the current authoritative source.
+>
+> Authoritative replacement: [Current Architecture](01-Architecture/README.md)
+>
+> **وثيقة تاريخية — تم استبدالها**
+>
+> تم الاحتفاظ بهذه الوثيقة لحفظ تاريخ المشروع، لكنها ليست المرجع الحالي المعتمد.
+>
+> الوثيقة المعتمدة البديلة: [المعمارية الحالية](01-Architecture/README.md)
+
 # معمارية منصة QSC
 
 ---

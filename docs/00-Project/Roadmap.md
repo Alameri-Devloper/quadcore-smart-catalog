@@ -1,14 +1,20 @@
 # QSC Platform Roadmap
 
+> **Historical Reference | مرجع تاريخي**
+>
+> This roadmap preserves prior planning context. Current planning authority: [Current Roadmap](../06-Roadmap/Current-Roadmap.md).
+>
+> تحفظ هذه الخارطة سياق التخطيط السابق. مرجع التخطيط الحالي: [خارطة الطريق الحالية](../06-Roadmap/Current-Roadmap.md).
+
 # خارطة طريق منصة QSC
 
 ## English
 
-This roadmap describes the planned growth of QSC Platform while preserving Domain Driven Design, Clean Architecture, multi-tenant boundaries, and Responsive First delivery for Desktop and Mobile.
+This roadmap describes the planned growth of QSC Platform while preserving Domain Driven Design, Clean Architecture, multi-tenant boundaries, and Responsive First delivery for Mobile, Tablet, and Desktop as equally first-class environments.
 
 ## العربية
 
-توضح هذه الخارطة نمو منصة QSC المخطط له مع الحفاظ على التصميم الموجه بالمجال، والمعمارية النظيفة، وحدود تعدد المستأجرين، والتسليم وفق مبدأ Responsive First للكمبيوتر والجوال.
+توضح هذه الخارطة نمو منصة QSC المخطط له مع الحفاظ على التصميم الموجه بالمجال، والمعمارية النظيفة، وحدود تعدد المستأجرين، والتسليم وفق Responsive First للجوال والجهاز اللوحي والكمبيوتر كبيئات أساسية ومتساوية.
 
 ## Completed ✅ | مكتمل ✅
 

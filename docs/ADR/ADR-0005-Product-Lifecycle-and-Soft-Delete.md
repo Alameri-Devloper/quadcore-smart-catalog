@@ -1,5 +1,17 @@
 # ADR-0005: Product Lifecycle and Soft Delete
 
+> **Historical Document — Superseded**
+>
+> This document is preserved for project history and is not the current authoritative source.
+>
+> Authoritative replacement: [ADR-001: Product Lifecycle](../01-Architecture/ADR/ADR-001-Product-Lifecycle.md)
+>
+> **وثيقة تاريخية — تم استبدالها**
+>
+> تم الاحتفاظ بهذه الوثيقة لحفظ تاريخ المشروع، لكنها ليست المرجع الحالي المعتمد.
+>
+> الوثيقة المعتمدة البديلة: [ADR-001: دورة حياة المنتج](../01-Architecture/ADR/ADR-001-Product-Lifecycle.md)
+
 ## English
 
 ## Title
@@ -8,7 +20,7 @@ Product Lifecycle and Soft Delete
 
 ## Status
 
-Accepted for future implementation.
+Superseded by ADR-001: Product Lifecycle.
 
 ## Context
 
@@ -78,7 +90,7 @@ An employee stops halfway through Product Entry. The incomplete work remains a D
 
 ## الحالة
 
-معتمد للتنفيذ المستقبلي.
+تم استبداله بواسطة ADR-001: دورة حياة المنتج.
 
 ## السياق
 

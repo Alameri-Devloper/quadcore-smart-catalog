@@ -1,5 +1,17 @@
 # Project Decisions
 
+> **Historical Document — Superseded**
+>
+> This document is preserved for project history and is not the current authoritative source.
+>
+> Authoritative replacement: [Constitution and current ADR register](../00-Constitution/README.md)
+>
+> **وثيقة تاريخية — تم استبدالها**
+>
+> تم الاحتفاظ بهذه الوثيقة لحفظ تاريخ المشروع، لكنها ليست المرجع الحالي المعتمد.
+>
+> الوثيقة المعتمدة البديلة: [الدستور وسجل ADR الحالي](../00-Constitution/README.md)
+
 # قرارات المشروع
 
 ## English
@@ -38,6 +50,6 @@ Mock data is acceptable during early development, but it must stay inside mock f
 
 ### Responsive First | متجاوب منذ التصميم
 
-Catalog workflows must be designed for Desktop and Mobile from the beginning, with desktop productivity and mobile touch interaction treated as equally important.
+Catalog workflows must be designed for Mobile, Tablet, and Desktop from the beginning as equally first-class environments. Functional QA verifies touch, mouse, and keyboard navigation; Desktop and Tablet are never secondary adaptations.
 
-يجب تصميم سير عمل الكتالوج للكمبيوتر والجوال منذ البداية، مع منح إنتاجية الكمبيوتر والتفاعل باللمس على الجوال أهمية متساوية.
+يجب تصميم سير عمل الكتالوج للجوال والجهاز اللوحي والكمبيوتر منذ البداية كبيئات أساسية ومتساوية. يتحقق QA الوظيفي من اللمس والفأرة والتنقل بلوحة المفاتيح، ولا يعد الكمبيوتر أو الجهاز اللوحي نسخة ثانوية.

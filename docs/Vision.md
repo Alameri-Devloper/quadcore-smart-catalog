@@ -1,5 +1,17 @@
 # QSC Platform Vision
 
+> **Historical Document — Superseded**
+>
+> This document is preserved for project history and is not the current authoritative source.
+>
+> Authoritative replacement: [QSC Constitution — Vision](00-Constitution/Vision.md)
+>
+> **وثيقة تاريخية — تم استبدالها**
+>
+> تم الاحتفاظ بهذه الوثيقة لحفظ تاريخ المشروع، لكنها ليست المرجع الحالي المعتمد.
+>
+> الوثيقة المعتمدة البديلة: [دستور QSC — الرؤية](00-Constitution/Vision.md)
+
 # رؤية منصة QSC
 
 ---

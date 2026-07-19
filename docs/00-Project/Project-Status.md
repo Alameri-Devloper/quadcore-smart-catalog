@@ -1,5 +1,11 @@
 # Project Status
 
+> **Historical Reference | مرجع تاريخي**
+>
+> This point-in-time status is preserved for history; use the [current roadmap](../06-Roadmap/Current-Roadmap.md) for current planning authority.
+>
+> حُفظت هذه الحالة الزمنية للتاريخ؛ استخدم [خارطة الطريق الحالية](../06-Roadmap/Current-Roadmap.md) لمرجعية التخطيط الحالية.
+
 # حالة المشروع
 
 ## Current Status | الحالة الحالية

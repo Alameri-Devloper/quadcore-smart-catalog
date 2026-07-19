@@ -53,13 +53,13 @@ QSC should preserve trusted context and never ask employees to provide the same 
 
 ### Responsive First
 
-QSC must provide an excellent, equally important experience on desktop and mobile from Version 1.0. Each platform should use layouts and interactions suited to its strengths without creating separate business rules.
+QSC must provide excellent, equally important experiences on Mobile, Tablet, and Desktop from Version 1.0. Each environment should use layouts and interactions suited to its strengths without creating separate business rules.
 
 ## Responsive First Philosophy
 
 QSC is designed as a Responsive First application.
 
-Every screen should provide an excellent experience on both Desktop and Mobile devices.
+Every screen should provide an excellent, purpose-designed experience on Mobile, Tablet, and Desktop devices.
 
 Desktop layouts should take advantage of larger screens to improve productivity.
 
@@ -317,7 +317,7 @@ These version horizons express product direction. They do not authorize implemen
 
 ### Version 1.0 — Smart Sales Foundation
 
-- Desktop and mobile employee experiences with equal importance from Version 1.0.
+- Mobile, Tablet, and Desktop employee experiences with equal importance from Version 1.0.
 - Smart Catalog.
 - Smart Search.
 - Smart Product Entry.
@@ -466,13 +466,13 @@ QSC is an Employee Productivity and Sales Enablement Platform for Technology Ret
 
 ### Responsive First
 
-يجب أن يقدم QSC تجربة ممتازة ومتساوية الأهمية على الكمبيوتر والجوال منذ الإصدار 1.0. ويجب أن تستخدم كل منصة تخطيطات وتفاعلات تناسب نقاط قوتها دون إنشاء قواعد عمل منفصلة.
+يجب أن يقدم QSC تجارب ممتازة ومتساوية الأهمية على الجوال والجهاز اللوحي والكمبيوتر منذ الإصدار 1.0. ويجب أن تستخدم كل بيئة تخطيطات وتفاعلات تناسب نقاط قوتها دون إنشاء قواعد عمل منفصلة.
 
 ## فلسفة Responsive First
 
 تم تصميم QSC وفق مبدأ Responsive First.
 
-يجب أن تقدم جميع الشاشات تجربة ممتازة على أجهزة الكمبيوتر والهواتف المحمولة.
+يجب أن تقدم جميع الشاشات تجربة ممتازة ومصممة للغرض على أجهزة الجوال والأجهزة اللوحية والكمبيوتر.
 
 يجب أن تستفيد نسخة الكمبيوتر من المساحات الكبيرة لتحسين الإنتاجية.
 
@@ -730,7 +730,7 @@ SSD بسعة 1TB
 
 ### الإصدار 1.0 — أساس المبيعات الذكية
 
-- تجارب الموظف على الكمبيوتر والجوال بأهمية متساوية منذ الإصدار 1.0.
+- تجارب الموظف على الجوال والجهاز اللوحي والكمبيوتر بأهمية متساوية منذ الإصدار 1.0.
 - الكتالوج الذكي.
 - البحث الذكي.
 - إدخال المنتج الذكي.
