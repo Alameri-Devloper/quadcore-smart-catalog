@@ -1,8 +1,8 @@
 import { productsV2 } from "@/domains/catalog/mock/products-v2";
 import { ProductEntity } from "@/domains/catalog/types/product.entity";
-import { IProductRepository } from "@/domains/catalog/repositories/product.repository.interface";
+import { LegacyProductReadRepository } from "@/domains/catalog/repositories/legacy-product-read.repository.interface";
 
-export const MockProductRepository: IProductRepository = {
+export const MockProductRepository: LegacyProductReadRepository = {
   getAll(): ProductEntity[] {
     return productsV2;
   },

@@ -2,10 +2,11 @@ import {
   ProductPricing,
   type ProductPricingInput,
 } from "./money.value-object";
+import { ProductCode } from "./product-code.value-object";
 
 export interface ProductCommercialDetailsInput {
   productName?: string;
-  productCode?: string;
+  productCode?: string | ProductCode;
   productModelId?: string;
   brandId?: string;
   isHighlighted?: boolean;
@@ -23,7 +24,7 @@ const validateOptionalText = (
 
 export class ProductCommercialDetails {
   readonly productName?: string;
-  readonly productCode?: string;
+  readonly productCode?: ProductCode;
   readonly productModelId?: string;
   readonly brandId?: string;
   readonly isHighlighted: boolean;
@@ -31,7 +32,7 @@ export class ProductCommercialDetails {
 
   private constructor(input: ProductCommercialDetailsInput) {
     this.productName = input.productName;
-    this.productCode = input.productCode;
+    this.productCode = createOptionalProductCode(input.productCode);
     this.productModelId = input.productModelId;
     this.brandId = input.brandId;
     this.isHighlighted = input.isHighlighted ?? false;
@@ -45,7 +46,6 @@ export class ProductCommercialDetails {
     input: ProductCommercialDetailsInput = {},
   ): ProductCommercialDetails {
     validateOptionalText("ProductName", input.productName);
-    validateOptionalText("ProductCode", input.productCode);
     validateOptionalText("ProductModelId", input.productModelId);
     validateOptionalText("BrandId", input.brandId);
 
@@ -56,7 +56,7 @@ export class ProductCommercialDetails {
     return (
       other !== undefined &&
       this.productName === other.productName &&
-      this.productCode === other.productCode &&
+      optionalProductCodeEquals(this.productCode, other.productCode) &&
       this.productModelId === other.productModelId &&
       this.brandId === other.brandId &&
       this.isHighlighted === other.isHighlighted &&
@@ -70,3 +70,26 @@ const optionalPricingEquals = (
   right: ProductPricing | undefined,
 ): boolean =>
   left === undefined ? right === undefined : left.equals(right);
+
+const createOptionalProductCode = (
+  value: string | ProductCode | undefined,
+): ProductCode | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value instanceof ProductCode) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error("ProductCode must be a string or ProductCode.");
+  }
+
+  return ProductCode.create(value);
+};
+
+const optionalProductCodeEquals = (
+  left: ProductCode | undefined,
+  right: ProductCode | undefined,
+): boolean => left === undefined ? right === undefined : left.equals(right);
