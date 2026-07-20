@@ -1,21 +1,21 @@
-import { ProductEntity } from "@/domains/catalog/types/product.entity";
+import type { ProductId, WorkspaceId } from "../types/product-identity.value-object";
+import type { ProductRevision } from "../types/product-revision.value-object";
+import type { Product } from "../types/product.aggregate";
+import type {
+  ProductCreateResult,
+  ProductUpdateResult,
+} from "./product-repository-results";
 
-export interface IProductRepository {
-  getAll(): ProductEntity[];
+export interface ProductRepository {
+  findById(
+    workspaceId: WorkspaceId,
+    productId: ProductId,
+  ): Promise<Product | null>;
 
-  getActive(): ProductEntity[];
+  create(product: Product): Promise<ProductCreateResult>;
 
-  getFeatured(): ProductEntity[];
-
-  getByWorkspaceId(workspaceId: string): ProductEntity[];
-
-  getByProductModelId(productModelId: string): ProductEntity[];
-
-  getByBrandId(brandId: string): ProductEntity[];
-
-  getByStatus(status: ProductEntity["status"]): ProductEntity[];
-
-  getById(id: string): ProductEntity | undefined;
-
-  getBySlug(slug: string): ProductEntity | undefined;
+  update(
+    product: Product,
+    expectedPersistedRevision: ProductRevision,
+  ): Promise<ProductUpdateResult>;
 }

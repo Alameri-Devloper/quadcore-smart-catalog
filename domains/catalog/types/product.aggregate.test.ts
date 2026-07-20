@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import "./product-publication.test";
+import "../repositories/product.repository.interface.test";
 import { Money, ProductPricing } from "./money.value-object";
 import { ProductTypeId } from "./product-classification.value-object";
 import { ProductCreated } from "./product-created.event";

@@ -115,7 +115,7 @@ const productSnapshot = (product: Product) => ({
   commercialDetails: product.commercialDetails
     ? {
         productName: product.commercialDetails.productName,
-        productCode: product.commercialDetails.productCode,
+        productCode: product.commercialDetails.productCode?.value,
         productModelId: product.commercialDetails.productModelId,
         brandId: product.commercialDetails.brandId,
         retailPrice: product.commercialDetails.pricing?.retailPrice?.amountMinor,
