@@ -1,0 +1,648 @@
+{
+  "id": "7859ea11-bf87-41fc-ae21-5062fa080770",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.catalog_product_images": {
+      "name": "catalog_product_images",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_image_id": {
+          "name": "product_image_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_main": {
+          "name": "is_main",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alt_text": {
+          "name": "alt_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_product_images_workspace_product_position_uq": {
+          "name": "catalog_product_images_workspace_product_position_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_images_one_main_uq": {
+          "name": "catalog_product_images_one_main_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"catalog_product_images\".\"is_main\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_images_product_fk": {
+          "name": "catalog_product_images_product_fk",
+          "tableFrom": "catalog_product_images",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_images_pk": {
+          "name": "catalog_product_images_pk",
+          "columns": [
+            "workspace_id",
+            "product_id",
+            "product_image_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_images_position_non_negative": {
+          "name": "catalog_product_images_position_non_negative",
+          "value": "\"catalog_product_images\".\"position\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_specification_values": {
+      "name": "catalog_product_specification_values",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specification_field_id": {
+          "name": "specification_field_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value_type": {
+          "name": "value_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text_value": {
+          "name": "text_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "number_value": {
+          "name": "number_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "boolean_value": {
+          "name": "boolean_value",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_product_specification_values_workspace_field_idx": {
+          "name": "catalog_product_specification_values_workspace_field_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "specification_field_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_specification_values_workspace_product_position_uq": {
+          "name": "catalog_product_specification_values_workspace_product_position_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_specification_values_product_fk": {
+          "name": "catalog_product_specification_values_product_fk",
+          "tableFrom": "catalog_product_specification_values",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_specification_values_pk": {
+          "name": "catalog_product_specification_values_pk",
+          "columns": [
+            "workspace_id",
+            "product_id",
+            "specification_field_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_specification_values_position_non_negative": {
+          "name": "catalog_product_specification_values_position_non_negative",
+          "value": "\"catalog_product_specification_values\".\"position\" >= 0"
+        },
+        "catalog_product_specification_values_typed_value": {
+          "name": "catalog_product_specification_values_typed_value",
+          "value": "\n      (\"catalog_product_specification_values\".\"value_type\" = 'string' AND \"catalog_product_specification_values\".\"text_value\" IS NOT NULL AND \"catalog_product_specification_values\".\"number_value\" IS NULL AND \"catalog_product_specification_values\".\"boolean_value\" IS NULL) OR\n      (\"catalog_product_specification_values\".\"value_type\" = 'number' AND \"catalog_product_specification_values\".\"text_value\" IS NULL AND \"catalog_product_specification_values\".\"number_value\" IS NOT NULL AND \"catalog_product_specification_values\".\"boolean_value\" IS NULL) OR\n      (\"catalog_product_specification_values\".\"value_type\" = 'boolean' AND \"catalog_product_specification_values\".\"text_value\" IS NULL AND \"catalog_product_specification_values\".\"number_value\" IS NULL AND \"catalog_product_specification_values\".\"boolean_value\" IS NOT NULL)\n    "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_products": {
+      "name": "catalog_products",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_id": {
+          "name": "catalog_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lifecycle_state": {
+          "name": "lifecycle_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "has_classification": {
+          "name": "has_classification",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_type_id": {
+          "name": "product_type_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "device_class_id": {
+          "name": "device_class_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "condition_id": {
+          "name": "condition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability_status_id": {
+          "name": "availability_status_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_commercial_details": {
+          "name": "has_commercial_details",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_name": {
+          "name": "product_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_code": {
+          "name": "product_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_model_id": {
+          "name": "product_model_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brand_id": {
+          "name": "brand_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_highlighted": {
+          "name": "is_highlighted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "wholesale_price_minor": {
+          "name": "wholesale_price_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wholesale_price_currency": {
+          "name": "wholesale_price_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retail_price_minor": {
+          "name": "retail_price_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retail_price_currency": {
+          "name": "retail_price_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_products_workspace_product_code_uq": {
+          "name": "catalog_products_workspace_product_code_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"catalog_products\".\"product_code\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_catalog_idx": {
+          "name": "catalog_products_workspace_catalog_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "catalog_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_category_idx": {
+          "name": "catalog_products_workspace_category_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "category_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_product_type_idx": {
+          "name": "catalog_products_workspace_product_type_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_brand_idx": {
+          "name": "catalog_products_workspace_brand_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "brand_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_lifecycle_idx": {
+          "name": "catalog_products_workspace_lifecycle_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lifecycle_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_availability_idx": {
+          "name": "catalog_products_workspace_availability_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "availability_status_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "catalog_products_pk": {
+          "name": "catalog_products_pk",
+          "columns": [
+            "workspace_id",
+            "product_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_products_lifecycle_state_valid": {
+          "name": "catalog_products_lifecycle_state_valid",
+          "value": "\"catalog_products\".\"lifecycle_state\" IN ('Draft', 'Published', 'Archived')"
+        },
+        "catalog_products_revision_safe_range": {
+          "name": "catalog_products_revision_safe_range",
+          "value": "\"catalog_products\".\"revision\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_products_timestamps_ordered": {
+          "name": "catalog_products_timestamps_ordered",
+          "value": "\"catalog_products\".\"created_at\" <= \"catalog_products\".\"updated_at\""
+        },
+        "catalog_products_wholesale_pair": {
+          "name": "catalog_products_wholesale_pair",
+          "value": "(\"catalog_products\".\"wholesale_price_minor\" IS NULL) = (\"catalog_products\".\"wholesale_price_currency\" IS NULL)"
+        },
+        "catalog_products_retail_pair": {
+          "name": "catalog_products_retail_pair",
+          "value": "(\"catalog_products\".\"retail_price_minor\" IS NULL) = (\"catalog_products\".\"retail_price_currency\" IS NULL)"
+        },
+        "catalog_products_wholesale_safe_range": {
+          "name": "catalog_products_wholesale_safe_range",
+          "value": "\"catalog_products\".\"wholesale_price_minor\" IS NULL OR \"catalog_products\".\"wholesale_price_minor\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_products_retail_safe_range": {
+          "name": "catalog_products_retail_safe_range",
+          "value": "\"catalog_products\".\"retail_price_minor\" IS NULL OR \"catalog_products\".\"retail_price_minor\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_products_product_code_canonical": {
+          "name": "catalog_products_product_code_canonical",
+          "value": "\"catalog_products\".\"product_code\" IS NULL OR (btrim(\"catalog_products\".\"product_code\") <> '' AND \"catalog_products\".\"product_code\" = upper(btrim(\"catalog_products\".\"product_code\")))"
+        },
+        "catalog_products_classification_presence": {
+          "name": "catalog_products_classification_presence",
+          "value": "\"catalog_products\".\"has_classification\" OR (\"catalog_products\".\"category_id\" IS NULL AND \"catalog_products\".\"product_type_id\" IS NULL AND \"catalog_products\".\"device_class_id\" IS NULL AND \"catalog_products\".\"condition_id\" IS NULL AND \"catalog_products\".\"availability_status_id\" IS NULL)"
+        },
+        "catalog_products_commercial_presence": {
+          "name": "catalog_products_commercial_presence",
+          "value": "\"catalog_products\".\"has_commercial_details\" OR (\"catalog_products\".\"product_name\" IS NULL AND \"catalog_products\".\"product_code\" IS NULL AND \"catalog_products\".\"product_model_id\" IS NULL AND \"catalog_products\".\"brand_id\" IS NULL AND \"catalog_products\".\"is_highlighted\" = false AND \"catalog_products\".\"wholesale_price_minor\" IS NULL AND \"catalog_products\".\"wholesale_price_currency\" IS NULL AND \"catalog_products\".\"retail_price_minor\" IS NULL AND \"catalog_products\".\"retail_price_currency\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

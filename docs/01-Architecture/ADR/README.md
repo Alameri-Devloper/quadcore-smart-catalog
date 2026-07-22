@@ -1,6 +1,6 @@
 # Architecture Decision Records | سجلات القرارات المعمارية
 
-**Status:** Active · **Last Updated:** 2026-07-19 · **Scope:** Decision history
+**Status:** Active · **Last Updated:** 2026-07-21 · **Scope:** Decision history
 
 ## English
 
@@ -29,7 +29,7 @@ When sources overlap, select the current source of truth in this order: Constitu
 
 A Superseded ADR keeps all historical content, changes its status to `Superseded`, adds a bilingual notice, and links directly to the replacement. The replacement should identify the superseded record when relevant. Do not rename, renumber, reuse, or delete either identifier.
 
-The four-digit series is frozen for new decisions. Future ADRs continue in this current directory using the next unused three-digit identifier: `ADR-009`, then `ADR-010`, and so on. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
+The four-digit series is frozen for new decisions. ADR-009 and ADR-010 are assigned; `ADR-011` is next. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
 
 - [ADR-001 Product Lifecycle](ADR-001-Product-Lifecycle.md)
 - [ADR-002 Product Aggregate](ADR-002-Product-Aggregate.md)
@@ -39,6 +39,10 @@ The four-digit series is frozen for new decisions. Future ADRs continue in this 
 - [ADR-006 Product Classification Taxonomy](ADR-006-Product-Classification-Taxonomy.md)
 - [ADR-007 Product Revision and Publication Decision Integrity](ADR-007-Product-Revision-and-Publication-Decision-Integrity.md)
 - [ADR-008 Product Repository Contract and Optimistic Concurrency](ADR-008-Product-Repository-Contract-and-Optimistic-Concurrency.md)
+- [ADR-009 Provider-Neutral PostgreSQL Product Persistence](ADR-009-Provider-Neutral-PostgreSQL-Product-Persistence.md)
+- [ADR-010 Stable Product Media Storage Paths](ADR-010-Stable-Product-Media-Storage-Paths.md)
+
+`ADR-011` is the next available identifier. | المعرّف التالي المتاح هو `ADR-011`.
 
 ## العربية
 
