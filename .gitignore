@@ -44,3 +44,8 @@ next-env.d.ts
 
 # Temporary task review bundles
 docs/05-Development/Tasks/*-Review.zip
+
+# Automated task review artifacts
+artifacts/task-reviews/
+QSC-Reviews/
+*.review-temp

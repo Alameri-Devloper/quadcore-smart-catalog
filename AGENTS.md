@@ -112,3 +112,18 @@ The report must contain:
 Then wait for review.
 
 Never continue to another task automatically.
+
+## Approved Task Completion
+
+After every approved implementation task:
+
+1. Write the exact final report to `docs/05-Development/Reports/`.
+2. Run all task-required verification commands.
+3. Generate the automated review bundle.
+4. Preserve exact source files and sanitize evidence only.
+5. Never include credentials or real environment files.
+6. Never stage, commit, push, merge, or delete files automatically.
+7. Report the repository-local and exported ZIP paths.
+8. Stop for review.
+
+The review tool may clean temporary artifacts created by its own failed invocation. It must never delete project source, user data, prior review evidence, or Git content.
