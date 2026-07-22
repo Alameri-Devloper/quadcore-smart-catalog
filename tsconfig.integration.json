@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".next/integration-tests",
+    "rootDir": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "noEmit": false,
+    "isolatedModules": false,
+    "incremental": false
+  },
+  "include": [
+    "domains/catalog/infrastructure/**/*.ts",
+    "domains/catalog/repositories/**/*.ts",
+    "domains/catalog/types/**/*.ts"
+  ]
+}
