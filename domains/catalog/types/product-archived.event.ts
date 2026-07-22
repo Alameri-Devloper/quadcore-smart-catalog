@@ -5,6 +5,7 @@ import type {
   WorkspaceId,
 } from "./product-identity.value-object";
 import type { ProductLifecycleStateValue } from "./product-lifecycle-state.value-object";
+import type { ProductArchiveReason } from "./product-archive-reason.value-object";
 
 export const PRODUCT_ARCHIVED_EVENT_NAME = "ProductArchived" as const;
 
@@ -16,6 +17,7 @@ export class ProductArchived implements DomainEvent {
   readonly previousLifecycleState: ProductLifecycleStateValue;
   readonly currentLifecycleState: ProductLifecycleStateValue;
   readonly resultingRevision: number;
+  readonly archiveReason: ProductArchiveReason;
   private readonly occurredAtEpoch: number;
 
   constructor(
@@ -26,6 +28,7 @@ export class ProductArchived implements DomainEvent {
     previousLifecycleState: ProductLifecycleStateValue,
     currentLifecycleState: ProductLifecycleStateValue,
     resultingRevision: number,
+    archiveReason: ProductArchiveReason,
   ) {
     this.productId = productId;
     this.workspaceId = workspaceId;
@@ -33,6 +36,7 @@ export class ProductArchived implements DomainEvent {
     this.previousLifecycleState = previousLifecycleState;
     this.currentLifecycleState = currentLifecycleState;
     this.resultingRevision = resultingRevision;
+    this.archiveReason = archiveReason;
     this.occurredAtEpoch = occurredAt.getTime();
     Object.freeze(this);
   }

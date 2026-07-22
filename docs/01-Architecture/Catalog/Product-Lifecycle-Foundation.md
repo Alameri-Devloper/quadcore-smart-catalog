@@ -12,7 +12,13 @@ Every structurally valid canonical Product may be persisted as Draft; a `Product
 
 The implemented events are `ProductCreated`, `ProductPublished`, `ProductArchived`, and `ProductRestored`. They are Domain facts; no Event Bus is in current scope. `ProductSavedAsDraft` remains an approved event name for a future save workflow, not an event raised by current Aggregate mutations. Product Revision protects publication decisions and is not Product Version History. Approval workflows, history, audit, notifications, and integrations remain future capabilities.
 
+### Smart Save lifecycle
+Smart Save preserves incomplete Drafts, publishes ready Drafts, archives incomplete Published Products with `PublicationRequirementsNotMet`, restores only those automatic archives, and never auto-restores `Manual` archives.
+
 ## العربية
+
+### دورة حياة الحفظ الذكي
+يحفظ الحفظ الذكي المسودات الناقصة وينشر الجاهزة ويؤرشف المنشور الناقص آلياً، ويستعيد الأرشفة الآلية فقط ولا يستعيد الأرشفة اليدوية تلقائياً.
 
 المنتج هو Aggregate Root وهويته `ProductId` و`WorkspaceId` و`CatalogId` ولا يوجد `LifecycleId`. الحالات هي Draft وPublished وArchived. الانتقالات المسموحة: من Draft إلى Published، ومن Published إلى Archived، ومن Archived إلى Published. بقية الانتقالات المذكورة أعلاه غير مسموحة حالياً، ولا يعود المنتج المنشور إلى Draft تلقائياً.
 

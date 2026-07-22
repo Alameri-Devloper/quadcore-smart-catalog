@@ -8,7 +8,13 @@ Primary use cases are start/resume Product Entry, resolve definitions, validate 
 
 Future Product persistence use cases depend on the canonical `ProductRepository` port. They call explicit create or update, retain the persisted Revision observed at load time, and pass it as `expectedPersistedRevision` after Domain mutations. They handle typed Product ID, Product Code, not-found, and Revision conflicts; unexpected Infrastructure failures remain failures. Only after successful persistence may Application pull Domain Events for future dispatch. Product Code availability remains advisory and is not currently part of the port.
 
+### Smart Save Product
+One use case distinguishes Create and Update, gets trusted Workspace context, resolves current requirements, applies controlled Product changes, and performs one repository write. Conflicts are typed and never retried. Events are extracted once only after success.
+
 ## العربية
+
+### الحفظ الذكي للمنتج
+تميّز حالة استخدام واحدة الإنشاء والتحديث، وتحصل على مساحة عمل موثوقة، وتحل المتطلبات الحالية، وتنفذ كتابة واحدة. تُعاد التعارضات بأنواع صريحة دون إعادة محاولة، ولا تُسحب الأحداث إلا بعد النجاح.
 
 حالات الاستخدام الرئيسية هي بدء إدخال المنتج أو استكماله، وحل التعريفات، والتحقق، والحفظ، والنشر عند سماح السياسة، والأرشفة، والاستعادة، والعرض. توفر خدمات التطبيق سياق مساحة العمل وعقود المستودعات، ويعيد المجال النتائج والأحداث، وتعرض الواجهة الإرشاد والاستعادة.
 

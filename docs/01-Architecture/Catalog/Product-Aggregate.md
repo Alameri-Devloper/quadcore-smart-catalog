@@ -35,7 +35,13 @@ A Branch is not a Workspace. Product belongs to the Workspace Catalog, so `Branc
 
 Outside Product: inventory quantity, warehouses, stock movements, persisted Quality Score, persisted Ready for Customer, specification and Option Set definitions, file-storage implementation, React state, and repository implementation.
 
+### Smart Save archive reason
+An Archived Product has exactly one Domain-owned `ProductArchiveReason`; Draft and Published Products have none. Controlled archive sets the reason and restore clears it.
+
 ## العربية
+
+### سبب الأرشفة في الحفظ الذكي
+للمنتج المؤرشف سبب واحد يملكه المجال، بينما لا تحمل المسودة والمنتج المنشور سبباً. تضبط الأرشفة السبب وتمسحه الاستعادة عبر عمليات مضبوطة.
 
 المنتج هو Aggregate Root ويضم الهوية ودورة الحياة والمراجعة والتفاصيل التجارية وقيم المواصفات والصور وأحداث المجال. تشمل كائناته القيمية `ProductIdentity` و`ProductLifecycleState` و`ProductRevision` و`ProductCode` والمال والتسعير وقيمة المواصفة وهوية الصورة وبياناتها. تبقى الكميات والمستودعات وحركات المخزون ومؤشرات الجاهزية المحسوبة والتعريفات وتخزين الملفات وحالة React وتنفيذ المستودع خارج المنتج.
 

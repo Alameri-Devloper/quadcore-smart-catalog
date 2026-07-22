@@ -10,7 +10,13 @@ Create and update are distinct. Create atomically enforces Product ID and Worksp
 
 Infrastructure adapters map the complete Product Aggregate to and from their private persistence representation, preserving identity, lifecycle, Revision, timestamps, classification, commercial details, minor-unit Money, specification values, image metadata, and canonical Product Code. Repository operations never pull or dispatch Domain Events. The repository contract itself selects no database, ORM, schema, mapper, Outbox, or migration.
 
+### Product archive reason
+PostgreSQL persists nullable `archive_reason`. A named CHECK requires a supported value for Archived and NULL for Draft or Published. Migration `0001` maps legacy Archived rows to `Manual`; optimistic concurrency is unchanged.
+
 ## العربية
+
+### سبب أرشفة المنتج
+يخزن PostgreSQL الحقل `archive_reason`. يفرض قيد مسمى سبباً معتمداً للحالة Archived وNULL للحالتين الأخريين. يصنف الترحيل `0001` السجلات القديمة كـ `Manual` دون تغيير التزامن التفاؤلي.
 
 لا تصل المكونات إلى قاعدة البيانات. تعتمد خدمات Application على منافذ مستودعات مستقلة عن التقنية وتنفذها Infrastructure. يمثل `ProductRepository` منفذ تخزين Product Aggregate المعتمد الوحيد. يتقيد `findById` صراحة بـ`WorkspaceId`، ويستخدم الإنشاء والتحديث نطاق Workspace الثابت في هوية Product. يعيد المنفذ Products المعتمدة ونتائج متوقعة typed، ولا يكشف DTOs التخزين أو نماذج ORM.
 

@@ -8,6 +8,13 @@
       "when": 1784610351564,
       "tag": "0000_product_persistence_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784702741230,
+      "tag": "0001_product_archive_reason",
+      "breakpoints": true
     }
   ]
 }

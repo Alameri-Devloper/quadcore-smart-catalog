@@ -14,7 +14,13 @@ Product Revision starts at 0, including initial composition. Each effective cont
 
 Product Code is optional for Draft and has one immutable canonical representation: surrounding whitespace is removed and case is normalized to uppercase. Equivalent case variants compare equally. When present, Product Code must be unique across the complete Workspace regardless of Catalog or lifecycle state; archive does not release it. Atomic persistence enforcement is authoritative. Product Identity fixes Workspace ownership, and Repository update uses the persisted Revision observed at load time to prevent lost updates.
 
+### Archive reason
+Archived requires exactly one `Manual` or `PublicationRequirementsNotMet` reason. Draft and Published require no reason. Restore atomically clears and records the previous reason.
+
 ## العربية
+
+### سبب الأرشفة
+تتطلب Archived سبباً واحداً يدوياً أو لنقص متطلبات النشر، ولا يوجد سبب في Draft أو Published. تمسح الاستعادة السبب ذرياً وتسجل السبب السابق.
 
 هوية المنتج ثابتة ومقيدة بالمستأجر. يجب أن تطابق قيم المواصفات التعريفات المحلولة. تتبع انتقالات الحالة السياسات المعتمدة، ولا توجد أكثر من صورة رئيسية. المخزون خارج المنتج، والجاهزية المحسوبة ليست مصدراً مخزناً للحقيقة، وتحفظ المسودة الصالحة عند تعذر النشر.
 

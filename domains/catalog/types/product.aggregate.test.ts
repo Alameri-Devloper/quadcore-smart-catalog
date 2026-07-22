@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import "./product-publication.test";
 import "../repositories/product.repository.interface.test";
+import "../services/smart-save-product.test";
 import { Money, ProductPricing } from "./money.value-object";
+import { PRODUCT_ARCHIVE_REASONS } from "./product-archive-reason.value-object";
 import { ProductTypeId } from "./product-classification.value-object";
 import { ProductCreated } from "./product-created.event";
 import { CatalogId, ProductId, WorkspaceId } from "./product-identity.value-object";
@@ -99,6 +101,9 @@ describe("Product rehydration", () => {
       const product = Product.rehydrate({
         ...identity(),
         lifecycleState,
+        archiveReason: lifecycleState === PRODUCT_LIFECYCLE_STATES.archived
+          ? PRODUCT_ARCHIVE_REASONS.manual
+          : undefined,
         revision: 4,
         createdAt,
         updatedAt,
@@ -158,6 +163,19 @@ describe("Product rehydration", () => {
 
     assert.equal(product.createdAt.toISOString(), createdAt.toISOString());
     assert.equal(product.updatedAt.toISOString(), updatedAt.toISOString());
+  });
+
+  it("enforces the archive-reason lifecycle invariant", () => {
+    assert.throws(() => Product.rehydrate({
+      ...identity(), lifecycleState: PRODUCT_LIFECYCLE_STATES.archived,
+      revision: 1, createdAt, updatedAt,
+    }), /requires an archive reason/);
+    for (const lifecycleState of [PRODUCT_LIFECYCLE_STATES.draft, PRODUCT_LIFECYCLE_STATES.published]) {
+      assert.throws(() => Product.rehydrate({
+        ...identity(), lifecycleState, archiveReason: PRODUCT_ARCHIVE_REASONS.manual,
+        revision: 1, createdAt, updatedAt,
+      }), /must not have an archive reason/);
+    }
   });
 });
 
@@ -688,6 +706,7 @@ describe("Product composition rehydration and updates", () => {
     const product = Product.rehydrate({
       ...identity(),
       lifecycleState: PRODUCT_LIFECYCLE_STATES.archived,
+      archiveReason: PRODUCT_ARCHIVE_REASONS.manual,
       revision: 7,
       createdAt,
       updatedAt,

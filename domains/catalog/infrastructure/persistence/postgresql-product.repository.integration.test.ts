@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { PRODUCT_CREATE_OUTCOMES, PRODUCT_UPDATE_OUTCOMES } from "../../repositories/product-repository-results";
 import { ProductTypeId } from "../../types/product-classification.value-object";
+import { PRODUCT_ARCHIVE_REASONS } from "../../types/product-archive-reason.value-object";
 import { CatalogId, ProductId, WorkspaceId } from "../../types/product-identity.value-object";
 import { ProductRevision } from "../../types/product-revision.value-object";
 import { Product } from "../../types/product.aggregate";
@@ -111,12 +112,42 @@ describe("PostgreSqlProductRepository create and find", () => {
   it("does not scope ProductCode by Catalog and keeps archived codes reserved", async () => {
     const archived = Product.rehydrate({
       ...identity("workspace-a", "archived", "catalog-one"), lifecycleState: "Archived", revision: 7,
+      archiveReason: PRODUCT_ARCHIVE_REASONS.manual,
       createdAt: new Date("2026-01-01T00:00:00Z"), updatedAt: new Date("2026-02-01T00:00:00Z"),
       commercialDetails: { productCode: "RESERVED" },
     });
     await repository.create(archived);
+    const rehydrated = await repository.findById(archived.identity.workspaceId, archived.identity.productId);
+    assert.equal(rehydrated?.archiveReason?.value, PRODUCT_ARCHIVE_REASONS.manual);
     const conflict = await repository.create(completeProduct("workspace-a", "new", "RESERVED"));
     assert.equal(conflict.outcome, PRODUCT_CREATE_OUTCOMES.productCodeConflict);
+  });
+
+  it("enforces archive_reason lifecycle consistency in PostgreSQL", async () => {
+    const invalidRows = [
+      ["invalid-draft", "Draft", "Manual"],
+      ["invalid-archived", "Archived", null],
+    ] as const;
+    for (const [productIdValue, lifecycleState, archiveReason] of invalidRows) {
+      await assert.rejects(
+        connection.database.execute(sql`
+          INSERT INTO catalog_products (
+            workspace_id, product_id, catalog_id, lifecycle_state, archive_reason,
+            revision, created_at, updated_at, has_classification,
+            has_commercial_details, is_highlighted
+          ) VALUES (
+            'workspace-a', ${productIdValue}, 'catalog-a', ${lifecycleState}, ${archiveReason},
+            0, NOW(), NOW(), false, false, false
+          )
+        `),
+        (error: unknown) => {
+          const cause = typeof error === "object" && error !== null && "cause" in error
+            ? (error as { cause?: { constraint?: unknown } }).cause
+            : undefined;
+          return cause?.constraint === "catalog_products_archive_reason_lifecycle";
+        },
+      );
+    }
   });
 
   it("returns null for missing or differently scoped Products", async () => {
