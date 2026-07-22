@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsc --outDir .next/domain-tests --rootDir . --module commonjs --moduleResolution node --target ES2022 --noEmit false --isolatedModules false --incremental false --esModuleInterop true --strict true --skipLibCheck true domains/catalog/types/product.aggregate.test.ts && node --test .next/domain-tests/domains/catalog/types/product.aggregate.test.js",
+    "test": "tsc --outDir .next/domain-tests --rootDir . --module commonjs --moduleResolution node --target ES2022 --noEmit false --isolatedModules false --incremental false --esModuleInterop true --strict true --skipLibCheck true domains/catalog/types/product.aggregate.test.ts && node --test .next/domain-tests/domains/catalog/types/product.aggregate.test.js && npm run test:task-review",
+    "test:task-review": "tsx --test scripts/task-review/__tests__/*.test.ts",
+    "review:bundle": "tsx scripts/task-review/create-task-review-bundle.ts",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
@@ -29,7 +31,9 @@
     "drizzle-kit": "^0.31.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "fflate": "^0.8.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }
