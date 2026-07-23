@@ -1,0 +1,112 @@
+name: QSC CI Quality Gate
+
+on:
+  push:
+    branches:
+      - main
+      - feature/product-entry-engine
+  pull_request:
+    branches:
+      - main
+      - feature/product-entry-engine
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up repository Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies deterministically
+        run: npm ci
+
+      - name: Validate TypeScript
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Validate Drizzle migration metadata
+        env:
+          DATABASE_URL: ${{ format('{0}://{1}:{2}@127.0.0.1:5432/qsc_ci', 'postgresql', 'qsc_ci_runner', 'test') }}
+        run: npm run db:check
+
+      - name: Observe runtime dependency audit baseline (non-blocking)
+        continue-on-error: true
+        run: npm audit --omit=dev
+
+      - name: Observe full dependency audit baseline (non-blocking)
+        continue-on-error: true
+        run: npm audit
+
+  postgresql-integration:
+    name: PostgreSQL Integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: qsc_ci_runner
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U qsc_ci_runner -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      POSTGRES_USER: qsc_ci_runner
+      POSTGRES_PASSWORD: test
+      DATABASE_URL: ${{ format('{0}://{1}:{2}@127.0.0.1:5432/qsc_ci', 'postgresql', 'qsc_ci_runner', 'test') }}
+      TEST_DATABASE_URL: ${{ format('{0}://{1}:{2}@127.0.0.1:5432/qsc_ci_test', 'postgresql', 'qsc_ci_runner', 'test') }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up repository Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies deterministically
+        run: npm ci
+
+      - name: Create isolated CI databases
+        env:
+          PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        run: |
+          psql --host=127.0.0.1 --username="$POSTGRES_USER" --dbname=postgres --set=ON_ERROR_STOP=1 --command='CREATE DATABASE qsc_ci;'
+          psql --host=127.0.0.1 --username="$POSTGRES_USER" --dbname=postgres --set=ON_ERROR_STOP=1 --command='CREATE DATABASE qsc_ci_test;'
+
+      - name: Validate integration TypeScript
+        run: npx tsc --project tsconfig.integration.json
+
+      - name: Apply committed migrations to clean application database
+        run: npm run db:migrate
+
+      - name: Run PostgreSQL integration tests
+        run: npm run test:integration
