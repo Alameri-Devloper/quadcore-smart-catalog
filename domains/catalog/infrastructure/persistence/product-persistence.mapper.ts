@@ -1,4 +1,5 @@
 import { ProductTypeId } from "../../types/product-classification.value-object";
+import { ProductArchiveReason, type ProductArchiveReasonValue } from "../../types/product-archive-reason.value-object";
 import { CatalogId, ProductId, WorkspaceId } from "../../types/product-identity.value-object";
 import { ProductLifecycleState } from "../../types/product-lifecycle-state.value-object";
 import { Product } from "../../types/product.aggregate";
@@ -57,6 +58,7 @@ export class ProductPersistenceMapper {
         ...scope,
         catalogId: identity.catalogId.value,
         lifecycleState: product.lifecycleState.value,
+        archiveReason: product.archiveReason?.value,
         revision: assertSafeNonNegativeInteger("Product Revision", product.revision.value),
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
@@ -133,6 +135,9 @@ export class ProductPersistenceMapper {
       productId: ProductId.create(product.productId),
       catalogId: CatalogId.create(product.catalogId),
       lifecycleState: ProductLifecycleState.rehydrate(product.lifecycleState).value,
+      archiveReason: product.archiveReason === null
+        ? undefined
+        : ProductArchiveReason.rehydrate(product.archiveReason as ProductArchiveReasonValue).value,
       revision: assertSafeNonNegativeInteger("Product Revision", product.revision),
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

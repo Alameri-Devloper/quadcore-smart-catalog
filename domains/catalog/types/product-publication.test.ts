@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { ProductArchived } from "./product-archived.event";
+import { PRODUCT_ARCHIVE_REASONS, ProductArchiveReason } from "./product-archive-reason.value-object";
 import { ProductTypeId } from "./product-classification.value-object";
 import { ProductId, WorkspaceId, CatalogId } from "./product-identity.value-object";
 import { PRODUCT_LIFECYCLE_STATES } from "./product-lifecycle-state.value-object";
@@ -88,6 +89,9 @@ const rehydrateCompleteProduct = (
     ...productIdentity(productId),
     ...completeComposition(),
     lifecycleState,
+    archiveReason: lifecycleState === PRODUCT_LIFECYCLE_STATES.archived
+      ? PRODUCT_ARCHIVE_REASONS.manual
+      : undefined,
     revision,
     createdAt,
     updatedAt: firstUpdate,
@@ -488,9 +492,10 @@ describe("Product archive transition", () => {
   it("archives a Published Product and records one event", () => {
     const product = rehydrateCompleteProduct(PRODUCT_LIFECYCLE_STATES.published);
 
-    product.archive(secondUpdate);
+    product.archive(ProductArchiveReason.manual(), secondUpdate);
 
     assert.equal(product.lifecycleState.value, PRODUCT_LIFECYCLE_STATES.archived);
+    assert.equal(product.archiveReason?.value, PRODUCT_ARCHIVE_REASONS.manual);
     assert.equal(product.revision.value, 6);
     assert.equal(product.updatedAt.toISOString(), secondUpdate.toISOString());
     assert.equal(product.events.length, 1);
@@ -499,6 +504,7 @@ describe("Product archive transition", () => {
     assert.equal(event.previousLifecycleState, PRODUCT_LIFECYCLE_STATES.published);
     assert.equal(event.currentLifecycleState, PRODUCT_LIFECYCLE_STATES.archived);
     assert.equal(event.resultingRevision, 6);
+    assert.equal(event.archiveReason.value, PRODUCT_ARCHIVE_REASONS.manual);
   });
 
   for (const lifecycleState of [
@@ -509,7 +515,7 @@ describe("Product archive transition", () => {
       const product = rehydrateCompleteProduct(lifecycleState);
       const before = productSnapshot(product);
 
-      assert.throws(() => product.archive(secondUpdate), /Only a Published/);
+      assert.throws(() => product.archive(ProductArchiveReason.manual(), secondUpdate), /Only a Published/);
       assert.deepEqual(productSnapshot(product), before);
     });
   }
@@ -523,11 +529,16 @@ describe("Product restore transition", () => {
     product.restore(decision, secondUpdate);
 
     assert.equal(product.lifecycleState.value, PRODUCT_LIFECYCLE_STATES.published);
+    assert.equal(product.archiveReason, undefined);
     assert.equal(product.revision.value, 6);
     assert.equal(product.createdAt.toISOString(), createdAt.toISOString());
     assert.equal(product.updatedAt.toISOString(), secondUpdate.toISOString());
     assert.equal(product.events.length, 1);
     assert.ok(product.events[0] instanceof ProductRestored);
+    assert.equal(
+      (product.events[0] as ProductRestored).previousArchiveReason.value,
+      PRODUCT_ARCHIVE_REASONS.manual,
+    );
   });
 
   it("rejects an old pre-archive approval", () => {
@@ -536,7 +547,7 @@ describe("Product restore transition", () => {
       product,
       allRequirements(),
     );
-    product.archive(secondUpdate);
+    product.archive(ProductArchiveReason.manual(), secondUpdate);
     product.pullDomainEvents();
     const before = productSnapshot(product);
 
@@ -603,7 +614,7 @@ describe("Product restore transition", () => {
 describe("Product lifecycle event integrity", () => {
   it("protects event timestamps and immutable event data", () => {
     const product = rehydrateCompleteProduct(PRODUCT_LIFECYCLE_STATES.published);
-    product.archive(secondUpdate);
+    product.archive(ProductArchiveReason.manual(), secondUpdate);
     const event = product.events[0] as ProductArchived;
     const exposedTime = event.occurredAt;
 
@@ -615,7 +626,7 @@ describe("Product lifecycle event integrity", () => {
 
   it("pulls transition events once without changing business state or Revision", () => {
     const product = rehydrateCompleteProduct(PRODUCT_LIFECYCLE_STATES.published);
-    product.archive(secondUpdate);
+    product.archive(ProductArchiveReason.manual(), secondUpdate);
     const before = productSnapshot(product);
 
     const events = product.pullDomainEvents();

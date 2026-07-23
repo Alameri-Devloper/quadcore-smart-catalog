@@ -1,4 +1,8 @@
 import type { DomainEvent } from "./domain-event";
+import {
+  ProductArchiveReason,
+  type ProductArchiveReasonValue,
+} from "./product-archive-reason.value-object";
 import { ProductArchived } from "./product-archived.event";
 import { ProductCreated } from "./product-created.event";
 import {
@@ -46,6 +50,7 @@ export interface CreateProductInput extends ProductIdentityInput {
 
 export interface RehydrateProductInput extends ProductIdentityInput {
   lifecycleState: ProductLifecycleStateValue;
+  archiveReason?: ProductArchiveReasonValue;
   revision: number;
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +63,7 @@ export interface RehydrateProductInput extends ProductIdentityInput {
 interface ProductState {
   identity: ProductIdentity;
   lifecycleState: ProductLifecycleState;
+  archiveReason?: ProductArchiveReason;
   classification?: ProductClassification;
   commercialDetails?: ProductCommercialDetails;
   specificationValues: ProductSpecificationValue[];
@@ -89,6 +95,7 @@ export class Product {
     const product = new Product({
       identity,
       lifecycleState: ProductLifecycleState.draft(),
+      archiveReason: undefined,
       classification: input.classification
         ? ProductClassification.create(input.classification)
         : undefined,
@@ -124,9 +131,23 @@ export class Product {
       throw new Error("CreatedAt cannot be later than UpdatedAt.");
     }
 
+    const lifecycleState = ProductLifecycleState.rehydrate(input.lifecycleState);
+    const archiveReason = input.archiveReason
+      ? ProductArchiveReason.rehydrate(input.archiveReason)
+      : undefined;
+    const isArchived = lifecycleState.value === PRODUCT_LIFECYCLE_STATES.archived;
+    if (isArchived !== (archiveReason !== undefined)) {
+      throw new Error(
+        isArchived
+          ? "Archived Product requires an archive reason."
+          : "Draft and Published Products must not have an archive reason.",
+      );
+    }
+
     return new Product({
       identity: ProductIdentity.create(input),
-      lifecycleState: ProductLifecycleState.rehydrate(input.lifecycleState),
+      lifecycleState,
+      archiveReason,
       classification: input.classification
         ? ProductClassification.create(input.classification)
         : undefined,
@@ -149,6 +170,10 @@ export class Product {
 
   get lifecycleState(): ProductLifecycleState {
     return this.state.lifecycleState;
+  }
+
+  get archiveReason(): ProductArchiveReason | undefined {
+    return this.state.archiveReason;
   }
 
   get classification(): ProductClassification | undefined {
@@ -296,11 +321,14 @@ export class Product {
     this.recordEvent(event);
   }
 
-  archive(effectiveTime: Date): void {
+  archive(reason: ProductArchiveReason, effectiveTime: Date): void {
     if (
       this.state.lifecycleState.value !== PRODUCT_LIFECYCLE_STATES.published
     ) {
       throw new Error("Only a Published Product can be archived.");
+    }
+    if (!(reason instanceof ProductArchiveReason)) {
+      throw new Error("Product archive reason is required.");
     }
 
     const effectiveTimeEpoch = this.getValidUpdateTime(effectiveTime);
@@ -314,9 +342,11 @@ export class Product {
       this.state.lifecycleState.value,
       lifecycleState.value,
       resultingRevision.value,
+      reason,
     );
 
     this.state.lifecycleState = lifecycleState;
+    this.state.archiveReason = reason;
     this.state.updatedAtEpoch = effectiveTimeEpoch;
     this.state.revision = resultingRevision;
     this.recordEvent(event);
@@ -331,6 +361,10 @@ export class Product {
     }
 
     const effectiveTimeEpoch = this.getValidUpdateTime(effectiveTime);
+    const previousArchiveReason = this.state.archiveReason;
+    if (!previousArchiveReason) {
+      throw new Error("Archived Product requires an archive reason.");
+    }
     assertCurrentApprovedPublicationDecision(
       decision,
       this.state.identity.productId,
@@ -347,9 +381,11 @@ export class Product {
       this.state.lifecycleState.value,
       lifecycleState.value,
       resultingRevision.value,
+      previousArchiveReason,
     );
 
     this.state.lifecycleState = lifecycleState;
+    this.state.archiveReason = undefined;
     this.state.updatedAtEpoch = effectiveTimeEpoch;
     this.state.revision = resultingRevision;
     this.recordEvent(event);

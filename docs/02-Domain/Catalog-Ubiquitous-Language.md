@@ -10,7 +10,15 @@ Catalog terminology follows the [constitutional language](../00-Constitution/Ubi
 
 **Product Code** is the optional canonical Workspace-wide identifier stored on Product commercial details; surrounding whitespace is removed and case is normalized to uppercase. It remains reserved when Product is Archived. **Expected Persisted Revision** is the Revision observed when an Aggregate was loaded and supplied to Repository update, not the Aggregate's newer post-mutation Revision. **Revision Conflict** means the expected and actual stored Revisions differ, so newer data must not be overwritten. **Product Repository** is the persistence port for complete canonical Product Aggregates, not a database model.
 
+### Smart Save terms
+- **Smart Save:** one Application action that preserves valid edits and derives lifecycle from current readiness.
+- **ProductArchiveReason:** Domain value `Manual` or `PublicationRequirementsNotMet`, never presentation text.
+
 ## العربية
+
+### مصطلحات الحفظ الذكي
+- **الحفظ الذكي:** إجراء تطبيقي واحد يحفظ التعديلات الصحيحة ويشتق دورة الحياة من الجاهزية الحالية.
+- **سبب أرشفة المنتج:** قيمة مجال يدوية أو بسبب نقص متطلبات النشر وليست نص عرض.
 
 تتبع مصطلحات Catalog اللغة الدستورية. يجمع Department فئات Category، وتمثل Category عائلة تجارية واسعة، ويمثل Product Type نوعاً وظيفياً أو بنيوياً داخلها، وتصف Device Class الاستخدام المقصود أو الشريحة السوقية، وتصف Specifications الخصائص التقنية. يبقى Product Model نموذجاً قابلاً لإعادة الاستخدام، ويخزن Product مراجع التصنيف والقيم المحددة لا كيانات التعريف. راجع [ADR-006](../01-Architecture/ADR/ADR-006-Product-Classification-Taxonomy.md).
 

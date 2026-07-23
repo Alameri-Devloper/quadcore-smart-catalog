@@ -8,7 +8,13 @@ Every structurally valid canonical Product may be persisted as Draft, so no `Pro
 
 Draft→Published and Archived→Published require a current approved publication decision. Published→Archived is enforced directly by the Aggregate because no variable archive authorization rule exists. No ceremonial `ProductArchivePolicy` or `ProductRestorePolicy` class is implemented. The UI may render reason codes through translated Presentation messages but never decides lifecycle.
 
+### Smart Save matrix
+Incomplete Draft stays Draft; ready Draft publishes. Ready Published stays Published; incomplete Published is saved and auto-archived. Automatic archive restores only when ready; Manual archive always remains Archived.
+
 ## العربية
+
+### مصفوفة الحفظ الذكي
+تبقى المسودة الناقصة وتُنشر الجاهزة. يبقى المنشور الجاهز ويُحفظ ويؤرشف الناقص. تُستعاد الأرشفة الآلية عند الجاهزية فقط، وتبقى اليدوية مؤرشفة دائماً.
 
 يجوز حفظ كل Product معتمد وصحيح بنيوياً كمسودة، ولذلك لا تلزم فئة `ProductSavePolicy` حالياً. تمثل `ProductPublicationPolicy` سياسة Domain المتغيرة المنفذة؛ فهي تتلقى متطلبات ثابتة محلولة مسبقاً، وتقيّم محتوى Product الحالي، وتعيد قراراً ثابتاً يحتوي كل الأسباب المنظمة ومعرف Product والمراجعة التي جرى تقييمها. لا تغير المنتج ولا تسجل حدثاً ولا تحمل بيانات ولا تحل Template.
 

@@ -29,7 +29,7 @@ When sources overlap, select the current source of truth in this order: Constitu
 
 A Superseded ADR keeps all historical content, changes its status to `Superseded`, adds a bilingual notice, and links directly to the replacement. The replacement should identify the superseded record when relevant. Do not rename, renumber, reuse, or delete either identifier.
 
-The four-digit series is frozen for new decisions. ADR-009 and ADR-010 are assigned; `ADR-011` is next. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
+The four-digit series is frozen for new decisions. ADR-009, ADR-010, and ADR-011 are assigned; `ADR-012` is next. Before assigning a number, check both directories; identical numeric values in different formats are distinct identifiers, but titles and links must always be used to prevent ambiguity.
 
 - [ADR-001 Product Lifecycle](ADR-001-Product-Lifecycle.md)
 - [ADR-002 Product Aggregate](ADR-002-Product-Aggregate.md)
@@ -41,8 +41,9 @@ The four-digit series is frozen for new decisions. ADR-009 and ADR-010 are assig
 - [ADR-008 Product Repository Contract and Optimistic Concurrency](ADR-008-Product-Repository-Contract-and-Optimistic-Concurrency.md)
 - [ADR-009 Provider-Neutral PostgreSQL Product Persistence](ADR-009-Provider-Neutral-PostgreSQL-Product-Persistence.md)
 - [ADR-010 Stable Product Media Storage Paths](ADR-010-Stable-Product-Media-Storage-Paths.md)
+- [ADR-011 Smart Save and Product Archive Reason](ADR-011-Smart-Save-and-Product-Archive-Reason.md)
 
-`ADR-011` is the next available identifier. | المعرّف التالي المتاح هو `ADR-011`.
+`ADR-012` is the next available identifier. | المعرّف التالي المتاح هو `ADR-012`.
 
 ## العربية
 
