@@ -120,3 +120,31 @@ export const catalogProductImages = pgTable(
     check("catalog_product_images_position_non_negative", sql`${table.position} >= 0`),
   ],
 );
+
+export const catalogProductMediaRoots = pgTable(
+  "catalog_product_media_roots",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    productId: text("product_id").notNull(),
+    storageRootKey: text("storage_root_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_media_roots_pk", columns: [table.workspaceId, table.productId] }),
+    uniqueIndex("catalog_product_media_roots_storage_root_uq").on(table.storageRootKey),
+    foreignKey({
+      name: "catalog_product_media_roots_product_fk",
+      columns: [table.workspaceId, table.productId],
+      foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId],
+    }).onDelete("restrict"),
+    check("catalog_product_media_roots_storage_key_length", sql`length(${table.storageRootKey}) BETWEEN 1 AND 512`),
+    check("catalog_product_media_roots_storage_key_lowercase", sql`${table.storageRootKey} = lower(${table.storageRootKey})`),
+    check("catalog_product_media_roots_storage_key_canonical", sql`${table.storageRootKey} ~ '^[a-z0-9][a-z0-9._/-]*$'`),
+    check("catalog_product_media_roots_storage_key_boundaries", sql`${table.storageRootKey} NOT LIKE '/%' AND ${table.storageRootKey} NOT LIKE '%/'`),
+    check("catalog_product_media_roots_storage_key_separators", sql`${table.storageRootKey} NOT LIKE '%//%' AND position(chr(92) in ${table.storageRootKey}) = 0`),
+    check("catalog_product_media_roots_storage_key_segments", sql`${table.storageRootKey} !~ '(^|/)\\.{1,2}(/|$)'`),
+    check("catalog_product_media_roots_storage_key_not_drive", sql`${table.storageRootKey} !~ '^[a-z]:'`),
+    check("catalog_product_media_roots_storage_key_shape", sql`${table.storageRootKey} ~ '^workspaces/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9-]{0,77}--[a-f0-9]{16}$'`),
+    check("catalog_product_media_roots_storage_key_reserved", sql`${table.storageRootKey} !~ '(^|/)(_staging|_trash|_variants)(/|$)'`),
+  ],
+);
