@@ -2,6 +2,8 @@
 
 ## English
 
+Migration `0002_product_media_root_registry` adds the immutable Product media-root registry after `0000` and `0001`, without backfill. R1 regenerated undeployed `0002` with provider-global root uniqueness and strict root-shape constraints. Integration tests verify anonymous cross-Workspace conflicts, same-Product outcomes, concurrent collisions, isolation, and `ON DELETE RESTRICT` behavior.
+
 Copy `.env.example` to a local ignored `.env`; keep credentials development-only. Start with `docker compose up -d postgres`, inspect health with `docker compose ps`, apply migrations with `npm.cmd run db:migrate`, and run real integration tests with `npm.cmd run test:integration`. Stop without deleting data using `docker compose stop postgres`.
 
 Generate a descriptively named migration with `npm.cmd run db:generate -- --name=product_archive_reason` and validate migrations with `npm.cmd run db:check`. The generation script is generic; every migration supplies its own explicit name. Production uses committed SQL migrations, never schema push.
@@ -32,13 +34,15 @@ docker compose exec postgres createdb -U qsc qsc_test
 On later runs PostgreSQL may report that `qsc_test` already exists; that is expected. Set the URL in the current PowerShell process and run the tests:
 
 ```powershell
-$env:TEST_DATABASE_URL="postgresql://qsc:qsc_dev_password@127.0.0.1:5432/qsc_test"
+$env:TEST_DATABASE_URL="postgresql://qsc:password@127.0.0.1:5432/qsc_test"
 npm.cmd run test:integration
 ```
 
-The standalone integration-test process reads `TEST_DATABASE_URL` from its process environment. Merely copying `.env.example` does not inject the value into that Node process. Never point `TEST_DATABASE_URL` to an application or production database. The test safety guard rejects suspicious database names and rejects the same host, port, and database target as `DATABASE_URL`.
+Replace the documented `password` placeholder with the local test-only credential. The standalone integration-test process reads `TEST_DATABASE_URL` from its process environment. Merely copying `.env.example` does not inject the value into that Node process. Never point `TEST_DATABASE_URL` to an application or production database. The test safety guard rejects suspicious database names and rejects the same host, port, and database target as `DATABASE_URL`.
 
 ## العربية
+
+يضيف الترحيل `0002_product_media_root_registry` سجل جذور وسائط Product الثابت بعد `0000` و`0001` من دون backfill. أعاد R1 توليد `0002` غير المنشور مع تفرد عالمي للجذر داخل المزود وقيود صارمة لبنية الجذر. تتحقق اختبارات التكامل من التعارض المجهول بين مساحات العمل ونتائج المنتج نفسه والتصادم المتزامن والعزل وسلوك `ON DELETE RESTRICT`.
 
 انسخ `.env.example` إلى `.env` محلي متجاهَل ولا تستخدم أسرار الإنتاج. شغّل القاعدة عبر `docker compose up -d postgres`، وافحص الصحة بـ`docker compose ps`، وطبّق الترحيلات بـ`npm.cmd run db:migrate`، وشغّل الاختبارات الحقيقية بـ`npm.cmd run test:integration`. يوقف `docker compose stop postgres` الخدمة دون حذف البيانات.
 
@@ -66,8 +70,8 @@ docker compose exec postgres createdb -U qsc qsc_test
 قد تبلغ PostgreSQL في التشغيلات اللاحقة أن `qsc_test` موجودة مسبقاً، وهذا متوقع. اضبط الرابط في جلسة PowerShell الحالية ثم شغّل الاختبارات:
 
 ```powershell
-$env:TEST_DATABASE_URL="postgresql://qsc:qsc_dev_password@127.0.0.1:5432/qsc_test"
+$env:TEST_DATABASE_URL="postgresql://qsc:password@127.0.0.1:5432/qsc_test"
 npm.cmd run test:integration
 ```
 
-تقرأ عملية اختبارات التكامل المستقلة `TEST_DATABASE_URL` من بيئة العملية. لا يؤدي مجرد نسخ `.env.example` إلى حقن القيمة في عملية Node المستقلة. لا توجّه الرابط أبداً إلى قاعدة التطبيق أو الإنتاج. يرفض حاجز الأمان أسماء القواعد المشبوهة ويرفض تطابق المضيف والمنفذ واسم القاعدة مع `DATABASE_URL`.
+استبدل العنصر النائب `password` ببيانات اعتماد محلية مخصصة للاختبار. تقرأ عملية اختبارات التكامل المستقلة `TEST_DATABASE_URL` من بيئة العملية. لا يؤدي مجرد نسخ `.env.example` إلى حقن القيمة في عملية Node المستقلة. لا توجّه الرابط أبداً إلى قاعدة التطبيق أو الإنتاج. يرفض حاجز الأمان أسماء القواعد المشبوهة ويرفض تطابق المضيف والمنفذ واسم القاعدة مع `DATABASE_URL`.

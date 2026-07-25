@@ -1,0 +1,51 @@
+name: Product Media Compatibility
+
+on:
+  push:
+    branches:
+      - main
+      - feature/product-entry-engine
+  pull_request:
+    branches:
+      - main
+      - feature/product-entry-engine
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  product-media-compatibility:
+    name: Product Media Compatibility (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up repository Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies deterministically
+        run: npm ci
+
+      - name: Prove direct sharp installation
+        run: npm ls sharp --depth=0
+
+      - name: Validate TypeScript
+        run: npx tsc --noEmit
+
+      - name: Run focused Product Media foundation tests
+        run: npm run test:product-media

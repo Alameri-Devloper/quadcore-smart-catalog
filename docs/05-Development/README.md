@@ -4,11 +4,15 @@
 
 ## English
 
+The Product Media compatibility workflow runs focused foundation tests on Windows and Ubuntu; hosted success requires an actual pull-request run.
+
 The [GitHub CI Quality Gate](GitHub-CI-Quality-Gate.md) defines the independent Ubuntu quality and PostgreSQL integration checks for relevant pushes and pull requests.
 
 Use the [documentation audit](Documentation-Audit.md), [refactoring report](Documentation-Refactoring-Report.md), [contribution guide](Contribution-and-Review.md), [acceptance criteria](Acceptance-Criteria.md), [dependency security risk register](Dependency-Security-Risks.md), [automated task review bundle guide](Automated-Task-Review-Bundle.md), and [final report index](Reports/README.md). Legacy development guides remain preserved and indexed by the audit.
 
 ## العربية
+
+يشغل سير توافق Product Media اختبارات الأساس المركزة على Windows وUbuntu، ولا يثبت النجاح المستضاف إلا تشغيل فعلي لطلب سحب.
 
 تحدد [بوابة جودة GitHub CI](GitHub-CI-Quality-Gate.md) فحوص الجودة وتكامل PostgreSQL المستقلة على Ubuntu لعمليات الدفع وطلبات السحب ذات الصلة.
 

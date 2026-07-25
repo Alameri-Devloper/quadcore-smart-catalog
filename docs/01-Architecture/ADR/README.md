@@ -42,8 +42,9 @@ The four-digit series is frozen for new decisions. ADR-009, ADR-010, and ADR-011
 - [ADR-009 Provider-Neutral PostgreSQL Product Persistence](ADR-009-Provider-Neutral-PostgreSQL-Product-Persistence.md)
 - [ADR-010 Stable Product Media Storage Paths](ADR-010-Stable-Product-Media-Storage-Paths.md)
 - [ADR-011 Smart Save and Product Archive Reason](ADR-011-Smart-Save-and-Product-Archive-Reason.md)
+- [ADR-012 Product Media Root Registry and Local Storage Foundation](ADR-012-Product-Media-Root-Registry-and-Local-Storage-Foundation.md)
 
-`ADR-012` is the next available identifier. | المعرّف التالي المتاح هو `ADR-012`.
+`ADR-013` is the next available identifier. | المعرّف التالي المتاح هو `ADR-013`.
 
 ## العربية
 

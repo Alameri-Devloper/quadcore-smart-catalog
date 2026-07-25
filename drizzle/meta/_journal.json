@@ -15,6 +15,13 @@
       "when": 1784702741230,
       "tag": "0001_product_archive_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784789750165,
+      "tag": "0002_product_media_root_registry",
+      "breakpoints": true
     }
   ]
 }
