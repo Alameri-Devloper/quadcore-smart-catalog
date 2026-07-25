@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 import { calculateFileSha256 } from "./calculate-sha256";
@@ -16,14 +16,25 @@ import {
 } from "./create-review-archive";
 import { createBundleFile, createReviewManifest, serializeReviewManifest } from "./create-review-manifest";
 import {
-  cleanupTemporaryArtifactPair,
-  prepareDesktopArtifactPair,
-  publishPreparedArtifactPairs,
+  cleanupArtifactPaths,
+  createReviewInvocationId,
+  desktopPublicationPaths,
+  nodeReviewArtifactFileSystemOperations,
+  preflightDesktopReviewDirectory,
+  prepareDesktopArtifactSet,
+  publicationPaths,
+  publishPreparedArtifactPaths,
+  rollbackPublishedArtifactPaths,
   resolveCollisionSafeArtifactPair,
+  resolveDesktopArtifactSet,
   resolveDesktopReviewDirectory,
+  resolveTemporaryDesktopArtifactSet,
   resolveTemporaryArtifactPair,
+  verifyPublishedDesktopArtifactSet,
   verifyPublishedArtifactPair,
-  type ArtifactPair,
+  type DesktopArtifactSet,
+  type PublicationPath,
+  type ReviewArtifactFileSystemOperations,
 } from "./export-review-archive";
 import { parseTaskReviewArguments } from "./parse-task-review-arguments";
 import {
@@ -33,7 +44,7 @@ import {
   toCanonicalPath,
 } from "./resolve-repository-root";
 import { sanitizeTextEvidence } from "./sanitize-text-evidence";
-import { TaskReviewError } from "./task-review.errors";
+import { ArtifactPublicationPartialFailure, TaskReviewError } from "./task-review.errors";
 import type { TaskReviewBundleFile, TaskReviewChangedFile, TaskReviewVerificationResult } from "./task-review.types";
 import type { VerificationExecution } from "./run-verification-command";
 
@@ -44,7 +55,10 @@ interface BundleDependencies {
   readonly afterLocalPreparation?: () => void | Promise<void>;
   readonly afterDesktopPreparation?: () => void | Promise<void>;
   readonly writeChecksum?: typeof writeArchiveChecksum;
-  readonly prepareDesktop?: typeof prepareDesktopArtifactPair;
+  readonly preflightDesktop?: typeof preflightDesktopReviewDirectory;
+  readonly prepareDesktop?: typeof prepareDesktopArtifactSet;
+  readonly publicationFileSystem?: ReviewArtifactFileSystemOperations;
+  readonly invocationId?: string;
 }
 
 function mergeCounts(target: Record<string, number>, source: Readonly<Record<string, number>>): void {
@@ -109,12 +123,19 @@ function recheckExactSources(
 export async function createTaskReviewBundle(argv: readonly string[], dependencies: BundleDependencies = {}) {
   const arguments_ = parseTaskReviewArguments(argv);
   validateSkippedVerificationCommands(arguments_.skippedCommandKeys);
+  const invocationId = dependencies.invocationId ?? createReviewInvocationId();
+  const ownedTemporaryPaths = new Set<string>();
+  const markTemporaryOwned = (path: string) => ownedTemporaryPaths.add(path);
   const repositoryRoot = resolveRepositoryRoot();
   const reportAbsolutePath = resolvePathInsideRepository(repositoryRoot, arguments_.reportPath);
   const reportRepositoryPath = toCanonicalPath(relative(repositoryRoot, reportAbsolutePath));
   const outputCandidate = arguments_.output ?? join("artifacts", "task-reviews", arguments_.taskId);
   const outputAbsolutePath = resolveSafeReviewOutputPath(repositoryRoot, outputCandidate);
   if (existsSync(outputAbsolutePath)) throw new TaskReviewError("The bundle output directory already exists.", "BundleFailed");
+  const desktopDirectory = arguments_.desktopExport
+    ? dependencies.exportDirectory ?? resolveDesktopReviewDirectory()
+    : null;
+  if (desktopDirectory) (dependencies.preflightDesktop ?? preflightDesktopReviewDirectory)(desktopDirectory, invocationId);
 
   const generatedAt = (dependencies.clock ?? (() => new Date()))().toISOString();
   const initialFingerprint = collectRepositoryFingerprint(repositoryRoot, reportRepositoryPath);
@@ -143,7 +164,8 @@ export async function createTaskReviewBundle(argv: readonly string[], dependenci
 
   const redactions: Record<string, number> = {};
   const reportBundlePath = "report/final-report.md";
-  writeSanitized(join(outputAbsolutePath, reportBundlePath), readFileSync(reportAbsolutePath, "utf8"), redactions);
+  const reportBundleAbsolutePath = join(outputAbsolutePath, reportBundlePath);
+  writeSanitized(reportBundleAbsolutePath, readFileSync(reportAbsolutePath, "utf8"), redactions);
   const gitFiles: Readonly<Record<string, string>> = {
     "branch.txt": `${git.branch}\n`,
     "head.txt": `${git.head}\n`,
@@ -216,7 +238,7 @@ export async function createTaskReviewBundle(argv: readonly string[], dependenci
     },
     reportRepositoryPath,
     reportBundlePath,
-    reportSha256: calculateFileSha256(join(outputAbsolutePath, reportBundlePath)),
+    reportSha256: calculateFileSha256(reportBundleAbsolutePath),
     changedFiles,
     verification: verificationResults,
     redactions,
@@ -236,15 +258,18 @@ export async function createTaskReviewBundle(argv: readonly string[], dependenci
     `QSC-Task-${arguments_.taskId}-Review.zip`,
     publicationTime,
   );
-  const localTemporary = resolveTemporaryArtifactPair(localFinal);
-  let desktopFinal: ArtifactPair | null = null;
-  let desktopTemporary: ArtifactPair | null = null;
-  let published = false;
+  const localTemporary = resolveTemporaryArtifactPair(localFinal, invocationId);
+  let desktopFinal: DesktopArtifactSet | null = null;
+  let desktopTemporary: DesktopArtifactSet | null = null;
+  const publicationFileSystem = dependencies.publicationFileSystem ?? nodeReviewArtifactFileSystemOperations;
+  let publication: PublicationPath[] = [];
+  let publicationStarted = false;
+  let publicationCompleted = false;
   try {
-    createReviewArchive(archiveEntries, localTemporary.archivePath);
+    createReviewArchive(archiveEntries, localTemporary.archivePath, markTemporaryOwned);
     verifyReviewArchive(localTemporary.archivePath, archiveEntries.map(({ path }) => path));
     const writeChecksum = dependencies.writeChecksum ?? writeArchiveChecksum;
-    writeChecksum(localTemporary.archivePath, localTemporary.checksumPath, basename(localFinal.archivePath));
+    writeChecksum(localTemporary.archivePath, localTemporary.checksumPath, basename(localFinal.archivePath), markTemporaryOwned);
     verifyArchiveChecksum(localTemporary.archivePath, localTemporary.checksumPath, basename(localFinal.archivePath));
     await dependencies.afterLocalPreparation?.();
     const localPreparedFingerprint = collectRepositoryFingerprint(repositoryRoot, reportRepositoryPath);
@@ -256,12 +281,22 @@ export async function createTaskReviewBundle(argv: readonly string[], dependenci
       );
     }
 
-    if (arguments_.desktopExport) {
-      const desktopDirectory = dependencies.exportDirectory ?? resolveDesktopReviewDirectory();
-      desktopFinal = resolveCollisionSafeArtifactPair(desktopDirectory, basename(localFinal.archivePath), publicationTime);
-      desktopTemporary = resolveTemporaryArtifactPair(desktopFinal);
-      const prepareDesktop = dependencies.prepareDesktop ?? prepareDesktopArtifactPair;
-      prepareDesktop(localTemporary.archivePath, desktopTemporary, desktopFinal);
+    if (desktopDirectory) {
+      const sourceReportSha256 = calculateFileSha256(reportAbsolutePath);
+      if (sourceReportSha256 !== manifest.report.sha256) {
+        throw new TaskReviewError("Final Report source differs from the bundled report.", "DesktopExportFailed");
+      }
+      desktopFinal = resolveDesktopArtifactSet(desktopDirectory, arguments_.taskId, publicationTime);
+      desktopTemporary = resolveTemporaryDesktopArtifactSet(desktopFinal, invocationId);
+      const prepareDesktop = dependencies.prepareDesktop ?? prepareDesktopArtifactSet;
+      prepareDesktop(
+        reportAbsolutePath,
+        localTemporary.archivePath,
+        desktopTemporary,
+        desktopFinal,
+        sourceReportSha256,
+        markTemporaryOwned,
+      );
       await dependencies.afterDesktopPreparation?.();
     }
 
@@ -274,15 +309,19 @@ export async function createTaskReviewBundle(argv: readonly string[], dependenci
       );
     }
 
-    const pairs = [
-      { temporary: localTemporary, final: localFinal },
-      ...(desktopFinal && desktopTemporary ? [{ temporary: desktopTemporary, final: desktopFinal }] : []),
+    publication = [
+      ...publicationPaths(localTemporary, localFinal),
+      ...(desktopFinal && desktopTemporary ? desktopPublicationPaths(desktopTemporary, desktopFinal) : []),
     ];
-    publishPreparedArtifactPairs(pairs);
-    published = true;
+    if (publication.some(({ temporaryPath }) => !ownedTemporaryPaths.has(temporaryPath))) {
+      throw new TaskReviewError("Review temporary artifact ownership is incomplete.", "ArtifactPreparationFailed");
+    }
+    publicationStarted = true;
+    publishPreparedArtifactPaths(publication, publicationFileSystem);
+    publicationCompleted = true;
     verifyPublishedArtifactPair(localFinal);
     if (desktopFinal) {
-      verifyPublishedArtifactPair(desktopFinal);
+      verifyPublishedDesktopArtifactSet(desktopFinal, calculateFileSha256(reportAbsolutePath), manifest.report.sha256);
       if (calculateFileSha256(localFinal.archivePath) !== calculateFileSha256(desktopFinal.archivePath)) {
         throw new TaskReviewError("Published local and Desktop ZIP files differ.", "ArtifactPublicationFailed");
       }
@@ -297,15 +336,13 @@ export async function createTaskReviewBundle(argv: readonly string[], dependenci
     }
     return { outputPath: outputAbsolutePath, archivePath: localFinal.archivePath, checksumPath: localFinal.checksumPath, exported: desktopFinal, manifest };
   } catch (error) {
-    cleanupTemporaryArtifactPair(localTemporary);
-    cleanupTemporaryArtifactPair(desktopTemporary);
-    if (published) {
-      rmSync(localFinal.archivePath, { force: true });
-      rmSync(localFinal.checksumPath, { force: true });
-      if (desktopFinal) {
-        rmSync(desktopFinal.archivePath, { force: true });
-        rmSync(desktopFinal.checksumPath, { force: true });
-      }
+    if (error instanceof ArtifactPublicationPartialFailure) throw error;
+    if (publicationCompleted) {
+      const rollback = rollbackPublishedArtifactPaths(publication, publicationFileSystem);
+      if (rollback.failedCount > 0) throw new ArtifactPublicationPartialFailure();
+    } else if (!publicationStarted) {
+      const cleanup = cleanupArtifactPaths([...ownedTemporaryPaths], publicationFileSystem);
+      if (cleanup.failedCount > 0) throw new ArtifactPublicationPartialFailure();
     }
     if (error instanceof TaskReviewError) throw error;
     throw new TaskReviewError("Review artifact preparation failed.", "ArtifactPreparationFailed");
@@ -317,6 +354,7 @@ async function main(): Promise<void> {
     const result = await createTaskReviewBundle(process.argv.slice(2));
     process.stdout.write(`Repository bundle: ${result.outputPath}\nRepository ZIP: ${result.archivePath}\nRepository checksum: ${result.checksumPath}\n`);
     if (result.exported) {
+      process.stdout.write(`Exported Final Report: ${result.exported.reportPath}\n`);
       process.stdout.write(`Exported ZIP: ${result.exported.archivePath}\nExported checksum: ${result.exported.checksumPath}\n`);
     }
     process.stdout.write(`Status: ${result.manifest.overallStatus}\n`);

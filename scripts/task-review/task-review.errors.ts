@@ -11,10 +11,21 @@ export class TaskReviewError extends Error {
       | "WorkingTreeChangedDuringBundleCreation"
       | "ArtifactPreparationFailed"
       | "ArtifactPublicationFailed"
+      | "ArtifactPublicationPartialFailure"
       | "DesktopExportFailed"
       | "BundleFailed",
   ) {
     super(message);
     this.name = "TaskReviewError";
+  }
+}
+
+export class ArtifactPublicationPartialFailure extends TaskReviewError {
+  public readonly operation = "publish-review-artifacts" as const;
+  public readonly reconciliationRequired = true as const;
+
+  public constructor() {
+    super("Review artifact publication requires reconciliation.", "ArtifactPublicationPartialFailure");
+    this.name = "ArtifactPublicationPartialFailure";
   }
 }
