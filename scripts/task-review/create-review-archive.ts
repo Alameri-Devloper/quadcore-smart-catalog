@@ -1,9 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { unzipSync, zipSync } from "fflate";
 import { calculateSha256 } from "./calculate-sha256";
+import { writeFileExclusive, type TemporaryArtifactCreated } from "./create-exclusive-file";
 import { isExcludedReviewPath } from "./task-review.config";
-import { TaskReviewError } from "./task-review.errors";
+import { ArtifactPublicationPartialFailure, TaskReviewError } from "./task-review.errors";
 import type { TaskReviewManifest } from "./task-review.types";
 
 export interface ArchiveEntry {
@@ -11,21 +12,32 @@ export interface ArchiveEntry {
   readonly absolutePath: string;
 }
 
-export function createReviewArchive(entries: readonly ArchiveEntry[], finalPath: string): string {
-  if (existsSync(finalPath)) throw new TaskReviewError(`Review archive already exists: ${finalPath}`, "BundleFailed");
+export function createReviewArchive(
+  entries: readonly ArchiveEntry[],
+  finalPath: string,
+  onCreated?: TemporaryArtifactCreated,
+): string {
   mkdirSync(dirname(finalPath), { recursive: true });
-  const temporaryPath = `${finalPath}.review-temp`;
   const archiveInput: Record<string, [Uint8Array, { mtime: Date }]> = {};
   for (const entry of [...entries].sort((left, right) => left.path.localeCompare(right.path))) {
     archiveInput[entry.path] = [readFileSync(entry.absolutePath), { mtime: new Date("1980-01-01T00:00:00.000Z") }];
   }
+  let created = false;
   try {
     const archive = zipSync(archiveInput, { level: 6 });
     if (archive.byteLength === 0) throw new TaskReviewError("ZIP creation produced an empty archive.", "BundleFailed");
-    writeFileSync(temporaryPath, archive);
-    renameSync(temporaryPath, finalPath);
+    writeFileExclusive(finalPath, archive, (path) => {
+      created = true;
+      onCreated?.(path);
+    });
   } catch (error) {
-    rmSync(temporaryPath, { force: true });
+    if (created) {
+      try {
+        rmSync(finalPath, { force: true });
+      } catch {
+        throw new ArtifactPublicationPartialFailure();
+      }
+    }
     if (error instanceof TaskReviewError) throw error;
     throw new TaskReviewError("ZIP creation failed.", "BundleFailed");
   }
@@ -92,14 +104,37 @@ export function verifyReviewArchive(archivePath: string, expectedPaths: readonly
 
 export function createArchiveChecksumSidecar(archivePath: string): string {
   const sidecarPath = `${archivePath}.sha256`;
-  if (existsSync(sidecarPath)) throw new TaskReviewError(`Archive checksum already exists: ${sidecarPath}`, "BundleFailed");
   writeArchiveChecksum(archivePath, sidecarPath, basename(archivePath));
   return sidecarPath;
 }
 
-export function writeArchiveChecksum(archivePath: string, checksumPath: string, publishedArchiveName: string): void {
-  if (existsSync(checksumPath)) throw new TaskReviewError(`Archive checksum already exists: ${checksumPath}`, "ArtifactPreparationFailed");
-  writeFileSync(checksumPath, `${calculateSha256(readFileSync(archivePath))}  ${publishedArchiveName}\n`, "utf8");
+export function writeArchiveChecksum(
+  archivePath: string,
+  checksumPath: string,
+  publishedArchiveName: string,
+  onCreated?: TemporaryArtifactCreated,
+): void {
+  let created = false;
+  try {
+    writeFileExclusive(
+      checksumPath,
+      `${calculateSha256(readFileSync(archivePath))}  ${publishedArchiveName}\n`,
+      (path) => {
+        created = true;
+        onCreated?.(path);
+      },
+    );
+  } catch (error) {
+    if (created) {
+      try {
+        rmSync(checksumPath, { force: true });
+      } catch {
+        throw new ArtifactPublicationPartialFailure();
+      }
+    }
+    if (error instanceof TaskReviewError) throw error;
+    throw new TaskReviewError("Archive checksum preparation failed.", "ArtifactPreparationFailed");
+  }
 }
 
 export function verifyArchiveChecksum(archivePath: string, checksumPath: string, expectedArchiveName: string): void {
