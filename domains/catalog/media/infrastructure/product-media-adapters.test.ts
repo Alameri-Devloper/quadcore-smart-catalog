@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { link as fsLink, mkdir, mkdtemp, readFile, rm, symlink, unlink, writeFile } from "node:fs/promises";
+import { link as fsLink, mkdir, mkdtemp, open as fsOpen, readFile, rm, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -167,6 +167,26 @@ describe("Local Product media storage adapter", () => {
     ]);
     assert.deepEqual(results.map((result) => result.type), ["Staged", "Staged"]);
   }));
+
+  it("reports staging ambiguity when cleanup of an operation-owned partial file fails", async () => {
+    const physicalRoot = await mkdtemp(join(tmpdir(), "qsc-media-stage-partial-"));
+    try {
+      const adapter = await LocalProductMediaStorageAdapter.create(physicalRoot, processor, {
+        link: fsLink,
+        open: fsOpen,
+        readFile: (async () => { throw Object.assign(new Error("injected staging inspection failure"), { code: "EIO" }); }) as typeof readFile,
+        unlink: async () => { throw Object.assign(new Error("injected staging cleanup failure"), { code: "EIO" }); },
+      });
+      const stagingKey = ProductMediaStagingKey.create(rootKey(), "stage-partial");
+      await assert.rejects(
+        adapter.stage({ stagingKey, image: await normalized() }),
+        (error: unknown) => error instanceof ProductMediaStoragePartialOperationError && error.operation === "stage",
+      );
+      assert.ok((await readFile(join(physicalRoot, ...stagingKey.value.split("/")))).byteLength > 0);
+    } finally {
+      await rm(physicalRoot, { recursive: true, force: true });
+    }
+  });
 
   it("verifies final checksum and length before removing staging", async () => withAdapter(async (physicalRoot, adapter) => {
     const root = rootKey();
@@ -584,6 +604,12 @@ describe("Local Product media storage adapter", () => {
     await rm(physicalRoot, { recursive: true, force: true });
     const finalKey = ProductMediaFinalKey.fromSlot(rootKey(), ProductMediaSlots.main());
     await assert.rejects(adapter.exists(finalKey), (error: unknown) => {
+      assert.ok(error instanceof ProductMediaStorageInfrastructureError);
+      assert.equal(error.message.includes(physicalRoot), false);
+      return true;
+    });
+    const stagingKey = ProductMediaStagingKey.create(rootKey(), "probe-operation");
+    await assert.rejects(adapter.temporaryExists(stagingKey), (error: unknown) => {
       assert.ok(error instanceof ProductMediaStorageInfrastructureError);
       assert.equal(error.message.includes(physicalRoot), false);
       return true;

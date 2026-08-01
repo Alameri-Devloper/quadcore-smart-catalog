@@ -1,4 +1,5 @@
 import type { ProductMediaSlot } from "./product-media-slot";
+import { ProductMediaOperationId } from "./product-media-operation-id";
 
 const MAX_STORAGE_KEY_LENGTH = 512;
 const MAX_WORKSPACE_SEGMENT_LENGTH = 64;
@@ -35,8 +36,6 @@ const assertRootShape = (value: string): readonly [string, string, string, strin
   }
   return segments as unknown as readonly [string, string, string, string];
 };
-
-const assertOperationId = (value: string): string => validateSegment("Product media operation ID", value, 80);
 
 export class ProductMediaStorageRootKey {
   private constructor(private readonly canonicalValue: string) {
@@ -91,6 +90,16 @@ export class ProductMediaFinalKey extends ProductMediaRootedKey {
     const fileName = slot.type === "Main" ? "main.webp" : `gallery-${String(slot.slotNumber).padStart(2, "0")}.webp`;
     return new ProductMediaFinalKey(root, `${root.value}/${fileName}`);
   }
+
+  static rehydrate(root: ProductMediaStorageRootKey, value: string): ProductMediaFinalKey {
+    const prefix = `${root.value}/`;
+    if (!value.startsWith(prefix)) throw new Error("Product media final key must belong to its Product root.");
+    const fileName = value.slice(prefix.length);
+    if (fileName !== "main.webp" && !/^gallery-(0[1-9]|[1-9][0-9])\.webp$/.test(fileName)) {
+      throw new Error("Product media final key must use a canonical published filename.");
+    }
+    return new ProductMediaFinalKey(root, value);
+  }
 }
 
 export class ProductMediaStagingKey extends ProductMediaRootedKey {
@@ -100,7 +109,7 @@ export class ProductMediaStagingKey extends ProductMediaRootedKey {
   }
 
   static create(root: ProductMediaStorageRootKey, operationId: string): ProductMediaStagingKey {
-    return new ProductMediaStagingKey(root, `${root.value}/_staging/${assertOperationId(operationId)}.webp`);
+    return new ProductMediaStagingKey(root, `${root.value}/_staging/${ProductMediaOperationId.create(operationId).value}.webp`);
   }
 }
 
@@ -111,7 +120,7 @@ export class ProductMediaTrashKey extends ProductMediaRootedKey {
   }
 
   static create(root: ProductMediaStorageRootKey, operationId: string): ProductMediaTrashKey {
-    return new ProductMediaTrashKey(root, `${root.value}/_trash/${assertOperationId(operationId)}.webp`);
+    return new ProductMediaTrashKey(root, `${root.value}/_trash/${ProductMediaOperationId.create(operationId).value}.webp`);
   }
 }
 

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { lstat, link, mkdir, open, readFile, realpath, stat, unlink } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import type { ProductMediaFinalKey } from "../domain/product-media-keys";
+import type { ProductMediaFinalKey, ProductMediaStagingKey } from "../domain/product-media-keys";
 import type { ProductImageProcessor } from "../ports/product-image-processor";
 import {
   ProductMediaStorageInfrastructureError,
@@ -30,9 +30,11 @@ class UnsafeMediaPathError extends Error {}
 export interface ProductMediaFileSystemOperations {
   readonly link: (existingPath: string, newPath: string) => Promise<void>;
   readonly unlink: (path: string) => Promise<void>;
+  readonly open?: typeof open;
+  readonly readFile?: typeof readFile;
 }
 
-const defaultFileSystemOperations: ProductMediaFileSystemOperations = { link, unlink };
+const defaultFileSystemOperations: ProductMediaFileSystemOperations = { link, unlink, open, readFile };
 
 const errorCode = (error: unknown): string | undefined => (error as NodeJS.ErrnoException)?.code;
 const sameRoot = (...keys: readonly { readonly root: { readonly value: string } }[]): boolean =>
@@ -143,7 +145,7 @@ export class LocalProductMediaStorageAdapter implements ProductMediaStoragePort 
     let owned = false;
     try {
       path = await this.safePath(input.stagingKey, true);
-      const handle = await open(path, "wx");
+      const handle = await (this.fileSystem.open ?? open)(path, "wx");
       owned = true;
       try {
         await handle.writeFile(input.image.bytes);
@@ -151,10 +153,15 @@ export class LocalProductMediaStorageAdapter implements ProductMediaStoragePort 
       } finally {
         await handle.close();
       }
-      const storedBytes = new Uint8Array(await readFile(path));
+      const storedBytes = new Uint8Array(await (this.fileSystem.readFile ?? readFile)(path));
       const hash = createHash("sha256").update(storedBytes).digest("hex");
       if (storedBytes.byteLength !== input.image.bytes.byteLength || hash !== input.image.sha256) {
-        await unlink(path);
+        try {
+          await this.fileSystem.unlink(path);
+          owned = false;
+        } catch {
+          throw new ProductMediaStoragePartialOperationError("stage");
+        }
         return { type: "Failed", code: "ChecksumMismatch" };
       }
       const object: StagedProductMediaObject = Object.freeze({
@@ -167,9 +174,16 @@ export class LocalProductMediaStorageAdapter implements ProductMediaStoragePort 
       });
       return { type: "Staged", object };
     } catch (error) {
+      if (error instanceof ProductMediaStoragePartialOperationError) throw error;
       if (error instanceof UnsafeMediaPathError) return { type: "Failed", code: "UnsafeKey" };
       if (errorCode(error) === "EEXIST") return { type: "Failed", code: "TargetConflict" };
-      if (owned && path) await unlink(path).catch(() => undefined);
+      if (owned && path) {
+        try {
+          await this.fileSystem.unlink(path);
+        } catch {
+          throw new ProductMediaStoragePartialOperationError("stage");
+        }
+      }
       return this.infrastructure("stage");
     }
   }
@@ -318,12 +332,23 @@ export class LocalProductMediaStorageAdapter implements ProductMediaStoragePort 
 
   async discardTemporary(input: DiscardTemporaryProductMediaInput): Promise<DiscardTemporaryProductMediaResult> {
     try {
-      await unlink(await this.safePath(input.stagingKey, false));
+      await this.fileSystem.unlink(await this.safePath(input.stagingKey, false));
       return { type: "Discarded" };
     } catch (error) {
       if (error instanceof UnsafeMediaPathError) return { type: "Failed", code: "UnsafeKey" };
       if (errorCode(error) === "ENOENT") return { type: "Failed", code: "TemporaryObjectMissing" };
       return this.infrastructure("discard-staging");
+    }
+  }
+
+  async temporaryExists(key: ProductMediaStagingKey): Promise<ProductMediaExistsResult> {
+    try {
+      await stat(await this.safePath(key, false));
+      return { type: "Exists", exists: true };
+    } catch (error) {
+      if (error instanceof UnsafeMediaPathError) return { type: "Failed", code: "UnsafeKey" };
+      if (errorCode(error) === "ENOENT") return { type: "Exists", exists: false };
+      throw new ProductMediaStorageInfrastructureError("temporary-exists");
     }
   }
 

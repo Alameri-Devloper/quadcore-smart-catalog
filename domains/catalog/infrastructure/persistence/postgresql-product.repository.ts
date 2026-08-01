@@ -22,6 +22,11 @@ const UNIQUE_VIOLATION = "23505";
 const PRODUCT_ID_CONSTRAINT = "catalog_products_pk";
 const PRODUCT_CODE_CONSTRAINT = "catalog_products_workspace_product_code_uq";
 
+export class ProductImageMutationNotAllowedError extends Error {
+  readonly code = "ProductImageMutationNotAllowed";
+  constructor() { super("Product images must be mutated through the Product Media Workflow."); this.name = "ProductImageMutationNotAllowedError"; }
+}
+
 export const PRODUCT_READ_TRANSACTION_CONFIG = Object.freeze({
   isolationLevel: "repeatable read" as const,
   accessMode: "read only" as const,
@@ -139,20 +144,24 @@ export class PostgreSqlProductRepository implements ProductRepository {
             : ProductUpdateResult.productNotFound(product.identity.workspaceId, product.identity.productId);
         }
 
+        const canonicalImages = await transaction.select().from(catalogProductImages).where(and(
+          eq(catalogProductImages.workspaceId, product.identity.workspaceId.value),
+          eq(catalogProductImages.productId, product.identity.productId.value),
+        )).orderBy(asc(catalogProductImages.position), asc(catalogProductImages.productImageId));
+        const projected = [...rows.images].sort((left, right) => left.position - right.position || left.productImageId.localeCompare(right.productImageId));
+        const canonicalProjection = canonicalImages.map((image) => ({ productImageId: image.productImageId, storageKey: image.storageKey, position: image.position, isMain: image.isMain, altText: image.altText }));
+        const requestedProjection = projected.map((image) => ({ productImageId: image.productImageId, storageKey: image.storageKey, position: image.position, isMain: image.isMain, altText: image.altText ?? null }));
+        if (JSON.stringify(canonicalProjection) !== JSON.stringify(requestedProjection)) throw new ProductImageMutationNotAllowedError();
+
         await transaction.delete(catalogProductSpecificationValues).where(and(
           eq(catalogProductSpecificationValues.workspaceId, product.identity.workspaceId.value),
           eq(catalogProductSpecificationValues.productId, product.identity.productId.value),
         ));
-        await transaction.delete(catalogProductImages).where(and(
-          eq(catalogProductImages.workspaceId, product.identity.workspaceId.value),
-          eq(catalogProductImages.productId, product.identity.productId.value),
-        ));
         if (rows.specificationValues.length > 0) {
           await transaction.insert(catalogProductSpecificationValues).values(rows.specificationValues);
         }
-        if (rows.images.length > 0) {
-          await transaction.insert(catalogProductImages).values(rows.images);
-        }
+        // Canonical image rows are owned by the Product Media workflow. A Product
+        // content update must never erase a concurrent Media revision.
         return ProductUpdateResult.updated(product.identity.workspaceId, product.identity.productId, product.revision);
       });
     } catch (error) {

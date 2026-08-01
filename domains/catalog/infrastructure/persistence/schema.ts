@@ -6,6 +6,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -107,6 +108,10 @@ export const catalogProductImages = pgTable(
     position: integer("position").notNull(),
     isMain: boolean("is_main").notNull(),
     altText: text("alt_text"),
+    checksumSha256: text("checksum_sha256"),
+    mimeType: text("mime_type"),
+    mediaCreatedAt: timestamp("media_created_at", { withTimezone: true, mode: "date" }),
+    mediaCreatedBy: text("media_created_by"),
   },
   (table) => [
     primaryKey({ name: "catalog_product_images_pk", columns: [table.workspaceId, table.productId, table.productImageId] }),
@@ -117,7 +122,9 @@ export const catalogProductImages = pgTable(
     }).onDelete("cascade"),
     uniqueIndex("catalog_product_images_workspace_product_position_uq").on(table.workspaceId, table.productId, table.position),
     uniqueIndex("catalog_product_images_one_main_uq").on(table.workspaceId, table.productId).where(sql`${table.isMain} = true`),
+    uniqueIndex("catalog_product_images_storage_key_uq").on(table.storageKey),
     check("catalog_product_images_position_non_negative", sql`${table.position} >= 0`),
+    check("catalog_product_images_workflow_integrity", sql`(${table.checksumSha256} IS NULL AND ${table.mimeType} IS NULL AND ${table.mediaCreatedAt} IS NULL AND ${table.mediaCreatedBy} IS NULL) OR (${table.checksumSha256} ~ '^[a-f0-9]{64}$' AND ${table.mimeType} = 'image/webp' AND ${table.mediaCreatedAt} IS NOT NULL AND btrim(${table.mediaCreatedBy}) <> '')`),
   ],
 );
 
@@ -146,5 +153,87 @@ export const catalogProductMediaRoots = pgTable(
     check("catalog_product_media_roots_storage_key_not_drive", sql`${table.storageRootKey} !~ '^[a-z]:'`),
     check("catalog_product_media_roots_storage_key_shape", sql`${table.storageRootKey} ~ '^workspaces/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9-]{0,77}--[a-f0-9]{16}$'`),
     check("catalog_product_media_roots_storage_key_reserved", sql`${table.storageRootKey} !~ '(^|/)(_staging|_trash|_variants)(/|$)'`),
+  ],
+);
+
+export const catalogProductMediaStates = pgTable(
+  "catalog_product_media_states",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    productId: text("product_id").notNull(),
+    revision: bigint("revision", { mode: "number" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedBy: text("updated_by").notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_media_states_pk", columns: [table.workspaceId, table.productId] }),
+    foreignKey({ name: "catalog_product_media_states_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
+    check("catalog_product_media_states_revision_safe", sql`${table.revision} BETWEEN 0 AND 9007199254740991`),
+  ],
+);
+
+export const catalogProductMediaWorkflows = pgTable(
+  "catalog_product_media_workflows",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    workflowId: text("workflow_id").notNull(),
+    productId: text("product_id").notNull(),
+    status: text("status").notNull(),
+    expectedMediaRevision: bigint("expected_media_revision", { mode: "number" }).notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    requestFingerprint: text("request_fingerprint").notNull(),
+    createdBy: text("created_by").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
+    version: bigint("version", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_media_workflows_pk", columns: [table.workspaceId, table.workflowId] }),
+    foreignKey({ name: "catalog_product_media_workflows_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
+    uniqueIndex("catalog_product_media_workflows_idempotency_uq").on(table.workspaceId, table.idempotencyKey),
+    index("catalog_product_media_workflows_product_idx").on(table.workspaceId, table.productId, table.startedAt),
+    check("catalog_product_media_workflows_status", sql`${table.status} IN ('Pending','InProgress','Completed','PartiallyCompleted','Failed','ReconciliationRequired','Cancelled')`),
+    check("catalog_product_media_workflows_revisions_safe", sql`${table.expectedMediaRevision} BETWEEN 0 AND 9007199254740991 AND ${table.version} BETWEEN 0 AND 9007199254740991`),
+    check("catalog_product_media_workflows_fingerprint", sql`${table.requestFingerprint} ~ '^[a-f0-9]{64}$'`),
+  ],
+);
+
+export const catalogProductMediaOperations = pgTable(
+  "catalog_product_media_operations",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    operationId: text("operation_id").notNull(),
+    workflowId: text("workflow_id").notNull(),
+    type: text("type").notNull(),
+    status: text("status").notNull(),
+    targetMediaId: text("target_media_id"),
+    requestedDisplayOrder: integer("requested_display_order"),
+    selectAsCover: boolean("select_as_cover").notNull().default(false),
+    orderedMediaIds: jsonb("ordered_media_ids").$type<string[]>(),
+    stagedArtifactKey: text("staged_artifact_key"),
+    finalArtifactKey: text("final_artifact_key"),
+    stagedSha256: text("staged_sha256"),
+    stagedByteLength: bigint("staged_byte_length", { mode: "number" }),
+    stagedWidth: integer("staged_width"),
+    stagedHeight: integer("staged_height"),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }),
+    attemptCount: bigint("attempt_count", { mode: "number" }).notNull(),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true, mode: "date" }),
+    retryAllowed: boolean("retry_allowed").notNull(),
+    requiresNewSource: boolean("requires_new_source").notNull(),
+    errorCode: text("error_code"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_media_operations_pk", columns: [table.workspaceId, table.operationId] }),
+    foreignKey({ name: "catalog_product_media_operations_workflow_fk", columns: [table.workspaceId, table.workflowId], foreignColumns: [catalogProductMediaWorkflows.workspaceId, catalogProductMediaWorkflows.workflowId] }).onDelete("cascade"),
+    index("catalog_product_media_operations_workflow_idx").on(table.workspaceId, table.workflowId, table.createdAt),
+    index("catalog_product_media_operations_expiry_idx").on(table.workspaceId, table.expiresAt),
+    check("catalog_product_media_operations_type", sql`${table.type} IN ('Add','Replace','Remove','SetCover','Reorder')`),
+    check("catalog_product_media_operations_status", sql`${table.status} IN ('Pending','Staged','InProgress','Completed','Failed','SourceUnavailable','ReconciliationRequired','Cancelled')`),
+    check("catalog_product_media_operations_attempt_safe", sql`${table.attemptCount} BETWEEN 0 AND 9007199254740991`),
+    check("catalog_product_media_operations_staging_relative", sql`${table.stagedArtifactKey} IS NULL OR (${table.stagedArtifactKey} !~ '^[a-zA-Z]:' AND ${table.stagedArtifactKey} NOT LIKE '/%' AND position(chr(92) in ${table.stagedArtifactKey}) = 0)`),
+    check("catalog_product_media_operations_staged_integrity", sql`(${table.stagedArtifactKey} IS NULL AND ${table.stagedSha256} IS NULL AND ${table.stagedByteLength} IS NULL AND ${table.stagedWidth} IS NULL AND ${table.stagedHeight} IS NULL) OR (${table.stagedArtifactKey} IS NOT NULL AND ${table.stagedSha256} ~ '^[a-f0-9]{64}$' AND ${table.stagedByteLength} > 0 AND ${table.stagedWidth} > 0 AND ${table.stagedHeight} > 0)`),
   ],
 );
