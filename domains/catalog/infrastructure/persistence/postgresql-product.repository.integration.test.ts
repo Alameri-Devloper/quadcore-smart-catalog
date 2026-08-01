@@ -10,7 +10,7 @@ import { ProductRevision } from "../../types/product-revision.value-object";
 import { Product } from "../../types/product.aggregate";
 import { createCatalogDatabaseConnection } from "./database";
 import { assertSafeIntegrationTestDatabaseUrl } from "./integration-test-database-safety";
-import { PostgreSqlProductRepository } from "./postgresql-product.repository";
+import { PostgreSqlProductRepository, ProductImageMutationNotAllowedError } from "./postgresql-product.repository";
 import { catalogProductImages, catalogProducts, catalogProductSpecificationValues } from "./schema";
 
 const connectionUrl = process.env.TEST_DATABASE_URL;
@@ -60,8 +60,8 @@ const completeProduct = (
     { specificationFieldId: "backlit", value: true },
   ],
   images: [
-    { productImageId: "image-main", storageReference: "stable/main.webp", order: 0, isMain: true, altText: "Front" },
-    { productImageId: "image-gallery", storageReference: "stable/gallery-01.webp", order: 1, isMain: false },
+    { productImageId: "image-main", storageReference: `stable/${workspace}/${product}/main.webp`, order: 0, isMain: true, altText: "Front" },
+    { productImageId: "image-gallery", storageReference: `stable/${workspace}/${product}/gallery-01.webp`, order: 1, isMain: false },
   ],
 });
 
@@ -158,17 +158,23 @@ describe("PostgreSqlProductRepository create and find", () => {
 });
 
 describe("PostgreSqlProductRepository update", () => {
-  it("revision-checks the main row and atomically replaces owned collections", async () => {
+  it("revision-checks Product content while preserving Media-owned canonical images", async () => {
     const product = completeProduct();
     await repository.create(product);
     product.replaceSpecificationValues([{ specificationFieldId: "storage", value: 1024 }], new Date("2026-07-03T00:00:00Z"));
-    product.replaceImages([{ productImageId: "replacement", storageReference: "stable/main.webp", order: 0, isMain: true }], new Date("2026-07-03T00:00:01Z"));
     const result = await repository.update(product, ProductRevision.rehydrate(4));
     assert.equal(result.outcome, PRODUCT_UPDATE_OUTCOMES.updated);
     const found = await repository.findById(product.identity.workspaceId, product.identity.productId);
     assert.deepEqual(found?.specificationValues.map((value) => value.specificationFieldId), ["storage"]);
-    assert.deepEqual(found?.images.map((image) => image.productImageId), ["replacement"]);
-    assert.equal(found?.revision.value, 6);
+    assert.deepEqual(found?.images.map((image) => image.productImageId), ["image-main", "image-gallery"]);
+    assert.equal(found?.revision.value, 5);
+  });
+
+  it("rejects ProductRepository image mutation with a typed sanitized ownership error", async () => {
+    const product = completeProduct(); await repository.create(product);
+    product.replaceImages([], new Date("2026-07-03T00:00:00Z"));
+    await assert.rejects(repository.update(product, ProductRevision.rehydrate(4)), (error: unknown) => error instanceof ProductImageMutationNotAllowedError && error.code === "ProductImageMutationNotAllowed");
+    assert.equal((await repository.findById(product.identity.workspaceId, product.identity.productId))?.images.length, 2);
   });
 
   it("distinguishes not-found and stale Revision without overwriting newer state", async () => {

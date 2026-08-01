@@ -9,6 +9,7 @@ import {
   ProductMediaTrashKey,
 } from "./product-media-keys";
 import { ProductMediaRoot } from "./product-media-root";
+import { ProductMediaOperationId } from "./product-media-operation-id";
 import { ProductMediaSlots } from "./product-media-slot";
 import { ProductMediaPathPolicy } from "../services/product-media-path-policy";
 
@@ -80,6 +81,16 @@ describe("Product Media root shape and immutable registry model", () => {
 });
 
 describe("Product Media typed operation keys and deterministic root policy", () => {
+  it("uses one canonical ProductMediaOperationId policy for commands, storage keys, and rehydration", () => {
+    for (const value of ["a", "operation-1", "a.b_c-9", `a${"b".repeat(79)}`]) {
+      assert.equal(ProductMediaOperationId.create(value).value, value);
+      assert.equal(ProductMediaOperationId.rehydrate(value).value, value);
+    }
+    for (const value of ["", "A", "_staging", "_trash", "_variants", "con", "con.txt", "ends.", "../trash", "é", `a${"b".repeat(80)}`]) {
+      assert.throws(() => ProductMediaOperationId.create(value));
+    }
+  });
+
   it("maps stable Main and Gallery slots to final keys", () => {
     const root = validRoot();
     assert.equal(ProductMediaSlots.fileName(ProductMediaSlots.main()), "main.webp");

@@ -22,6 +22,13 @@
       "when": 1784789750165,
       "tag": "0002_product_media_root_registry",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785291464163,
+      "tag": "0003_large_blizzard",
+      "breakpoints": true
     }
   ]
 }

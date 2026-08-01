@@ -15,7 +15,7 @@ export class ProductMediaStorageInfrastructureError extends Error {
 export class ProductMediaStoragePartialOperationError extends Error {
   readonly reconciliationRequired = true;
 
-  constructor(readonly operation: "move-to-trash" | "restore-from-trash" | "publish-new" | "publish-replacement") {
+  constructor(readonly operation: "stage" | "move-to-trash" | "restore-from-trash" | "publish-new" | "publish-replacement") {
     super(`Product media storage partially failed during ${operation}; reconciliation is required.`);
     this.name = "ProductMediaStoragePartialOperationError";
   }
@@ -89,6 +89,7 @@ export interface ProductMediaStoragePort {
   moveToTrash(input: MoveProductMediaToTrashInput): Promise<MoveProductMediaToTrashResult>;
   restoreFromTrash(input: RestoreProductMediaFromTrashInput): Promise<RestoreProductMediaFromTrashResult>;
   discardTemporary(input: DiscardTemporaryProductMediaInput): Promise<DiscardTemporaryProductMediaResult>;
+  temporaryExists(key: ProductMediaStagingKey): Promise<ProductMediaExistsResult>;
   inspect(key: ProductMediaFinalKey): Promise<ProductMediaStoredObjectInspectionResult>;
   exists(key: ProductMediaFinalKey): Promise<ProductMediaExistsResult>;
 }

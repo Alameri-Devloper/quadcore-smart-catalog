@@ -14,7 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
-    "test:integration": "tsc --project tsconfig.integration.json && node --test --test-concurrency=1 .next/integration-tests/domains/catalog/infrastructure/persistence/integration-test-database-safety.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/product-persistence.mapper.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/postgresql-product.repository.integration.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/postgresql-product-media-root.repository.integration.test.js"
+    "test:integration": "tsc --project tsconfig.integration.json && node --test --test-concurrency=1 .next/integration-tests/domains/catalog/infrastructure/persistence/integration-test-database-safety.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/product-persistence.mapper.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/postgresql-product.repository.integration.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/postgresql-product-media-root.repository.integration.test.js .next/integration-tests/domains/catalog/infrastructure/persistence/postgresql-product-media-workflow.repository.integration.test.js"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
