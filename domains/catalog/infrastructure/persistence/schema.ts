@@ -13,6 +13,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { ProductEntrySaveReceipt } from "../../product-entry/repositories/product-entry-submission.repository";
 
 export const catalogProducts = pgTable(
   "catalog_products",
@@ -235,5 +236,126 @@ export const catalogProductMediaOperations = pgTable(
     check("catalog_product_media_operations_attempt_safe", sql`${table.attemptCount} BETWEEN 0 AND 9007199254740991`),
     check("catalog_product_media_operations_staging_relative", sql`${table.stagedArtifactKey} IS NULL OR (${table.stagedArtifactKey} !~ '^[a-zA-Z]:' AND ${table.stagedArtifactKey} NOT LIKE '/%' AND position(chr(92) in ${table.stagedArtifactKey}) = 0)`),
     check("catalog_product_media_operations_staged_integrity", sql`(${table.stagedArtifactKey} IS NULL AND ${table.stagedSha256} IS NULL AND ${table.stagedByteLength} IS NULL AND ${table.stagedWidth} IS NULL AND ${table.stagedHeight} IS NULL) OR (${table.stagedArtifactKey} IS NOT NULL AND ${table.stagedSha256} ~ '^[a-f0-9]{64}$' AND ${table.stagedByteLength} > 0 AND ${table.stagedWidth} > 0 AND ${table.stagedHeight} > 0)`),
+  ],
+);
+
+export const catalogProductEntrySubmissions = pgTable(
+  "catalog_product_entry_submissions",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    submissionId: text("submission_id").notNull(),
+    requestFingerprint: text("request_fingerprint").notNull(),
+    productId: text("product_id"),
+    mode: text("mode").notNull(),
+    status: text("status").notNull(),
+    productRevision: bigint("product_revision", { mode: "number" }),
+    mediaWorkflowId: text("media_workflow_id"),
+    productSaveReceipt: jsonb("product_save_receipt").$type<ProductEntrySaveReceipt>(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_entry_submissions_pk", columns: [table.workspaceId, table.submissionId] }),
+    foreignKey({
+      name: "catalog_product_entry_submissions_product_fk",
+      columns: [table.workspaceId, table.productId],
+      foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "catalog_product_entry_submissions_media_workflow_fk",
+      columns: [table.workspaceId, table.mediaWorkflowId],
+      foreignColumns: [catalogProductMediaWorkflows.workspaceId, catalogProductMediaWorkflows.workflowId],
+    }).onDelete("restrict"),
+    index("catalog_product_entry_submissions_product_idx").on(table.workspaceId, table.productId),
+    index("catalog_product_entry_submissions_status_idx").on(table.workspaceId, table.status, table.updatedAt),
+    check("catalog_product_entry_submissions_fingerprint", sql`${table.requestFingerprint} ~ '^[a-f0-9]{64}$'`),
+    check("catalog_product_entry_submissions_mode", sql`${table.mode} IN ('Create','Edit')`),
+    check("catalog_product_entry_submissions_status", sql`${table.status} IN ('Claimed','ProductSaved','Completed','PartiallyCompleted')`),
+    check("catalog_product_entry_submissions_revision_safe", sql`${table.productRevision} IS NULL OR ${table.productRevision} BETWEEN 0 AND 9007199254740991`),
+    check("catalog_product_entry_submissions_timestamps_ordered", sql`${table.createdAt} <= ${table.updatedAt}`),
+    check("catalog_product_entry_submissions_identity_non_empty", sql`btrim(${table.submissionId}) <> ''`),
+    check("catalog_product_entry_submissions_mode_identity", sql`
+      (${table.mode} = 'Edit' AND ${table.productId} IS NOT NULL) OR
+      (${table.mode} = 'Create' AND (${table.status} <> 'Claimed' OR ${table.productId} IS NULL))
+    `),
+    check("catalog_product_entry_submissions_saved_state", sql`
+      (${table.status} = 'Claimed' AND ${table.productRevision} IS NULL AND ${table.mediaWorkflowId} IS NULL AND ${table.productSaveReceipt} IS NULL) OR
+      (${table.status} IN ('ProductSaved','Completed','PartiallyCompleted') AND ${table.productId} IS NOT NULL AND ${table.productRevision} IS NOT NULL AND ${table.productSaveReceipt} IS NOT NULL AND jsonb_typeof(${table.productSaveReceipt}) = 'object')
+    `),
+  ],
+);
+
+export const catalogProductEntrySubmissionMediaOperations = pgTable(
+  "catalog_product_entry_submission_media_operations",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    submissionId: text("submission_id").notNull(),
+    operationId: text("operation_id").notNull(),
+    operationType: text("operation_type").notNull(),
+    sequence: integer("sequence").notNull(),
+    mediaId: text("media_id"),
+    requestedDisplayOrder: integer("requested_display_order"),
+    selectedAsCover: boolean("selected_as_cover").notNull().default(false),
+    expectedSourceSha256: text("expected_source_sha256"),
+    expectedSourceByteLength: bigint("expected_source_byte_length", { mode: "number" }),
+    finalOrder: integer("final_order"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_product_entry_submission_media_operations_pk",
+      columns: [table.workspaceId, table.submissionId, table.operationId],
+    }),
+    foreignKey({
+      name: "catalog_product_entry_submission_media_operations_submission_fk",
+      columns: [table.workspaceId, table.submissionId],
+      foreignColumns: [catalogProductEntrySubmissions.workspaceId, catalogProductEntrySubmissions.submissionId],
+    }).onDelete("restrict"),
+    uniqueIndex("catalog_product_entry_submission_media_operations_sequence_uq")
+      .on(table.workspaceId, table.submissionId, table.sequence),
+    check("catalog_product_entry_submission_media_operations_type", sql`${table.operationType} IN ('Add','Replace','Remove')`),
+    check("catalog_product_entry_submission_media_operations_identity_non_empty", sql`btrim(${table.operationId}) <> ''`),
+    check("catalog_product_entry_submission_media_operations_sequence", sql`${table.sequence} >= 0`),
+    check("catalog_product_entry_submission_media_operations_orders", sql`
+      (${table.requestedDisplayOrder} IS NULL OR ${table.requestedDisplayOrder} >= 0) AND
+      (${table.finalOrder} IS NULL OR ${table.finalOrder} >= 0)
+    `),
+    check("catalog_product_entry_submission_media_operations_source_length", sql`${table.expectedSourceByteLength} IS NULL OR ${table.expectedSourceByteLength} BETWEEN 1 AND 9007199254740991`),
+    check("catalog_product_entry_submission_media_operations_shape", sql`
+      (${table.operationType} = 'Add' AND ${table.mediaId} IS NULL AND ${table.expectedSourceSha256} ~ '^[a-f0-9]{64}$' AND ${table.expectedSourceByteLength} IS NOT NULL) OR
+      (${table.operationType} = 'Replace' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} ~ '^[a-f0-9]{64}$' AND ${table.expectedSourceByteLength} IS NOT NULL) OR
+      (${table.operationType} = 'Remove' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} IS NULL AND ${table.expectedSourceByteLength} IS NULL)
+    `),
+  ],
+);
+
+export const catalogProductEntryAuditRecords = pgTable(
+  "catalog_product_entry_audit_records",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    auditId: text("audit_id").notNull(),
+    eventType: text("event_type").notNull(),
+    actorId: text("actor_id").notNull(),
+    submissionId: text("submission_id").notNull(),
+    productId: text("product_id").notNull(),
+    resultCode: text("result_code").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_entry_audit_records_pk", columns: [table.workspaceId, table.auditId] }),
+    foreignKey({
+      name: "catalog_product_entry_audit_records_submission_fk",
+      columns: [table.workspaceId, table.submissionId],
+      foreignColumns: [catalogProductEntrySubmissions.workspaceId, catalogProductEntrySubmissions.submissionId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "catalog_product_entry_audit_records_product_fk",
+      columns: [table.workspaceId, table.productId],
+      foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId],
+    }).onDelete("restrict"),
+    index("catalog_product_entry_audit_records_submission_idx").on(table.workspaceId, table.submissionId, table.occurredAt),
+    index("catalog_product_entry_audit_records_product_idx").on(table.workspaceId, table.productId, table.occurredAt),
+    check("catalog_product_entry_audit_records_event_type", sql`${table.eventType} IN ('SubmissionClaimed','ProductCreateRequested','ProductEditRequested','ProductSaved','LifecycleOutcome')`),
+    check("catalog_product_entry_audit_records_non_empty", sql`btrim(${table.auditId}) <> '' AND btrim(${table.actorId}) <> '' AND btrim(${table.resultCode}) <> ''`),
   ],
 );

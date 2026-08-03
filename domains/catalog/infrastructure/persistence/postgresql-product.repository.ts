@@ -51,10 +51,28 @@ const expectedConstraint = (error: unknown): string | undefined => {
 };
 
 export class PostgreSqlProductRepository implements ProductRepository {
-  constructor(private readonly database: CatalogDatabase) {}
+  constructor(
+    private readonly database: CatalogDatabase,
+    private readonly managesTransactions = true,
+  ) {}
+
+  static transactional(database: CatalogDatabase): PostgreSqlProductRepository {
+    return new PostgreSqlProductRepository(database, false);
+  }
+
+  private async executeWithDatabase<T>(
+    work: (database: CatalogDatabase) => Promise<T>,
+    config?: typeof PRODUCT_READ_TRANSACTION_CONFIG,
+  ): Promise<T> {
+    if (!this.managesTransactions) return work(this.database);
+    return this.database.transaction(
+      async (transaction) => work(transaction as unknown as CatalogDatabase),
+      config,
+    );
+  }
 
   async findById(workspaceId: WorkspaceId, productId: ProductId): Promise<Product | null> {
-    return this.database.transaction(async (transaction) => {
+    return this.executeWithDatabase(async (transaction) => {
       const scope = and(
         eq(catalogProducts.workspaceId, workspaceId.value),
         eq(catalogProducts.productId, productId.value),
@@ -85,7 +103,7 @@ export class PostgreSqlProductRepository implements ProductRepository {
   async create(product: Product): Promise<CreateResult> {
     const rows = ProductPersistenceMapper.toRows(product);
     try {
-      await this.database.transaction(async (transaction) => {
+      await this.executeWithDatabase(async (transaction) => {
         await transaction.insert(catalogProducts).values(rows.product);
         if (rows.specificationValues.length > 0) {
           await transaction.insert(catalogProductSpecificationValues).values(rows.specificationValues);
@@ -114,7 +132,7 @@ export class PostgreSqlProductRepository implements ProductRepository {
   async update(product: Product, expectedPersistedRevision: ProductRevision): Promise<UpdateResult> {
     const rows = ProductPersistenceMapper.toRows(product);
     try {
-      return await this.database.transaction(async (transaction) => {
+      return await this.executeWithDatabase(async (transaction) => {
         const updated = await transaction
           .update(catalogProducts)
           .set(rows.product)
