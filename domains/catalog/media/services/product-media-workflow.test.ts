@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { before, describe, it } from "node:test";
 import type { ProductRepository } from "../../repositories/product.repository.interface";
 import { CatalogId, ProductId, WorkspaceId } from "../../types/product-identity.value-object";
@@ -395,5 +396,95 @@ describe("Product Media workflow application", () => {
   });
   it("queries state within trusted Workspace scope", async () => { const { workflows, dependencies } = setup(); workflows.state = { workspaceId, productId, revision: 0, updatedAt: new Date(), updatedBy: "actor-a", items: [] }; const state = await new GetProductMediaStateQuery(dependencies).execute(actor, productId.value); assert.equal(state.workspaceId.value, workspaceId.value); });
   it("normalizes a legacy missing cover and appends at the first free sparse position", async () => { const { execute, workflows } = setup(); workflows.state = { workspaceId, productId, revision: 0, updatedAt: new Date(), updatedBy: "legacy", items: [1,4,9].map((displayOrder, index) => ({ mediaId: `old-${index}`, workspaceId, productId, storageArtifactKey: `${root.storageRootKey.value}/gallery-0${index + 1}.webp`, checksumSha256: hash, mimeType: "image/webp", displayOrder, createdAt: new Date(`2026-01-0${index + 1}T00:00:00Z`), createdBy: "legacy" })) }; await execute.execute(command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) } }])); assert.equal(workflows.state!.coverMediaId, "old-0"); assert.equal(workflows.state!.items.find((item) => item.mediaId === "add-a")!.displayOrder, 0); });
+  it("resumes a durable Pending operation for the same idempotency request", async () => {
+    const value = setup();
+    const input = command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) }, requestedDisplayOrder: 0 }]);
+    await value.execute.execute(input);
+    const pending = value.workflows.workflow!.operations[0];
+    Object.assign(pending, {
+      status: "Pending",
+      attemptCount: 0,
+      retryAllowed: false,
+      requiresNewSource: false,
+      stagedArtifactKey: undefined,
+      finalArtifactKey: undefined,
+      stagedSha256: undefined,
+      completedAt: undefined,
+    });
+    value.workflows.workflow!.status = "Pending";
+    value.workflows.workflow!.completedAt = undefined;
+    value.workflows.state = { workspaceId, productId, revision: 0, updatedAt: new Date(), updatedBy: "actor-a", items: [] };
+    value.storage.finals.clear();
+    value.storage.calls = [];
+    const resumed = await value.execute.execute(input);
+    assert.equal(resumed.status, "Completed");
+    assert.equal(resumed.operations[0].attemptCount, 1);
+    assert.equal(value.storage.calls.filter((call) => call.startsWith("add:")).length, 1);
+  });
+  it("resumes only a Pending source operation using durable hashes for already completed sources", async () => {
+    const value = setup();
+    const source = new Uint8Array([1]);
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const initial = command([
+      { operationId: "add-a", type: "Add", source: { bytes: source } },
+      { operationId: "add-b", type: "Add", source: { bytes: source } },
+    ]);
+    await value.execute.execute(initial);
+    const pending = value.workflows.workflow!.operations[1];
+    Object.assign(pending, {
+      status: "Pending",
+      attemptCount: 0,
+      retryAllowed: false,
+      requiresNewSource: false,
+      stagedArtifactKey: undefined,
+      finalArtifactKey: undefined,
+      stagedSha256: undefined,
+      completedAt: undefined,
+    });
+    value.workflows.workflow!.status = "InProgress";
+    value.workflows.workflow!.completedAt = undefined;
+    value.workflows.state!.items = value.workflows.state!.items.filter((item) => item.mediaId === "add-a");
+    value.workflows.state!.revision = 1;
+    for (const key of [...value.storage.finals.keys()]) {
+      if (!key.endsWith("gallery-01.webp")) value.storage.finals.delete(key);
+    }
+    value.storage.calls = [];
+    const resumed = await value.execute.execute(command([
+      { operationId: "add-a", type: "Add", sourceSha256 },
+      { operationId: "add-b", type: "Add", source: { bytes: source }, sourceSha256 },
+    ]));
+    assert.equal(resumed.status, "Completed");
+    assert.deepEqual(value.workflows.state!.items.map((item) => item.mediaId).sort(), ["add-a", "add-b"]);
+    assert.equal(value.storage.calls.filter((call) => call.includes("add-a")).length, 0);
+    assert.equal(value.storage.calls.filter((call) => call.includes("add-b")).length, 1);
+  });
+  it("applies authoritative requested order to Replace inside the canonical Media workflow", async () => {
+    const value = setup();
+    const items = ["one", "two", "three"].map((mediaId, displayOrder) => ({
+      mediaId,
+      workspaceId,
+      productId,
+      storageArtifactKey: `${root.storageRootKey.value}/gallery-0${displayOrder + 1}.webp`,
+      checksumSha256: hash,
+      mimeType: "image/webp" as const,
+      displayOrder,
+      createdAt: new Date(),
+      createdBy: "actor-a",
+    }));
+    value.workflows.state = { workspaceId, productId, revision: 0, coverMediaId: "one", updatedAt: new Date(), updatedBy: "actor-a", items };
+    for (const item of items) value.storage.finals.set(item.storageArtifactKey, hash);
+    await value.execute.execute(command([{
+      operationId: "replace-three",
+      type: "Replace",
+      targetMediaId: "three",
+      source: { bytes: new Uint8Array([1]) },
+      requestedDisplayOrder: 0,
+    }]));
+    assert.deepEqual(
+      [...value.workflows.state!.items].sort((left, right) => left.displayOrder - right.displayOrder)
+        .map((item) => [item.mediaId, item.displayOrder]),
+      [["three", 0], ["one", 1], ["two", 2]],
+    );
+  });
   it("restores canonical order and cover when metadata-only persistence fails", async () => { const reorderCase = setup(); const keyA = `${root.storageRootKey.value}/gallery-01.webp`; const keyB = `${root.storageRootKey.value}/gallery-02.webp`; reorderCase.workflows.state = { workspaceId, productId, revision: 0, coverMediaId: "a", updatedAt: new Date(), updatedBy: "actor-a", items: [{ mediaId: "a", workspaceId, productId, storageArtifactKey: keyA, displayOrder: 0, createdAt: new Date(), createdBy: "actor-a" }, { mediaId: "b", workspaceId, productId, storageArtifactKey: keyB, displayOrder: 1, createdAt: new Date(), createdBy: "actor-a" }] }; reorderCase.workflows.failSave = true; const reordered = await reorderCase.execute.execute(command([{ operationId: "reorder", type: "Reorder", orderedMediaIds: ["b", "a"] }])); assert.equal(reordered.operations[0].status, "Failed"); assert.deepEqual(reorderCase.workflows.state!.items.map((item) => item.mediaId), ["a", "b"]); const coverCase = setup(); coverCase.workflows.state = cloneState(reorderCase.workflows.state!); coverCase.workflows.failSave = true; const covered = await coverCase.execute.execute(command([{ operationId: "cover", type: "SetCover", targetMediaId: "b" }])); assert.equal(covered.operations[0].status, "Failed"); assert.equal(coverCase.workflows.state!.coverMediaId, "a"); });
 });

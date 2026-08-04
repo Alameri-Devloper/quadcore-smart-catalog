@@ -12,7 +12,15 @@ Use the [documentation audit](Documentation-Audit.md), [refactoring report](Docu
 
 The [Product Entry Submission Registry](Product-Entry-Submission-Registry.md) documents the Phase 1 idempotency, transaction, persistence, authorization, and API boundary introduced by Task 3.14.9-A.
 
+The [Product Entry Media Upload Coordination](Product-Entry-Media-Upload-Coordination.md) guide documents Task 3.14.9-B Phase 2 multipart mapping, double source verification, Media idempotency, workflow resume, partial success, tenancy, and HTTP behavior.
+
+Task 3.14.9-B-R1 corrects that contract so completed replay and retained-Staging retry need no re-upload, GET and POST share durable source requirements, and bounded multipart guards run before application opening.
+
 ## العربية
+
+يوثق دليل [تنسيق رفع وسائط إدخال المنتج](Product-Entry-Media-Upload-Coordination.md) عقد المرحلة الثانية للرفع متعدد الأجزاء والتحقق المزدوج وIdempotency والاستئناف والنجاح الجزئي والعزل بين مساحات العمل واستجابات HTTP.
+
+تصحح المهمة 3.14.9-B-R1 الاستئناف بحيث لا يحتاج الطلب المكتمل أو المصدر المرحلي المحفوظ إلى رفع جديد، وتوحد متطلبات المصدر بين GET وPOST، وتضيف حدوداً مبكرة للطلب متعدد الأجزاء.
 
 يشغل سير توافق Product Media اختبارات الأساس المركزة على Windows وUbuntu، ولا يثبت النجاح المستضاف إلا تشغيل فعلي لطلب سحب.
 

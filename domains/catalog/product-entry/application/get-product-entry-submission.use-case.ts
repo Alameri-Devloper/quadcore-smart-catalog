@@ -17,7 +17,7 @@ export interface ProductEntrySubmissionView {
   readonly productId: string | null;
   readonly productRevision: number | null;
   readonly mediaWorkflowId: string | null;
-  readonly mediaUploadState: "PendingUpload";
+  readonly mediaUploadState: "PendingUpload" | "Completed" | "PartiallyCompleted";
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly product: ReturnType<typeof productSnapshot> | null;
@@ -112,7 +112,11 @@ export class GetProductEntrySubmissionUseCase {
           productId: submission.productId?.value ?? null,
           productRevision: submission.productRevision,
           mediaWorkflowId: submission.mediaWorkflowId,
-          mediaUploadState: "PendingUpload",
+          mediaUploadState: submission.status === "Completed"
+            ? "Completed"
+            : submission.status === "PartiallyCompleted"
+              ? "PartiallyCompleted"
+              : "PendingUpload",
           createdAt: submission.createdAt,
           updatedAt: submission.updatedAt,
           product: product

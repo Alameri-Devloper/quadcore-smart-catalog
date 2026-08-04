@@ -14,7 +14,7 @@ const validDevelopmentEnvironment = Object.freeze({
   NODE_ENV: "development",
   QSC_TRUSTED_WORKSPACE_ID: "trusted-workspace",
   QSC_TRUSTED_ACTOR_ID: "trusted-actor",
-  QSC_TRUSTED_PRODUCT_ENTRY_PERMISSIONS: "catalog.product.create,catalog.product-entry-submission.read",
+  QSC_TRUSTED_PRODUCT_ENTRY_PERMISSIONS: "catalog.product.create,catalog.product-entry-submission.read,catalog.product-entry-media.upload",
 });
 
 describe("Product Entry trusted context adapters", () => {
@@ -22,7 +22,11 @@ describe("Product Entry trusted context adapters", () => {
     const context = await new DevelopmentEnvironmentProductEntryTrustedContextResolver(validDevelopmentEnvironment).resolve();
     assert.equal(context.workspaceId.value, "trusted-workspace");
     assert.equal(context.actorId.value, "trusted-actor");
-    assert.deepEqual([...context.permissions], ["catalog.product.create", "catalog.product-entry-submission.read"]);
+    assert.deepEqual([...context.permissions], [
+      "catalog.product.create",
+      "catalog.product-entry-submission.read",
+      "catalog.product-entry-media.upload",
+    ]);
   });
 
   it("fails closed for missing, empty, duplicate, or unsupported development configuration", async () => {

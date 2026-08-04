@@ -17,6 +17,7 @@ export const PRODUCT_ENTRY_PERMISSIONS = {
   create: "catalog.product.create",
   edit: "catalog.product.edit",
   read: "catalog.product-entry-submission.read",
+  mediaUpload: "catalog.product-entry-media.upload",
   readReferenceCost: "catalog.product.reference-cost.read",
 } as const;
 

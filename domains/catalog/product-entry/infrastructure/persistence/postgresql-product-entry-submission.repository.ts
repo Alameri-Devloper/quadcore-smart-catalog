@@ -1,4 +1,4 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { SMART_SAVE_PRODUCT_OUTCOMES } from "../../../services/smart-save-product";
 import { ProductId, WorkspaceId } from "../../../types/product-identity.value-object";
 import {
@@ -15,6 +15,8 @@ import {
 import type {
   ClaimProductEntrySubmission,
   MarkProductEntrySubmissionProductSaved,
+  MarkProductEntrySubmissionMediaOutcome,
+  MarkProductEntrySubmissionMediaOutcomeResult,
   ProductEntrySaveReceipt,
   ProductEntrySubmissionClaimResult,
   ProductEntrySubmissionRepository,
@@ -145,5 +147,32 @@ export class PostgreSqlProductEntrySubmissionRepository implements ProductEntryS
       ),
     )).returning({ submissionId: catalogProductEntrySubmissions.submissionId });
     if (updated.length !== 1) throw new Error("Product Entry Submission saved-product transition failed.");
+  }
+
+  async markMediaOutcome(
+    command: MarkProductEntrySubmissionMediaOutcome,
+  ): Promise<MarkProductEntrySubmissionMediaOutcomeResult> {
+    const allowedCurrentStatuses = command.status === PRODUCT_ENTRY_SUBMISSION_STATUSES.completed
+      ? [PRODUCT_ENTRY_SUBMISSION_STATUSES.productSaved, PRODUCT_ENTRY_SUBMISSION_STATUSES.partiallyCompleted]
+      : [PRODUCT_ENTRY_SUBMISSION_STATUSES.productSaved];
+    const updated = await this.database.update(catalogProductEntrySubmissions).set({
+      mediaWorkflowId: command.mediaWorkflowId,
+      status: command.status,
+      updatedAt: command.updatedAt,
+    }).where(and(
+      eq(catalogProductEntrySubmissions.workspaceId, command.workspaceId.value),
+      eq(catalogProductEntrySubmissions.submissionId, command.submissionId.value),
+      inArray(catalogProductEntrySubmissions.status, allowedCurrentStatuses),
+      or(
+        isNull(catalogProductEntrySubmissions.mediaWorkflowId),
+        eq(catalogProductEntrySubmissions.mediaWorkflowId, command.mediaWorkflowId),
+      ),
+    )).returning({ submissionId: catalogProductEntrySubmissions.submissionId });
+    if (updated.length === 1) return { type: "Linked" };
+    const existing = await this.findById(command.workspaceId, command.submissionId);
+    if (existing?.mediaWorkflowId === command.mediaWorkflowId && existing.status === command.status) {
+      return { type: "Existing" };
+    }
+    return { type: "Conflict" };
   }
 }

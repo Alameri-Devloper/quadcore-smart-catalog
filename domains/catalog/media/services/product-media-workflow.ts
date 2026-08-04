@@ -22,8 +22,8 @@ import type { ProductMediaOperationTransition, ProductMediaWorkflowRepository, S
 
 export interface IncomingMediaSource { readonly bytes: Uint8Array }
 export type ProductMediaCommandOperation =
-  | { readonly operationId: string; readonly type: "Add"; readonly source: IncomingMediaSource; readonly requestedDisplayOrder?: number; readonly selectAsCover?: boolean }
-  | { readonly operationId: string; readonly type: "Replace"; readonly targetMediaId: string; readonly source: IncomingMediaSource; readonly selectAsCover?: boolean }
+  | { readonly operationId: string; readonly type: "Add"; readonly source?: IncomingMediaSource; readonly sourceSha256?: string; readonly requestedDisplayOrder?: number; readonly selectAsCover?: boolean }
+  | { readonly operationId: string; readonly type: "Replace"; readonly targetMediaId: string; readonly source?: IncomingMediaSource; readonly sourceSha256?: string; readonly requestedDisplayOrder?: number; readonly selectAsCover?: boolean }
   | { readonly operationId: string; readonly type: "Remove"; readonly targetMediaId: string }
   | { readonly operationId: string; readonly type: "SetCover"; readonly targetMediaId: string }
   | { readonly operationId: string; readonly type: "Reorder"; readonly orderedMediaIds: readonly string[] };
@@ -88,13 +88,23 @@ const assertCommand = (command: ExecuteProductMediaWorkflowCommand): void => {
     if ("requestedDisplayOrder" in operation && operation.requestedDisplayOrder !== undefined && (!Number.isSafeInteger(operation.requestedDisplayOrder) || operation.requestedDisplayOrder < 0)) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
     if ("targetMediaId" in operation) { if (!operation.targetMediaId.trim()) throw new ProductMediaWorkflowError("ProductMediaValidationFailed"); if (operation.type !== "SetCover" && storageTargets.has(operation.targetMediaId)) throw new ProductMediaWorkflowError("ProductMediaValidationFailed"); if (operation.type !== "SetCover") storageTargets.add(operation.targetMediaId); }
     if (operation.type === "Reorder" && (operation.orderedMediaIds.some((id) => !id.trim()) || new Set(operation.orderedMediaIds).size !== operation.orderedMediaIds.length)) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
-    if ((operation.type === "Add" || operation.type === "Replace") && operation.source.bytes.byteLength === 0) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
+    if (operation.type === "Add" || operation.type === "Replace") {
+      const actualSourceSha256 = operation.source
+        ? createHash("sha256").update(operation.source.bytes).digest("hex")
+        : undefined;
+      if (
+        (operation.source && operation.source.bytes.byteLength === 0)
+        || (!operation.source && !operation.sourceSha256)
+        || (operation.sourceSha256 !== undefined && !/^[a-f0-9]{64}$/.test(operation.sourceSha256))
+        || (operation.sourceSha256 !== undefined && actualSourceSha256 !== undefined && operation.sourceSha256 !== actualSourceSha256)
+      ) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
+    }
   }
 };
 
 const requestFingerprint = (command: ExecuteProductMediaWorkflowCommand): string => createHash("sha256").update(JSON.stringify({
   workspaceId: command.actorContext.workspaceId.value, productId: command.productId, expectedMediaRevision: command.expectedMediaRevision,
-  operations: command.operations.map((operation) => ({ operationId: operation.operationId, type: operation.type, targetMediaId: "targetMediaId" in operation ? operation.targetMediaId : null, requestedDisplayOrder: "requestedDisplayOrder" in operation ? operation.requestedDisplayOrder ?? null : null, selectAsCover: "selectAsCover" in operation ? operation.selectAsCover === true : false, orderedMediaIds: "orderedMediaIds" in operation ? [...operation.orderedMediaIds] : null, sourceSha256: "source" in operation ? createHash("sha256").update(operation.source.bytes).digest("hex") : null })),
+  operations: command.operations.map((operation) => ({ operationId: operation.operationId, type: operation.type, targetMediaId: "targetMediaId" in operation ? operation.targetMediaId : null, requestedDisplayOrder: "requestedDisplayOrder" in operation ? operation.requestedDisplayOrder ?? null : null, selectAsCover: "selectAsCover" in operation ? operation.selectAsCover === true : false, orderedMediaIds: "orderedMediaIds" in operation ? [...operation.orderedMediaIds] : null, sourceSha256: operation.type === "Add" || operation.type === "Replace" ? operation.sourceSha256 ?? createHash("sha256").update(operation.source!.bytes).digest("hex") : null })),
 })).digest("hex");
 
 const resolveOrCreateRoot = async (dependencies: WorkflowDependencies, product: Product, now: Date) => {
@@ -425,26 +435,35 @@ export class ExecuteProductMediaWorkflowUseCase {
       if (existing.requestFingerprint !== fingerprint) {
         throw new ProductMediaWorkflowError("ProductMediaIdempotencyConflict");
       }
-      return copyWorkflow(existing);
+      if (!existing.operations.some((operation) => operation.status === "Pending")) return copyWorkflow(existing);
     }
+    if (!existing && command.operations.some((operation) =>
+      (operation.type === "Add" || operation.type === "Replace") && !operation.source,
+    )) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
     const mediaState = (await this.dependencies.workflows.loadMediaState(command.actorContext.workspaceId, productId)) ?? emptyMediaState(command.actorContext, productId, command.effectiveTime);
-    if (mediaState.revision !== command.expectedMediaRevision) throw new ProductMediaWorkflowError("MediaRevisionConflict");
+    if (!existing && mediaState.revision !== command.expectedMediaRevision) throw new ProductMediaWorkflowError("MediaRevisionConflict");
     const root = await resolveOrCreateRoot(this.dependencies, product, command.effectiveTime);
-    const workflow: ProductMediaWorkflowState = {
+    let workflow: ProductMediaWorkflowState = existing ? copyWorkflow(existing) : {
       workflowId: command.workflowId, workspaceId: command.actorContext.workspaceId, productId, status: "Pending",
       expectedMediaRevision: command.expectedMediaRevision, idempotencyKey: command.idempotencyKey,
       requestFingerprint: fingerprint,
       createdBy: command.actorContext.actorId, startedAt: new Date(command.effectiveTime), version: 0,
       operations: command.operations.map((operation) => initialOperation(command.workflowId, command.actorContext, operation, command.effectiveTime)),
     };
-    const created = await this.dependencies.workflows.create(workflow);
-    if (created.type === "Existing") return copyWorkflow(created.workflow);
-    if (created.type === "IdempotencyConflict") throw new ProductMediaWorkflowError("ProductMediaIdempotencyConflict");
+    if (!existing) {
+      const created = await this.dependencies.workflows.create(workflow);
+      if (created.type === "Existing") {
+        if (created.workflow.requestFingerprint !== fingerprint) throw new ProductMediaWorkflowError("ProductMediaIdempotencyConflict");
+        if (!created.workflow.operations.some((operation) => operation.status === "Pending")) return copyWorkflow(created.workflow);
+        workflow = copyWorkflow(created.workflow);
+      }
+      if (created.type === "IdempotencyConflict") throw new ProductMediaWorkflowError("ProductMediaIdempotencyConflict");
+    }
     const inputById = new Map(command.operations.map((operation) => [operation.operationId, operation]));
     let selectedCover: string | undefined;
     const previousCover = mediaState.coverMediaId;
-    let persistedWorkflowVersion = 0;
-    let persistedMediaRevision = command.expectedMediaRevision;
+    let persistedWorkflowVersion = workflow.version;
+    let persistedMediaRevision = mediaState.revision;
     const persist = async (mediaChanged: boolean): Promise<void> => {
       workflow.status = deriveProductMediaWorkflowStatus(workflow.operations);
       workflow.version = persistedWorkflowVersion + 1;
@@ -459,7 +478,7 @@ export class ExecuteProductMediaWorkflowUseCase {
       await persist(true);
     }
     for (const type of ["Add", "Replace", "Remove"] as const) {
-      for (const operation of workflow.operations.filter((candidate) => candidate.type === type)) {
+      for (const operation of workflow.operations.filter((candidate) => candidate.type === type && candidate.status === "Pending")) {
         const input = inputById.get(operation.operationId)!;
         if (type === "Add" || type === "Replace") {
           const source = "source" in input ? input.source : undefined;
@@ -551,8 +570,8 @@ export class ExecuteProductMediaWorkflowUseCase {
         if (code === "MediaRevisionConflict") throw new ProductMediaWorkflowError("MediaRevisionConflict");
       }
     };
-    for (const operation of workflow.operations.filter((candidate) => candidate.type === "Reorder")) await metadataTransition(operation, () => { mediaState.items = reorderProductMedia(mediaState.items, operation.orderedMediaIds ?? []); });
-    for (const operation of workflow.operations.filter((candidate) => candidate.type === "SetCover")) {
+    for (const operation of workflow.operations.filter((candidate) => candidate.type === "Reorder" && candidate.status === "Pending")) await metadataTransition(operation, () => { mediaState.items = reorderProductMedia(mediaState.items, operation.orderedMediaIds ?? []); });
+    for (const operation of workflow.operations.filter((candidate) => candidate.type === "SetCover" && candidate.status === "Pending")) {
       await metadataTransition(operation, () => {
         if (!operation.targetMediaId || !mediaState.items.some((item) => item.mediaId === operation.targetMediaId)) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
         mediaState.coverMediaId = operation.targetMediaId;
@@ -561,7 +580,7 @@ export class ExecuteProductMediaWorkflowUseCase {
     }
     mediaState.coverMediaId = resolveProductMediaCover(mediaState.items, selectedCover, mediaState.coverMediaId ?? previousCover);
     workflow.status = deriveProductMediaWorkflowStatus(workflow.operations);
-    workflow.completedAt = new Date(command.effectiveTime);
+    if (workflow.status !== "Pending" && workflow.status !== "InProgress") workflow.completedAt = new Date(command.effectiveTime);
     await persist(false);
     return copyWorkflow(workflow);
   }
@@ -672,7 +691,13 @@ export class ExecuteProductMediaWorkflowUseCase {
     operation.finalArtifactKey = finalKey.value;
     const result = await this.dependencies.storage.publishReplacement({ stagedObject: this.staged(operation, root), finalKey, trashKey });
     if (result.type === "Failed") return classifyStorageFailure(operation.type, result.code, "Publication");
-    state.items[index] = Object.freeze({ ...previous, checksumSha256: result.object.sha256, createdBy: actor.actorId });
+    const replacement = Object.freeze({ ...previous, checksumSha256: result.object.sha256, createdBy: actor.actorId });
+    if (operation.requestedDisplayOrder === undefined) state.items[index] = replacement;
+    else {
+      const remaining = state.items.filter((item) => item.mediaId !== previous.mediaId);
+      const displayOrder = allocateDisplayOrder(remaining, operation.requestedDisplayOrder);
+      state.items = [...remaining, { ...replacement, displayOrder }];
+    }
     return { type: "Succeeded", compensations: [async () => (await this.dependencies.storage.restoreFromTrash({ finalKey, trashKey })).type === "Restored"] };
   }
 
@@ -703,6 +728,17 @@ export class GetProductMediaWorkflowQuery {
   async execute(actor: TrustedActorContext, workflowId: string): Promise<ProductMediaWorkflowState> {
     const workflow = await this.dependencies.workflows.findById(actor.workspaceId, workflowId);
     if (!workflow) throw new ProductMediaWorkflowError("ProductMediaWorkflowNotFound");
+    if (!(await this.dependencies.authorization.canEditProduct(actor, workflow.productId))) throw new ProductMediaWorkflowError("ProductMediaAuthorizationDenied");
+    return copyWorkflow(workflow);
+  }
+}
+
+export class GetProductMediaWorkflowByIdempotencyKeyQuery {
+  constructor(private readonly dependencies: Pick<WorkflowDependencies, "workflows" | "authorization">) {}
+  async execute(actor: TrustedActorContext, idempotencyKey: string): Promise<ProductMediaWorkflowState | null> {
+    if (!idempotencyKey.trim()) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
+    const workflow = await this.dependencies.workflows.findByIdempotencyKey(actor.workspaceId, idempotencyKey);
+    if (!workflow) return null;
     if (!(await this.dependencies.authorization.canEditProduct(actor, workflow.productId))) throw new ProductMediaWorkflowError("ProductMediaAuthorizationDenied");
     return copyWorkflow(workflow);
   }
@@ -817,7 +853,17 @@ export class RetryProductMediaOperationUseCase {
       if (item) {
         const finalKey = ProductMediaFinalKey.rehydrate(root.storageRootKey, item.storageArtifactKey); const trashKey = ProductMediaTrashKey.create(root.storageRootKey, operation.operationId);
         const result = await this.dependencies.storage.publishReplacement({ stagedObject: this.staged(operation, root.storageRootKey), finalKey, trashKey });
-        if (result.type === "Replaced") { state.items = state.items.map((candidate) => candidate.mediaId === item.mediaId ? { ...candidate, checksumSha256: result.object.sha256 } : candidate); outcome = { type: "Succeeded", compensation: async () => (await this.dependencies.storage.restoreFromTrash({ finalKey, trashKey })).type === "Restored" }; }
+        if (result.type === "Replaced") {
+          const replacement = { ...item, checksumSha256: result.object.sha256 };
+          if (operation.requestedDisplayOrder === undefined) {
+            state.items = state.items.map((candidate) => candidate.mediaId === item.mediaId ? replacement : candidate);
+          } else {
+            const remaining = state.items.filter((candidate) => candidate.mediaId !== item.mediaId);
+            const displayOrder = allocateDisplayOrder(remaining, operation.requestedDisplayOrder);
+            state.items = [...remaining, { ...replacement, displayOrder }];
+          }
+          outcome = { type: "Succeeded", compensation: async () => (await this.dependencies.storage.restoreFromTrash({ finalKey, trashKey })).type === "Restored" };
+        }
         else outcome = classifyStorageFailure(operation.type, result.code, "Publication");
       }
     } else if (operation.type === "Remove" && operation.targetMediaId) {

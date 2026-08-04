@@ -6,6 +6,10 @@ Product Media workflow orchestration is an independent Catalog module. It never 
 
 ## Reused foundation | الأساس المعاد استخدامه
 
+Task 3.14.9-B composes a Product Entry Infrastructure adapter over these Application use cases. The adapter does not merge the boundaries or give Product Entry authority over canonical Media state. | تركب المهمة 3.14.9-B محولاً في بنية Product Entry فوق حالات الاستخدام هذه دون دمج الحدود أو منح Product Entry سلطة على حالة الوسائط الأساسية.
+
+Task 3.14.9-B-R1 permits a Pending-operation resume command to carry the durable raw source SHA-256 for already completed source operations instead of their bytes. Product Media validates any supplied hash against supplied bytes, reconstructs the unchanged request fingerprint, and executes only durable Pending operations; retained-Staging retries still use the dedicated retry use case. | تسمح المهمة 3.14.9-B-R1 لأمر استئناف عملية معلقة بحمل بصمة SHA-256 الخام المحفوظة للعمليات المكتملة بدلاً من بايتاتها. تتحقق Product Media من توافق البصمة مع أي بايتات مرسلة، وتعيد بناء بصمة الطلب دون تغيير، ولا تنفذ إلا العمليات المعلقة، بينما تستخدم إعادة محاولة المصدر المرحلي حالة الاستخدام المخصصة للإعادة.
+
 The workflow reuses `ProductMediaRoot`, canonical final/Staging/Trash keys, `ProductImageProcessor`, `ProductMediaStoragePort`, `LocalProductMediaStorageAdapter`, checksum validation, no-clobber publication, replacement restoration, Trash movement, and the PostgreSQL Product/Media-root repositories. Application code contains no filesystem paths or low-level filesystem operations. | تعيد الدورة استخدام جذر الوسائط والمفاتيح المنمطة للملفات النهائية والمؤقتة وسلة المحذوفات ومعالج الصور ومنفذ التخزين ومحول التخزين المحلي والتحقق من البصمة والنشر دون استبدال والاستعادة وسجل PostgreSQL، ولا تحتوي طبقة التطبيق على عمليات نظام ملفات منخفضة المستوى.
 
 ## Workflow and operation lifecycle | دورة العمل والعمليات
