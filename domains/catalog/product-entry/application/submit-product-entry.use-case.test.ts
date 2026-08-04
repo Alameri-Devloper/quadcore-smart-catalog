@@ -11,7 +11,7 @@ import type { ProductEntryMediaOperation } from "../domain/product-entry-media-p
 import { ProductEntrySubmission, type ProductEntrySubmissionId } from "../domain/product-entry-submission";
 import type { ProductEntryAuditRecord, ProductEntryAuditRepository } from "../repositories/product-entry-audit.repository";
 import type { ProductEntrySubmissionMediaPlanRepository } from "../repositories/product-entry-media-plan.repository";
-import type { ClaimProductEntrySubmission, MarkProductEntrySubmissionProductSaved, ProductEntrySaveReceipt, ProductEntrySubmissionClaimResult, ProductEntrySubmissionRepository } from "../repositories/product-entry-submission.repository";
+import type { ClaimProductEntrySubmission, MarkProductEntrySubmissionMediaOutcome, MarkProductEntrySubmissionProductSaved, ProductEntrySaveReceipt, ProductEntrySubmissionClaimResult, ProductEntrySubmissionRepository } from "../repositories/product-entry-submission.repository";
 import type { ProductEntryTransactionDecision, ProductEntryTransactionalContext, ProductEntryUnitOfWork } from "../ports/product-entry-unit-of-work.port";
 import { GetProductEntrySubmissionUseCase } from "./get-product-entry-submission.use-case";
 import { ProductEntryActorId, PRODUCT_ENTRY_PERMISSIONS, type ProductEntryExecutionContext, type ProductEntryPermission } from "./product-entry-execution-context";
@@ -168,6 +168,19 @@ class MemorySubmissionRepository implements ProductEntrySubmissionRepository {
     if (!submission) throw new Error("missing submission");
     submission.markProductSaved(command.productId, command.productRevision, command.savedAt);
     this.state.receipts.set(key, command.receipt);
+  }
+  async markMediaOutcome(command: MarkProductEntrySubmissionMediaOutcome) {
+    const submission = this.state.submissions.get(scoped(command.workspaceId.value, command.submissionId.value));
+    if (!submission) return { type: "Conflict" as const };
+    if (submission.mediaWorkflowId === command.mediaWorkflowId && submission.status === command.status) {
+      return { type: "Existing" as const };
+    }
+    try {
+      submission.markMediaOutcome(command.status, command.mediaWorkflowId, command.updatedAt);
+      return { type: "Linked" as const };
+    } catch {
+      return { type: "Conflict" as const };
+    }
   }
 }
 

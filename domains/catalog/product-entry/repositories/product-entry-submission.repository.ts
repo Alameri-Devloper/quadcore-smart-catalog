@@ -4,6 +4,7 @@ import type { ProductEntrySubmission } from "../domain/product-entry-submission"
 import type {
   ProductEntrySubmissionId,
   ProductEntrySubmissionMode,
+  ProductEntrySubmissionStatus,
   RequestFingerprint,
 } from "../domain/product-entry-submission";
 
@@ -40,9 +41,25 @@ export interface MarkProductEntrySubmissionProductSaved {
   readonly savedAt: Date;
 }
 
+export interface MarkProductEntrySubmissionMediaOutcome {
+  readonly workspaceId: WorkspaceId;
+  readonly submissionId: ProductEntrySubmissionId;
+  readonly mediaWorkflowId: string;
+  readonly status: Extract<ProductEntrySubmissionStatus, "Completed" | "PartiallyCompleted">;
+  readonly updatedAt: Date;
+}
+
+export type MarkProductEntrySubmissionMediaOutcomeResult =
+  | { readonly type: "Linked" }
+  | { readonly type: "Existing" }
+  | { readonly type: "Conflict" };
+
 export interface ProductEntrySubmissionRepository {
   findById(workspaceId: WorkspaceId, submissionId: ProductEntrySubmissionId): Promise<ProductEntrySubmission | null>;
   findSaveReceipt(workspaceId: WorkspaceId, submissionId: ProductEntrySubmissionId): Promise<ProductEntrySaveReceipt | null>;
   claim(command: ClaimProductEntrySubmission): Promise<ProductEntrySubmissionClaimResult>;
   markProductSaved(command: MarkProductEntrySubmissionProductSaved): Promise<void>;
+  markMediaOutcome(
+    command: MarkProductEntrySubmissionMediaOutcome,
+  ): Promise<MarkProductEntrySubmissionMediaOutcomeResult>;
 }

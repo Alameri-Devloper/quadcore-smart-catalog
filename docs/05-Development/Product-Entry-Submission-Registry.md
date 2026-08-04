@@ -8,6 +8,8 @@
 
 `ProductEntrySubmission` is an independent Product Entry model. It is not part of the Product Aggregate and it is not a Product Media Workflow. Its Workspace-scoped identity is `workspaceId + submissionId`; the same identity and request fingerprint is an idempotent replay, while a different fingerprint is a structured conflict. Phase 1 advances a new submission from `Claimed` to `ProductSaved`. `Completed` and `PartiallyCompleted` are reserved for a later Media phase.
 
+Task 3.14.9-B implements that separate Media phase. It consumes the persisted plan without changing it, coordinates only through the Product Media Application boundary, and links the resulting workflow in a separate idempotent transaction. Phase 2 never reruns Smart Save or rolls back the Product. See [Product Entry Media Upload Coordination](Product-Entry-Media-Upload-Coordination.md). | تنفذ المهمة 3.14.9-B مرحلة الوسائط المستقلة، وتستهلك الخطة المحفوظة دون تعديلها وتنسق عبر طبقة تطبيق Product Media فقط، ثم تربط الدورة في معاملة مستقلة وآمنة للتكرار. لا تعيد المرحلة الثانية Smart Save ولا تتراجع عن المنتج.
+
 The canonical request fingerprint is lowercase SHA-256 over deterministic UTF-8 serialization. Object keys are sorted, media-operation array order remains significant, and the normalized Phase 1 contract represents omitted optional fields as explicit `null` or contract defaults. Server timestamps and file bytes are excluded. Add and Replace descriptors require the browser source hash and byte length.
 
 ### Transaction boundary
