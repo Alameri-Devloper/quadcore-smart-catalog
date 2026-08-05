@@ -1,6 +1,6 @@
 # Development Documentation | توثيق التطوير
 
-**Status:** Active · **Last Updated:** 2026-07-22 · **Scope:** Delivery and governance
+**Status:** Active · **Last Updated:** 2026-08-04 · **Scope:** Delivery and governance
 
 ## English
 
@@ -16,7 +16,11 @@ The [Product Entry Media Upload Coordination](Product-Entry-Media-Upload-Coordin
 
 Task 3.14.9-B-R1 corrects that contract so completed replay and retained-Staging retry need no re-upload, GET and POST share durable source requirements, and bounded multipart guards run before application opening.
 
+The [Product Entry Local Draft Recovery](Product-Entry-Local-Draft-Recovery.md) guide documents Task 3.14.9-C IndexedDB identities, retention, schema migration, explicit recovery, Edit revision conflicts, Media reselection, security filtering, autosave serialization, revalidation, and the Task 3.14.9-D Presentation boundary.
+
 ## العربية
+
+يوثق دليل [استعادة مسودة إدخال المنتج محلياً](Product-Entry-Local-Draft-Recovery.md) مفاتيح IndexedDB ومدد الاحتفاظ وترحيل المخطط والاستعادة الصريحة وتعارض مراجعة التعديل وإعادة اختيار الوسائط والتصفية الأمنية وتسلسل الحفظ التلقائي وحدود العرض للمهمة 3.14.9-D.
 
 يوثق دليل [تنسيق رفع وسائط إدخال المنتج](Product-Entry-Media-Upload-Coordination.md) عقد المرحلة الثانية للرفع متعدد الأجزاء والتحقق المزدوج وIdempotency والاستئناف والنجاح الجزئي والعزل بين مساحات العمل واستجابات HTTP.
 

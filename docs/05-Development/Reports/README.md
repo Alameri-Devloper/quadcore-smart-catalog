@@ -8,6 +8,8 @@
 - [Task 3.14.7-R3 Publication Compensation and Review-Evidence Integrity Correction](Task-3.14.7-R3-Final-Report.md)
 - [Task 3.14.9-B Product Entry Media Upload Coordination](Task-3.14.9-B-Final-Report.md)
 - [Task 3.14.9-B-R1 Media Resume Source Requirements Correction](Task-3.14.9-B-R1-Final-Report.md)
+- [Task 3.14.9-C Product Entry Local Draft Recovery](Task-3.14.9-C-Final-Report.md)
+- [Task 3.14.9-C-R1 Create Draft Completion Lifecycle Correction](Task-3.14.9-C-R1-Final-Report.md)
 
 This directory contains the Git-tracked final report for every approved implementation task. Name reports `<task-id>-Final-Report.md` and record their review status accurately. After verification, the automated review bundle re-reads, copies, and sanitizes the final-state report. Final ZIP/checksum names are published only after temporary-pair verification and repository-stability checks; the bundle does not replace this source report. Final Markdown reports belong in Git. Generated bundle directories, ZIP archives, detached checksums, and temporary files do not belong in Git.
 
@@ -15,6 +17,8 @@ This directory contains the Git-tracked final report for every approved implemen
 
 - [المهمة 3.14.9-B — تنسيق رفع وسائط إدخال المنتج](Task-3.14.9-B-Final-Report.md)
 - [المهمة 3.14.9-B-R1 — تصحيح متطلبات مصدر استئناف الوسائط](Task-3.14.9-B-R1-Final-Report.md)
+- [المهمة 3.14.9-C — استعادة مسودة إدخال المنتج محلياً](Task-3.14.9-C-Final-Report.md)
+- [المهمة 3.14.9-C-R1 — تصحيح دورة اكتمال مسودة الإنشاء](Task-3.14.9-C-R1-Final-Report.md)
 
 - [المهمة 3.14.7 — أساس تخزين وسائط المنتج](Task-3.14.7-Final-Report.md)
 - [المهمة 3.14.7-R1 — تصحيح عزل المستأجر وسلامة نظام الملفات](Task-3.14.7-R1-Final-Report.md)

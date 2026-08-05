@@ -3,19 +3,13 @@
 import { useEffect, useRef } from "react";
 
 interface ProductEntryExitDialogProps {
-  error: string | null;
-  isSaving: boolean;
   onContinueEditing: () => void;
   onDiscardChanges: () => void;
-  onSaveDraft: () => void;
 }
 
 export function ProductEntryExitDialog({
-  error,
-  isSaving,
   onContinueEditing,
   onDiscardChanges,
-  onSaveDraft,
 }: ProductEntryExitDialogProps) {
   const continueButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -55,21 +49,11 @@ export function ProductEntryExitDialog({
           className="mt-2 text-sm leading-6 text-slate-600"
           id="product-entry-exit-description"
         >
-          Save your current work as a Draft and close, discard your changes and close, or continue editing.
+          Your unsaved changes will be lost if you close. Choose whether to discard them or continue editing.
         </p>
         <div className="mt-6 grid gap-3">
           <button
-            className="min-h-12 rounded-xl bg-blue-600 px-4 font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:opacity-50"
-            disabled={isSaving}
-            onClick={onSaveDraft}
-            ref={continueButtonRef}
-            type="button"
-          >
-            {isSaving ? "Saving Draft…" : "Save Draft and Close"}
-          </button>
-          <button
             className="min-h-12 rounded-xl border border-red-300 bg-white px-4 font-semibold text-red-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200"
-            disabled={isSaving}
             onClick={onDiscardChanges}
             type="button"
           >
@@ -77,13 +61,12 @@ export function ProductEntryExitDialog({
           </button>
           <button
             className="min-h-12 rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
-            disabled={isSaving}
             onClick={onContinueEditing}
+            ref={continueButtonRef}
             type="button"
           >
             Continue Editing
           </button>
-          {error ? <p className="text-sm font-medium text-red-700" role="alert">{error}</p> : null}
         </div>
       </section>
     </div>

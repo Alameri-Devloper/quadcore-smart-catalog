@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { productEntryWorkflow } from "../product-entry.workflow";
 import {
@@ -18,10 +18,6 @@ import { ProductEntryStepContent } from "./ProductEntryStepContent";
 import { ProductEntryWizardHeader } from "./ProductEntryWizardHeader";
 import { ProductEntryExitDialog } from "./ProductEntryExitDialog";
 import { ProductEntryCompletion } from "./ProductEntryCompletion";
-import { ProductEntryResumeDialog } from "./ProductEntryResumeDialog";
-import { ProductEntryDraftService } from "../drafts/product-entry-draft.service";
-import { BrowserProductEntryDraftRepository } from "../drafts/infrastructure/browser-product-entry-draft.repository";
-import type { ProductEntryDraft } from "../drafts/product-entry-draft.entity";
 import { PRODUCT_ENTRY_DEVELOPMENT_SCOPE } from "../product-entry.development-config";
 import {
   ProductEntryCategoryService,
@@ -87,15 +83,7 @@ interface ProductEntryWizardSessionProps {
 function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCategory, categoryLoadError, categoriesLoading, onRetryCategories }: ProductEntryWizardSessionProps) {
   const router = useRouter();
   const workflow = useProductEntryWorkflow();
-  const draftService = useMemo(
-    () => new ProductEntryDraftService(new BrowserProductEntryDraftRepository()),
-    [],
-  );
-  const [activeDraft, setActiveDraft] = useState<ProductEntryDraft | null>(null);
-  const [resumeDraft, setResumeDraft] = useState<ProductEntryDraft | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isWorking, setIsWorking] = useState(false);
   const [deviceClassResult, setDeviceClassResult] = useState<{
     categoryId: string;
     options: ProductEntryDeviceClassOption[];
@@ -120,9 +108,6 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     contextKey: string;
     message: string;
   } | null>(null);
-  const previousStepRef = useRef(workflow.currentStepId);
-  const initializedRef = useRef(false);
-  const previousValuesRef = useRef(workflow.values);
   const selectedCategoryId = workflow.values.categoryId;
   const currentStepId = workflow.currentStepId;
   const validateCurrentStep = workflow.validateCurrentStep;
@@ -296,49 +281,9 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     workflow.values.isActive,
   ]);
 
-  const leave = useCallback((saved = false) => {
-    router.push(saved ? "/?productEntryDraft=saved" : "/");
+  const leave = useCallback(() => {
+    router.push("/");
   }, [router]);
-  const saveDraft = useCallback(async () => {
-    if (!workflow.currentStepId) throw new Error("The current workflow step is unavailable.");
-    const saved = await draftService.saveActive({
-      existingDraft: activeDraft,
-      scope: PRODUCT_ENTRY_DEVELOPMENT_SCOPE,
-      values: workflow.values,
-      currentStepId: workflow.currentStepId,
-      completedStepIds: workflow.completedSteps.map((step) => step.id),
-    });
-    setActiveDraft(saved);
-    return saved;
-  }, [activeDraft, draftService, workflow.completedSteps, workflow.currentStepId, workflow.values]);
-
-  useEffect(() => {
-    void draftService.findActive(PRODUCT_ENTRY_DEVELOPMENT_SCOPE)
-      .then((draft) => { setResumeDraft(draft); })
-      .catch(() => setError("The saved Draft could not be loaded. Start a new Product or try again."))
-      .finally(() => { initializedRef.current = true; });
-  }, [draftService]);
-
-  useEffect(() => {
-    if (!initializedRef.current || resumeDraft || !workflow.currentStepId) return;
-    if (previousStepRef.current !== workflow.currentStepId) {
-      previousStepRef.current = workflow.currentStepId;
-      void saveDraft().catch(() => setError("The Draft could not be saved after moving steps. Your work remains open."));
-    }
-  }, [resumeDraft, saveDraft, workflow.currentStepId]);
-
-  useEffect(() => {
-    if (!initializedRef.current || resumeDraft || previousValuesRef.current === workflow.values) return;
-    previousValuesRef.current = workflow.values;
-    void saveDraft().catch(() => setError("The Draft could not be saved after this change. Your work remains open."));
-  }, [resumeDraft, saveDraft, workflow.values]);
-
-  const run = async (action: () => Promise<void>) => {
-    setIsWorking(true); setError(null);
-    try { await action(); } catch { setError("Browser storage is unavailable. Your work remains open and no navigation occurred."); }
-    finally { setIsWorking(false); }
-  };
-  const startClean = () => { workflow.resetWorkflow(); setActiveDraft(null); setResumeDraft(null); previousStepRef.current = PRODUCT_ENTRY_STEP_IDS.entryMethod; };
   const productIdentity = ProductEntryIdentityService.createViewModel({
     values: workflow.values,
     steps: workflow.visibleSteps,
@@ -347,10 +292,7 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
     brandName: selectedProductModel?.brandName,
     productModelName: selectedProductModel?.name,
     specificationsResolution,
-    draftSaved: Boolean(
-      activeDraft &&
-        JSON.stringify(activeDraft.workflowValues) === JSON.stringify(workflow.values),
-    ),
+    draftSaved: false,
     identityError: Boolean(
       categoryLoadError || activeDeviceClassError || activeProductModelError,
     ),
@@ -387,7 +329,10 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
             const started = workflow.completedSteps.length > 0 || workflow.isDirty || workflow.currentStepId !== PRODUCT_ENTRY_STEP_IDS.entryMethod;
             if (started) setShowCloseDialog(true); else leave();
           }}
-          onHome={() => void run(async () => { await saveDraft(); leave(true); })}
+          onHome={() => {
+            const started = workflow.completedSteps.length > 0 || workflow.isDirty || workflow.currentStepId !== PRODUCT_ENTRY_STEP_IDS.entryMethod;
+            if (started) setShowCloseDialog(true); else leave();
+          }}
         />
         <ProductEntryProgress />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
@@ -402,28 +347,10 @@ function ProductEntryWizardSession({ categories, categoryRequiresDeviceClassByCa
       </div>
       {showCloseDialog ? (
         <ProductEntryExitDialog
-          error={error}
-          isSaving={isWorking}
-          onContinueEditing={() => { setShowCloseDialog(false); setError(null); }}
-          onDiscardChanges={() => void run(async () => { if (activeDraft) await draftService.discard(activeDraft); leave(); })}
-          onSaveDraft={() => void run(async () => { await saveDraft(); leave(true); })}
+          onContinueEditing={() => setShowCloseDialog(false)}
+          onDiscardChanges={leave}
         />
       ) : null}
-      {resumeDraft ? (
-        <ProductEntryResumeDialog
-          canContinue={!categoriesLoading && !categoryLoadError}
-          draft={resumeDraft}
-          error={error}
-          isWorking={isWorking}
-          onContinue={() => void run(async () => {
-            await workflow.restoreWorkflow({ values: resumeDraft.workflowValues, currentStepId: resumeDraft.currentStepId, completedStepIds: resumeDraft.completedStepIds });
-            previousValuesRef.current = resumeDraft.workflowValues; setActiveDraft(resumeDraft); setResumeDraft(null); previousStepRef.current = resumeDraft.currentStepId;
-          })}
-          onDelete={() => void run(async () => { await draftService.delete(resumeDraft.id); startClean(); })}
-          onStartNew={() => void run(async () => { await draftService.discard(resumeDraft); startClean(); })}
-        />
-      ) : null}
-      {error && !showCloseDialog && !resumeDraft ? <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800" role="alert">{error}</div> : null}
     </main>
   );
 }
