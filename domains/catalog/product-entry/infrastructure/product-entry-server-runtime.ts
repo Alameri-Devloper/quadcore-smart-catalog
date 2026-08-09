@@ -1,5 +1,6 @@
 import { createCatalogDatabaseConnection, type CatalogDatabaseConnection } from "../../infrastructure/persistence/database";
 import { GetProductEntrySubmissionUseCase } from "../application/get-product-entry-submission.use-case";
+import { GetProductEntryProductUseCase } from "../application/get-product-entry-product.use-case";
 import { GetProductEntrySubmissionMediaStatusUseCase } from "../application/get-product-entry-submission-media-status.use-case";
 import { ProductEntryMediaIdempotencyKeyService } from "../application/product-entry-media-idempotency-key";
 import { SubmitProductEntryUseCase } from "../application/submit-product-entry.use-case";
@@ -18,6 +19,7 @@ import { SharpProductEntryMediaSourceVerifier } from "./sharp-product-entry-medi
 export interface ProductEntryServerApplication {
   readonly submit: SubmitProductEntryUseCase;
   readonly get: GetProductEntrySubmissionUseCase;
+  readonly getProduct: GetProductEntryProductUseCase;
   close(): Promise<void>;
 }
 
@@ -53,6 +55,7 @@ const openProductEntryServerApplication = (
       clock: systemProductEntryClock,
     }),
     get: new GetProductEntrySubmissionUseCase(unitOfWork),
+    getProduct: new GetProductEntryProductUseCase(unitOfWork),
     close: () => connection.close(),
   };
 };

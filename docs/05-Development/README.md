@@ -18,6 +18,10 @@ Task 3.14.9-B-R1 corrects that contract so completed replay and retained-Staging
 
 The [Product Entry Local Draft Recovery](Product-Entry-Local-Draft-Recovery.md) guide documents Task 3.14.9-C IndexedDB identities, retention, schema migration, explicit recovery, Edit revision conflicts, Media reselection, security filtering, autosave serialization, revalidation, and the Task 3.14.9-D Presentation boundary.
 
+The [Mobile Product Entry and Two-Phase Save](Mobile-Product-Entry-Two-Phase-UI.md) guide documents Tasks 3.14.9-D, D-R1, and D-R2: Create/Edit routes, trusted client context, Local Draft binding, first-class Reorder/SetCover operations, deterministic complete Media ordering, dependency-safe metadata resume, allocate-before-delete Add New safety, typed English/Arabic Presentation copy, terminal Worker failure handling, two-phase retry/resume, responsive layout, accessibility, security, and deterministic manual QA.
+
+يوثق دليل [إدخال المنتج للجوال والحفظ على مرحلتين](Mobile-Product-Entry-Two-Phase-UI.md) المهام 3.14.9-D وD-R1 وD-R2، بما يشمل مساري الإنشاء والتعديل والسياق الموثوق وربط المسودة المحلية وعمليتي Reorder وSetCover الأصليتين، وإعادة بناء ترتيب الوسائط الكامل، واستئناف البيانات الوصفية الآمن للاعتماديات، وتخصيص الهوية قبل حذف المسودة عند «إضافة منتج جديد»، وحد التعريب المركزي المحدد الأنواع، ومعالجة أعطال عامل البصمة، والاستئناف والتصميم المتجاوب وإتاحة الوصول والأمن وقائمة التحقق اليدوية.
+
 ## العربية
 
 يوثق دليل [استعادة مسودة إدخال المنتج محلياً](Product-Entry-Local-Draft-Recovery.md) مفاتيح IndexedDB ومدد الاحتفاظ وترحيل المخطط والاستعادة الصريحة وتعارض مراجعة التعديل وإعادة اختيار الوسائط والتصفية الأمنية وتسلسل الحفظ التلقائي وحدود العرض للمهمة 3.14.9-D.

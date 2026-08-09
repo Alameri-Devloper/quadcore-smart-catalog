@@ -57,7 +57,7 @@ const addProgressiveTerm = (current: string | undefined, next: string | undefine
 const hasAnyCommercialInput = (values: Readonly<ProductEntryValues>) =>
   Boolean(
     values.productName.trim() || values.productCode.trim() || values.retailPrice !== null ||
-    values.wholesalePrice !== null || values.currency || values.quantity !== null ||
+    values.wholesalePrice !== null || values.currency ||
     values.condition || values.availabilityStatus,
   );
 
@@ -116,10 +116,6 @@ export const ProductEntryIdentityService = {
     const wholesale = !invalidCommercialFields.has("wholesalePrice") && currencyValid && input.values.wholesalePrice !== null && Number.isFinite(input.values.wholesalePrice) && input.values.wholesalePrice >= 0
       ? `${input.values.wholesalePrice} ${input.values.currency}`
       : undefined;
-    const quantity = commercialValidationReady && !invalidCommercialFields.has("quantity") && input.values.quantity !== null && Number.isInteger(input.values.quantity) && input.values.quantity >= 0
-      ? `${input.values.quantity} units`
-      : undefined;
-
     return {
       displayTitle: confirmedProductName ?? progressiveTitle,
       identityError: input.identityError,
@@ -135,8 +131,7 @@ export const ProductEntryIdentityService = {
           retail ? { label: "Retail", value: retail } : null,
           wholesale ? { label: "Wholesale", value: wholesale } : null,
           condition ? { label: "Condition", value: condition } : null,
-          availability ? { label: "Availability", value: quantity ? `${availability} — ${quantity}` : availability } : null,
-          !availability && quantity ? { label: "Quantity", value: quantity } : null,
+          availability ? { label: "Availability", value: availability } : null,
         ].filter((value): value is ProductIdentityValue => value !== null),
       },
       images: {

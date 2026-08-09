@@ -48,6 +48,38 @@ interface WorkflowDependencies {
   readonly storage: ProductMediaStoragePort;
 }
 
+export type ProductMediaMetadataExecutionEligibility =
+  | { readonly type: "Ready" }
+  | { readonly type: "WaitingForDependencies"; readonly blockingOperationIds: readonly string[] }
+  | { readonly type: "BlockedByTerminalFailure"; readonly blockingOperationIds: readonly string[] };
+
+const sourceMutation = (operation: ProductMediaOperationState): boolean =>
+  operation.type === "Add" || operation.type === "Replace" || operation.type === "Remove";
+
+export const resolveProductMediaMetadataExecutionEligibility = (
+  operations: readonly ProductMediaOperationState[],
+): ProductMediaMetadataExecutionEligibility => {
+  const dependencies = operations.filter(sourceMutation).filter((operation) => operation.status !== "Completed");
+  const terminal = dependencies.filter((operation) =>
+    operation.status === "SourceUnavailable"
+    || operation.status === "ReconciliationRequired"
+    || operation.status === "Cancelled"
+    || (operation.status === "Failed" && !operation.retryAllowed));
+  if (terminal.length > 0) {
+    return Object.freeze({
+      type: "BlockedByTerminalFailure",
+      blockingOperationIds: Object.freeze(terminal.map((operation) => operation.operationId)),
+    });
+  }
+  if (dependencies.length > 0) {
+    return Object.freeze({
+      type: "WaitingForDependencies",
+      blockingOperationIds: Object.freeze(dependencies.map((operation) => operation.operationId)),
+    });
+  }
+  return Object.freeze({ type: "Ready" });
+};
+
 const copyOperation = (operation: ProductMediaOperationState): ProductMediaOperationState => ({
   ...operation,
   orderedMediaIds: operation.orderedMediaIds ? [...operation.orderedMediaIds] : undefined,
@@ -422,6 +454,101 @@ const synchronizeWorkflow = (target: ProductMediaWorkflowState, source: ProductM
   }
 };
 
+interface ExecutePendingProductMediaMetadataResult {
+  readonly eligibility: ProductMediaMetadataExecutionEligibility;
+  readonly workflowVersion: number;
+  readonly mediaRevision: number;
+}
+
+const executePendingProductMediaMetadata = async (input: {
+  readonly dependencies: Pick<WorkflowDependencies, "workflows">;
+  readonly workflow: ProductMediaWorkflowState;
+  readonly mediaState: ProductMediaState;
+  readonly actor: TrustedActorContext;
+  readonly effectiveTime: Date;
+  readonly workflowVersion: number;
+  readonly mediaRevision: number;
+}): Promise<ExecutePendingProductMediaMetadataResult> => {
+  const eligibility = resolveProductMediaMetadataExecutionEligibility(input.workflow.operations);
+  if (eligibility.type !== "Ready") {
+    return { eligibility, workflowVersion: input.workflowVersion, mediaRevision: input.mediaRevision };
+  }
+
+  let workflowVersion = input.workflowVersion;
+  let mediaRevision = input.mediaRevision;
+  const execute = async (operation: ProductMediaOperationState, mutate: () => void): Promise<void> => {
+    const beforeState = cloneMediaState(input.mediaState);
+    const beforeOperation = copyOperation(operation);
+    try {
+      mutate();
+      operation.status = "Completed";
+      operation.retryAllowed = false;
+      operation.requiresNewSource = false;
+      operation.errorCode = undefined;
+      operation.completedAt = new Date(input.effectiveTime);
+      input.mediaState.revision = mediaRevision + 1;
+      input.mediaState.updatedAt = new Date(input.effectiveTime);
+      input.mediaState.updatedBy = input.actor.actorId;
+      input.workflow.status = deriveProductMediaWorkflowStatus(input.workflow.operations);
+      input.workflow.completedAt = input.workflow.status === "Completed"
+        ? new Date(input.effectiveTime)
+        : undefined;
+      input.workflow.version = workflowVersion + 1;
+      const saved = await input.dependencies.workflows.save(
+        input.workflow,
+        input.mediaState,
+        workflowVersion,
+        mediaRevision,
+      );
+      if (saved.type !== "Saved") {
+        throw new ProductMediaWorkflowError(saved.type === "MediaRevisionConflict"
+          ? "MediaRevisionConflict"
+          : "ProductMediaOperationAlreadyInProgress");
+      }
+      workflowVersion = input.workflow.version;
+      mediaRevision = input.mediaState.revision;
+    } catch (error) {
+      Object.assign(input.mediaState, beforeState, { items: beforeState.items });
+      Object.assign(operation, beforeOperation);
+      input.workflow.version = workflowVersion;
+      const code = error instanceof ProductMediaWorkflowError
+        ? error.code
+        : "ProductMediaValidationFailed";
+      try {
+        await transitionOperation(
+          input.dependencies,
+          input.workflow,
+          operation,
+          workflowVersion,
+          ["Pending"],
+          { status: "Failed", retryAllowed: false, requiresNewSource: false, errorCode: code },
+        );
+      } catch {
+        throw new ProductMediaWorkflowError("ProductMediaReconciliationRequired");
+      }
+      workflowVersion = input.workflow.version;
+      if (code === "MediaRevisionConflict") throw new ProductMediaWorkflowError("MediaRevisionConflict");
+    }
+  };
+
+  for (const operation of input.workflow.operations.filter((candidate) =>
+    candidate.type === "Reorder" && candidate.status === "Pending")) {
+    await execute(operation, () => {
+      input.mediaState.items = reorderProductMedia(input.mediaState.items, operation.orderedMediaIds ?? []);
+    });
+  }
+  for (const operation of input.workflow.operations.filter((candidate) =>
+    candidate.type === "SetCover" && candidate.status === "Pending")) {
+    await execute(operation, () => {
+      if (!operation.targetMediaId || !input.mediaState.items.some((item) => item.mediaId === operation.targetMediaId)) {
+        throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
+      }
+      input.mediaState.coverMediaId = operation.targetMediaId;
+    });
+  }
+  return { eligibility, workflowVersion, mediaRevision };
+};
+
 export class ExecuteProductMediaWorkflowUseCase {
   constructor(private readonly dependencies: WorkflowDependencies) {}
 
@@ -556,31 +683,27 @@ export class ExecuteProductMediaWorkflowUseCase {
         }
       }
     }
-    const metadataTransition = async (operation: ProductMediaOperationState, mutate: () => void): Promise<void> => {
-      const before = cloneMediaState(mediaState);
-      try {
-        mutate(); this.complete(operation, command.effectiveTime); mediaState.revision = persistedMediaRevision + 1; mediaState.updatedAt = new Date(command.effectiveTime); mediaState.updatedBy = command.actorContext.actorId;
-        await persist(true);
-      } catch (error) {
-        Object.assign(mediaState, before, { items: before.items });
-        const code = error instanceof ProductMediaWorkflowError ? error.code : "ProductMediaValidationFailed";
-        try { await transitionOperation(this.dependencies, workflow, operation, persistedWorkflowVersion, ["Pending", "InProgress"], { status: "Failed", retryAllowed: false, requiresNewSource: false, errorCode: code }); }
-        catch { throw new ProductMediaWorkflowError("ProductMediaReconciliationRequired"); }
-        persistedWorkflowVersion = workflow.version;
-        if (code === "MediaRevisionConflict") throw new ProductMediaWorkflowError("MediaRevisionConflict");
-      }
-    };
-    for (const operation of workflow.operations.filter((candidate) => candidate.type === "Reorder" && candidate.status === "Pending")) await metadataTransition(operation, () => { mediaState.items = reorderProductMedia(mediaState.items, operation.orderedMediaIds ?? []); });
-    for (const operation of workflow.operations.filter((candidate) => candidate.type === "SetCover" && candidate.status === "Pending")) {
-      await metadataTransition(operation, () => {
-        if (!operation.targetMediaId || !mediaState.items.some((item) => item.mediaId === operation.targetMediaId)) throw new ProductMediaWorkflowError("ProductMediaValidationFailed");
-        mediaState.coverMediaId = operation.targetMediaId;
-      });
-      if (operation.status === "Completed") selectedCover = operation.targetMediaId;
-    }
+    const metadata = await executePendingProductMediaMetadata({
+      dependencies: this.dependencies,
+      workflow,
+      mediaState,
+      actor: command.actorContext,
+      effectiveTime: command.effectiveTime,
+      workflowVersion: persistedWorkflowVersion,
+      mediaRevision: persistedMediaRevision,
+    });
+    persistedWorkflowVersion = metadata.workflowVersion;
+    persistedMediaRevision = metadata.mediaRevision;
+    const completedCover = workflow.operations.find((operation) =>
+      operation.type === "SetCover" && operation.status === "Completed");
+    if (completedCover?.targetMediaId) selectedCover = completedCover.targetMediaId;
     mediaState.coverMediaId = resolveProductMediaCover(mediaState.items, selectedCover, mediaState.coverMediaId ?? previousCover);
     workflow.status = deriveProductMediaWorkflowStatus(workflow.operations);
-    if (workflow.status !== "Pending" && workflow.status !== "InProgress") workflow.completedAt = new Date(command.effectiveTime);
+    workflow.completedAt = workflow.operations.some((operation) => operation.status === "Pending")
+      ? undefined
+      : workflow.status !== "Pending" && workflow.status !== "InProgress"
+        ? new Date(command.effectiveTime)
+        : undefined;
     await persist(false);
     return copyWorkflow(workflow);
   }
@@ -881,7 +1004,11 @@ export class RetryProductMediaOperationUseCase {
       state.coverMediaId = resolveProductMediaCover(state.items, operation.selectAsCover ? operation.targetMediaId ?? operation.operationId : undefined, state.coverMediaId);
     } else if (outcome.type === "ReconciliationRequired") { operation.status = "ReconciliationRequired"; operation.retryAllowed = false; operation.requiresNewSource = false; operation.errorCode = outcome.errorCode; }
     else { operation.status = outcome.status; operation.retryAllowed = outcome.retryAllowed; operation.requiresNewSource = outcome.requiresNewSource; operation.errorCode = outcome.errorCode; }
-    workflow.status = deriveProductMediaWorkflowStatus(workflow.operations); workflow.version = claimedVersion + 1; workflow.completedAt = new Date(command.effectiveTime);
+    workflow.status = deriveProductMediaWorkflowStatus(workflow.operations);
+    workflow.version = claimedVersion + 1;
+    workflow.completedAt = workflow.operations.some((candidate) => candidate.status === "Pending")
+      ? undefined
+      : new Date(command.effectiveTime);
     let saved;
     try { saved = await this.dependencies.workflows.save(workflow, state, claimedVersion, before.revision); }
     catch { saved = { type: "WorkflowVersionConflict" as const }; }
@@ -917,6 +1044,17 @@ export class RetryProductMediaOperationUseCase {
       if (established.type !== "Established" && established.type !== "CompatibleConcurrentTruth") throw new ProductMediaWorkflowError("ProductMediaReconciliationRequired");
       if (!restored) throw new ProductMediaWorkflowError("ProductMediaReconciliationRequired");
       throw new ProductMediaWorkflowError(saved.type === "MediaRevisionConflict" ? "MediaRevisionConflict" : "ProductMediaStorageFailed");
+    }
+    if (outcome.type === "Succeeded") {
+      await executePendingProductMediaMetadata({
+        dependencies: this.dependencies,
+        workflow,
+        mediaState: state,
+        actor: command.actorContext,
+        effectiveTime: command.effectiveTime,
+        workflowVersion: workflow.version,
+        mediaRevision: state.revision,
+      });
     }
     return copyWorkflow(workflow);
   }

@@ -232,11 +232,21 @@ describe("PostgreSQL Product Entry constraints and mapping", () => {
         workspaceId, submissionId, operationId: "remove-a", operationType: "Remove", sequence: 1, mediaId: "old-media",
         requestedDisplayOrder: null, selectedAsCover: false, expectedSourceSha256: null, expectedSourceByteLength: null, finalOrder: null, createdAt: now,
       },
+      {
+        workspaceId, submissionId, operationId: "reorder-a", operationType: "Reorder", sequence: 2, mediaId: "existing-a",
+        requestedDisplayOrder: 0, selectedAsCover: false, expectedSourceSha256: null, expectedSourceByteLength: null, finalOrder: 0, createdAt: now,
+      },
+      {
+        workspaceId, submissionId, operationId: "cover-b", operationType: "SetCover", sequence: 3, mediaId: "existing-b",
+        requestedDisplayOrder: null, selectedAsCover: true, expectedSourceSha256: null, expectedSourceByteLength: null, finalOrder: null, createdAt: now,
+      },
     ]);
     const repository = new PostgreSqlProductEntryMediaPlanRepository(connection.database);
     await repository.save(plan);
     const rehydrated = await repository.findBySubmission(workspaceId, submissionId);
-    assert.deepEqual(rehydrated.map((operation) => [operation.sequence, operation.finalOrder]), [[0, 3], [1, null]]);
+    assert.deepEqual(rehydrated.map((operation) => [operation.sequence, operation.operationType, operation.finalOrder]), [
+      [0, "Add", 3], [1, "Remove", null], [2, "Reorder", 0], [3, "SetCover", null],
+    ]);
   });
 
   it("rejects a foreign Product FK and preserves composite Workspace ownership", async () => {

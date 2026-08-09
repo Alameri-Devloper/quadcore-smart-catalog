@@ -5,9 +5,17 @@ import {
   type ProductEntryMethod,
 } from "../../product-entry.types";
 import { useProductEntryWorkflow } from "../../react/product-entry-workflow-adapter";
+import { PRODUCT_ENTRY_PRESENTATION_TEXT } from "../../presentation/product-entry-i18n";
 
-export function EntryMethodStep() {
+export function EntryMethodStep({ locale }: { readonly locale: "en" | "ar" }) {
   const { setValue, validation, values } = useProductEntryWorkflow();
+  const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
+  const methodText = {
+    manual: { label: text.manualEntry, description: text.manualEntryDescription },
+    "excel-import": { label: text.excelImport, description: text.excelImportDescription },
+    "product-model-lookup": { label: text.modelLookup, description: text.modelLookupDescription },
+    "label-scan": { label: text.labelScan, description: text.labelScanDescription },
+  } as const;
 
   const selectMethod = (method: ProductEntryMethod) => {
     void setValue("entryMethod", method);
@@ -22,11 +30,10 @@ export function EntryMethodStep() {
       }
     >
       <legend className="text-xl font-semibold text-slate-950">
-        Choose an Entry Method
+        {text.chooseEntryMethod}
       </legend>
       <p className="mt-2 text-sm leading-6 text-slate-600" id="entry-method-help">
-        Choose how you want to add this Product. You can return to this step
-        without losing your selection.
+        {text.chooseEntryMethodHelp}
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -52,23 +59,23 @@ export function EntryMethodStep() {
                 value={option.id}
               />
               <span className="flex flex-wrap items-center gap-2 pr-8">
-                <span className="font-semibold text-slate-950">{option.label}</span>
+                <span className="font-semibold text-slate-950">{methodText[option.id].label}</span>
                 {option.recommended ? (
                   <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
-                    Recommended
+                    {text.recommended}
                   </span>
                 ) : null}
                 {option.disabled ? (
                   <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700">
-                    Available in a Future Version
+                    {text.futureVersion}
                   </span>
                 ) : null}
               </span>
               <span className="mt-3 text-sm leading-6 text-slate-600">
-                {option.description}
+                {methodText[option.id].description}
               </span>
               <span className="mt-auto pt-3 text-xs font-semibold text-slate-700">
-                {isSelected ? "Selected" : option.disabled ? "Unavailable" : "Available"}
+                {isSelected ? text.selected : option.disabled ? text.unavailable : text.available}
               </span>
             </label>
           );
@@ -84,7 +91,7 @@ export function EntryMethodStep() {
         >
           {validation.issues.map((issue) => (
             <p key={`${issue.code}-${issue.field ?? issue.message}`}>
-              {issue.message}
+              {locale === "ar" ? text.reviewStepPrompt : issue.message}
             </p>
           ))}
         </div>

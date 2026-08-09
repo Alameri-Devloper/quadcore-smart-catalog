@@ -37,6 +37,19 @@ class MutableClock {
   now(): Date { return new Date(this.epoch); }
 }
 
+class ObservedLocalDraftStore extends InMemoryProductEntryLocalDraftStore {
+  deleteCalls = 0;
+  failDelete = false;
+
+  override async deleteByIdentity(
+    identity: CreateProductEntryLocalDraftIdentity | EditProductEntryLocalDraftIdentity,
+  ): Promise<void> {
+    this.deleteCalls += 1;
+    if (this.failDelete) throw new Error("storage unavailable");
+    await super.deleteByIdentity(identity);
+  }
+}
+
 const createIdentity = (
   overrides: Partial<CreateProductEntryLocalDraftIdentity> = {},
 ): CreateProductEntryLocalDraftIdentity => ({
@@ -295,8 +308,9 @@ describe("Product Entry local draft application", () => {
     await new SaveProductEntryLocalDraftUseCase(store, new MutableClock())
       .execute(input(foreignActor));
     const next = await sessions.startNewProduct(create);
-    assert.equal(next?.submissionId, "submission-b");
-    assert.notEqual(next?.submissionId, create.submissionId);
+    assert.deepEqual(next, { type: "Started", identity: { ...create, submissionId: "submission-b" } });
+    if (next.type !== "Started") throw new Error("Expected new Product session.");
+    assert.notEqual(next.identity.submissionId, create.submissionId);
     assert.equal((await store.findCreateByIdentity(create)).type, "NotFound");
     assert.equal((await store.findCreateByIdentity(foreignWorkspace)).type, "Found");
     assert.equal((await store.findCreateByIdentity(foreignActor)).type, "Found");
@@ -309,6 +323,45 @@ describe("Product Entry local draft application", () => {
     const nextEdit = sessions.startEditSessionAfterCompletion(edit)!;
     assert.equal(nextEdit.submissionId, "submission-d");
     assert.notEqual(nextEdit.submissionId, edit.submissionId);
+  });
+
+  it("allocates and validates before delete so allocation failure preserves the persisted draft", async () => {
+    const store = new ObservedLocalDraftStore();
+    const identity = createIdentity();
+    await new SaveProductEntryLocalDraftUseCase(store, new MutableClock()).execute(input(identity));
+    const result = await new ProductEntryLocalDraftSessionService({ allocate: () => { throw new Error("allocation failed"); } }, store)
+      .startNewProduct(identity);
+    assert.deepEqual(result, { type: "Rejected", code: "SubmissionIdAllocationFailed" });
+    assert.equal(store.deleteCalls, 0);
+    assert.equal((await store.findCreateByIdentity(identity)).type, "Found");
+  });
+
+  it("preserves the persisted draft for invalid and unchanged candidate IDs", async () => {
+    for (const scenario of [
+      { candidate: "", code: "SubmissionIdInvalid" },
+      { candidate: "submission-1", code: "SubmissionIdUnchanged" },
+    ] as const) {
+      const store = new ObservedLocalDraftStore();
+      const identity = createIdentity();
+      await new SaveProductEntryLocalDraftUseCase(store, new MutableClock()).execute(input(identity));
+      const result = await new ProductEntryLocalDraftSessionService({ allocate: () => scenario.candidate }, store)
+        .startNewProduct(identity);
+      assert.deepEqual(result, { type: "Rejected", code: scenario.code });
+      assert.equal(store.deleteCalls, 0);
+      assert.equal((await store.findCreateByIdentity(identity)).type, "Found");
+    }
+  });
+
+  it("returns StorageUnavailable and preserves the persisted draft when exact deletion fails", async () => {
+    const store = new ObservedLocalDraftStore();
+    const identity = createIdentity();
+    await new SaveProductEntryLocalDraftUseCase(store, new MutableClock()).execute(input(identity));
+    store.failDelete = true;
+    const result = await new ProductEntryLocalDraftSessionService({ allocate: () => "submission-2" }, store)
+      .startNewProduct(identity);
+    assert.deepEqual(result, { type: "Rejected", code: "StorageUnavailable" });
+    assert.equal(store.deleteCalls, 1);
+    assert.equal((await store.findCreateByIdentity(identity)).type, "Found");
   });
 
   it("exact-deletes an Edit draft only for terminal Edit completion", async () => {
@@ -430,6 +483,25 @@ describe("Product Entry local draft application", () => {
     }
   });
 
+  it("restores Reorder and SetCover descriptors without source reselection", async () => {
+    const store = new InMemoryProductEntryLocalDraftStore();
+    const clock = new MutableClock();
+    const saved = assertSaved(await new SaveProductEntryLocalDraftUseCase(store, clock).execute({
+      ...input(),
+      mediaDescriptors: [
+        { operationId: "reorder-a", operationType: "Reorder", sequence: 0, mediaId: "media-a", requestedDisplayOrder: 0, selectedAsCover: false, expectedSourceSha256: null, expectedSourceByteLength: null, finalOrder: 0, fileName: null, mimeType: null, sourceAvailability: "NotRequired" },
+        { operationId: "cover-b", operationType: "SetCover", sequence: 1, mediaId: "media-b", requestedDisplayOrder: null, selectedAsCover: true, expectedSourceSha256: null, expectedSourceByteLength: null, finalOrder: null, fileName: null, mimeType: null, sourceAvailability: "NotRequired" },
+      ],
+    }));
+    assert.deepEqual(saved.mediaDescriptors.map((descriptor) => descriptor.operationType), ["Reorder", "SetCover"]);
+    const restored = await new GetRecoverableProductEntryLocalDraftUseCase(store, clock).execute(createIdentity());
+    assert.equal(restored.type, "RecoverableCreateDraft");
+    if (restored.type === "RecoverableCreateDraft") {
+      assert.equal(restored.draft.mediaDescriptors.every((descriptor) =>
+        descriptor.sourceAvailability === PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.notRequired), true);
+    }
+  });
+
   it("maps future schema, corrupt payload, invalid identity, and cross-scope lookups safely", async () => {
     const store = new InMemoryProductEntryLocalDraftStore();
     const identity = createIdentity();
@@ -537,8 +609,9 @@ describe("Product Entry local draft application", () => {
     );
     assert.equal((await store.findCreateByIdentity(createIdentity())).type, "Found");
     const next = await controller.startNewProduct(createIdentity());
-    assert.equal(next?.submissionId, "next-submission");
-    assert.notEqual(next?.submissionId, createIdentity().submissionId);
+    assert.deepEqual(next, { type: "Started", identity: { ...createIdentity(), submissionId: "next-submission" } });
+    if (next.type !== "Started") throw new Error("Expected new Product session.");
+    assert.notEqual(next.identity.submissionId, createIdentity().submissionId);
     assert.equal((await store.findCreateByIdentity(createIdentity())).type, "NotFound");
     controller.dispose();
   });

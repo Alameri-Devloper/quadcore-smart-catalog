@@ -27,6 +27,7 @@ import {
   type ProductEntryLocalDraftRestoreDecision,
   type ProductEntryLocalDraftSaveInput,
   type SaveProductEntryLocalDraftResult,
+  type StartNewProductEntrySessionResult,
 } from "./product-entry-local-draft.types";
 
 export interface ProductEntrySubmissionIdAllocator {
@@ -324,15 +325,29 @@ export class ProductEntryLocalDraftSessionService {
 
   async startNewProduct(
     current: CreateProductEntryLocalDraftIdentity,
-  ): Promise<CreateProductEntryLocalDraftIdentity | null> {
-    if (!isValidProductEntryLocalDraftIdentity(current) || current.mode !== "Create") return null;
+  ): Promise<StartNewProductEntrySessionResult> {
+    if (!isValidProductEntryLocalDraftIdentity(current) || current.mode !== "Create") {
+      return { type: "Rejected", code: "IdentityInvalid" };
+    }
+    let submissionId: string;
+    try {
+      submissionId = this.allocator.allocate();
+    } catch {
+      return { type: "Rejected", code: "SubmissionIdAllocationFailed" };
+    }
+    const next = { ...current, submissionId };
+    if (!isValidProductEntryLocalDraftIdentity(next)) {
+      return { type: "Rejected", code: "SubmissionIdInvalid" };
+    }
+    if (next.submissionId === current.submissionId) {
+      return { type: "Rejected", code: "SubmissionIdUnchanged" };
+    }
     try {
       await this.store.deleteByIdentity(current);
     } catch {
-      return null;
+      return { type: "Rejected", code: "StorageUnavailable" };
     }
-    const next = this.startCreate(current);
-    return next && next.submissionId !== current.submissionId ? next : null;
+    return { type: "Started", identity: next };
   }
 
   startEditSessionAfterCompletion(

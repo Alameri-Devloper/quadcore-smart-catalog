@@ -189,19 +189,6 @@ export const validateCommercialDetails: ProductEntryValidator = ({ values }) => 
     issues.push(requiredIssue("currency", "Choose a currency."));
   }
 
-  if (
-    values.quantity === null ||
-    !Number.isFinite(values.quantity) ||
-    values.quantity < 0 ||
-    !Number.isInteger(values.quantity)
-  ) {
-    issues.push({
-      code: "whole-quantity",
-      field: "quantity",
-      message: "Enter a whole quantity of zero or greater.",
-    });
-  }
-
   if (!isApprovedProductCondition(values.condition)) {
     issues.push(requiredIssue("condition", "Choose whether the product is new or used."));
   }
@@ -215,51 +202,43 @@ export const validateCommercialDetails: ProductEntryValidator = ({ values }) => 
     );
   }
 
-  if (values.availabilityStatus === "available" && values.quantity === 0) {
-    issues.push({
-      code: "in-stock-quantity",
-      field: "quantity",
-      message: "An in-stock product must have an available quantity.",
-    });
-  }
-
   if (typeof values.isFeatured !== "boolean") {
     issues.push({ code: "featured-boolean", field: "isFeatured", message: "Choose whether to feature this product." });
   }
 
-  if (typeof values.isActive !== "boolean") {
-    issues.push({ code: "active-boolean", field: "isActive", message: "Choose whether to show this product in the Catalog." });
+  if (values.publicationIntent !== "SaveAsDraft" && values.publicationIntent !== "PublishWhenReady") {
+    issues.push({ code: "publication-intent", field: "publicationIntent", message: "Choose a publication intent." });
   }
 
   return resultFromIssues(issues);
 };
 
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const PROCESSING_STATUSES = new Set(["pending", "processing", "ready", "failed", "skipped"]);
-
 export const validateImages: ProductEntryValidator = ({ values }) => {
   const issues: WorkflowValidationIssue[] = [];
   const ids = new Set<string>();
   const orders = new Set<number>();
   let mainCount = 0;
 
+  const activeImages = values.images.filter((image) => image.operationType !== "Remove");
   for (const image of values.images) {
     if (ids.has(image.id)) issues.push({ code: "duplicate-image-id", field: "images", message: "An image was added more than once. Remove it and choose it again." });
     ids.add(image.id);
     if (orders.has(image.sortOrder)) issues.push({ code: "duplicate-image-order", field: "images", message: "Image order could not be confirmed. Reorder the images and try again." });
     orders.add(image.sortOrder);
-    if (image.isPrimary) mainCount += 1;
-    if (!SUPPORTED_IMAGE_TYPES.has(image.mimeType)) issues.push({ code: "unsupported-image-type", field: "images", message: "Choose a JPG, PNG, or WebP image." });
-    if (!Number.isFinite(image.sizeBytes) || image.sizeBytes <= 0) issues.push({ code: "empty-image", field: "images", message: "Remove the empty image and choose a valid image file." });
-    if (image.previewAvailability === "available" && !image.originalPreviewUrl) issues.push({ code: "image-preview-reference", field: "images", message: "This image could not be previewed. Select it again or remove it." });
-    if (!PROCESSING_STATUSES.has(image.processingStatus)) issues.push({ code: "image-processing-status", field: "images", message: "The image preparation status is invalid. Keep the Original image or remove it." });
-    if (image.selectedDisplayVersion !== "original" && image.selectedDisplayVersion !== "processed") issues.push({ code: "image-display-version", field: "images", message: "Choose the Original or Processed image version." });
-    if (image.selectedDisplayVersion === "processed" && (image.processingStatus !== "ready" || !image.processedPreviewUrl)) issues.push({ code: "processed-image-unavailable", field: "images", message: "The Processed image is unavailable. Keep the Original image." });
+    if (image.operationType !== "Remove" && image.isPrimary) mainCount += 1;
+    if (image.operationType === "Add" || image.operationType === "Replace") {
+      if (!image.mimeType || !SUPPORTED_IMAGE_TYPES.has(image.mimeType)) issues.push({ code: "unsupported-image-type", field: "images", message: "Choose a JPG, PNG, or WebP image." });
+      if (image.sizeBytes === null || !Number.isFinite(image.sizeBytes) || image.sizeBytes <= 0) issues.push({ code: "empty-image", field: "images", message: "Select the image source again or remove the operation." });
+      if (image.sourceAvailability !== "AvailableInCurrentSession" || image.hashStatus !== "Ready" || !image.expectedSourceSha256 || !image.expectedSourceByteLength) {
+        issues.push({ code: "image-source-not-ready", field: "images", message: "Select and verify every added or replaced image before saving." });
+      }
+    }
   }
 
-  if (values.images.length > 0 && mainCount !== 1) issues.push({ code: "main-image", field: "images", message: "Choose exactly one Main Product Image." });
-  const expectedOrders = values.images.map((_, index) => index + 1);
-  const actualOrders = [...orders].sort((left, right) => left - right);
+  if (activeImages.length > 0 && mainCount !== 1) issues.push({ code: "main-image", field: "images", message: "Choose exactly one Main Product Image." });
+  const expectedOrders = activeImages.map((_, index) => index + 1);
+  const actualOrders = activeImages.map((image) => image.sortOrder).sort((left, right) => left - right);
   if (actualOrders.some((order, index) => order !== expectedOrders[index])) issues.push({ code: "image-order", field: "images", message: "Image order must be continuous. Reorder the images and try again." });
 
   return resultFromIssues(issues);

@@ -52,6 +52,12 @@ const terminal = new Set<ProductMediaOperationStatus>(["Completed", "Failed", "S
 export const deriveProductMediaWorkflowStatus = (operations: readonly ProductMediaOperationState[]): ProductMediaWorkflowStatus => {
   if (operations.some((operation) => operation.status === "ReconciliationRequired")) return "ReconciliationRequired";
   if (operations.length > 0 && operations.every((operation) => operation.status === "Completed")) return "Completed";
+  const metadataWaiting = operations.some((operation) =>
+    (operation.type === "Reorder" || operation.type === "SetCover") && operation.status === "Pending");
+  const incompleteTerminalDependency = operations.some((operation) =>
+    (operation.type === "Add" || operation.type === "Replace" || operation.type === "Remove")
+    && (operation.status === "Failed" || operation.status === "SourceUnavailable" || operation.status === "Cancelled"));
+  if (metadataWaiting && incompleteTerminalDependency) return "PartiallyCompleted";
   const completed = operations.some((operation) => operation.status === "Completed");
   const unsuccessful = operations.some((operation) => operation.status === "Failed" || operation.status === "SourceUnavailable" || operation.status === "Cancelled");
   if (completed && unsuccessful) return "PartiallyCompleted";
