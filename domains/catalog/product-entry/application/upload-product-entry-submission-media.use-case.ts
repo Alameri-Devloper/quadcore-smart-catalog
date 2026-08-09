@@ -100,7 +100,18 @@ const coordinatedOperations = (
         selectAsCover: operation.selectedAsCover,
       };
     }
-    return { operationId: operation.operationId, type: "Remove", targetMediaId: operation.mediaId! };
+    if (operation.operationType === "Remove") {
+      return { operationId: operation.operationId, type: "Remove", targetMediaId: operation.mediaId! };
+    }
+    if (operation.operationType === "Reorder") {
+      return {
+        operationId: operation.operationId,
+        type: "Reorder",
+        targetMediaId: operation.mediaId!,
+        requestedDisplayOrder: operation.finalOrder!,
+      };
+    }
+    return { operationId: operation.operationId, type: "SetCover", targetMediaId: operation.mediaId! };
   });
 
 export class UploadProductEntrySubmissionMediaUseCase {

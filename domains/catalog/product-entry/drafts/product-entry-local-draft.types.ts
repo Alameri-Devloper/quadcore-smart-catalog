@@ -80,7 +80,7 @@ export type ProductEntryLocalMediaSourceAvailability =
 
 export interface ProductEntryLocalDraftMediaDescriptor {
   readonly operationId: string;
-  readonly operationType: "Add" | "Replace" | "Remove";
+  readonly operationType: "Add" | "Replace" | "Remove" | "Reorder" | "SetCover";
   readonly sequence: number;
   readonly mediaId: string | null;
   readonly requestedDisplayOrder: number | null;
@@ -164,6 +164,17 @@ export type ProductEntryLocalDraftCleanupResult =
   | { readonly type: "Completed"; readonly deletedCount: number }
   | { readonly type: "Rejected"; readonly code: ProductEntryLocalDraftCode };
 
+export type StartNewProductEntrySessionFailureCode =
+  | "IdentityInvalid"
+  | "SubmissionIdAllocationFailed"
+  | "SubmissionIdInvalid"
+  | "SubmissionIdUnchanged"
+  | "StorageUnavailable";
+
+export type StartNewProductEntrySessionResult =
+  | { readonly type: "Started"; readonly identity: CreateProductEntryLocalDraftIdentity }
+  | { readonly type: "Rejected"; readonly code: StartNewProductEntrySessionFailureCode };
+
 export interface ProductEntryLocalDraftSaveInput {
   readonly identity: ProductEntryLocalDraftIdentity;
   readonly formState: ProductEntryLocalDraftFormState;
@@ -176,6 +187,6 @@ export interface ProductEntryLocalDraftHeadlessContract {
   saveDraft(input: ProductEntryLocalDraftSaveInput): void;
   flushDraft(identity: ProductEntryLocalDraftIdentity): Promise<void>;
   discardDraft(identity: ProductEntryLocalDraftIdentity): Promise<ProductEntryLocalDraftMutationResult>;
-  startNewProduct(identity: CreateProductEntryLocalDraftIdentity): Promise<CreateProductEntryLocalDraftIdentity | null>;
+  startNewProduct(identity: CreateProductEntryLocalDraftIdentity): Promise<StartNewProductEntrySessionResult>;
   resolveRestoreDecision(accept: boolean): AcceptProductEntryLocalDraftResult;
 }

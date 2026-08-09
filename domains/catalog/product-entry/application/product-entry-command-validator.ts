@@ -91,7 +91,8 @@ const normalizeMediaOperations = (value: unknown): readonly PreparedProductEntry
     const sourceByteLength = input.expectedSourceByteLength === undefined || input.expectedSourceByteLength === null
       ? null
       : input.expectedSourceByteLength;
-    const sourceOperation = operationType !== PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.remove;
+    const sourceOperation = operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.add
+      || operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.replace;
     if (sourceOperation) {
       if (sourceSha256 === null || !SHA_256_LOWERCASE_HEX.test(sourceSha256) || !Number.isSafeInteger(sourceByteLength) || (sourceByteLength as number) <= 0) {
         throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, `mediaOperations[${index}].source`);
@@ -105,18 +106,46 @@ const normalizeMediaOperations = (value: unknown): readonly PreparedProductEntry
     if (input.selectedAsCover !== undefined && typeof input.selectedAsCover !== "boolean") {
       throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, `mediaOperations[${index}].selectedAsCover`);
     }
+    const requestedDisplayOrder = nullableOrder(input.requestedDisplayOrder, `mediaOperations[${index}].requestedDisplayOrder`);
+    const finalOrder = nullableOrder(input.finalOrder, `mediaOperations[${index}].finalOrder`);
+    const selectedAsCover = (input.selectedAsCover as boolean | undefined) ?? false;
+    if (operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.remove
+      && (requestedDisplayOrder !== null || finalOrder !== null || selectedAsCover)) {
+      throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, `mediaOperations[${index}]`);
+    }
+    if (operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.reorder
+      && (requestedDisplayOrder === null || finalOrder !== requestedDisplayOrder || selectedAsCover)) {
+      throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, `mediaOperations[${index}]`);
+    }
+    if (operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.setCover
+      && (requestedDisplayOrder !== null || finalOrder !== null || !selectedAsCover)) {
+      throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, `mediaOperations[${index}]`);
+    }
     return Object.freeze({
       operationId: input.operationId,
       operationType,
       sequence: index,
       mediaId,
-      requestedDisplayOrder: nullableOrder(input.requestedDisplayOrder, `mediaOperations[${index}].requestedDisplayOrder`),
-      selectedAsCover: (input.selectedAsCover as boolean | undefined) ?? false,
+      requestedDisplayOrder,
+      selectedAsCover,
       expectedSourceSha256: sourceSha256,
       expectedSourceByteLength: sourceByteLength as number | null,
-      finalOrder: nullableOrder(input.finalOrder, `mediaOperations[${index}].finalOrder`),
+      finalOrder,
     });
   });
+  if (operations.filter((operation) => operation.selectedAsCover).length > 1) {
+    throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, "mediaOperations.selectedAsCover");
+  }
+  for (const operation of operations) {
+    if (!operation.mediaId || (operation.operationType !== PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.remove
+      && operation.operationType !== PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.replace)) continue;
+    const hasMetadataMutation = operations.some((candidate) => candidate.mediaId === operation.mediaId
+      && (candidate.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.reorder
+        || candidate.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.setCover));
+    if (hasMetadataMutation) {
+      throw new ValidationFailure(PRODUCT_ENTRY_VALIDATION_CODES.invalidMediaPlan, "mediaOperations.mediaId");
+    }
+  }
   return Object.freeze(operations);
 };
 

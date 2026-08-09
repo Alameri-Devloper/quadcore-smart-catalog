@@ -66,6 +66,7 @@ export const reconcileProductEntryValues: WorkflowValueReconciler<
 
   return {
     ...nextValues,
+    productTypeId: categoryChanged ? null : nextValues.productTypeId,
     deviceClassId,
     productModelId,
     brandId,

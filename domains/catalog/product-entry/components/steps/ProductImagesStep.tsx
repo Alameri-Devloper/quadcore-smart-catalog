@@ -1,137 +1,158 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ProductEntryImageReference } from "../../product-entry.types";
+import { useProductEntryBrowserMedia } from "../../react/product-entry-media-adapter";
 import { useProductEntryWorkflow } from "../../react/product-entry-workflow-adapter";
 import { productEntryImagesService } from "../../services/product-entry-images.service";
+import { PRODUCT_ENTRY_PRESENTATION_TEXT, type ProductEntryPresentationText } from "../../presentation/product-entry-i18n";
 
-const buttonClass = "min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50";
+const buttonClass = "min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 disabled:opacity-45";
+const ACCEPT = "image/jpeg,image/png,image/webp";
 
-const formatSize = (bytes: number) =>
-  bytes < 1024 * 1024 ? `${Math.ceil(bytes / 1024)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-
-const statusText = (image: ProductEntryImageReference) => {
-  if (image.previewAvailability === "reselection-required") return "Select this image again to restore its preview.";
-  switch (image.processingStatus) {
-    case "pending": return "Ready for background processing";
-    case "processing": return "Preparing white-background version...";
-    case "ready": return "Processed version ready for review";
-    case "failed": return "Background processing failed. You can keep the Original image.";
-    case "skipped": return "Original image will be used";
-  }
+const sourceLabel = (image: ProductEntryImageReference, text: ProductEntryPresentationText): string => {
+  if (image.operationType === null) return text.existingServerImage;
+  if (image.operationType === "Remove") return text.markedForRemoval;
+  if (image.sourceAvailability === "RequiresReselection") return text.requiresReselection;
+  if (image.hashStatus === "Hashing") return text.computingSecureHash;
+  if (image.hashStatus === "Ready") return text.readyToUpload;
+  if (image.hashStatus === "Failed") return text.sourceVerificationFailed;
+  return text.waitingForVerification;
 };
 
-export function ProductImagesStep() {
-  const { setValue, values } = useProductEntryWorkflow();
-  const imagesRef = useRef(values.images);
-  const cardRefs = useRef(new Map<string, HTMLLIElement>());
-  const [selectionIssues, setSelectionIssues] = useState<string[]>([]);
+export function ProductImagesStep({ locale }: { readonly locale: "en" | "ar" }) {
+  const workflow = useProductEntryWorkflow();
+  const media = useProductEntryBrowserMedia();
+  const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
+  const imagesRef = useRef(workflow.values.images);
+  useEffect(() => { imagesRef.current = workflow.values.images; }, [workflow.values.images]);
   const [announcement, setAnnouncement] = useState("");
-  const [unavailablePreviews, setUnavailablePreviews] = useState<Set<string>>(() => new Set());
-  const orderedImages = [...values.images].sort((left, right) => left.sortOrder - right.sortOrder);
+  const [issue, setIssue] = useState<string | null>(null);
 
   const updateImages = (images: ProductEntryImageReference[]) => {
     imagesRef.current = images;
-    void setValue("images", images);
+    void workflow.setValue("images", images);
   };
-  const replaceImage = (next: ProductEntryImageReference) => {
-    updateImages(imagesRef.current.map((image) => image.id === next.id ? next : image));
+
+  const hashSelected = async (operationId: string, file: File) => {
+    updateImages(productEntryImagesService.markHashing(imagesRef.current, operationId));
+    const result = await media.select(operationId, file);
+    if (result.type === "Hashed") {
+      const applied = productEntryImagesService.applyHash(
+        imagesRef.current,
+        operationId,
+        result.sha256,
+        result.byteLength,
+      );
+      updateImages(applied.images);
+      if (!applied.matchedPersistedSource) setIssue(text.selectedFileMismatch);
+      else setAnnouncement(`${file.name} ${text.fileReadySuffix}`);
+      return;
+    }
+    if (result.code !== "MEDIA_HASH_CANCELLED") {
+      updateImages(productEntryImagesService.markHashFailed(imagesRef.current, operationId, result.code));
+      setIssue(text.secureHashUnavailable);
+    }
   };
-  const selectFiles = (files: File[]) => {
-    const result = productEntryImagesService.createReferences(files, imagesRef.current);
-    setSelectionIssues(result.issues.map((issue) => `${issue.fileName}: ${issue.message}`));
-    if (result.images.length === 0) return;
-    const replacements = new Map(result.images.map((image) => [image.id, image]));
-    const restoredIds = new Set(imagesRef.current.map((image) => image.id));
-    const next = imagesRef.current.map((image) => replacements.get(image.id) ?? image);
-    next.push(...result.images.filter((image) => !restoredIds.has(image.id)));
+
+  const addFiles = (files: readonly File[]) => {
+    setIssue(null);
+    const candidates = files.filter((file) => {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setIssue(`${file.name}: ${text.invalidImageType}`);
+        return false;
+      }
+      if (file.size <= 0 || file.size > 10 * 1024 * 1024) {
+        setIssue(`${file.name}: ${text.invalidImageSize}`);
+        return false;
+      }
+      return true;
+    });
+    const before = imagesRef.current;
+    const next = productEntryImagesService.add(before, candidates.map((file) => ({
+      fileName: file.name,
+      mimeType: file.type,
+      byteLength: file.size,
+    })));
     updateImages(next);
-    setAnnouncement(`${result.images.length} image${result.images.length === 1 ? "" : "s"} added or restored.`);
+    const added = next.filter((image) => image.operationType === "Add" &&
+      !before.some((existing) => existing.operationId === image.operationId));
+    added.forEach((image, index) => {
+      const file = candidates[index];
+      if (image.operationId && file) void hashSelected(image.operationId, file);
+    });
   };
-  const removeImage = (image: ProductEntryImageReference) => {
-    const before = [...imagesRef.current].sort((a, b) => a.sortOrder - b.sortOrder);
-    const index = before.findIndex((candidate) => candidate.id === image.id);
-    const nextImages = productEntryImagesService.remove(before, image.id);
-    updateImages(nextImages);
-    setAnnouncement(`${image.fileName} removed.`);
-    const focusId = nextImages[Math.min(index, nextImages.length - 1)]?.id;
-    if (focusId) requestAnimationFrame(() => cardRefs.current.get(focusId)?.focus());
+
+  const replace = (image: ProductEntryImageReference, file: File) => {
+    const next = productEntryImagesService.replace(imagesRef.current, image.id, {
+      fileName: file.name,
+      mimeType: file.type,
+      byteLength: file.size,
+    });
+    updateImages(next);
+    const replacement = next.find((candidate) =>
+      (image.operationId !== null && candidate.operationId === image.operationId) ||
+      (image.mediaId !== null && candidate.mediaId === image.mediaId) ||
+      candidate.id === image.id,
+    );
+    if (replacement?.operationId) void hashSelected(replacement.operationId, file);
   };
+
+  const visible = workflow.values.images
+    .filter((image) => image.operationType !== "Remove")
+    .sort((left, right) => left.sortOrder - right.sortOrder);
 
   return (
     <div>
-      <h2 id="product-entry-step-heading" className="text-2xl font-semibold tracking-tight text-slate-950">Add product images</h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Add clear product images, choose the main image, and prepare them for a consistent Catalog appearance.</p>
-
-      <div className="mt-6 rounded-2xl border border-dashed border-blue-300 bg-blue-50 p-5">
-        <label className="inline-flex min-h-12 cursor-pointer items-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white focus-within:ring-4 focus-within:ring-blue-200">
-          Choose Images
-          <input
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
-            multiple
-            onChange={(event) => {
-              selectFiles(Array.from(event.target.files ?? []));
-              event.target.value = "";
-            }}
-            type="file"
-          />
-        </label>
-        <p className="mt-3 text-sm text-slate-700">Choose JPG, PNG, or WebP files. You can select more than one image.</p>
-        {selectionIssues.length > 0 ? <ul className="mt-3 space-y-1 text-sm font-medium text-red-800" role="alert">{selectionIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : null}
-      </div>
-
+      <h2 className="text-2xl font-semibold text-slate-950" id="product-entry-step-heading">{text.productMedia}</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{text.productMediaDescription}</p>
+      <label className="mt-6 inline-flex min-h-12 cursor-pointer items-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white focus-within:ring-4 focus-within:ring-blue-200">
+        {text.addImages}
+        <input accept={ACCEPT} className="sr-only" multiple onChange={(event) => {
+          addFiles(Array.from(event.target.files ?? []));
+          event.target.value = "";
+        }} type="file" />
+      </label>
+      <p className="mt-2 text-xs text-slate-600">{text.imageFileRules}</p>
+      {issue ? <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{issue}</p> : null}
       <p aria-live="polite" className="sr-only">{announcement}</p>
 
-      {orderedImages.length === 0 ? (
-        <div className="mt-6 rounded-xl bg-slate-100 p-4 text-sm text-slate-700">
-          <p className="font-semibold text-slate-900">No product images have been added.</p>
-          <p className="mt-1">Images are optional for now. Add clear photos to improve Catalog presentation.</p>
-        </div>
+      {visible.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-600">{text.noMedia}</div>
       ) : (
-        <ol className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="Selected product images">
-          {orderedImages.map((image, index) => {
-            const previewKey = `${image.id}-${image.selectedDisplayVersion}`;
-            const previewUrl = image.selectedDisplayVersion === "processed" && image.processedPreviewUrl ? image.processedPreviewUrl : image.originalPreviewUrl;
-            const previewUnavailable = image.previewAvailability === "reselection-required" || !previewUrl || unavailablePreviews.has(previewKey);
-            const canUseProcessed = image.processingStatus === "ready" && Boolean(image.processedPreviewUrl);
-
+        <ol className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {visible.map((image, index) => {
+            const preview = image.operationId ? media.previewUrl(image.operationId) : null;
+            const label = image.fileName ?? `${text.serverImage} ${image.mediaId ?? index + 1}`;
             return (
-              <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200" key={image.id} ref={(node) => { if (node) cardRefs.current.set(image.id, node); else cardRefs.current.delete(image.id); }} tabIndex={-1}>
-                <div className="relative mx-auto aspect-square w-full max-w-64 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                  {previewUnavailable ? <div className="flex h-full items-center justify-center p-4 text-center text-sm text-slate-600">This image was added in a previous session. Select the file again to restore its preview.</div> : <Image alt={`${image.fileName} selected product image preview`} className="object-contain" fill onError={() => setUnavailablePreviews((current) => new Set(current).add(previewKey))} sizes="(min-width: 1280px) 20rem, (min-width: 768px) 50vw, 100vw" src={previewUrl} unoptimized />}
-                  <span className="absolute left-2 top-2 rounded-full bg-slate-950/85 px-2 py-1 text-xs font-semibold text-white">{image.selectedDisplayVersion === "processed" ? "Processed" : "Original"}</span>
-                  {image.isPrimary ? <span className="absolute right-2 top-2 rounded-full bg-emerald-800 px-2 py-1 text-xs font-semibold text-white">Main Product Image</span> : null}
+              <li className="rounded-2xl border border-slate-200 bg-slate-50 p-4" key={image.id}>
+                <div className="flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  {preview ? <Image alt={`${text.previewOf} ${label}`} className="h-full w-full object-contain" height={360} src={preview} unoptimized width={640} /> : <span className="px-4 text-center text-sm text-slate-500">{image.mediaId ? text.serverPreviewUnavailable : text.selectSourceAgain}</span>}
                 </div>
-
-                <p className="mt-3 break-all text-sm font-semibold text-slate-900">{image.fileName}</p>
-                {image.previewAvailability === "reselection-required" ? <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Requires Reselection</p><p className="mt-1">This image is not uploaded or permanently stored.</p><label className="mt-3 inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-amber-300 bg-white px-3 font-semibold focus-within:ring-4 focus-within:ring-amber-200">Reselect Image<input accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => { selectFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} type="file" /></label></div> : null}
-                <dl className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600"><div><dt>File type</dt><dd className="font-semibold text-slate-800">{image.mimeType}</dd></div><div><dt>File size</dt><dd className="font-semibold text-slate-800">{formatSize(image.sizeBytes)}</dd></div><div><dt>Display version</dt><dd className="font-semibold capitalize text-slate-800">{image.selectedDisplayVersion}</dd></div><div><dt>Main image</dt><dd className="font-semibold text-slate-800">{image.isPrimary ? "Selected" : "Not selected"}</dd></div></dl>
-
-                <div className="mt-4 grid grid-cols-2 gap-2" aria-label={`Ordering and image actions for ${image.fileName}`}>
-                  <button className={buttonClass} disabled={index === 0} onClick={() => { updateImages(productEntryImagesService.move(imagesRef.current, image.id, -1)); setAnnouncement(`${image.fileName} moved earlier.`); }} type="button">Move Earlier</button>
-                  <button className={buttonClass} disabled={index === orderedImages.length - 1} onClick={() => { updateImages(productEntryImagesService.move(imagesRef.current, image.id, 1)); setAnnouncement(`${image.fileName} moved later.`); }} type="button">Move Later</button>
-                  <button className={buttonClass} disabled={image.isPrimary} onClick={() => { updateImages(productEntryImagesService.setPrimary(imagesRef.current, image.id)); setAnnouncement(`${image.fileName} is now the Main Product Image.`); }} type="button">Make Main Image</button>
-                  <button className={`${buttonClass} border-red-300 text-red-800`} onClick={() => removeImage(image)} type="button">Remove Image</button>
+                <div className="mt-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-950">{label}</p><p className="mt-1 text-xs text-slate-600">{sourceLabel(image, text)}</p></div>
+                  {image.isPrimary ? <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-900">{text.cover}</span> : null}
                 </div>
-
-                <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-labelledby={`background-${image.id}`}>
-                  <h3 className="text-sm font-semibold text-slate-900" id={`background-${image.id}`}>White-background version</h3>
-                  <p className="mt-1 text-sm text-slate-600">Optional. Your Original image always remains available.</p>
-                  <p className="mt-3 text-sm font-semibold text-slate-800">{statusText(image)}</p>
-
-                  {canUseProcessed ? <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" aria-label="Compare Original and Processed versions">{[{ label: "Original", url: image.originalPreviewUrl }, { label: "Processed", url: image.processedPreviewUrl! }].map((preview) => <figure key={preview.label}><div className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-white"><Image alt={`${image.fileName} ${preview.label} version`} className="object-contain" fill sizes="10rem" src={preview.url} unoptimized /></div><figcaption className="mt-2 text-xs font-semibold text-slate-700">{preview.label}</figcaption></figure>)}</div> : null}
-                  <p className="mt-3 text-xs leading-5 text-slate-600">Prepare White Background creates a customer-ready copy with a clean white background. Available in a Future Version.</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button className={buttonClass} disabled={!productEntryImagesService.isProcessingAvailable()} title="Available in a Future Version" type="button">Prepare White Background</button>
-                    {canUseProcessed ? <button className={buttonClass} disabled={image.selectedDisplayVersion === "processed"} onClick={() => replaceImage(productEntryImagesService.useProcessed(image))} type="button">Use Processed Image</button> : null}
-                    {canUseProcessed ? <button className={buttonClass} disabled={image.selectedDisplayVersion === "original"} onClick={() => replaceImage(productEntryImagesService.useOriginal(image))} type="button">Keep Original Image</button> : null}
-                    {image.processingStatus !== "processing" ? <button className={buttonClass} onClick={() => replaceImage(productEntryImagesService.skip(image))} type="button">Use Original Image</button> : null}
-                  </div>
-                  <p className="mt-2 text-xs text-slate-600">Use Original Image keeps this image as uploaded without background changes.</p>
-                  {!productEntryImagesService.isProcessingAvailable() ? <p className="mt-2 text-xs font-medium text-slate-600">Prepare White Background: Available in a Future Version</p> : null}
-                </section>
+                {image.sourceErrorCode ? <p className="mt-2 text-xs font-medium text-red-700">{text.sourceVerificationFailed}</p> : null}
+                <div className="mt-4 grid grid-cols-2 gap-2" aria-label={`${text.mediaControlsFor} ${label}`}>
+                  <button className={buttonClass} disabled={index === 0} onClick={() => updateImages(productEntryImagesService.move(imagesRef.current, image.id, -1))} type="button">{text.moveUp}</button>
+                  <button className={buttonClass} disabled={index === visible.length - 1} onClick={() => updateImages(productEntryImagesService.move(imagesRef.current, image.id, 1))} type="button">{text.moveDown}</button>
+                  <button aria-label={`${text.setCover}: ${label}`} className={buttonClass} disabled={image.isPrimary} onClick={() => updateImages(productEntryImagesService.setPrimary(imagesRef.current, image.id))} type="button">{text.setCover}</button>
+                  <label className={`${buttonClass} inline-flex cursor-pointer items-center justify-center`}>
+                    {text.replace}
+                    <input accept={ACCEPT} className="sr-only" onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) replace(image, file);
+                      event.target.value = "";
+                    }} type="file" />
+                  </label>
+                  <button className={`${buttonClass} col-span-2 border-red-300 text-red-800`} onClick={() => {
+                    if (image.operationId) media.remove(image.operationId);
+                    updateImages(productEntryImagesService.remove(imagesRef.current, image.id));
+                    setAnnouncement(`${label} ${text.removedSuffix}`);
+                  }} type="button">{text.remove} {label}</button>
+                </div>
               </li>
             );
           })}

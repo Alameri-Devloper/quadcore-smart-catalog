@@ -22,31 +22,32 @@ export type ProductEntryMethod =
   | "product-model-lookup"
   | "label-scan";
 
-export type ProductEntryImageDisplayVersion = "original" | "processed";
-export type ProductEntryImageProcessingStatus =
-  | "pending"
-  | "processing"
-  | "ready"
-  | "failed"
-  | "skipped";
+export type ProductEntryMediaOperationKind = "Add" | "Replace" | "Remove" | "Reorder" | "SetCover";
+export type ProductEntryMediaSourceAvailability =
+  | "AvailableInCurrentSession"
+  | "RequiresReselection"
+  | "NotRequired";
+export type ProductEntryMediaHashStatus = "NotRequired" | "Pending" | "Hashing" | "Ready" | "Failed";
 
 export interface ProductEntryImageReference {
-  id: string;
-  originalPreviewUrl: string;
-  processedPreviewUrl?: string;
-  selectedDisplayVersion: ProductEntryImageDisplayVersion;
-  processingStatus: ProductEntryImageProcessingStatus;
-  processingError?: string;
+  readonly id: string;
+  readonly operationId: string | null;
+  readonly operationType: ProductEntryMediaOperationKind | null;
+  readonly mediaId: string | null;
+  readonly originalIsPrimary: boolean | null;
+  readonly originalSortOrder: number | null;
+  readonly reorderOperationId: string | null;
+  readonly setCoverOperationId: string | null;
   isPrimary: boolean;
   sortOrder: number;
-  fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  lastModified?: number;
-  imagePurpose?: "catalog-product";
-  previewAvailability: "available" | "reselection-required";
-  createdAt?: string;
-  updatedAt?: string;
+  readonly fileName: string | null;
+  readonly mimeType: string | null;
+  readonly sizeBytes: number | null;
+  readonly expectedSourceSha256: string | null;
+  readonly expectedSourceByteLength: number | null;
+  readonly sourceAvailability: ProductEntryMediaSourceAvailability;
+  readonly hashStatus: ProductEntryMediaHashStatus;
+  readonly sourceErrorCode: string | null;
 }
 
 export interface ProductEntryMethodOption {
@@ -97,6 +98,7 @@ export interface ProductEntryState {
   entryMethod: ProductEntryMethod;
   departmentId: string | null;
   categoryId: string | null;
+  productTypeId: string | null;
   deviceClassId: string | null;
   brandId: string | null;
   productModelId: string | null;
@@ -106,11 +108,10 @@ export interface ProductEntryState {
   retailPrice: number | null;
   wholesalePrice: number | null;
   currency: string;
-  quantity: number | null;
   condition: ProductCondition | null;
   availabilityStatus: ProductStatus | null;
   isFeatured: boolean;
-  isActive: boolean;
+  publicationIntent: "SaveAsDraft" | "PublishWhenReady";
   images: ProductEntryImageReference[];
 }
 
@@ -144,6 +145,7 @@ export const createInitialProductEntryState = (): ProductEntryState => ({
   entryMethod: "manual",
   departmentId: null,
   categoryId: null,
+  productTypeId: null,
   deviceClassId: null,
   brandId: null,
   productModelId: null,
@@ -153,11 +155,10 @@ export const createInitialProductEntryState = (): ProductEntryState => ({
   retailPrice: null,
   wholesalePrice: null,
   currency: "",
-  quantity: null,
   condition: null,
   availabilityStatus: null,
   isFeatured: PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isFeatured,
-  isActive: PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isActive,
+  publicationIntent: "SaveAsDraft",
   images: [],
 });
 
@@ -169,45 +170,19 @@ type LegacyProductEntryValues = Partial<ProductEntryValues> & {
 const migrateProductEntryImages = (
   images: ProductEntryImageReference[] | string[] | undefined,
 ): ProductEntryImageReference[] => {
-  const migrated = (images ?? []).map<ProductEntryImageReference>((image, index) =>
-    typeof image === "string"
-      ? {
-          id: `legacy-image-${index + 1}`,
-          originalPreviewUrl: image,
-          selectedDisplayVersion: "original",
-          processingStatus: "skipped",
-          isPrimary: index === 0,
-          sortOrder: index + 1,
-          fileName: image.split("/").at(-1) || `Image ${index + 1}`,
-          mimeType: "image/unknown",
-          sizeBytes: 0,
-          previewAvailability: image ? "available" : "reselection-required",
-        }
-      : image.processingStatus === "processing"
-        ? {
-            ...image,
-            selectedDisplayVersion: "original",
-            processingStatus: "failed",
-            processingError: "Background processing was interrupted. Retry processing or keep the original image.",
-          }
-        : {
-            ...image,
-            previewAvailability:
-              image.previewAvailability ??
-              (image.originalPreviewUrl ? "available" : "reselection-required"),
-            selectedDisplayVersion:
-              image.selectedDisplayVersion === "processed" &&
-              image.processingStatus === "ready" &&
-              image.processedPreviewUrl
-                ? "processed"
-                : "original",
-          },
+  const migrated = (images ?? []).filter(
+    (image): image is ProductEntryImageReference => typeof image !== "string",
   );
   const ordered = [...migrated].sort((left, right) => left.sortOrder - right.sortOrder);
-  const primaryId = ordered.find((image) => image.isPrimary)?.id ?? ordered[0]?.id;
+  const active = ordered.filter((image) => image.operationType !== "Remove");
+  const primaryId = active.find((image) => image.isPrimary)?.id ?? active[0]?.id;
   return ordered.map((image, index) => ({
     ...image,
-    isPrimary: image.id === primaryId,
+    originalIsPrimary: image.originalIsPrimary ?? (image.mediaId ? image.isPrimary : null),
+    originalSortOrder: image.originalSortOrder ?? (image.mediaId ? image.sortOrder : null),
+    reorderOperationId: image.reorderOperationId ?? null,
+    setCoverOperationId: image.setCoverOperationId ?? null,
+    isPrimary: image.operationType !== "Remove" && image.id === primaryId,
     sortOrder: index + 1,
   }));
 };
@@ -223,7 +198,7 @@ export const migrateProductEntryValues = (
     retailPrice: values.retailPrice ?? legacyPrice ?? null,
     wholesalePrice: values.wholesalePrice ?? null,
     isFeatured: values.isFeatured ?? PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isFeatured,
-    isActive: values.isActive ?? PRODUCT_ENTRY_COMMERCIAL_DEFAULTS.isActive,
+    publicationIntent: values.publicationIntent ?? "SaveAsDraft",
     images: migrateProductEntryImages(values.images),
   };
 };

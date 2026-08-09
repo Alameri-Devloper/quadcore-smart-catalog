@@ -313,7 +313,10 @@ export const catalogProductEntrySubmissionMediaOperations = pgTable(
     }).onDelete("restrict"),
     uniqueIndex("catalog_product_entry_submission_media_operations_sequence_uq")
       .on(table.workspaceId, table.submissionId, table.sequence),
-    check("catalog_product_entry_submission_media_operations_type", sql`${table.operationType} IN ('Add','Replace','Remove')`),
+    uniqueIndex("catalog_product_entry_submission_media_operations_cover_uq")
+      .on(table.workspaceId, table.submissionId)
+      .where(sql`${table.selectedAsCover} = true`),
+    check("catalog_product_entry_submission_media_operations_type", sql`${table.operationType} IN ('Add','Replace','Remove','Reorder','SetCover')`),
     check("catalog_product_entry_submission_media_operations_identity_non_empty", sql`btrim(${table.operationId}) <> ''`),
     check("catalog_product_entry_submission_media_operations_sequence", sql`${table.sequence} >= 0`),
     check("catalog_product_entry_submission_media_operations_orders", sql`
@@ -324,7 +327,9 @@ export const catalogProductEntrySubmissionMediaOperations = pgTable(
     check("catalog_product_entry_submission_media_operations_shape", sql`
       (${table.operationType} = 'Add' AND ${table.mediaId} IS NULL AND ${table.expectedSourceSha256} ~ '^[a-f0-9]{64}$' AND ${table.expectedSourceByteLength} IS NOT NULL) OR
       (${table.operationType} = 'Replace' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} ~ '^[a-f0-9]{64}$' AND ${table.expectedSourceByteLength} IS NOT NULL) OR
-      (${table.operationType} = 'Remove' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} IS NULL AND ${table.expectedSourceByteLength} IS NULL)
+      (${table.operationType} = 'Remove' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} IS NULL AND ${table.expectedSourceByteLength} IS NULL AND ${table.requestedDisplayOrder} IS NULL AND ${table.finalOrder} IS NULL AND ${table.selectedAsCover} = false) OR
+      (${table.operationType} = 'Reorder' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} IS NULL AND ${table.expectedSourceByteLength} IS NULL AND ${table.requestedDisplayOrder} IS NOT NULL AND ${table.finalOrder} = ${table.requestedDisplayOrder} AND ${table.selectedAsCover} = false) OR
+      (${table.operationType} = 'SetCover' AND btrim(${table.mediaId}) <> '' AND ${table.expectedSourceSha256} IS NULL AND ${table.expectedSourceByteLength} IS NULL AND ${table.requestedDisplayOrder} IS NULL AND ${table.finalOrder} IS NULL AND ${table.selectedAsCover} = true)
     `),
   ],
 );

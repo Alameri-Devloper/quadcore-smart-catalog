@@ -43,6 +43,13 @@
       "when": 1785788626552,
       "tag": "0005_product_entry_submission_constraint_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785903256650,
+      "tag": "0006_product_entry_media_metadata_operations",
+      "breakpoints": true
     }
   ]
 }

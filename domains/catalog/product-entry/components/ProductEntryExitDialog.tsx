@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { PRODUCT_ENTRY_PRESENTATION_TEXT } from "../presentation/product-entry-i18n";
 
 interface ProductEntryExitDialogProps {
   onContinueEditing: () => void;
   onDiscardChanges: () => void;
+  locale: "en" | "ar";
 }
 
 export function ProductEntryExitDialog({
   onContinueEditing,
   onDiscardChanges,
+  locale,
 }: ProductEntryExitDialogProps) {
   const continueButtonRef = useRef<HTMLButtonElement>(null);
+  const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
 
   useEffect(() => {
     continueButtonRef.current?.focus();
@@ -43,13 +47,13 @@ export function ProductEntryExitDialog({
           className="text-xl font-bold text-slate-950"
           id="product-entry-exit-title"
         >
-          Close Product Entry?
+          {text.leaveProductEntry}
         </h2>
         <p
           className="mt-2 text-sm leading-6 text-slate-600"
           id="product-entry-exit-description"
         >
-          Your unsaved changes will be lost if you close. Choose whether to discard them or continue editing.
+          {text.leaveDescription}
         </p>
         <div className="mt-6 grid gap-3">
           <button
@@ -57,15 +61,15 @@ export function ProductEntryExitDialog({
             onClick={onDiscardChanges}
             type="button"
           >
-            Discard Changes and Close
+            {text.saveLocallyAndLeave}
           </button>
           <button
-            className="min-h-12 rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+            className="min-h-12 rounded-xl bg-blue-600 px-4 font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
             onClick={onContinueEditing}
             ref={continueButtonRef}
             type="button"
           >
-            Continue Editing
+            {text.continueEditing}
           </button>
         </div>
       </section>

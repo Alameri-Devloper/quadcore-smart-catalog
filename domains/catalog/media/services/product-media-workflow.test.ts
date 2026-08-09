@@ -12,7 +12,7 @@ import type { ProductImageProcessor } from "../ports/product-image-processor";
 import { DEFAULT_PRODUCT_IMAGE_PROCESSING_CONFIGURATION } from "../ports/product-image-processor";
 import { ProductMediaStoragePartialOperationError, type ProductMediaStoragePort, type StagedProductMediaObject } from "../ports/product-media-storage.port";
 import type { ProductMediaWorkflowRepository } from "../repositories/product-media-workflow.repository";
-import { CancelProductMediaOperationUseCase, CleanupExpiredMediaStagingUseCase, ExecuteProductMediaWorkflowUseCase, GetProductMediaStateQuery, RetryProductMediaOperationUseCase } from "./product-media-workflow";
+import { CancelProductMediaOperationUseCase, CleanupExpiredMediaStagingUseCase, ExecuteProductMediaWorkflowUseCase, GetProductMediaStateQuery, RetryProductMediaOperationUseCase, resolveProductMediaMetadataExecutionEligibility } from "./product-media-workflow";
 
 const workspaceId = WorkspaceId.create("workspace-a"); const productId = ProductId.create("product-a");
 const actor = { workspaceId, actorId: "actor-a" };
@@ -113,14 +113,124 @@ const seedCanonicalMedia = (workflows: MemoryWorkflows, storage: MemoryStorage, 
   storage.finals.set(key, "b".repeat(64));
   return key;
 };
+const seedOrderedCanonicalMedia = (workflows: MemoryWorkflows, storage: MemoryStorage, mediaIds: readonly string[]) => {
+  const items = mediaIds.map((mediaId, displayOrder) => ({
+    mediaId, workspaceId, productId,
+    storageArtifactKey: `${root.storageRootKey.value}/gallery-${String(displayOrder + 1).padStart(2, "0")}.webp`,
+    checksumSha256: hash, mimeType: "image/webp" as const, displayOrder,
+    createdAt: new Date("2026-01-01T00:00:00Z"), createdBy: "actor-a",
+  }));
+  workflows.state = { workspaceId, productId, revision: 0, coverMediaId: mediaIds[0], updatedAt: new Date("2026-01-01T00:00:00Z"), updatedBy: "actor-a", items };
+  items.forEach((item) => storage.finals.set(item.storageArtifactKey, hash));
+};
 
 describe("Product Media workflow application", () => {
+  it("classifies metadata dependency eligibility deterministically", () => {
+    const operation = (operationId: string, type: "Add" | "Replace" | "Remove", status: ProductMediaWorkflowState["operations"][number]["status"], retryAllowed: boolean) => ({
+      operationId, workflowId: "workflow-a", workspaceId, type, status, selectAsCover: false,
+      attemptCount: 0, retryAllowed, requiresNewSource: status === "SourceUnavailable", createdAt: new Date(0),
+    });
+    assert.deepEqual(resolveProductMediaMetadataExecutionEligibility([
+      operation("add", "Add", "Completed", false),
+    ]), { type: "Ready" });
+    assert.deepEqual(resolveProductMediaMetadataExecutionEligibility([
+      operation("add", "Add", "Staged", true),
+      operation("remove", "Remove", "Failed", true),
+    ]), { type: "WaitingForDependencies", blockingOperationIds: ["add", "remove"] });
+    assert.deepEqual(resolveProductMediaMetadataExecutionEligibility([
+      operation("add", "Add", "SourceUnavailable", false),
+      operation("remove", "Remove", "Failed", false),
+    ]), { type: "BlockedByTerminalFailure", blockingOperationIds: ["add", "remove"] });
+  });
   it("preserves Published Product lifecycle while completing independent media", async () => { const { execute } = setup(); const result = await execute.execute(command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) }, selectAsCover: true }])); assert.equal(result.status, "Completed"); assert.equal(published.lifecycleState.value, "Published"); });
   it("preserves partial success and executes Add before Remove", async () => { const { execute, storage } = setup(); const result = await execute.execute(command([{ operationId: "remove-missing", type: "Remove", targetMediaId: "missing" }, { operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) } }])); assert.equal(result.status, "PartiallyCompleted"); assert.match(storage.calls[0], /^add:/); });
   it("reports all failures without creating fake metadata", async () => { const { execute, workflows } = setup(); const result = await execute.execute(command([{ operationId: "bad", type: "Add", source: { bytes: new Uint8Array([0]) } }])); assert.equal(result.status, "Failed"); assert.equal(workflows.state?.items.length, 0); });
   it("preserves the previous image and cover when replacement publication fails", async () => { const { execute, workflows, storage } = setup(); const key = `${root.storageRootKey.value}/gallery-01.webp`; workflows.state = { workspaceId, productId, revision: 0, coverMediaId: "old", updatedAt: new Date(), updatedBy: "actor-a", items: [{ mediaId: "old", workspaceId, productId, storageArtifactKey: key, checksumSha256: "b".repeat(64), mimeType: "image/webp", displayOrder: 0, createdAt: new Date(), createdBy: "actor-a" }] }; storage.finals.set(key, "b".repeat(64)); storage.fail.add(`${root.storageRootKey.value}/_staging/replace-a.webp`); const result = await execute.execute(command([{ operationId: "replace-a", type: "Replace", targetMediaId: "old", source: { bytes: new Uint8Array([1]) } }])); assert.equal(result.status, "Failed"); assert.equal(workflows.state.items[0].checksumSha256, "b".repeat(64)); assert.equal(workflows.state.coverMediaId, "old"); });
   it("uses Trash for removal and selects a deterministic fallback cover", async () => { const { execute, workflows, storage } = setup(); const keys = [1,2].map((n) => `${root.storageRootKey.value}/gallery-0${n}.webp`); workflows.state = { workspaceId, productId, revision: 0, coverMediaId: "one", updatedAt: new Date(), updatedBy: "actor-a", items: keys.map((key,index) => ({ mediaId: index ? "two" : "one", workspaceId, productId, storageArtifactKey: key, checksumSha256: hash, mimeType: "image/webp", displayOrder: index, createdAt: new Date(), createdBy: "actor-a" })) }; keys.forEach((key) => storage.finals.set(key, hash)); await execute.execute(command([{ operationId: "remove-one", type: "Remove", targetMediaId: "one" }])); assert.equal(workflows.state.coverMediaId, "two"); assert.equal(storage.trash.size, 1); });
   it("returns the previous logical workflow for a repeated idempotency key", async () => { const { execute, storage } = setup(); const input = command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) } }]); const first = await execute.execute(input); const second = await execute.execute(input); assert.deepEqual(second, first); assert.equal(storage.calls.length, 1); });
+  it("keeps Reorder Pending after retryable Add failure and resumes it automatically after retry", async () => {
+    const value = setup(); seedOrderedCanonicalMedia(value.workflows, value.storage, ["A", "B"]);
+    const stagingKey = `${root.storageRootKey.value}/_staging/add-x.webp`; value.storage.fail.add(stagingKey);
+    const input = command([
+      { operationId: "add-x", type: "Add", source: { bytes: new Uint8Array([1]) } },
+      { operationId: "reorder", type: "Reorder", orderedMediaIds: ["A", "add-x", "B"] },
+    ]);
+    const initial = await value.execute.execute(input);
+    assert.equal(initial.status, "PartiallyCompleted");
+    assert.deepEqual(initial.operations.map((operation) => [operation.status, operation.attemptCount, operation.errorCode]), [
+      ["Failed", 1, "ProductMediaStorageFailed"], ["Pending", 0, undefined],
+    ]);
+    value.storage.fail.delete(stagingKey);
+    const retried = await new RetryProductMediaOperationUseCase(value.dependencies).execute({ actorContext: actor, workflowId: "workflow-a", operationId: "add-x", effectiveTime: new Date("2026-02-02T00:00:00Z") });
+    assert.equal(retried.status, "Completed");
+    assert.deepEqual(retried.operations.map((operation) => operation.status), ["Completed", "Completed"]);
+    assert.deepEqual([...value.workflows.state!.items].sort((left, right) => left.displayOrder - right.displayOrder).map((item) => item.mediaId), ["A", "add-x", "B"]);
+    const calls = value.storage.calls.length;
+    assert.deepEqual(await value.execute.execute(input), retried);
+    assert.equal(value.storage.calls.length, calls);
+  });
+  it("resumes Pending Reorder after retained Staging publishes with zero new source", async () => {
+    const value = setup(); seedOrderedCanonicalMedia(value.workflows, value.storage, ["A", "B"]);
+    const stagingKey = `${root.storageRootKey.value}/_staging/add-x.webp`; value.storage.fail.add(stagingKey);
+    await value.execute.execute(command([
+      { operationId: "add-x", type: "Add", source: { bytes: new Uint8Array([1]) } },
+      { operationId: "reorder", type: "Reorder", orderedMediaIds: ["A", "add-x", "B"] },
+    ]));
+    const add = value.workflows.workflow!.operations[0];
+    add.status = "Staged"; add.retryAllowed = true; add.errorCode = undefined;
+    value.storage.fail.delete(stagingKey);
+    const resumed = await new RetryProductMediaOperationUseCase(value.dependencies).execute({ actorContext: actor, workflowId: "workflow-a", operationId: "add-x", effectiveTime: new Date("2026-02-02T00:00:00Z") });
+    assert.equal(resumed.status, "Completed");
+    assert.deepEqual(resumed.operations.map((operation) => operation.status), ["Completed", "Completed"]);
+  });
+  it("keeps dependent metadata Pending for terminal source-unavailable outcome", async () => {
+    const value = setup(); seedOrderedCanonicalMedia(value.workflows, value.storage, ["A"]);
+    value.storage.publicationFailureCode = "TemporaryObjectMissing";
+    const result = await value.execute.execute(command([
+      { operationId: "add-x", type: "Add", source: { bytes: new Uint8Array([1]) } },
+      { operationId: "cover-x", type: "SetCover", targetMediaId: "add-x" },
+    ]));
+    assert.equal(result.status, "PartiallyCompleted");
+    assert.deepEqual(result.operations.map((operation) => [operation.status, operation.errorCode, operation.attemptCount]), [
+      ["SourceUnavailable", "ProductMediaSourceUnavailable", 1], ["Pending", undefined, 0],
+    ]);
+  });
+  it("resumes Reorder after retryable Remove and Replace dependencies", async () => {
+    const removed = setup(); seedOrderedCanonicalMedia(removed.workflows, removed.storage, ["A", "B", "C"]); removed.storage.moveFailureCode = "ChecksumMismatch";
+    const removeInitial = await removed.execute.execute(command([
+      { operationId: "remove-b", type: "Remove", targetMediaId: "B" },
+      { operationId: "reorder", type: "Reorder", orderedMediaIds: ["C", "A"] },
+    ]));
+    assert.deepEqual(removeInitial.operations.map((operation) => operation.status), ["Failed", "Pending"]);
+    removed.storage.moveFailureCode = undefined;
+    const removeRetry = await new RetryProductMediaOperationUseCase(removed.dependencies).execute({ actorContext: actor, workflowId: "workflow-a", operationId: "remove-b", effectiveTime: new Date("2026-02-02T00:00:00Z") });
+    assert.equal(removeRetry.status, "Completed");
+    assert.deepEqual([...removed.workflows.state!.items].sort((left, right) => left.displayOrder - right.displayOrder).map((item) => item.mediaId), ["C", "A"]);
+
+    const replaced = setup(); seedOrderedCanonicalMedia(replaced.workflows, replaced.storage, ["A", "B"]); replaced.storage.publicationFailureCode = "ChecksumMismatch";
+    const replaceInitial = await replaced.execute.execute(command([
+      { operationId: "replace-b", type: "Replace", targetMediaId: "B", source: { bytes: new Uint8Array([1]) } },
+      { operationId: "reorder", type: "Reorder", orderedMediaIds: ["B", "A"] },
+    ]));
+    assert.deepEqual(replaceInitial.operations.map((operation) => operation.status), ["Failed", "Pending"]);
+    replaced.storage.publicationFailureCode = undefined;
+    const replaceRetry = await new RetryProductMediaOperationUseCase(replaced.dependencies).execute({ actorContext: actor, workflowId: "workflow-a", operationId: "replace-b", effectiveTime: new Date("2026-02-02T00:00:00Z") });
+    assert.equal(replaceRetry.status, "Completed");
+    assert.deepEqual([...replaced.workflows.state!.items].sort((left, right) => left.displayOrder - right.displayOrder).map((item) => item.mediaId), ["B", "A"]);
+  });
+  it("resumes SetCover automatically after its Add dependency succeeds", async () => {
+    const value = setup(); seedOrderedCanonicalMedia(value.workflows, value.storage, ["A"]);
+    const stagingKey = `${root.storageRootKey.value}/_staging/add-x.webp`; value.storage.fail.add(stagingKey);
+    const initial = await value.execute.execute(command([
+      { operationId: "add-x", type: "Add", source: { bytes: new Uint8Array([1]) } },
+      { operationId: "cover-x", type: "SetCover", targetMediaId: "add-x" },
+    ]));
+    assert.deepEqual(initial.operations.map((operation) => operation.status), ["Failed", "Pending"]);
+    value.storage.fail.delete(stagingKey);
+    const retried = await new RetryProductMediaOperationUseCase(value.dependencies).execute({ actorContext: actor, workflowId: "workflow-a", operationId: "add-x", effectiveTime: new Date("2026-02-02T00:00:00Z") });
+    assert.equal(retried.status, "Completed");
+    assert.equal(value.workflows.state!.coverMediaId, "add-x");
+  });
   it("binds an idempotency key to operation descriptors and source content", async () => { const one = setup(); await one.execute.execute(command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) } }])); await assert.rejects(one.execute.execute(command([{ operationId: "add-b", type: "Add", source: { bytes: new Uint8Array([1]) } }])), /IdempotencyConflict/); const two = setup(); await two.execute.execute(command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) } }])); await assert.rejects(two.execute.execute(command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([2]) } }])), /IdempotencyConflict/); });
   it("creates the immutable unclassified root lazily and persists effect boundaries", async () => { const value = setup(false); await value.execute.execute(command([{ operationId: "add-a", type: "Add", source: { bytes: new Uint8Array([1]) } }])); assert.match(value.getRoot()!.storageRootKey.value, /\/unclassified\//); assert.equal(value.workflows.stageTransitionExpectedVersions.length, 1); assert.ok(value.workflows.savedStatuses.some(([status]) => status === "InProgress")); assert.ok(value.workflows.savedStatuses.some(([status]) => status === "Completed")); });
   it("accepts exact compatible concurrent Staged truth without re-staging", async () => {

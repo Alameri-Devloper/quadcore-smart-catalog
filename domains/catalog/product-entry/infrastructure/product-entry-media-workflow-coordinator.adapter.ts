@@ -13,15 +13,21 @@ import {
   GetProductMediaWorkflowByIdempotencyKeyQuery,
   GetProductMediaWorkflowQuery,
   RetryProductMediaOperationUseCase,
+  type ProductMediaCommandOperation,
 } from "../../media/services/product-media-workflow";
 import type { ProductId } from "../../types/product-identity.value-object";
 import { PRODUCT_ENTRY_PERMISSIONS, type ProductEntryExecutionContext } from "../application/product-entry-execution-context";
+import {
+  resolveProductEntryFinalMediaOrder,
+  type ProductEntryFinalMediaOrderInvalidCode,
+} from "../application/resolve-product-entry-final-media-order";
 import {
   ProductEntryMediaWorkflowCoordinationError,
   type CoordinateProductEntryMediaWorkflowCommand,
   type CoordinateProductEntryMediaWorkflowResult,
   type ProductEntryMediaWorkflowCoordinator,
   type ProductEntryMediaWorkflowView,
+  type ProductEntryCoordinatedMediaOperation,
 } from "../ports/product-entry-media-workflow-coordinator.port";
 
 type WorkflowIdAllocator = () => string;
@@ -36,9 +42,6 @@ const projectWorkflow = (workflow: ProductMediaWorkflowState): ProductEntryMedia
   productId: workflow.productId.value,
   status: workflow.status,
   operations: workflow.operations.map((operation) => {
-    if (operation.type === "SetCover" || operation.type === "Reorder") {
-      throw new ProductEntryMediaWorkflowCoordinationError("ValidationFailed");
-    }
     return {
       operationId: operation.operationId,
       type: operation.type,
@@ -52,6 +55,78 @@ const projectWorkflow = (workflow: ProductMediaWorkflowState): ProductEntryMedia
   startedAt: new Date(workflow.startedAt),
   completedAt: workflow.completedAt ? new Date(workflow.completedAt) : null,
 });
+
+export type MapProductEntryMediaOperationsResult =
+  | { readonly type: "Resolved"; readonly operations: readonly ProductMediaCommandOperation[] }
+  | { readonly type: "Invalid"; readonly code: ProductEntryFinalMediaOrderInvalidCode };
+
+export const mapProductEntryMediaOperationsToCanonicalWorkflow = (
+  operations: readonly ProductEntryCoordinatedMediaOperation[],
+  currentMediaIds: readonly string[],
+  persistedReorders: ReadonlyMap<string, readonly string[]> = new Map(),
+): MapProductEntryMediaOperationsResult => {
+  const removed = new Set(operations.flatMap((operation) => operation.type === "Remove" ? [operation.targetMediaId] : []));
+  const finalMediaIds = currentMediaIds.filter((mediaId) => !removed.has(mediaId));
+  const finalMediaSet = new Set(finalMediaIds);
+  const newMediaIdsInPlanOrder: string[] = [];
+  for (const operation of operations) {
+    if (operation.type === "Add") {
+      newMediaIdsInPlanOrder.push(operation.operationId);
+      if (!finalMediaSet.has(operation.operationId)) {
+        finalMediaSet.add(operation.operationId);
+        finalMediaIds.push(operation.operationId);
+      }
+    }
+  }
+  const requestedPositions = new Map<string, number>();
+  for (const operation of operations) {
+    let mediaId: string | undefined;
+    let position: number | undefined;
+    if (operation.type === "Add" && operation.requestedDisplayOrder !== undefined) {
+      mediaId = operation.operationId;
+      position = operation.requestedDisplayOrder;
+    } else if (operation.type === "Replace" && operation.requestedDisplayOrder !== undefined) {
+      mediaId = operation.targetMediaId;
+      position = operation.requestedDisplayOrder;
+    } else if (operation.type === "Reorder") {
+      mediaId = operation.targetMediaId;
+      position = operation.requestedDisplayOrder;
+    }
+    if (mediaId !== undefined && position !== undefined) {
+      if (requestedPositions.has(mediaId)) return { type: "Invalid", code: "DuplicateMediaId" };
+      requestedPositions.set(mediaId, position);
+    }
+  }
+  const resolvedOrder = resolveProductEntryFinalMediaOrder({
+    currentOrderedMediaIds: currentMediaIds,
+    finalMediaIds,
+    newMediaIdsInPlanOrder,
+    requestedPositions,
+  });
+  if (resolvedOrder.type === "Invalid") return resolvedOrder;
+
+  const mapped: ProductMediaCommandOperation[] = [];
+  for (const operation of operations) {
+    if (operation.type !== "Reorder") {
+      mapped.push(operation);
+      continue;
+    }
+    const persisted = persistedReorders.get(operation.operationId);
+    if (persisted) {
+      if (new Set(persisted).size !== persisted.length) return { type: "Invalid", code: "DuplicateMediaId" };
+      if (
+        persisted.length !== finalMediaSet.size
+        || persisted.some((mediaId) => !finalMediaSet.has(mediaId))
+      ) return { type: "Invalid", code: "FinalMediaSetMismatch" };
+    }
+    mapped.push({
+      operationId: operation.operationId,
+      type: "Reorder",
+      orderedMediaIds: persisted ? Object.freeze([...persisted]) : resolvedOrder.orderedMediaIds,
+    });
+  }
+  return { type: "Resolved", operations: Object.freeze(mapped) };
+};
 
 const mapWorkflowError = (error: ProductMediaWorkflowError): ProductEntryMediaWorkflowCoordinationError => {
   switch (error.code) {
@@ -112,8 +187,24 @@ export class ProductEntryMediaWorkflowCoordinatorAdapter implements ProductEntry
     const byIdempotency = new GetProductMediaWorkflowByIdempotencyKeyQuery({ workflows: this.workflows, authorization });
     const allocatedWorkflowId = this.allocateWorkflowId();
     const workflowId = existing?.workflowId ?? allocatedWorkflowId;
-    const expectedMediaRevision = existing?.expectedMediaRevision
-      ?? (await new GetProductMediaStateQuery({ workflows: this.workflows, authorization }).execute(actor, command.productId)).revision;
+    const currentMediaState = await new GetProductMediaStateQuery({ workflows: this.workflows, authorization })
+      .execute(actor, command.productId);
+    const expectedMediaRevision = existing?.expectedMediaRevision ?? currentMediaState.revision;
+    const persistedReorders = new Map((existing?.operations ?? []).flatMap((operation) =>
+      operation.type === "Reorder" && operation.orderedMediaIds
+        ? [[operation.operationId, operation.orderedMediaIds] as const]
+        : []));
+    const mapping = mapProductEntryMediaOperationsToCanonicalWorkflow(
+      command.operations,
+      [...currentMediaState.items]
+        .sort((left, right) => left.displayOrder - right.displayOrder || left.mediaId.localeCompare(right.mediaId))
+        .map((item) => item.mediaId),
+      persistedReorders,
+    );
+    if (mapping.type === "Invalid") {
+      throw new ProductEntryMediaWorkflowCoordinationError("ValidationFailed");
+    }
+    const operations = mapping.operations;
     let workflow: ProductMediaWorkflowState;
     try {
       workflow = await new ExecuteProductMediaWorkflowUseCase(dependencies).execute({
@@ -122,7 +213,7 @@ export class ProductEntryMediaWorkflowCoordinatorAdapter implements ProductEntry
         productId: command.productId,
         expectedMediaRevision,
         idempotencyKey: command.idempotencyKey,
-        operations: command.operations,
+        operations,
         effectiveTime: command.effectiveTime,
       });
       for (const operation of existing ? [...workflow.operations] : []) {

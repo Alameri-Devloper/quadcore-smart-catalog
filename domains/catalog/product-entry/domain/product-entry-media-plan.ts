@@ -7,6 +7,8 @@ export const PRODUCT_ENTRY_MEDIA_OPERATION_TYPES = {
   add: "Add",
   replace: "Replace",
   remove: "Remove",
+  reorder: "Reorder",
+  setCover: "SetCover",
 } as const;
 
 export type ProductEntryMediaOperationType =
@@ -52,7 +54,8 @@ export class ProductEntryMediaOperation {
     if (typeof input.selectedAsCover !== "boolean") {
       throw new Error("SelectedAsCover must be boolean.");
     }
-    const sourceOperation = input.operationType !== PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.remove;
+    const sourceOperation = input.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.add
+      || input.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.replace;
     if (sourceOperation) {
       if (!SHA_256_LOWERCASE_HEX.test(input.expectedSourceSha256 ?? "")) {
         throw new Error("Add and Replace operations require a lowercase SHA-256 source fingerprint.");
@@ -61,14 +64,31 @@ export class ProductEntryMediaOperation {
         throw new Error("Add and Replace operations require a positive safe source byte length.");
       }
     } else if (input.expectedSourceSha256 !== null || input.expectedSourceByteLength !== null) {
-      throw new Error("Remove operations cannot contain source fingerprint metadata.");
+      throw new Error("Remove and metadata operations cannot contain source fingerprint metadata.");
     }
     const targetOperation = input.operationType !== PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.add;
     if (targetOperation !== (typeof input.mediaId === "string" && input.mediaId.trim().length > 0)) {
       throw new Error(targetOperation
-        ? "Replace and Remove operations require MediaId."
+        ? "Replace, Remove, Reorder, and SetCover operations require MediaId."
         : "Add operations cannot target an existing MediaId.");
     }
+    if (
+      input.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.remove
+      && (input.requestedDisplayOrder !== null || input.finalOrder !== null || input.selectedAsCover)
+    ) throw new Error("Remove operations cannot contain order or cover metadata.");
+    if (
+      input.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.reorder
+      && (
+        input.finalOrder === null
+        || input.requestedDisplayOrder === null
+        || input.finalOrder !== input.requestedDisplayOrder
+        || input.selectedAsCover
+      )
+    ) throw new Error("Reorder operations require one matching final order and cannot select the cover.");
+    if (
+      input.operationType === PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.setCover
+      && (input.requestedDisplayOrder !== null || input.finalOrder !== null || !input.selectedAsCover)
+    ) throw new Error("SetCover operations require the cover flag and cannot contain order metadata.");
     if (!(input.createdAt instanceof Date) || Number.isNaN(input.createdAt.getTime())) {
       throw new Error("Media operation CreatedAt must be a valid Date.");
     }
@@ -115,6 +135,26 @@ export const createProductEntryMediaPlan = (
       throw new Error("Duplicate Product Entry media OperationId.");
     }
     ids.add(operation.operationId);
+  }
+  if (operations.filter((operation) => operation.selectedAsCover).length > 1) {
+    throw new Error("A Product Entry media plan can select at most one cover target.");
+  }
+  const mutationsByMedia = new Map<string, Set<ProductEntryMediaOperationType>>();
+  for (const operation of operations) {
+    if (!operation.mediaId) continue;
+    const types = mutationsByMedia.get(operation.mediaId) ?? new Set<ProductEntryMediaOperationType>();
+    types.add(operation.operationType);
+    mutationsByMedia.set(operation.mediaId, types);
+  }
+  for (const types of mutationsByMedia.values()) {
+    if (
+      types.has(PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.remove)
+      && (types.has(PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.reorder) || types.has(PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.setCover))
+    ) throw new Error("Removed media cannot also receive metadata operations.");
+    if (
+      types.has(PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.replace)
+      && (types.has(PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.reorder) || types.has(PRODUCT_ENTRY_MEDIA_OPERATION_TYPES.setCover))
+    ) throw new Error("Replace operations carry final metadata and cannot be duplicated by metadata operations.");
   }
   return Object.freeze(operations);
 };

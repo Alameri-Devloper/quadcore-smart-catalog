@@ -18,63 +18,49 @@ import { CommercialDetailsStep } from "./steps/CommercialDetailsStep";
 import { ProductImagesStep } from "./steps/ProductImagesStep";
 import { ProductReviewStep } from "./steps/ProductReviewStep";
 import type { ProductEntryReviewViewModel } from "../services/product-entry-review.service";
+import { PRODUCT_ENTRY_PRESENTATION_TEXT } from "../presentation/product-entry-i18n";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
-  { title: string; description: string; placeholder: string }
+  { title: "entryMethodTitle" | "categoryTitle" | "deviceClassTitle" | "productModelTitle" | "specificationsTitle" | "detailsTitle" | "imagesTitle" | "reviewTitle"; description: "entryMethodDescription" | "categoryDescription" | "deviceClassDescription" | "productModelDescription" | "specificationsDescription" | "detailsDescription" | "imagesDescription" | "reviewDescription" }
 > = {
   [PRODUCT_ENTRY_STEP_IDS.entryMethod]: {
-    title: "Entry Method",
-    description: "Choose how you want to add this product.",
-    placeholder: "Manual entry is ready. More entry methods will be added later.",
+    title: "entryMethodTitle", description: "entryMethodDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.category]: {
-    title: "Category",
-    description: "Choose where this product belongs in your catalog.",
-    placeholder: "Category selection will appear here in the next UI task.",
+    title: "categoryTitle", description: "categoryDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.deviceClass]: {
-    title: "Device Class",
-    description: "Narrow the product type when the selected category needs it.",
-    placeholder: "Device class selection will appear here when required.",
+    title: "deviceClassTitle", description: "deviceClassDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.productModel]: {
-    title: "Product Model",
-    description: "Select the model that defines this product.",
-    placeholder: "Product model selection will appear here.",
+    title: "productModelTitle", description: "productModelDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.specifications]: {
-    title: "Device Specifications",
-    description: "Add the technical details customers need to compare products.",
-    placeholder: "Device specification fields will appear here.",
+    title: "specificationsTitle", description: "specificationsDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.commercialDetails]: {
-    title: "Product Details",
-    description: "Add the name, price, quantity, condition, and availability.",
-    placeholder: "Commercial product details will appear here.",
+    title: "detailsTitle", description: "detailsDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.images]: {
-    title: "Add product images",
-    description: "Add clear product images, choose the main image, and prepare them for a consistent Catalog appearance.",
-    placeholder: "Product images are optional.",
+    title: "imagesTitle", description: "imagesDescription",
   },
   [PRODUCT_ENTRY_STEP_IDS.review]: {
-    title: "Review",
-    description: "Review the product information before completing the workflow.",
-    placeholder: "A product summary will appear here before saving is implemented.",
+    title: "reviewTitle", description: "reviewDescription",
   },
 };
 
-export function getProductEntryStepPresentation(stepId: string | null) {
+export function getProductEntryStepPresentation(stepId: string | null, locale: "en" | "ar") {
+  const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
   if (!stepId || !(stepId in STEP_PRESENTATION)) {
     return {
-      title: "Product Entry",
-      description: "Follow the steps to add a product.",
-      placeholder: "Workflow content will appear here.",
+      title: text.productEntryTitle,
+      description: text.productEntryDescription,
+      placeholder: text.workflowPlaceholder,
     };
   }
-
-  return STEP_PRESENTATION[stepId as ProductEntryStepId];
+  const presentation = STEP_PRESENTATION[stepId as ProductEntryStepId];
+  return { title: text[presentation.title], description: text[presentation.description], placeholder: text.workflowPlaceholder };
 }
 
 interface ProductEntryStepContentProps {
@@ -97,11 +83,13 @@ interface ProductEntryStepContentProps {
   specificationsResolution: ProductEntrySpecificationsResolution | null;
   onRetrySpecifications: () => void;
   review: ProductEntryReviewViewModel;
+  locale: "en" | "ar";
 }
 
-export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications, review }: ProductEntryStepContentProps) {
+export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications, review, locale }: ProductEntryStepContentProps) {
   const { currentStepId, validation } = useProductEntryWorkflow();
-  const presentation = getProductEntryStepPresentation(currentStepId);
+  const presentation = getProductEntryStepPresentation(currentStepId, locale);
+  const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
   const isEntryMethod = currentStepId === PRODUCT_ENTRY_STEP_IDS.entryMethod;
   const isCategory = currentStepId === PRODUCT_ENTRY_STEP_IDS.category;
   const isDeviceClass = currentStepId === PRODUCT_ENTRY_STEP_IDS.deviceClass;
@@ -117,21 +105,21 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       className="min-h-72 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:min-h-80 sm:p-8"
     >
       {isEntryMethod ? (
-        <EntryMethodStep />
+        <EntryMethodStep locale={locale} />
       ) : isCategory ? (
-        <CategoryStep categories={categories} loadError={categoryLoadError} loading={categoriesLoading} onRetry={onRetryCategories} />
+        <CategoryStep categories={categories} loadError={categoryLoadError} loading={categoriesLoading} locale={locale} onRetry={onRetryCategories} />
       ) : isDeviceClass ? (
-        <DeviceClassStep deviceClasses={deviceClasses} loadError={deviceClassLoadError} loading={deviceClassesLoading} onRetry={onRetryDeviceClasses} />
+        <DeviceClassStep deviceClasses={deviceClasses} loadError={deviceClassLoadError} loading={deviceClassesLoading} locale={locale} onRetry={onRetryDeviceClasses} />
       ) : isProductModel ? (
-        <ProductModelStep contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} onRetry={onRetryProductModels} productModels={productModels} />
+        <ProductModelStep contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} locale={locale} onRetry={onRetryProductModels} productModels={productModels} />
       ) : isSpecifications ? (
-        <SpecificationsStep loadError={specificationsLoadError} loading={specificationsLoading} onRetry={onRetrySpecifications} resolution={specificationsResolution} />
+        <SpecificationsStep loadError={specificationsLoadError} loading={specificationsLoading} locale={locale} onRetry={onRetrySpecifications} resolution={specificationsResolution} />
       ) : isCommercialDetails ? (
-        <CommercialDetailsStep />
+        <CommercialDetailsStep locale={locale} />
       ) : isImages ? (
-        <ProductImagesStep />
+        <ProductImagesStep locale={locale} />
       ) : isReview ? (
-        <ProductReviewStep review={review} />
+        <ProductReviewStep locale={locale} review={review} />
       ) : (
       <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center sm:min-h-64">
         <span className="mb-4 inline-flex size-12 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -159,7 +147,7 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
           role="alert"
           aria-live="polite"
         >
-          <p className="font-medium text-red-900">Please review this step.</p>
+          <p className="font-medium text-red-900">{text.reviewStepPrompt}</p>
           <ul className="mt-2 space-y-1 text-sm text-red-800">
             {validation.issues.map((issue) => (
               <li key={`${issue.code}-${issue.field ?? issue.message}`}>

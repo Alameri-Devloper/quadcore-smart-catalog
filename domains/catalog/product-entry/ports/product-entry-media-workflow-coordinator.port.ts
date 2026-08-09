@@ -14,7 +14,7 @@ export interface ProductEntryMediaWorkflowView {
   readonly status: ProductEntryMediaWorkflowStatus;
   readonly operations: readonly {
     readonly operationId: string;
-    readonly type: "Add" | "Replace" | "Remove";
+    readonly type: "Add" | "Replace" | "Remove" | "Reorder" | "SetCover";
     readonly status: ProductEntryMediaWorkflowOperationStatus;
     readonly attemptCount: number;
     readonly retryAllowed: boolean;
@@ -43,7 +43,14 @@ export type ProductEntryCoordinatedMediaOperation =
       readonly requestedDisplayOrder?: number;
       readonly selectAsCover?: boolean;
     }
-  | { readonly operationId: string; readonly type: "Remove"; readonly targetMediaId: string };
+  | { readonly operationId: string; readonly type: "Remove"; readonly targetMediaId: string }
+  | {
+      readonly operationId: string;
+      readonly type: "Reorder";
+      readonly targetMediaId: string;
+      readonly requestedDisplayOrder: number;
+    }
+  | { readonly operationId: string; readonly type: "SetCover"; readonly targetMediaId: string };
 
 export interface CoordinateProductEntryMediaWorkflowCommand {
   readonly context: ProductEntryExecutionContext;

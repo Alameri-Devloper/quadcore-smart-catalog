@@ -213,7 +213,7 @@ describe("Product Entry Media idempotency key", () => {
 
 describe("Product Entry Media source mapping", () => {
   const replace = operation({ operationId: "replace-a", operationType: "Replace", sequence: 1, mediaId: "old", finalOrder: 0 });
-  const remove = operation({ operationId: "remove-a", operationType: "Remove", sequence: 2, mediaId: "old-two", expectedSourceSha256: null, expectedSourceByteLength: null });
+  const remove = operation({ operationId: "remove-a", operationType: "Remove", sequence: 2, mediaId: "old-two", requestedDisplayOrder: null, selectedAsCover: false, expectedSourceSha256: null, expectedSourceByteLength: null, finalOrder: null });
   const plan = [operation(), replace, remove];
   const part = (fieldName: string) => ({ fieldName, bytes, clientMediaType: "text/plain" });
 
@@ -228,15 +228,17 @@ describe("Product Entry Media source mapping", () => {
     assert.deepEqual(mapProductEntryMediaSources(plan, [part("source:add-a"), part("source:add-a")]), { type: "Rejected", code: "SOURCE_DUPLICATED", operationId: "add-a" });
     assert.deepEqual(mapProductEntryMediaSources(plan, [part("source:add-a"), part("source:replace-a"), part("source:remove-a")]), { type: "Rejected", code: "SOURCE_UNEXPECTED", operationId: "remove-a" });
   });
-  it("rejects sources for future Reorder and SetCover descriptors", () => {
+  it("rejects sources for zero-file Reorder and SetCover descriptors", () => {
     for (const operationType of ["Reorder", "SetCover"] as const) {
-      const future = {
-        operationId: operationType.toLowerCase(),
-        operationType,
-        sequence: 0,
-      } as unknown as ProductEntryMediaOperation;
-      assert.deepEqual(mapProductEntryMediaSources([future], [part(`source:${future.operationId}`)]), {
-        type: "Rejected", code: "SOURCE_UNEXPECTED", operationId: future.operationId,
+      const metadata = operation({
+        operationId: operationType.toLowerCase(), operationType, sequence: 0, mediaId: "existing",
+        requestedDisplayOrder: operationType === "Reorder" ? 0 : null,
+        finalOrder: operationType === "Reorder" ? 0 : null,
+        selectedAsCover: operationType === "SetCover",
+        expectedSourceSha256: null, expectedSourceByteLength: null,
+      });
+      assert.deepEqual(mapProductEntryMediaSources([metadata], [part(`source:${metadata.operationId}`)]), {
+        type: "Rejected", code: "SOURCE_UNEXPECTED", operationId: metadata.operationId,
       });
     }
   });
@@ -296,6 +298,34 @@ describe("Product Entry Media source mapping", () => {
 });
 
 describe("Product Entry Media coordinator use cases", () => {
+  it("coordinates Reorder and SetCover as real zero-file Product Media operations", async () => {
+    const reorder = operation({
+      operationId: "reorder-a", operationType: "Reorder", mediaId: "existing-a", sequence: 0,
+      requestedDisplayOrder: 1, finalOrder: 1, selectedAsCover: false,
+      expectedSourceSha256: null, expectedSourceByteLength: null,
+    });
+    const setCover = operation({
+      operationId: "cover-b", operationType: "SetCover", mediaId: "existing-b", sequence: 1,
+      requestedDisplayOrder: null, finalOrder: null, selectedAsCover: true,
+      expectedSourceSha256: null, expectedSourceByteLength: null,
+    });
+    const value = setup([reorder, setCover]);
+    value.coordinator.nextWorkflow = {
+      ...workflow(),
+      operations: [
+        { ...workflow().operations[0], operationId: "reorder-a", type: "Reorder" },
+        { ...workflow().operations[0], operationId: "cover-b", type: "SetCover" },
+      ],
+    };
+    const result = await value.upload.execute(executionContext(), submissionId.value, []);
+    assert.equal(result.type, "Completed");
+    assert.deepEqual(value.coordinator.coordinateCalls[0].operations, [
+      { operationId: "reorder-a", type: "Reorder", targetMediaId: "existing-a", requestedDisplayOrder: 1 },
+      { operationId: "cover-b", type: "SetCover", targetMediaId: "existing-b" },
+    ]);
+    assert.equal(value.verifier.calls, 0);
+  });
+
   it("uses persisted sequence and finalOrder, never multipart order or requested order", async () => {
     const replace = operation({ operationId: "replace-a", operationType: "Replace", sequence: 1, mediaId: "old", requestedDisplayOrder: 2, finalOrder: 4 });
     const value = setup([operation(), replace]);

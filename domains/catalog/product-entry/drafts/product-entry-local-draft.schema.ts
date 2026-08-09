@@ -205,15 +205,15 @@ export const sanitizeProductEntryLocalDraftMediaDescriptors = (
     const operationId = requiredString(input.operationId);
     if (operationIds.has(operationId)) throw new Error("Duplicate media operation.");
     operationIds.add(operationId);
-    if (!(["Add", "Replace", "Remove"] as const).includes(input.operationType as never)) {
+    if (!(["Add", "Replace", "Remove", "Reorder", "SetCover"] as const).includes(input.operationType as never)) {
       throw new Error("Invalid media operation type.");
     }
-    const operationType = input.operationType as "Add" | "Replace" | "Remove";
+    const operationType = input.operationType as ProductEntryLocalDraftMediaDescriptor["operationType"];
     const sequence = nonNegativeInteger(input.sequence);
     if (sequence !== index) throw new Error("Media sequence must be contiguous.");
     if (typeof input.selectedAsCover !== "boolean") throw new Error("Invalid cover flag.");
     const mediaId = nullableString(input.mediaId);
-    const sourceOperation = operationType !== "Remove";
+    const sourceOperation = operationType === "Add" || operationType === "Replace";
     if ((operationType === "Add" && mediaId !== null) || (operationType !== "Add" && mediaId === null)) {
       throw new Error("Invalid media target.");
     }
@@ -227,7 +227,7 @@ export const sanitizeProductEntryLocalDraftMediaDescriptors = (
       throw new Error("Invalid source integrity metadata.");
     }
     if (!sourceOperation && (expectedSourceSha256 !== null || expectedSourceByteLength !== null)) {
-      throw new Error("Remove cannot have source metadata.");
+      throw new Error("Remove and metadata operations cannot have source metadata.");
     }
     const sourceAvailability = input.sourceAvailability;
     if (!Object.values(PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY).includes(sourceAvailability as never)) {
@@ -239,21 +239,37 @@ export const sanitizeProductEntryLocalDraftMediaDescriptors = (
     ) {
       throw new Error("Invalid source availability for operation.");
     }
+    const requestedDisplayOrder = nullableNonNegativeInteger(input.requestedDisplayOrder);
+    const finalOrder = nullableNonNegativeInteger(input.finalOrder);
+    if (operationType === "Remove" && (requestedDisplayOrder !== null || finalOrder !== null || input.selectedAsCover)) {
+      throw new Error("Remove cannot have order or cover metadata.");
+    }
+    if (operationType === "Reorder"
+      && (requestedDisplayOrder === null || finalOrder !== requestedDisplayOrder || input.selectedAsCover)) {
+      throw new Error("Invalid Reorder metadata.");
+    }
+    if (operationType === "SetCover"
+      && (requestedDisplayOrder !== null || finalOrder !== null || !input.selectedAsCover)) {
+      throw new Error("Invalid SetCover metadata.");
+    }
     return Object.freeze({
       operationId,
       operationType,
       sequence,
       mediaId,
-      requestedDisplayOrder: nullableNonNegativeInteger(input.requestedDisplayOrder),
+      requestedDisplayOrder,
       selectedAsCover: input.selectedAsCover,
       expectedSourceSha256,
       expectedSourceByteLength,
-      finalOrder: nullableNonNegativeInteger(input.finalOrder),
+      finalOrder,
       fileName: sourceOperation ? nullableString(input.fileName) : null,
       mimeType: sourceOperation ? nullableString(input.mimeType) : null,
       sourceAvailability: sourceAvailability as ProductEntryLocalDraftMediaDescriptor["sourceAvailability"],
     });
   });
+  if (descriptors.filter((descriptor) => descriptor.selectedAsCover).length > 1) {
+    throw new Error("Only one media operation may select the cover.");
+  }
   return Object.freeze(descriptors);
 };
 
@@ -297,9 +313,9 @@ const migrateVersionZero = (value: Readonly<Record<string, unknown>>): Readonly<
         const item = record(descriptor);
         return {
           ...item,
-          sourceAvailability: item.operationType === "Remove"
-            ? PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.notRequired
-            : PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.requiresReselection,
+          sourceAvailability: item.operationType === "Add" || item.operationType === "Replace"
+            ? PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.requiresReselection
+            : PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.notRequired,
         };
       })
     : value.mediaDescriptors,
@@ -329,8 +345,8 @@ export const prepareRestoredProductEntryLocalDraft = (
   ...draft,
   mediaDescriptors: Object.freeze(draft.mediaDescriptors.map((descriptor) => Object.freeze({
     ...descriptor,
-    sourceAvailability: descriptor.operationType === "Remove"
-      ? PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.notRequired
-      : PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.requiresReselection,
+    sourceAvailability: descriptor.operationType === "Add" || descriptor.operationType === "Replace"
+      ? PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.requiresReselection
+      : PRODUCT_ENTRY_LOCAL_MEDIA_SOURCE_AVAILABILITY.notRequired,
   }))),
 });

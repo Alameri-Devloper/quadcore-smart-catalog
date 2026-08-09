@@ -22,7 +22,6 @@ export const PRODUCT_ENTRY_AVAILABILITY_OPTIONS = [
 
 export const PRODUCT_ENTRY_COMMERCIAL_DEFAULTS = {
   isFeatured: false,
-  isActive: true,
 } as const;
 
 export const isApprovedProductEntryCurrency = (value: string): boolean =>
