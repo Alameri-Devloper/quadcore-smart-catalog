@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { productEntryRuntimeErrorHttpResponse } from "@/domains/catalog/product-entry/application/product-entry-api-response";
-import { createProductEntryServerRuntime, type ProductEntryServerApplication } from "@/domains/catalog/product-entry/infrastructure/product-entry-server-runtime";
+import type { ProductEntryServerApplication } from "@/domains/catalog/product-entry/infrastructure/product-entry-server-runtime";
+import { createRequestProductEntryServerRuntime } from "../../../product-entry-server-runtime";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   routeContext: { readonly params: Promise<{ readonly productId: string }> },
 ): Promise<NextResponse> {
   let application: ProductEntryServerApplication | undefined;
   let response: NextResponse;
   try {
-    const serverRuntime = createProductEntryServerRuntime();
-    const context = await serverRuntime.trustedContextResolver.resolve();
+    const serverRuntime = createRequestProductEntryServerRuntime();
+    const context = await serverRuntime.trustedContextResolver.resolve(request);
     application = serverRuntime.open(false);
     const { productId } = await routeContext.params;
     const result = await application.getProduct.execute(context, productId);

@@ -9,6 +9,7 @@ import {
   PostgreSqlMembershipRepository,
   PostgreSqlPasswordCredentialRepository,
   PostgreSqlPasswordRecoveryChallengeRepository,
+  PostgreSqlSessionRepository,
 } from "./postgresql-identity.repositories";
 
 class ExpectedIdentityRollback<T> extends Error {
@@ -33,6 +34,7 @@ export class PostgreSqlIdentityUnitOfWork implements IdentityUnitOfWork {
           passwordRecoveryChallengeRepository: new PostgreSqlPasswordRecoveryChallengeRepository(database),
           memberProfileRepository: new PostgreSqlMemberProfileRepository(database),
           membershipRepository: new PostgreSqlMembershipRepository(database),
+          sessionRepository: new PostgreSqlSessionRepository(database),
           audit: new PostgreSqlSecurityAuditRepository(database),
         });
         const decision = await work(context);

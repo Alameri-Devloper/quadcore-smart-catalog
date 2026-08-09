@@ -40,3 +40,15 @@ export class ChallengeId {
     return this.value === other.value;
   }
 }
+
+export class SessionId {
+  private constructor(readonly value: string) {}
+
+  static create(value: string): SessionId {
+    return Object.freeze(new SessionId(requireIdentifier(value, "SessionId")));
+  }
+
+  equals(other: SessionId): boolean {
+    return this.value === other.value;
+  }
+}

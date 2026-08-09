@@ -17,6 +17,15 @@ export const SECURITY_AUDIT_EVENT_TYPES = {
   recoveryChallengeConsumed: "PasswordRecoveryChallengeConsumed",
   loginProtectionLocked: "LoginProtectionLocked",
   loginProtectionCleared: "LoginProtectionCleared",
+  loginSucceeded: "LoginSucceeded",
+  loginFailed: "LoginFailed",
+  sessionCreated: "SessionCreated",
+  sessionRevoked: "SessionRevoked",
+  logoutCompleted: "LogoutCompleted",
+  credentialChanged: "PasswordChanged",
+  restrictedSessionUpgraded: "RestrictedSessionUpgraded",
+  sessionRejectedCredentialVersion: "SessionRejectedPasswordVersion",
+  sessionRejectedAuthorizationVersion: "SessionRejectedAuthorizationVersion",
 } as const;
 
 export type SecurityAuditEventType =

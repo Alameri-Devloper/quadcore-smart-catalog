@@ -2,13 +2,15 @@
 
 **Status:** Implemented foundation · **Task:** 3.15.1-A · **Last Updated:** 2026-08-09
 
+> Task B update: server sessions and real reset/recovery revocation are now implemented. See [Identity Server Sessions and Trusted Context](Identity-Server-Sessions-and-Trusted-Context.md). | تحديث المهمة B: تم تنفيذ جلسات الخادم والإبطال الفعلي عند إعادة الضبط والاستعادة. راجع [جلسات الهوية على الخادم والسياق الموثوق](Identity-Server-Sessions-and-Trusted-Context.md).
+
 ## English
 
 ### Architecture and boundaries
 
 Task 3.15.1-A establishes the first Identity bounded-context foundation with Domain, Application, and Infrastructure layers. Application use cases own transaction orchestration. Focused repository ports own persistence contracts; repositories never call other repositories. PostgreSQL adapters use Drizzle ORM only inside Infrastructure.
 
-Authentication Account, Password Credential, Member Profile, Workspace Membership, Login Protection, Recovery Challenge, and Session remain separate concepts. Workspace owns `workspaceId`, `workspaceCode`, display name, recovery policy, and communication settings. Identity consumes Workspace ports without duplicating its aggregate. Catalog source and persistence boundaries are unchanged. Session is not implemented.
+Authentication Account, Password Credential, Member Profile, Workspace Membership, Login Protection, Recovery Challenge, and Session remain separate concepts. Workspace owns `workspaceId`, `workspaceCode`, display name, recovery policy, and communication settings. Identity consumes Workspace ports without duplicating its aggregate. Catalog source and persistence boundaries are unchanged. Task A did not implement Session; Task B now does so without collapsing these concepts.
 
 Membership branch scope uses the approved `AllBranches | SelectedBranches` vocabulary. Every Owner is constrained to `AllBranches`. Task A represents scoped Staff membership with `SelectedBranches` only; selected Branch ID persistence and management remain deferred to Task C.
 
@@ -28,7 +30,7 @@ Account status is `PendingActivation`, `Active`, or `Suspended`. Password lifecy
 - Recovery completion: account status is preserved and password becomes `Permanent`.
 - Suspension invalidates open recovery challenges; reactivation clears login protection.
 
-There is no hard-delete path. Password version starts at 1 and increments atomically for every replacement. Task A defines `SessionRevocationPort` only as the future integration seam. Reset and recovery use cases do not invoke session revocation; actual revocation is intentionally deferred until Task B provides server-side session persistence. Task A creates no session table or fake adapter.
+There is no hard-delete path. Password version starts at 1 and increments atomically for every replacement. Task A defined `SessionRevocationPort` as an integration seam and created no session table or fake adapter. Task B now implements session persistence and makes reset/recovery transactions revoke applicable sessions.
 
 ### Password security and Argon2id
 
@@ -78,9 +80,9 @@ Security Audit uses a shared platform contract rather than an Identity-private g
 
 ### Security and task boundaries
 
-No public bootstrap, emergency-reset, recovery, or authentication route exists. Normal commands require trusted Workspace/Actor context. Browser input cannot provide business authority. There is no plaintext credential/OTP storage, credential logging, password viewing, default password, login by phone, or session implementation.
+No public bootstrap, emergency-reset, or recovery route exists. Task B adds only the approved authentication routes. Normal commands require trusted Workspace/Actor context. Browser input cannot provide business authority. There is no plaintext credential/OTP/session storage, credential logging, password viewing, default password, or login by phone.
 
-- Task B: opaque sessions, cookies, trusted actor resolution, logout, and `/api/auth/me`.
+- Task B (implemented): opaque sessions, cookies, trusted actor resolution, logout, and `/api/auth/me`.
 - Task C: final Owner member/profile/role/permission/branch-scope operations.
 - Task D: login, password, recovery, and member-management presentation.
 - Task E: WhatsApp delivery adapter and provider-facing security limits.

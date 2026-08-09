@@ -20,6 +20,7 @@ export interface WorkspaceMembership {
   readonly actorId: ActorId;
   readonly role: WorkspaceRole;
   readonly branchScope: BranchScope;
+  readonly authorizationVersion: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -44,6 +45,9 @@ export const createMembership = (
   }
   if (input.role === "Owner" && input.branchScope !== "AllBranches") {
     throw new Error("OwnerBranchScopeInvalid");
+  }
+  if (!Number.isSafeInteger(input.authorizationVersion) || input.authorizationVersion < 1) {
+    throw new Error("AuthorizationVersionInvalid");
   }
   return Object.freeze({ ...input, createdAt: new Date(input.createdAt), updatedAt: new Date(input.updatedAt) });
 };

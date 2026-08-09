@@ -6,6 +6,7 @@ import { LoginProtection } from "../domain/login-protection";
 import type { WorkspaceMemberProfile, WorkspaceMembership } from "../domain/member";
 import { PasswordCredential } from "../domain/password-credential";
 import { PasswordRecoveryChallenge } from "../domain/password-recovery-challenge";
+import { ServerSession } from "../domain/session";
 
 const scoped = (workspaceId: string, id: string) => `${workspaceId}\u0000${id}`;
 
@@ -19,6 +20,7 @@ export interface MemoryIdentityState {
   readonly challenges: Map<string, PasswordRecoveryChallenge>;
   readonly profiles: Map<string, WorkspaceMemberProfile>;
   readonly memberships: Map<string, WorkspaceMembership>;
+  readonly sessions: Map<string, ServerSession>;
   readonly audits: SecurityAuditRecord[];
 }
 
@@ -68,6 +70,22 @@ const cloneChallenge = (challenge: PasswordRecoveryChallenge): PasswordRecoveryC
   invalidatedAt: challenge.invalidatedAt,
 });
 
+const cloneSession = (session: ServerSession): ServerSession => ServerSession.rehydrate({
+  workspaceId: session.workspaceId,
+  sessionId: session.sessionId,
+  digest: session.digest,
+  actorId: session.actorId,
+  sessionClass: session.sessionClass,
+  authorizationVersion: session.authorizationVersion,
+  passwordVersion: session.passwordVersion,
+  createdAt: session.createdAt,
+  lastSeenAt: session.lastSeenAt,
+  idleExpiresAt: session.idleExpiresAt,
+  absoluteExpiresAt: session.absoluteExpiresAt,
+  revokedAt: session.revokedAt,
+  revocationReason: session.revocationReason,
+});
+
 const cloneMap = <T>(source: Map<string, T>, clone: (value: T) => T): Map<string, T> =>
   new Map([...source].map(([key, value]) => [key, clone(value)]));
 
@@ -81,6 +99,7 @@ const cloneState = (state: MemoryIdentityState): MemoryIdentityState => ({
   challenges: cloneMap(state.challenges, cloneChallenge),
   profiles: new Map(state.profiles),
   memberships: new Map(state.memberships),
+  sessions: cloneMap(state.sessions, cloneSession),
   audits: [...state.audits],
 });
 
@@ -94,6 +113,7 @@ const emptyState = (): MemoryIdentityState => ({
   challenges: new Map(),
   profiles: new Map(),
   memberships: new Map(),
+  sessions: new Map(),
   audits: [],
 });
 
@@ -232,7 +252,64 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
       },
       membershipRepository: {
         create: async (membership) => { state.memberships.set(scoped(membership.workspaceId.value, membership.actorId.value), membership); },
+        findByActorId: async (workspaceId, actorId) => state.memberships.get(scoped(workspaceId.value, actorId.value)) ?? null,
         findRole: async (workspaceId, actorId) => state.memberships.get(scoped(workspaceId.value, actorId.value))?.role ?? null,
+      },
+      sessionRepository: {
+        create: async (session) => {
+          const key = scoped(session.workspaceId.value, session.sessionId.value);
+          if (state.sessions.has(key)) return "SessionIdConflict";
+          if ([...state.sessions.values()].some((candidate) => candidate.digest.value === session.digest.value)) {
+            return "DigestConflict";
+          }
+          state.sessions.set(key, cloneSession(session));
+          return "Created";
+        },
+        findByDigests: async (digests) => {
+          const matched = [...state.sessions.values()].find((candidate) => digests.some((digest) =>
+            digest.keyVersion === candidate.digest.keyVersion && digest.value === candidate.digest.value));
+          return matched ? cloneSession(matched) : null;
+        },
+        findById: async (workspaceId, sessionId) => {
+          const session = state.sessions.get(scoped(workspaceId.value, sessionId.value));
+          return session ? cloneSession(session) : null;
+        },
+        save: async (session) => {
+          state.sessions.set(scoped(session.workspaceId.value, session.sessionId.value), cloneSession(session));
+        },
+        revokeAllForActor: async (workspaceId, actorId, reason, at) => {
+          let count = 0;
+          for (const [key, session] of state.sessions) {
+            if (session.workspaceId.equals(workspaceId) && session.actorId.equals(actorId) && session.revoke(reason, at)) {
+              state.sessions.set(key, cloneSession(session));
+              count += 1;
+            }
+          }
+          return count;
+        },
+        revokeOtherSessions: async (workspaceId, actorId, exceptSessionId, reason, at) => {
+          let count = 0;
+          for (const [key, session] of state.sessions) {
+            if (
+              session.workspaceId.equals(workspaceId)
+              && session.actorId.equals(actorId)
+              && !session.sessionId.equals(exceptSessionId)
+              && session.revoke(reason, at)
+            ) {
+              state.sessions.set(key, cloneSession(session));
+              count += 1;
+            }
+          }
+          return count;
+        },
+        deleteCleanupEligible: async (at, revokedBefore, limit) => {
+          const keys = [...state.sessions.entries()]
+            .filter(([, session]) => session.isCleanupEligible(at, revokedBefore))
+            .slice(0, limit)
+            .map(([key]) => key);
+          for (const key of keys) state.sessions.delete(key);
+          return keys.length;
+        },
       },
       audit: {
         append: async (records) => {

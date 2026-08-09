@@ -6,10 +6,10 @@ import {
 } from "../../../../../../domains/catalog/product-entry/application/product-entry-media-api-response";
 import type { ProductEntryMediaUploadPart } from "../../../../../../domains/catalog/product-entry/application/product-entry-media-source-mapping";
 import {
-  createProductEntryServerRuntime,
   type ProductEntryMediaStatusServerApplication,
   type ProductEntryMediaUploadServerApplication,
 } from "../../../../../../domains/catalog/product-entry/infrastructure/product-entry-server-runtime";
+import { createRequestProductEntryServerRuntime } from "../../../product-entry-server-runtime";
 import {
   PRODUCT_ENTRY_MEDIA_MULTIPART_LIMITS,
   validateProductEntryMediaContentLength,
@@ -35,8 +35,8 @@ export async function POST(
   let application: ProductEntryMediaUploadServerApplication | undefined;
   let response: NextResponse;
   try {
-    const serverRuntime = createProductEntryServerRuntime();
-    const executionContext = await serverRuntime.trustedContextResolver.resolve();
+    const serverRuntime = createRequestProductEntryServerRuntime();
+    const executionContext = await serverRuntime.trustedContextResolver.resolve(request);
     if (!request.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data")) {
       return malformedMultipart();
     }
@@ -75,14 +75,14 @@ export async function POST(
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   routeContext: { readonly params: Promise<{ readonly submissionId: string }> },
 ): Promise<NextResponse> {
   let application: ProductEntryMediaStatusServerApplication | undefined;
   let response: NextResponse;
   try {
-    const serverRuntime = createProductEntryServerRuntime();
-    const executionContext = await serverRuntime.trustedContextResolver.resolve();
+    const serverRuntime = createRequestProductEntryServerRuntime();
+    const executionContext = await serverRuntime.trustedContextResolver.resolve(request);
     application = serverRuntime.openMediaStatus();
     const { submissionId } = await routeContext.params;
     const result = await application.status.execute(executionContext, submissionId);

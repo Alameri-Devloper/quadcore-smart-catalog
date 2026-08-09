@@ -20,6 +20,16 @@ export type IdentityErrorCode =
   | "RecoveryRateLimited"
   | "RecoveryCodeInvalid"
   | "CredentialUpdateConflict"
+  | "InvalidCredentialsOrUnavailableAccount"
+  | "LoginTemporarilyUnavailable"
+  | "SessionNotFound"
+  | "SessionExpired"
+  | "SessionRevoked"
+  | "SessionStalePasswordVersion"
+  | "SessionStaleAuthorizationVersion"
+  | "ForbiddenForRestrictedSession"
+  | "InvalidCurrentPassword"
+  | "SessionCreateConflict"
   | "InfrastructureUnavailable"
   | "BootstrapInputInvalid";
 

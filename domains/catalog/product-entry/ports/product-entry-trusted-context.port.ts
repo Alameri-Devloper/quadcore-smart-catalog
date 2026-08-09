@@ -11,6 +11,20 @@ export class ProductEntryTrustedContextUnavailableError extends Error {
   }
 }
 
+export class ProductEntryAuthenticationRequiredError extends Error {
+  constructor() {
+    super("A valid authenticated session is required for Product Entry.");
+    this.name = "ProductEntryAuthenticationRequiredError";
+  }
+}
+
+export class ProductEntryRestrictedSessionError extends Error {
+  constructor() {
+    super("A restricted session cannot access Product Entry.");
+    this.name = "ProductEntryRestrictedSessionError";
+  }
+}
+
 export interface ProductEntryTrustedContextResolver {
-  resolve(): Promise<ProductEntryExecutionContext>;
+  resolve(request: Request): Promise<ProductEntryExecutionContext>;
 }

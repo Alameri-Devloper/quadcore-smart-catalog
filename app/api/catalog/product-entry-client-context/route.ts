@@ -22,10 +22,10 @@ const configuredCatalogId = (workspaceId: string): string => {
   return unique[0];
 };
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") throw new Error("Unavailable");
-    const trusted = await createProductEntryServerRuntime().trustedContextResolver.resolve();
+    const trusted = await createProductEntryServerRuntime().trustedContextResolver.resolve(request);
     if (trusted.workspaceId.value !== PRODUCT_ENTRY_DEVELOPMENT_SCOPE.workspaceId) throw new Error("Unavailable");
     return NextResponse.json({
       type: "Available",
