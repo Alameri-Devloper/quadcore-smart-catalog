@@ -1,0 +1,2966 @@
+{
+  "id": "a0998800-edd4-4b68-b33e-235b945d8e46",
+  "prevId": "9b4d89ff-f625-43b2-831c-b87ac9865a13",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.catalog_product_entry_audit_records": {
+      "name": "catalog_product_entry_audit_records",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "audit_id": {
+          "name": "audit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result_code": {
+          "name": "result_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "catalog_product_entry_audit_records_submission_idx": {
+          "name": "catalog_product_entry_audit_records_submission_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_entry_audit_records_product_idx": {
+          "name": "catalog_product_entry_audit_records_product_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_entry_audit_records_submission_fk": {
+          "name": "catalog_product_entry_audit_records_submission_fk",
+          "tableFrom": "catalog_product_entry_audit_records",
+          "tableTo": "catalog_product_entry_submissions",
+          "columnsFrom": [
+            "workspace_id",
+            "submission_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "submission_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "catalog_product_entry_audit_records_product_fk": {
+          "name": "catalog_product_entry_audit_records_product_fk",
+          "tableFrom": "catalog_product_entry_audit_records",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_entry_audit_records_pk": {
+          "name": "catalog_product_entry_audit_records_pk",
+          "columns": [
+            "workspace_id",
+            "audit_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_entry_audit_records_event_type": {
+          "name": "catalog_product_entry_audit_records_event_type",
+          "value": "\"catalog_product_entry_audit_records\".\"event_type\" IN ('SubmissionClaimed','ProductCreateRequested','ProductEditRequested','ProductSaved','LifecycleOutcome')"
+        },
+        "catalog_product_entry_audit_records_non_empty": {
+          "name": "catalog_product_entry_audit_records_non_empty",
+          "value": "btrim(\"catalog_product_entry_audit_records\".\"audit_id\") <> '' AND btrim(\"catalog_product_entry_audit_records\".\"actor_id\") <> '' AND btrim(\"catalog_product_entry_audit_records\".\"result_code\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_entry_submission_media_operations": {
+      "name": "catalog_product_entry_submission_media_operations",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_type": {
+          "name": "operation_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "media_id": {
+          "name": "media_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_display_order": {
+          "name": "requested_display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "selected_as_cover": {
+          "name": "selected_as_cover",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "expected_source_sha256": {
+          "name": "expected_source_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expected_source_byte_length": {
+          "name": "expected_source_byte_length",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_order": {
+          "name": "final_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "catalog_product_entry_submission_media_operations_sequence_uq": {
+          "name": "catalog_product_entry_submission_media_operations_sequence_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sequence",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_entry_submission_media_operations_cover_uq": {
+          "name": "catalog_product_entry_submission_media_operations_cover_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"catalog_product_entry_submission_media_operations\".\"selected_as_cover\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_entry_submission_media_operations_submission_fk": {
+          "name": "catalog_product_entry_submission_media_operations_submission_fk",
+          "tableFrom": "catalog_product_entry_submission_media_operations",
+          "tableTo": "catalog_product_entry_submissions",
+          "columnsFrom": [
+            "workspace_id",
+            "submission_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "submission_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_entry_submission_media_operations_pk": {
+          "name": "catalog_product_entry_submission_media_operations_pk",
+          "columns": [
+            "workspace_id",
+            "submission_id",
+            "operation_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_entry_submission_media_operations_type": {
+          "name": "catalog_product_entry_submission_media_operations_type",
+          "value": "\"catalog_product_entry_submission_media_operations\".\"operation_type\" IN ('Add','Replace','Remove','Reorder','SetCover')"
+        },
+        "catalog_product_entry_submission_media_operations_identity_non_empty": {
+          "name": "catalog_product_entry_submission_media_operations_identity_non_empty",
+          "value": "btrim(\"catalog_product_entry_submission_media_operations\".\"operation_id\") <> ''"
+        },
+        "catalog_product_entry_submission_media_operations_sequence": {
+          "name": "catalog_product_entry_submission_media_operations_sequence",
+          "value": "\"catalog_product_entry_submission_media_operations\".\"sequence\" >= 0"
+        },
+        "catalog_product_entry_submission_media_operations_orders": {
+          "name": "catalog_product_entry_submission_media_operations_orders",
+          "value": "\n      (\"catalog_product_entry_submission_media_operations\".\"requested_display_order\" IS NULL OR \"catalog_product_entry_submission_media_operations\".\"requested_display_order\" >= 0) AND\n      (\"catalog_product_entry_submission_media_operations\".\"final_order\" IS NULL OR \"catalog_product_entry_submission_media_operations\".\"final_order\" >= 0)\n    "
+        },
+        "catalog_product_entry_submission_media_operations_source_length": {
+          "name": "catalog_product_entry_submission_media_operations_source_length",
+          "value": "\"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" IS NULL OR \"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" BETWEEN 1 AND 9007199254740991"
+        },
+        "catalog_product_entry_submission_media_operations_shape": {
+          "name": "catalog_product_entry_submission_media_operations_shape",
+          "value": "\n      (\"catalog_product_entry_submission_media_operations\".\"operation_type\" = 'Add' AND \"catalog_product_entry_submission_media_operations\".\"media_id\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"expected_source_sha256\" ~ '^[a-f0-9]{64}$' AND \"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" IS NOT NULL) OR\n      (\"catalog_product_entry_submission_media_operations\".\"operation_type\" = 'Replace' AND btrim(\"catalog_product_entry_submission_media_operations\".\"media_id\") <> '' AND \"catalog_product_entry_submission_media_operations\".\"expected_source_sha256\" ~ '^[a-f0-9]{64}$' AND \"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" IS NOT NULL) OR\n      (\"catalog_product_entry_submission_media_operations\".\"operation_type\" = 'Remove' AND btrim(\"catalog_product_entry_submission_media_operations\".\"media_id\") <> '' AND \"catalog_product_entry_submission_media_operations\".\"expected_source_sha256\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"requested_display_order\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"final_order\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"selected_as_cover\" = false) OR\n      (\"catalog_product_entry_submission_media_operations\".\"operation_type\" = 'Reorder' AND btrim(\"catalog_product_entry_submission_media_operations\".\"media_id\") <> '' AND \"catalog_product_entry_submission_media_operations\".\"expected_source_sha256\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"requested_display_order\" IS NOT NULL AND \"catalog_product_entry_submission_media_operations\".\"final_order\" = \"catalog_product_entry_submission_media_operations\".\"requested_display_order\" AND \"catalog_product_entry_submission_media_operations\".\"selected_as_cover\" = false) OR\n      (\"catalog_product_entry_submission_media_operations\".\"operation_type\" = 'SetCover' AND btrim(\"catalog_product_entry_submission_media_operations\".\"media_id\") <> '' AND \"catalog_product_entry_submission_media_operations\".\"expected_source_sha256\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"expected_source_byte_length\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"requested_display_order\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"final_order\" IS NULL AND \"catalog_product_entry_submission_media_operations\".\"selected_as_cover\" = true)\n    "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_entry_submissions": {
+      "name": "catalog_product_entry_submissions",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_fingerprint": {
+          "name": "request_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mode": {
+          "name": "mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_revision": {
+          "name": "product_revision",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_workflow_id": {
+          "name": "media_workflow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_save_receipt": {
+          "name": "product_save_receipt",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "catalog_product_entry_submissions_product_idx": {
+          "name": "catalog_product_entry_submissions_product_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_entry_submissions_status_idx": {
+          "name": "catalog_product_entry_submissions_status_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_entry_submissions_product_fk": {
+          "name": "catalog_product_entry_submissions_product_fk",
+          "tableFrom": "catalog_product_entry_submissions",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "catalog_product_entry_submissions_media_workflow_fk": {
+          "name": "catalog_product_entry_submissions_media_workflow_fk",
+          "tableFrom": "catalog_product_entry_submissions",
+          "tableTo": "catalog_product_media_workflows",
+          "columnsFrom": [
+            "workspace_id",
+            "media_workflow_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "workflow_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_entry_submissions_pk": {
+          "name": "catalog_product_entry_submissions_pk",
+          "columns": [
+            "workspace_id",
+            "submission_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_entry_submissions_fingerprint": {
+          "name": "catalog_product_entry_submissions_fingerprint",
+          "value": "\"catalog_product_entry_submissions\".\"request_fingerprint\" ~ '^[a-f0-9]{64}$'"
+        },
+        "catalog_product_entry_submissions_mode": {
+          "name": "catalog_product_entry_submissions_mode",
+          "value": "\"catalog_product_entry_submissions\".\"mode\" IN ('Create','Edit')"
+        },
+        "catalog_product_entry_submissions_status": {
+          "name": "catalog_product_entry_submissions_status",
+          "value": "\"catalog_product_entry_submissions\".\"status\" IN ('Claimed','ProductSaved','Completed','PartiallyCompleted')"
+        },
+        "catalog_product_entry_submissions_revision_safe": {
+          "name": "catalog_product_entry_submissions_revision_safe",
+          "value": "\"catalog_product_entry_submissions\".\"product_revision\" IS NULL OR \"catalog_product_entry_submissions\".\"product_revision\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_product_entry_submissions_timestamps_ordered": {
+          "name": "catalog_product_entry_submissions_timestamps_ordered",
+          "value": "\"catalog_product_entry_submissions\".\"created_at\" <= \"catalog_product_entry_submissions\".\"updated_at\""
+        },
+        "catalog_product_entry_submissions_identity_non_empty": {
+          "name": "catalog_product_entry_submissions_identity_non_empty",
+          "value": "btrim(\"catalog_product_entry_submissions\".\"submission_id\") <> ''"
+        },
+        "catalog_product_entry_submissions_mode_identity": {
+          "name": "catalog_product_entry_submissions_mode_identity",
+          "value": "\n      (\"catalog_product_entry_submissions\".\"mode\" = 'Edit' AND \"catalog_product_entry_submissions\".\"product_id\" IS NOT NULL) OR\n      (\"catalog_product_entry_submissions\".\"mode\" = 'Create' AND (\"catalog_product_entry_submissions\".\"status\" <> 'Claimed' OR \"catalog_product_entry_submissions\".\"product_id\" IS NULL))\n    "
+        },
+        "catalog_product_entry_submissions_saved_state": {
+          "name": "catalog_product_entry_submissions_saved_state",
+          "value": "\n      (\"catalog_product_entry_submissions\".\"status\" = 'Claimed' AND \"catalog_product_entry_submissions\".\"product_revision\" IS NULL AND \"catalog_product_entry_submissions\".\"media_workflow_id\" IS NULL AND \"catalog_product_entry_submissions\".\"product_save_receipt\" IS NULL) OR\n      (\"catalog_product_entry_submissions\".\"status\" IN ('ProductSaved','Completed','PartiallyCompleted') AND \"catalog_product_entry_submissions\".\"product_id\" IS NOT NULL AND \"catalog_product_entry_submissions\".\"product_revision\" IS NOT NULL AND \"catalog_product_entry_submissions\".\"product_save_receipt\" IS NOT NULL AND jsonb_typeof(\"catalog_product_entry_submissions\".\"product_save_receipt\") = 'object')\n    "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_images": {
+      "name": "catalog_product_images",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_image_id": {
+          "name": "product_image_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_main": {
+          "name": "is_main",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alt_text": {
+          "name": "alt_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checksum_sha256": {
+          "name": "checksum_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_created_at": {
+          "name": "media_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_created_by": {
+          "name": "media_created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_product_images_workspace_product_position_uq": {
+          "name": "catalog_product_images_workspace_product_position_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_images_one_main_uq": {
+          "name": "catalog_product_images_one_main_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"catalog_product_images\".\"is_main\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_images_storage_key_uq": {
+          "name": "catalog_product_images_storage_key_uq",
+          "columns": [
+            {
+              "expression": "storage_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_images_product_fk": {
+          "name": "catalog_product_images_product_fk",
+          "tableFrom": "catalog_product_images",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_images_pk": {
+          "name": "catalog_product_images_pk",
+          "columns": [
+            "workspace_id",
+            "product_id",
+            "product_image_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_images_position_non_negative": {
+          "name": "catalog_product_images_position_non_negative",
+          "value": "\"catalog_product_images\".\"position\" >= 0"
+        },
+        "catalog_product_images_workflow_integrity": {
+          "name": "catalog_product_images_workflow_integrity",
+          "value": "(\"catalog_product_images\".\"checksum_sha256\" IS NULL AND \"catalog_product_images\".\"mime_type\" IS NULL AND \"catalog_product_images\".\"media_created_at\" IS NULL AND \"catalog_product_images\".\"media_created_by\" IS NULL) OR (\"catalog_product_images\".\"checksum_sha256\" ~ '^[a-f0-9]{64}$' AND \"catalog_product_images\".\"mime_type\" = 'image/webp' AND \"catalog_product_images\".\"media_created_at\" IS NOT NULL AND btrim(\"catalog_product_images\".\"media_created_by\") <> '')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_media_operations": {
+      "name": "catalog_product_media_operations",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_media_id": {
+          "name": "target_media_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_display_order": {
+          "name": "requested_display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "select_as_cover": {
+          "name": "select_as_cover",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ordered_media_ids": {
+          "name": "ordered_media_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staged_artifact_key": {
+          "name": "staged_artifact_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_artifact_key": {
+          "name": "final_artifact_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staged_sha256": {
+          "name": "staged_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staged_byte_length": {
+          "name": "staged_byte_length",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staged_width": {
+          "name": "staged_width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "staged_height": {
+          "name": "staged_height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_attempt_at": {
+          "name": "last_attempt_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retry_allowed": {
+          "name": "retry_allowed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requires_new_source": {
+          "name": "requires_new_source",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_product_media_operations_workflow_idx": {
+          "name": "catalog_product_media_operations_workflow_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workflow_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_media_operations_expiry_idx": {
+          "name": "catalog_product_media_operations_expiry_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_media_operations_workflow_fk": {
+          "name": "catalog_product_media_operations_workflow_fk",
+          "tableFrom": "catalog_product_media_operations",
+          "tableTo": "catalog_product_media_workflows",
+          "columnsFrom": [
+            "workspace_id",
+            "workflow_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "workflow_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_media_operations_pk": {
+          "name": "catalog_product_media_operations_pk",
+          "columns": [
+            "workspace_id",
+            "operation_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_media_operations_type": {
+          "name": "catalog_product_media_operations_type",
+          "value": "\"catalog_product_media_operations\".\"type\" IN ('Add','Replace','Remove','SetCover','Reorder')"
+        },
+        "catalog_product_media_operations_status": {
+          "name": "catalog_product_media_operations_status",
+          "value": "\"catalog_product_media_operations\".\"status\" IN ('Pending','Staged','InProgress','Completed','Failed','SourceUnavailable','ReconciliationRequired','Cancelled')"
+        },
+        "catalog_product_media_operations_attempt_safe": {
+          "name": "catalog_product_media_operations_attempt_safe",
+          "value": "\"catalog_product_media_operations\".\"attempt_count\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_product_media_operations_staging_relative": {
+          "name": "catalog_product_media_operations_staging_relative",
+          "value": "\"catalog_product_media_operations\".\"staged_artifact_key\" IS NULL OR (\"catalog_product_media_operations\".\"staged_artifact_key\" !~ '^[a-zA-Z]:' AND \"catalog_product_media_operations\".\"staged_artifact_key\" NOT LIKE '/%' AND position(chr(92) in \"catalog_product_media_operations\".\"staged_artifact_key\") = 0)"
+        },
+        "catalog_product_media_operations_staged_integrity": {
+          "name": "catalog_product_media_operations_staged_integrity",
+          "value": "(\"catalog_product_media_operations\".\"staged_artifact_key\" IS NULL AND \"catalog_product_media_operations\".\"staged_sha256\" IS NULL AND \"catalog_product_media_operations\".\"staged_byte_length\" IS NULL AND \"catalog_product_media_operations\".\"staged_width\" IS NULL AND \"catalog_product_media_operations\".\"staged_height\" IS NULL) OR (\"catalog_product_media_operations\".\"staged_artifact_key\" IS NOT NULL AND \"catalog_product_media_operations\".\"staged_sha256\" ~ '^[a-f0-9]{64}$' AND \"catalog_product_media_operations\".\"staged_byte_length\" > 0 AND \"catalog_product_media_operations\".\"staged_width\" > 0 AND \"catalog_product_media_operations\".\"staged_height\" > 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_media_roots": {
+      "name": "catalog_product_media_roots",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_root_key": {
+          "name": "storage_root_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "catalog_product_media_roots_storage_root_uq": {
+          "name": "catalog_product_media_roots_storage_root_uq",
+          "columns": [
+            {
+              "expression": "storage_root_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_media_roots_product_fk": {
+          "name": "catalog_product_media_roots_product_fk",
+          "tableFrom": "catalog_product_media_roots",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_media_roots_pk": {
+          "name": "catalog_product_media_roots_pk",
+          "columns": [
+            "workspace_id",
+            "product_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_media_roots_storage_key_length": {
+          "name": "catalog_product_media_roots_storage_key_length",
+          "value": "length(\"catalog_product_media_roots\".\"storage_root_key\") BETWEEN 1 AND 512"
+        },
+        "catalog_product_media_roots_storage_key_lowercase": {
+          "name": "catalog_product_media_roots_storage_key_lowercase",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" = lower(\"catalog_product_media_roots\".\"storage_root_key\")"
+        },
+        "catalog_product_media_roots_storage_key_canonical": {
+          "name": "catalog_product_media_roots_storage_key_canonical",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" ~ '^[a-z0-9][a-z0-9._/-]*$'"
+        },
+        "catalog_product_media_roots_storage_key_boundaries": {
+          "name": "catalog_product_media_roots_storage_key_boundaries",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" NOT LIKE '/%' AND \"catalog_product_media_roots\".\"storage_root_key\" NOT LIKE '%/'"
+        },
+        "catalog_product_media_roots_storage_key_separators": {
+          "name": "catalog_product_media_roots_storage_key_separators",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" NOT LIKE '%//%' AND position(chr(92) in \"catalog_product_media_roots\".\"storage_root_key\") = 0"
+        },
+        "catalog_product_media_roots_storage_key_segments": {
+          "name": "catalog_product_media_roots_storage_key_segments",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" !~ '(^|/)\\.{1,2}(/|$)'"
+        },
+        "catalog_product_media_roots_storage_key_not_drive": {
+          "name": "catalog_product_media_roots_storage_key_not_drive",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" !~ '^[a-z]:'"
+        },
+        "catalog_product_media_roots_storage_key_shape": {
+          "name": "catalog_product_media_roots_storage_key_shape",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" ~ '^workspaces/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9-]{0,77}--[a-f0-9]{16}$'"
+        },
+        "catalog_product_media_roots_storage_key_reserved": {
+          "name": "catalog_product_media_roots_storage_key_reserved",
+          "value": "\"catalog_product_media_roots\".\"storage_root_key\" !~ '(^|/)(_staging|_trash|_variants)(/|$)'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_media_states": {
+      "name": "catalog_product_media_states",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "catalog_product_media_states_product_fk": {
+          "name": "catalog_product_media_states_product_fk",
+          "tableFrom": "catalog_product_media_states",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_media_states_pk": {
+          "name": "catalog_product_media_states_pk",
+          "columns": [
+            "workspace_id",
+            "product_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_media_states_revision_safe": {
+          "name": "catalog_product_media_states_revision_safe",
+          "value": "\"catalog_product_media_states\".\"revision\" BETWEEN 0 AND 9007199254740991"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_media_workflows": {
+      "name": "catalog_product_media_workflows",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_media_revision": {
+          "name": "expected_media_revision",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_fingerprint": {
+          "name": "request_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "catalog_product_media_workflows_idempotency_uq": {
+          "name": "catalog_product_media_workflows_idempotency_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_media_workflows_product_idx": {
+          "name": "catalog_product_media_workflows_product_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_media_workflows_product_fk": {
+          "name": "catalog_product_media_workflows_product_fk",
+          "tableFrom": "catalog_product_media_workflows",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_media_workflows_pk": {
+          "name": "catalog_product_media_workflows_pk",
+          "columns": [
+            "workspace_id",
+            "workflow_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_media_workflows_status": {
+          "name": "catalog_product_media_workflows_status",
+          "value": "\"catalog_product_media_workflows\".\"status\" IN ('Pending','InProgress','Completed','PartiallyCompleted','Failed','ReconciliationRequired','Cancelled')"
+        },
+        "catalog_product_media_workflows_revisions_safe": {
+          "name": "catalog_product_media_workflows_revisions_safe",
+          "value": "\"catalog_product_media_workflows\".\"expected_media_revision\" BETWEEN 0 AND 9007199254740991 AND \"catalog_product_media_workflows\".\"version\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_product_media_workflows_fingerprint": {
+          "name": "catalog_product_media_workflows_fingerprint",
+          "value": "\"catalog_product_media_workflows\".\"request_fingerprint\" ~ '^[a-f0-9]{64}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_product_specification_values": {
+      "name": "catalog_product_specification_values",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specification_field_id": {
+          "name": "specification_field_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value_type": {
+          "name": "value_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text_value": {
+          "name": "text_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "number_value": {
+          "name": "number_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "boolean_value": {
+          "name": "boolean_value",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_product_specification_values_workspace_field_idx": {
+          "name": "catalog_product_specification_values_workspace_field_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "specification_field_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_product_specification_values_workspace_product_position_uq": {
+          "name": "catalog_product_specification_values_workspace_product_position_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_product_specification_values_product_fk": {
+          "name": "catalog_product_specification_values_product_fk",
+          "tableFrom": "catalog_product_specification_values",
+          "tableTo": "catalog_products",
+          "columnsFrom": [
+            "workspace_id",
+            "product_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "product_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalog_product_specification_values_pk": {
+          "name": "catalog_product_specification_values_pk",
+          "columns": [
+            "workspace_id",
+            "product_id",
+            "specification_field_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_product_specification_values_position_non_negative": {
+          "name": "catalog_product_specification_values_position_non_negative",
+          "value": "\"catalog_product_specification_values\".\"position\" >= 0"
+        },
+        "catalog_product_specification_values_typed_value": {
+          "name": "catalog_product_specification_values_typed_value",
+          "value": "\n      (\"catalog_product_specification_values\".\"value_type\" = 'string' AND \"catalog_product_specification_values\".\"text_value\" IS NOT NULL AND \"catalog_product_specification_values\".\"number_value\" IS NULL AND \"catalog_product_specification_values\".\"boolean_value\" IS NULL) OR\n      (\"catalog_product_specification_values\".\"value_type\" = 'number' AND \"catalog_product_specification_values\".\"text_value\" IS NULL AND \"catalog_product_specification_values\".\"number_value\" IS NOT NULL AND \"catalog_product_specification_values\".\"boolean_value\" IS NULL) OR\n      (\"catalog_product_specification_values\".\"value_type\" = 'boolean' AND \"catalog_product_specification_values\".\"text_value\" IS NULL AND \"catalog_product_specification_values\".\"number_value\" IS NULL AND \"catalog_product_specification_values\".\"boolean_value\" IS NOT NULL)\n    "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_products": {
+      "name": "catalog_products",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_id": {
+          "name": "catalog_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lifecycle_state": {
+          "name": "lifecycle_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archive_reason": {
+          "name": "archive_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "has_classification": {
+          "name": "has_classification",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_type_id": {
+          "name": "product_type_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "device_class_id": {
+          "name": "device_class_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "condition_id": {
+          "name": "condition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "availability_status_id": {
+          "name": "availability_status_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_commercial_details": {
+          "name": "has_commercial_details",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_name": {
+          "name": "product_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_code": {
+          "name": "product_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "product_model_id": {
+          "name": "product_model_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brand_id": {
+          "name": "brand_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_highlighted": {
+          "name": "is_highlighted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "wholesale_price_minor": {
+          "name": "wholesale_price_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wholesale_price_currency": {
+          "name": "wholesale_price_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retail_price_minor": {
+          "name": "retail_price_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retail_price_currency": {
+          "name": "retail_price_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "catalog_products_workspace_product_code_uq": {
+          "name": "catalog_products_workspace_product_code_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"catalog_products\".\"product_code\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_catalog_idx": {
+          "name": "catalog_products_workspace_catalog_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "catalog_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_category_idx": {
+          "name": "catalog_products_workspace_category_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "category_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_product_type_idx": {
+          "name": "catalog_products_workspace_product_type_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_brand_idx": {
+          "name": "catalog_products_workspace_brand_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "brand_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_lifecycle_idx": {
+          "name": "catalog_products_workspace_lifecycle_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lifecycle_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_products_workspace_availability_idx": {
+          "name": "catalog_products_workspace_availability_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "availability_status_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "catalog_products_pk": {
+          "name": "catalog_products_pk",
+          "columns": [
+            "workspace_id",
+            "product_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "catalog_products_lifecycle_state_valid": {
+          "name": "catalog_products_lifecycle_state_valid",
+          "value": "\"catalog_products\".\"lifecycle_state\" IN ('Draft', 'Published', 'Archived')"
+        },
+        "catalog_products_archive_reason_valid": {
+          "name": "catalog_products_archive_reason_valid",
+          "value": "\"catalog_products\".\"archive_reason\" IS NULL OR \"catalog_products\".\"archive_reason\" IN ('Manual', 'PublicationRequirementsNotMet')"
+        },
+        "catalog_products_archive_reason_lifecycle": {
+          "name": "catalog_products_archive_reason_lifecycle",
+          "value": "(\"catalog_products\".\"lifecycle_state\" = 'Archived' AND \"catalog_products\".\"archive_reason\" IS NOT NULL) OR (\"catalog_products\".\"lifecycle_state\" IN ('Draft', 'Published') AND \"catalog_products\".\"archive_reason\" IS NULL)"
+        },
+        "catalog_products_revision_safe_range": {
+          "name": "catalog_products_revision_safe_range",
+          "value": "\"catalog_products\".\"revision\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_products_timestamps_ordered": {
+          "name": "catalog_products_timestamps_ordered",
+          "value": "\"catalog_products\".\"created_at\" <= \"catalog_products\".\"updated_at\""
+        },
+        "catalog_products_wholesale_pair": {
+          "name": "catalog_products_wholesale_pair",
+          "value": "(\"catalog_products\".\"wholesale_price_minor\" IS NULL) = (\"catalog_products\".\"wholesale_price_currency\" IS NULL)"
+        },
+        "catalog_products_retail_pair": {
+          "name": "catalog_products_retail_pair",
+          "value": "(\"catalog_products\".\"retail_price_minor\" IS NULL) = (\"catalog_products\".\"retail_price_currency\" IS NULL)"
+        },
+        "catalog_products_wholesale_safe_range": {
+          "name": "catalog_products_wholesale_safe_range",
+          "value": "\"catalog_products\".\"wholesale_price_minor\" IS NULL OR \"catalog_products\".\"wholesale_price_minor\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_products_retail_safe_range": {
+          "name": "catalog_products_retail_safe_range",
+          "value": "\"catalog_products\".\"retail_price_minor\" IS NULL OR \"catalog_products\".\"retail_price_minor\" BETWEEN 0 AND 9007199254740991"
+        },
+        "catalog_products_product_code_canonical": {
+          "name": "catalog_products_product_code_canonical",
+          "value": "\"catalog_products\".\"product_code\" IS NULL OR (btrim(\"catalog_products\".\"product_code\") <> '' AND \"catalog_products\".\"product_code\" = upper(btrim(\"catalog_products\".\"product_code\")))"
+        },
+        "catalog_products_classification_presence": {
+          "name": "catalog_products_classification_presence",
+          "value": "\"catalog_products\".\"has_classification\" OR (\"catalog_products\".\"category_id\" IS NULL AND \"catalog_products\".\"product_type_id\" IS NULL AND \"catalog_products\".\"device_class_id\" IS NULL AND \"catalog_products\".\"condition_id\" IS NULL AND \"catalog_products\".\"availability_status_id\" IS NULL)"
+        },
+        "catalog_products_commercial_presence": {
+          "name": "catalog_products_commercial_presence",
+          "value": "\"catalog_products\".\"has_commercial_details\" OR (\"catalog_products\".\"product_name\" IS NULL AND \"catalog_products\".\"product_code\" IS NULL AND \"catalog_products\".\"product_model_id\" IS NULL AND \"catalog_products\".\"brand_id\" IS NULL AND \"catalog_products\".\"is_highlighted\" = false AND \"catalog_products\".\"wholesale_price_minor\" IS NULL AND \"catalog_products\".\"wholesale_price_currency\" IS NULL AND \"catalog_products\".\"retail_price_minor\" IS NULL AND \"catalog_products\".\"retail_price_currency\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.workspace_communication_settings": {
+      "name": "workspace_communication_settings",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "default_whatsapp_phone": {
+          "name": "default_whatsapp_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "workspace_communication_settings_workspace_id_workspaces_workspace_id_fk": {
+          "name": "workspace_communication_settings_workspace_id_workspaces_workspace_id_fk",
+          "tableFrom": "workspace_communication_settings",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "workspace_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "workspace_communication_settings_pk": {
+          "name": "workspace_communication_settings_pk",
+          "columns": [
+            "workspace_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "workspace_communication_settings_phone": {
+          "name": "workspace_communication_settings_phone",
+          "value": "\"workspace_communication_settings\".\"default_whatsapp_phone\" ~ '^\\+[1-9][0-9]{7,14}$'"
+        },
+        "workspace_communication_settings_timestamps": {
+          "name": "workspace_communication_settings_timestamps",
+          "value": "\"workspace_communication_settings\".\"created_at\" <= \"workspace_communication_settings\".\"updated_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.workspaces": {
+      "name": "workspaces",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workspace_code": {
+          "name": "workspace_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_recovery_policy": {
+          "name": "password_recovery_policy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "workspaces_code_uq": {
+          "name": "workspaces_code_uq",
+          "columns": [
+            {
+              "expression": "workspace_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "workspaces_company_idx": {
+          "name": "workspaces_company_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "workspaces_pk": {
+          "name": "workspaces_pk",
+          "columns": [
+            "workspace_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "workspaces_code_canonical": {
+          "name": "workspaces_code_canonical",
+          "value": "\"workspaces\".\"workspace_code\" ~ '^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$' AND \"workspaces\".\"workspace_code\" NOT LIKE '%--%'"
+        },
+        "workspaces_non_empty": {
+          "name": "workspaces_non_empty",
+          "value": "btrim(\"workspaces\".\"company_id\") <> '' AND btrim(\"workspaces\".\"display_name\") <> ''"
+        },
+        "workspaces_recovery_policy": {
+          "name": "workspaces_recovery_policy",
+          "value": "\"workspaces\".\"password_recovery_policy\" IN ('OwnerManagedOnly','WhatsAppOtpWithOwnerFallback')"
+        },
+        "workspaces_timestamps_ordered": {
+          "name": "workspaces_timestamps_ordered",
+          "value": "\"workspaces\".\"created_at\" <= \"workspaces\".\"updated_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.identity_accounts": {
+      "name": "identity_accounts",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "normalized_username": {
+          "name": "normalized_username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "identity_accounts_workspace_username_uq": {
+          "name": "identity_accounts_workspace_username_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "normalized_username",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "identity_accounts_login_lookup_idx": {
+          "name": "identity_accounts_login_lookup_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "normalized_username",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "identity_accounts_workspace_fk": {
+          "name": "identity_accounts_workspace_fk",
+          "tableFrom": "identity_accounts",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "workspace_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "identity_accounts_pk": {
+          "name": "identity_accounts_pk",
+          "columns": [
+            "workspace_id",
+            "actor_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "identity_accounts_username": {
+          "name": "identity_accounts_username",
+          "value": "\"identity_accounts\".\"username\" ~ '^[A-Za-z0-9._-]{3,64}$'"
+        },
+        "identity_accounts_normalized_username": {
+          "name": "identity_accounts_normalized_username",
+          "value": "\"identity_accounts\".\"normalized_username\" ~ '^[a-z0-9._-]{3,64}$' AND \"identity_accounts\".\"normalized_username\" = lower(\"identity_accounts\".\"username\")"
+        },
+        "identity_accounts_status": {
+          "name": "identity_accounts_status",
+          "value": "\"identity_accounts\".\"status\" IN ('PendingActivation','Active','Suspended')"
+        },
+        "identity_accounts_timestamps": {
+          "name": "identity_accounts_timestamps",
+          "value": "\"identity_accounts\".\"created_at\" <= \"identity_accounts\".\"updated_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.identity_login_protection": {
+      "name": "identity_login_protection",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "failed_attempt_count": {
+          "name": "failed_attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "failure_window_started_at": {
+          "name": "failure_window_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lock_level": {
+          "name": "lock_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_failed_at": {
+          "name": "last_failed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "identity_login_protection_locked_idx": {
+          "name": "identity_login_protection_locked_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "locked_until",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "identity_login_protection_account_fk": {
+          "name": "identity_login_protection_account_fk",
+          "tableFrom": "identity_login_protection",
+          "tableTo": "identity_accounts",
+          "columnsFrom": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "identity_login_protection_pk": {
+          "name": "identity_login_protection_pk",
+          "columns": [
+            "workspace_id",
+            "actor_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "identity_login_protection_attempts": {
+          "name": "identity_login_protection_attempts",
+          "value": "\"identity_login_protection\".\"failed_attempt_count\" BETWEEN 0 AND 4"
+        },
+        "identity_login_protection_level": {
+          "name": "identity_login_protection_level",
+          "value": "\"identity_login_protection\".\"lock_level\" >= 0"
+        },
+        "identity_login_protection_window_pair": {
+          "name": "identity_login_protection_window_pair",
+          "value": "(\"identity_login_protection\".\"failed_attempt_count\" = 0 AND \"identity_login_protection\".\"failure_window_started_at\" IS NULL) OR (\"identity_login_protection\".\"failed_attempt_count\" > 0 AND \"identity_login_protection\".\"failure_window_started_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.identity_member_profiles": {
+      "name": "identity_member_profiles",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recovery_phone": {
+          "name": "recovery_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recovery_contact_version": {
+          "name": "recovery_contact_version",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "identity_member_profiles_account_fk": {
+          "name": "identity_member_profiles_account_fk",
+          "tableFrom": "identity_member_profiles",
+          "tableTo": "identity_accounts",
+          "columnsFrom": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "identity_member_profiles_pk": {
+          "name": "identity_member_profiles_pk",
+          "columns": [
+            "workspace_id",
+            "actor_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "identity_member_profiles_display_name": {
+          "name": "identity_member_profiles_display_name",
+          "value": "btrim(\"identity_member_profiles\".\"display_name\") <> ''"
+        },
+        "identity_member_profiles_phone": {
+          "name": "identity_member_profiles_phone",
+          "value": "\"identity_member_profiles\".\"recovery_phone\" ~ '^\\+[1-9][0-9]{7,14}$'"
+        },
+        "identity_member_profiles_version": {
+          "name": "identity_member_profiles_version",
+          "value": "\"identity_member_profiles\".\"recovery_contact_version\" BETWEEN 1 AND 9007199254740991"
+        },
+        "identity_member_profiles_timestamps": {
+          "name": "identity_member_profiles_timestamps",
+          "value": "\"identity_member_profiles\".\"created_at\" <= \"identity_member_profiles\".\"updated_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.identity_memberships": {
+      "name": "identity_memberships",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "branch_scope": {
+          "name": "branch_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "identity_memberships_role_idx": {
+          "name": "identity_memberships_role_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "identity_memberships_profile_fk": {
+          "name": "identity_memberships_profile_fk",
+          "tableFrom": "identity_memberships",
+          "tableTo": "identity_member_profiles",
+          "columnsFrom": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "identity_memberships_pk": {
+          "name": "identity_memberships_pk",
+          "columns": [
+            "workspace_id",
+            "actor_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "identity_memberships_role": {
+          "name": "identity_memberships_role",
+          "value": "\"identity_memberships\".\"role\" IN ('Owner','Staff')"
+        },
+        "identity_memberships_branch_scope": {
+          "name": "identity_memberships_branch_scope",
+          "value": "\"identity_memberships\".\"branch_scope\" IN ('AllBranches','SelectedBranches')"
+        },
+        "identity_memberships_owner_scope": {
+          "name": "identity_memberships_owner_scope",
+          "value": "\"identity_memberships\".\"role\" <> 'Owner' OR \"identity_memberships\".\"branch_scope\" = 'AllBranches'"
+        },
+        "identity_memberships_timestamps": {
+          "name": "identity_memberships_timestamps",
+          "value": "\"identity_memberships\".\"created_at\" <= \"identity_memberships\".\"updated_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.identity_password_credentials": {
+      "name": "identity_password_credentials",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_lifecycle": {
+          "name": "password_lifecycle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_version": {
+          "name": "password_version",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "identity_password_credentials_account_fk": {
+          "name": "identity_password_credentials_account_fk",
+          "tableFrom": "identity_password_credentials",
+          "tableTo": "identity_accounts",
+          "columnsFrom": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "identity_password_credentials_pk": {
+          "name": "identity_password_credentials_pk",
+          "columns": [
+            "workspace_id",
+            "actor_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "identity_password_credentials_hash": {
+          "name": "identity_password_credentials_hash",
+          "value": "length(\"identity_password_credentials\".\"password_hash\") BETWEEN 1 AND 1024"
+        },
+        "identity_password_credentials_lifecycle": {
+          "name": "identity_password_credentials_lifecycle",
+          "value": "\"identity_password_credentials\".\"password_lifecycle\" IN ('Temporary','Permanent')"
+        },
+        "identity_password_credentials_version": {
+          "name": "identity_password_credentials_version",
+          "value": "\"identity_password_credentials\".\"password_version\" BETWEEN 1 AND 9007199254740991"
+        },
+        "identity_password_credentials_timestamps": {
+          "name": "identity_password_credentials_timestamps",
+          "value": "\"identity_password_credentials\".\"created_at\" <= \"identity_password_credentials\".\"updated_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.identity_password_recovery_challenges": {
+      "name": "identity_password_recovery_challenges",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "challenge_id": {
+          "name": "challenge_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "destination_version": {
+          "name": "destination_version",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "digest": {
+          "name": "digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "digest_key_version": {
+          "name": "digest_key_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_count": {
+          "name": "attempt_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invalidated_at": {
+          "name": "invalidated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "identity_password_recovery_challenges_one_open_uq": {
+          "name": "identity_password_recovery_challenges_one_open_uq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"identity_password_recovery_challenges\".\"status\" IN ('Active','Verified')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "identity_password_recovery_challenges_actor_idx": {
+          "name": "identity_password_recovery_challenges_actor_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "identity_password_recovery_challenges_expiry_idx": {
+          "name": "identity_password_recovery_challenges_expiry_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "identity_password_recovery_challenges_account_fk": {
+          "name": "identity_password_recovery_challenges_account_fk",
+          "tableFrom": "identity_password_recovery_challenges",
+          "tableTo": "identity_accounts",
+          "columnsFrom": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "columnsTo": [
+            "workspace_id",
+            "actor_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "identity_password_recovery_challenges_pk": {
+          "name": "identity_password_recovery_challenges_pk",
+          "columns": [
+            "workspace_id",
+            "challenge_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "identity_password_recovery_challenges_channel": {
+          "name": "identity_password_recovery_challenges_channel",
+          "value": "\"identity_password_recovery_challenges\".\"channel\" = 'PrimaryRecoveryContact'"
+        },
+        "identity_password_recovery_challenges_destination_version": {
+          "name": "identity_password_recovery_challenges_destination_version",
+          "value": "\"identity_password_recovery_challenges\".\"destination_version\" BETWEEN 1 AND 9007199254740991"
+        },
+        "identity_password_recovery_challenges_digest": {
+          "name": "identity_password_recovery_challenges_digest",
+          "value": "length(\"identity_password_recovery_challenges\".\"digest\") = 64 AND \"identity_password_recovery_challenges\".\"digest\" ~ '^[a-f0-9]{64}$' AND \"identity_password_recovery_challenges\".\"digest_key_version\" >= 1"
+        },
+        "identity_password_recovery_challenges_status": {
+          "name": "identity_password_recovery_challenges_status",
+          "value": "\"identity_password_recovery_challenges\".\"status\" IN ('Active','Verified','Consumed','Invalidated','Expired')"
+        },
+        "identity_password_recovery_challenges_attempts": {
+          "name": "identity_password_recovery_challenges_attempts",
+          "value": "\"identity_password_recovery_challenges\".\"attempt_count\" BETWEEN 0 AND 5"
+        },
+        "identity_password_recovery_challenges_expiry": {
+          "name": "identity_password_recovery_challenges_expiry",
+          "value": "\"identity_password_recovery_challenges\".\"expires_at\" > \"identity_password_recovery_challenges\".\"created_at\""
+        },
+        "identity_password_recovery_challenges_status_timestamps": {
+          "name": "identity_password_recovery_challenges_status_timestamps",
+          "value": "\n      (\"identity_password_recovery_challenges\".\"status\" = 'Active' AND \"identity_password_recovery_challenges\".\"verified_at\" IS NULL AND \"identity_password_recovery_challenges\".\"consumed_at\" IS NULL AND \"identity_password_recovery_challenges\".\"invalidated_at\" IS NULL) OR\n      (\"identity_password_recovery_challenges\".\"status\" = 'Verified' AND \"identity_password_recovery_challenges\".\"verified_at\" IS NOT NULL AND \"identity_password_recovery_challenges\".\"consumed_at\" IS NULL AND \"identity_password_recovery_challenges\".\"invalidated_at\" IS NULL) OR\n      (\"identity_password_recovery_challenges\".\"status\" = 'Consumed' AND \"identity_password_recovery_challenges\".\"verified_at\" IS NOT NULL AND \"identity_password_recovery_challenges\".\"consumed_at\" IS NOT NULL AND \"identity_password_recovery_challenges\".\"invalidated_at\" IS NULL) OR\n      (\"identity_password_recovery_challenges\".\"status\" = 'Invalidated' AND \"identity_password_recovery_challenges\".\"consumed_at\" IS NULL AND \"identity_password_recovery_challenges\".\"invalidated_at\" IS NOT NULL) OR\n      (\"identity_password_recovery_challenges\".\"status\" = 'Expired' AND \"identity_password_recovery_challenges\".\"consumed_at\" IS NULL)\n    "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.security_audit_events": {
+      "name": "security_audit_events",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "audit_id": {
+          "name": "audit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject_actor_id": {
+          "name": "subject_actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result_code": {
+          "name": "result_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "security_audit_events_actor_idx": {
+          "name": "security_audit_events_actor_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "security_audit_events_subject_idx": {
+          "name": "security_audit_events_subject_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "subject_actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "security_audit_events_workspace_fk": {
+          "name": "security_audit_events_workspace_fk",
+          "tableFrom": "security_audit_events",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "workspace_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "security_audit_events_pk": {
+          "name": "security_audit_events_pk",
+          "columns": [
+            "workspace_id",
+            "audit_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "security_audit_events_non_empty": {
+          "name": "security_audit_events_non_empty",
+          "value": "btrim(\"security_audit_events\".\"audit_id\") <> '' AND btrim(\"security_audit_events\".\"event_type\") <> '' AND btrim(\"security_audit_events\".\"result_code\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

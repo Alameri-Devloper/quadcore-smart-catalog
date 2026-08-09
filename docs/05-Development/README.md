@@ -12,6 +12,8 @@ Use the [documentation audit](Documentation-Audit.md), [refactoring report](Docu
 
 The [Product Entry Submission Registry](Product-Entry-Submission-Registry.md) documents the Phase 1 idempotency, transaction, persistence, authorization, and API boundary introduced by Task 3.14.9-A.
 
+The [Identity Accounts, Recovery, and Bootstrap](Identity-Accounts-Recovery-Bootstrap.md) guide documents Task 3.15.1-A account/credential separation, Workspace login codes, Argon2id, login protection, HMAC recovery challenges, atomic bootstrap, emergency Owner reset, multi-tenant persistence, and the boundaries reserved for Tasks B–E. | يوثق دليل [حسابات الهوية والاستعادة والتهيئة](Identity-Accounts-Recovery-Bootstrap.md) فصل الحساب وبيانات الاعتماد ورموز الدخول وحماية تسجيل الدخول وتحديات HMAC والتهيئة الذرية وإعادة ضبط المالك الطارئة وعزل المستأجرين.
+
 The [Product Entry Media Upload Coordination](Product-Entry-Media-Upload-Coordination.md) guide documents Task 3.14.9-B Phase 2 multipart mapping, double source verification, Media idempotency, workflow resume, partial success, tenancy, and HTTP behavior.
 
 Task 3.14.9-B-R1 corrects that contract so completed replay and retained-Staging retry need no re-upload, GET and POST share durable source requirements, and bounded multipart guards run before application opening.
