@@ -57,6 +57,13 @@
       "when": 1786242421246,
       "tag": "0007_identity_accounts_recovery_bootstrap",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786251269579,
+      "tag": "0008_supreme_vector",
+      "breakpoints": true
     }
   ]
 }

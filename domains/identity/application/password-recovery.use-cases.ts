@@ -244,6 +244,12 @@ export class CompletePasswordRecoveryUseCase {
         challenge.consume(now);
         await context.passwordRecoveryChallengeRepository.save(challenge);
         const invalidatedCount = await context.passwordRecoveryChallengeRepository.invalidateOpenByActorId(workspaceId, challenge.actorId, now, challenge.challengeId);
+        const revokedCount = await context.sessionRepository.revokeAllForActor(
+          workspaceId,
+          challenge.actorId,
+          "RecoveryCompleted",
+          now,
+        );
         await context.audit.append([
           {
             workspaceId,
@@ -270,6 +276,15 @@ export class CompletePasswordRecoveryUseCase {
             resultCode: "RecoveryCompleted",
             occurredAt: now,
             metadata: { invalidatedCount },
+          } as const] : []),
+          ...(revokedCount > 0 ? [{
+            workspaceId,
+            eventType: SECURITY_AUDIT_EVENT_TYPES.sessionRevoked,
+            actorId: challenge.actorId,
+            subjectActorId: challenge.actorId,
+            resultCode: "RecoveryCompleted",
+            occurredAt: now,
+            metadata: { revokedCount },
           } as const] : []),
         ]);
         return commitIdentityTransaction(identitySuccess({

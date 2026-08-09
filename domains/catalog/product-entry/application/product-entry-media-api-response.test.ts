@@ -5,6 +5,7 @@ import {
   productEntryMediaRuntimeErrorHttpResponse,
   uploadProductEntryMediaHttpStatus,
 } from "./product-entry-media-api-response";
+import { ProductEntryAuthenticationRequiredError, ProductEntryRestrictedSessionError } from "../ports/product-entry-trusted-context.port";
 
 describe("Product Entry Media HTTP response policy", () => {
   it("maps stable source validation statuses", () => {
@@ -24,6 +25,14 @@ describe("Product Entry Media HTTP response policy", () => {
   });
 
   it("sanitizes unexpected verifier and Infrastructure failures", () => {
+    assert.deepEqual(productEntryMediaRuntimeErrorHttpResponse(new ProductEntryAuthenticationRequiredError()), {
+      status: 401,
+      body: { type: "AuthenticationRequired" },
+    });
+    assert.deepEqual(productEntryMediaRuntimeErrorHttpResponse(new ProductEntryRestrictedSessionError()), {
+      status: 403,
+      body: { type: "ForbiddenForRestrictedSession" },
+    });
     assert.deepEqual(productEntryMediaRuntimeErrorHttpResponse(new Error("secret verifier detail")), {
       status: 503,
       body: {

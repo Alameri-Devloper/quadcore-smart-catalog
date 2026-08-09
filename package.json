@@ -11,7 +11,7 @@
     "test:task-review": "tsx --test scripts/task-review/__tests__/*.test.ts",
     "test:product-media": "tsx --test domains/catalog/media/**/*.test.ts",
     "test:product-entry": "tsx --test domains/catalog/product-entry/domain/*.test.ts domains/catalog/product-entry/application/*.test.ts domains/catalog/product-entry/infrastructure/*.test.ts",
-    "test:identity": "tsx --test domains/identity/domain/*.test.ts domains/identity/application/*.test.ts domains/identity/infrastructure/crypto/*.test.ts scripts/identity/*.test.ts",
+    "test:identity": "tsx --test domains/identity/domain/*.test.ts domains/identity/application/*.test.ts domains/identity/infrastructure/crypto/*.test.ts domains/identity/infrastructure/http/*.test.ts scripts/identity/*.test.ts",
     "review:bundle": "tsx scripts/task-review/create-task-review-bundle.ts",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",

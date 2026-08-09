@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { E164PhoneNumber } from "../../../shared/domain/e164-phone-number";
-import { ActorId, ChallengeId, WorkspaceId } from "../../../shared/domain/scoped-identity";
+import { ActorId, ChallengeId, SessionId, WorkspaceId } from "../../../shared/domain/scoped-identity";
 import { WorkspaceCode } from "../../workspace/domain/workspace";
 import { Account } from "./account";
 import { INITIAL_LOCK_DURATION_MS, LoginProtection, MAX_LOCK_DURATION_MS } from "./login-protection";
@@ -10,6 +10,12 @@ import { PasswordCredential } from "./password-credential";
 import { PasswordRecoveryChallenge, RECOVERY_CHALLENGE_VALIDITY_MS } from "./password-recovery-challenge";
 import { PasswordHash, validatePassword } from "./password";
 import { Username } from "./username";
+import {
+  SESSION_ABSOLUTE_TIMEOUT_MS,
+  SESSION_IDLE_TIMEOUT_MS,
+  SESSION_LAST_SEEN_THROTTLE_MS,
+  ServerSession,
+} from "./session";
 
 const workspaceId = WorkspaceId.create("workspace-a");
 const actorId = ActorId.create("actor-a");
@@ -83,12 +89,48 @@ describe("Account and password lifecycles", () => {
   });
 });
 
+describe("Server session lifecycle", () => {
+  const createSession = () => ServerSession.create({
+    workspaceId,
+    sessionId: SessionId.create("session-a"),
+    digest: { value: "a".repeat(64), keyVersion: 1 },
+    actorId,
+    sessionClass: "Restricted",
+    authorizationVersion: 1,
+    passwordVersion: 1,
+    createdAt: start,
+  });
+
+  it("enforces idle and absolute expiry and throttles activity persistence", () => {
+    const session = createSession();
+    assert.equal(session.idleExpiresAt.getTime(), start.getTime() + SESSION_IDLE_TIMEOUT_MS);
+    assert.equal(session.absoluteExpiresAt.getTime(), start.getTime() + SESSION_ABSOLUTE_TIMEOUT_MS);
+    assert.equal(session.refreshActivity(new Date(start.getTime() + SESSION_LAST_SEEN_THROTTLE_MS - 1)), false);
+    assert.equal(session.refreshActivity(new Date(start.getTime() + SESSION_LAST_SEEN_THROTTLE_MS)), true);
+    assert.equal(session.lastSeenAt.getTime(), start.getTime() + SESSION_LAST_SEEN_THROTTLE_MS);
+    assert.equal(session.availabilityAt(session.idleExpiresAt), "IdleExpired");
+    assert.equal(session.availabilityAt(session.absoluteExpiresAt), "AbsoluteExpired");
+  });
+
+  it("makes revocation idempotent and cleanup eligibility deterministic", () => {
+    const session = createSession();
+    const revokedAt = new Date(start.getTime() + 1_000);
+    assert.equal(session.revoke("Logout", revokedAt), true);
+    assert.equal(session.revoke("AdministrativeRevocation", new Date(revokedAt.getTime() + 1)), false);
+    assert.equal(session.availabilityAt(revokedAt), "Revoked");
+    assert.equal(session.revocationReason, "Logout");
+    assert.equal(session.isCleanupEligible(new Date(revokedAt.getTime() + 2), new Date(revokedAt.getTime() - 1)), false);
+    assert.equal(session.isCleanupEligible(new Date(revokedAt.getTime() + 2), revokedAt), true);
+  });
+});
+
 describe("Workspace membership branch scope", () => {
   const membership = (role: "Owner" | "Staff", branchScope: BranchScope) => ({
     workspaceId,
     actorId,
     role,
     branchScope,
+    authorizationVersion: 1,
     createdAt: start,
     updatedAt: start,
   });

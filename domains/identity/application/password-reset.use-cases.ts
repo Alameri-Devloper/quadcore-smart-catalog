@@ -42,6 +42,12 @@ const replaceWithTemporaryPassword = async (
     await context.loginProtectionRepository.save(protection);
   }
   const invalidatedCount = await context.passwordRecoveryChallengeRepository.invalidateOpenByActorId(target.workspaceId, target.actorId, now);
+  const revokedCount = await context.sessionRepository.revokeAllForActor(
+    target.workspaceId,
+    target.actorId,
+    "OwnerPasswordReset",
+    now,
+  );
   await context.audit.append([
     {
       workspaceId: target.workspaceId,
@@ -68,6 +74,15 @@ const replaceWithTemporaryPassword = async (
       resultCode: "PasswordReset",
       occurredAt: now,
       metadata: { invalidatedCount },
+    } as const] : []),
+    ...(revokedCount > 0 ? [{
+      workspaceId: target.workspaceId,
+      eventType: SECURITY_AUDIT_EVENT_TYPES.sessionRevoked,
+      actorId: target.auditActorId,
+      subjectActorId: target.actorId,
+      resultCode: "OwnerPasswordReset",
+      occurredAt: now,
+      metadata: { revokedCount },
     } as const] : []),
   ]);
   return identitySuccess({ passwordVersion: credential.passwordVersion });

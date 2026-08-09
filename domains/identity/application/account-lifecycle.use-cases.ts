@@ -95,6 +95,12 @@ export class SuspendAccountUseCase {
           return rollbackIdentityTransaction(identityFailure<null>("AccountTransitionInvalid"));
         }
         const invalidatedCount = await context.passwordRecoveryChallengeRepository.invalidateOpenByActorId(workspaceId, targetActorId, now);
+        const revokedCount = await context.sessionRepository.revokeAllForActor(
+          workspaceId,
+          targetActorId,
+          "AccountSuspended",
+          now,
+        );
         await context.audit.append([
           {
             workspaceId,
@@ -112,6 +118,15 @@ export class SuspendAccountUseCase {
             resultCode: "AccountSuspended",
             occurredAt: now,
             metadata: { invalidatedCount },
+          } as const] : []),
+          ...(revokedCount > 0 ? [{
+            workspaceId,
+            eventType: SECURITY_AUDIT_EVENT_TYPES.sessionRevoked,
+            actorId: requestedBy,
+            subjectActorId: targetActorId,
+            resultCode: "AccountSuspended",
+            occurredAt: now,
+            metadata: { revokedCount },
           } as const] : []),
         ]);
         return commitIdentityTransaction(identitySuccess(null));

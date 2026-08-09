@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { CatalogId, WorkspaceId } from "../../types/product-identity.value-object";
-import { ProductEntryTrustedContextUnavailableError } from "../ports/product-entry-trusted-context.port";
+import { ProductEntryRestrictedSessionError, ProductEntryTrustedContextUnavailableError } from "../ports/product-entry-trusted-context.port";
+import { RestrictedSessionContextError, type TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
 import { ConfiguredProductPublicationRequirementsResolver } from "./configured-product-publication-requirements-resolver";
 import {
   DevelopmentEnvironmentProductEntryTrustedContextResolver,
@@ -9,6 +10,7 @@ import {
 } from "./environment-product-entry-trusted-context";
 import { FallbackUuidProductEntryProductCodeAllocator } from "./product-entry-random-identity-allocator";
 import { createProductEntryServerRuntime } from "./product-entry-server-runtime";
+import { TrustedActorProductEntryContextAdapter } from "./trusted-actor-product-entry-context.adapter";
 
 const validDevelopmentEnvironment = Object.freeze({
   NODE_ENV: "development",
@@ -17,9 +19,11 @@ const validDevelopmentEnvironment = Object.freeze({
   QSC_TRUSTED_PRODUCT_ENTRY_PERMISSIONS: "catalog.product.create,catalog.product-entry-submission.read,catalog.product-entry-media.upload",
 });
 
+const request = new Request("http://localhost/api/catalog/product-entry-submissions");
+
 describe("Product Entry trusted context adapters", () => {
   it("resolves development identity and permissions only from trusted server configuration", async () => {
-    const context = await new DevelopmentEnvironmentProductEntryTrustedContextResolver(validDevelopmentEnvironment).resolve();
+    const context = await new DevelopmentEnvironmentProductEntryTrustedContextResolver(validDevelopmentEnvironment).resolve(request);
     assert.equal(context.workspaceId.value, "trusted-workspace");
     assert.equal(context.actorId.value, "trusted-actor");
     assert.deepEqual([...context.permissions], [
@@ -40,7 +44,7 @@ describe("Product Entry trusted context adapters", () => {
     ];
     for (const configuration of invalidConfigurations) {
       await assert.rejects(
-        () => new DevelopmentEnvironmentProductEntryTrustedContextResolver(configuration).resolve(),
+        () => new DevelopmentEnvironmentProductEntryTrustedContextResolver(configuration).resolve(request),
         ProductEntryTrustedContextUnavailableError,
       );
     }
@@ -49,15 +53,63 @@ describe("Product Entry trusted context adapters", () => {
   it("never accepts the environment-backed actor in Production runtime composition", async () => {
     const productionEnvironment = { ...validDevelopmentEnvironment, NODE_ENV: "production" };
     await assert.rejects(
-      () => new DevelopmentEnvironmentProductEntryTrustedContextResolver(productionEnvironment).resolve(),
+      () => new DevelopmentEnvironmentProductEntryTrustedContextResolver(productionEnvironment).resolve(request),
       ProductEntryTrustedContextUnavailableError,
     );
 
     const runtime = createProductEntryServerRuntime(productEntryTrustedContextResolverForEnvironment(productionEnvironment));
     await assert.rejects(
-      () => runtime.trustedContextResolver.resolve(),
+      () => runtime.trustedContextResolver.resolve(request),
       ProductEntryTrustedContextUnavailableError,
     );
+  });
+
+  it("maps only server-resolved actor authority and ignores browser-supplied identity claims", async () => {
+    const trusted: TrustedActorContext = {
+      workspaceId: "trusted-workspace",
+      actorId: "trusted-actor",
+      role: "Owner",
+      permissions: [],
+      branchScope: { type: "AllBranches" },
+      authorizationVersion: 4,
+    };
+    const adapter = new TrustedActorProductEntryContextAdapter({ resolve: async () => trusted });
+    const supplied = new Request("http://localhost/api/catalog/product-entry-submissions?workspaceId=foreign", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-actor-id": "foreign-actor" },
+      body: JSON.stringify({ workspaceId: "foreign-workspace", actorId: "foreign-actor", role: "Owner" }),
+    });
+    const context = await adapter.resolve(supplied);
+    assert.equal(context.workspaceId.value, "trusted-workspace");
+    assert.equal(context.actorId.value, "trusted-actor");
+    assert.deepEqual([...context.permissions], [
+      "catalog.product.create",
+      "catalog.product.edit",
+      "catalog.product-entry-submission.read",
+      "catalog.product-entry-media.upload",
+      "catalog.product.reference-cost.read",
+    ]);
+  });
+
+  it("prevents restricted sessions from reaching a Catalog execution context", async () => {
+    const adapter = new TrustedActorProductEntryContextAdapter({
+      resolve: async () => { throw new RestrictedSessionContextError(); },
+    });
+    await assert.rejects(() => adapter.resolve(request), ProductEntryRestrictedSessionError);
+  });
+
+  it("preserves the forward-compatible Staff branch seam without inventing Task C permissions", async () => {
+    const adapter = new TrustedActorProductEntryContextAdapter({ resolve: async () => ({
+      workspaceId: "trusted-workspace",
+      actorId: "staff-actor",
+      role: "Staff",
+      permissions: [],
+      branchScope: { type: "SelectedBranches", branchIds: ["branch-a"] },
+      authorizationVersion: 2,
+    }) });
+    const context = await adapter.resolve(request);
+    assert.deepEqual([...context.permissions], []);
+    assert.deepEqual([...(context.branchScope?.branchIds ?? [])], ["branch-a"]);
   });
 
   it("requires an exact Workspace and Catalog publication-policy scope", async () => {

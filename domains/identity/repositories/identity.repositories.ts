@@ -1,11 +1,12 @@
 import type { WorkspaceCommunicationSettingsRepository, WorkspaceRepository } from "../../workspace/repositories/workspace.repository";
 import type { SecurityAuditPort } from "../../../shared/audit/audit.port";
-import type { ActorId, ChallengeId, WorkspaceId } from "../../../shared/domain/scoped-identity";
+import type { ActorId, ChallengeId, SessionId, WorkspaceId } from "../../../shared/domain/scoped-identity";
 import type { Account, AccountStatus } from "../domain/account";
 import type { LoginProtection } from "../domain/login-protection";
 import type { WorkspaceMemberProfile, WorkspaceMembership, WorkspaceRole } from "../domain/member";
 import type { PasswordCredential } from "../domain/password-credential";
 import type { PasswordRecoveryChallenge } from "../domain/password-recovery-challenge";
+import type { ServerSession, SessionDigestValue, SessionRevocationReason } from "../domain/session";
 import type { Username } from "../domain/username";
 
 export type AccountCreateOutcome = "Created" | "ActorIdAlreadyExists" | "UsernameAlreadyExists";
@@ -46,7 +47,29 @@ export interface MemberProfileRepository {
 
 export interface MembershipRepository {
   create(membership: WorkspaceMembership): Promise<void>;
+  findByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceMembership | null>;
   findRole(workspaceId: WorkspaceId, actorId: ActorId): Promise<WorkspaceRole | null>;
+}
+
+export interface SessionRepository {
+  create(session: ServerSession): Promise<"Created" | "SessionIdConflict" | "DigestConflict">;
+  findByDigests(digests: readonly SessionDigestValue[], options?: { readonly forUpdate?: boolean }): Promise<ServerSession | null>;
+  findById(workspaceId: WorkspaceId, sessionId: SessionId, options?: { readonly forUpdate?: boolean }): Promise<ServerSession | null>;
+  save(session: ServerSession): Promise<void>;
+  revokeAllForActor(
+    workspaceId: WorkspaceId,
+    actorId: ActorId,
+    reason: SessionRevocationReason,
+    at: Date,
+  ): Promise<number>;
+  revokeOtherSessions(
+    workspaceId: WorkspaceId,
+    actorId: ActorId,
+    exceptSessionId: SessionId,
+    reason: SessionRevocationReason,
+    at: Date,
+  ): Promise<number>;
+  deleteCleanupEligible(at: Date, revokedBefore: Date, limit: number): Promise<number>;
 }
 
 export interface IdentityTransactionalContext {
@@ -58,6 +81,7 @@ export interface IdentityTransactionalContext {
   readonly passwordRecoveryChallengeRepository: PasswordRecoveryChallengeRepository;
   readonly memberProfileRepository: MemberProfileRepository;
   readonly membershipRepository: MembershipRepository;
+  readonly sessionRepository: SessionRepository;
   readonly audit: SecurityAuditPort;
 }
 

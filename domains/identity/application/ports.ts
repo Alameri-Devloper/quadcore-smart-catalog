@@ -1,5 +1,6 @@
 import type { PasswordHash } from "../domain/password";
 import type { RecoveryCodeDigestValue } from "../domain/password-recovery-challenge";
+import type { SessionDigestValue, SessionRevocationReason } from "../domain/session";
 
 export interface PasswordHasher {
   hash(password: string): Promise<PasswordHash>;
@@ -26,6 +27,26 @@ export interface IdentityIdentifierGenerator {
   challengeId(): string;
 }
 
+export interface SessionIdentifierGenerator {
+  sessionId(): string;
+}
+
+export interface SessionTokenGenerator {
+  generate(): string;
+}
+
+export interface SessionTokenDigest {
+  create(value: string): SessionDigestValue;
+  candidates(value: string): readonly SessionDigestValue[];
+}
+
 export interface SessionRevocationPort {
-  revokeForActor(workspaceId: string, actorId: string): Promise<void>;
+  revokeForActor(workspaceId: string, actorId: string, reason: SessionRevocationReason): Promise<number>;
+  revokeSession(workspaceId: string, sessionId: string, reason: SessionRevocationReason): Promise<boolean>;
+  revokeOtherSessions(
+    workspaceId: string,
+    actorId: string,
+    currentSessionId: string,
+    reason: SessionRevocationReason,
+  ): Promise<number>;
 }

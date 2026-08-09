@@ -3,7 +3,11 @@ import { describe, it } from "node:test";
 import { ProductPublicationReason } from "../../types/product-publication-reason.value-object";
 import { ProductRevision } from "../../types/product-revision.value-object";
 import { ProductId, WorkspaceId } from "../../types/product-identity.value-object";
-import { ProductEntryTrustedContextUnavailableError } from "../ports/product-entry-trusted-context.port";
+import {
+  ProductEntryAuthenticationRequiredError,
+  ProductEntryRestrictedSessionError,
+  ProductEntryTrustedContextUnavailableError,
+} from "../ports/product-entry-trusted-context.port";
 import {
   productEntryRuntimeErrorHttpResponse,
   serializeSubmitProductEntryResult,
@@ -49,6 +53,14 @@ describe("Product Entry Phase 1 HTTP mapping", () => {
   });
 
   it("maps authentication and unexpected runtime failures to distinct sanitized responses", () => {
+    assert.deepEqual(productEntryRuntimeErrorHttpResponse(new ProductEntryAuthenticationRequiredError()), {
+      status: 401,
+      body: { type: "AuthenticationRequired" },
+    });
+    assert.deepEqual(productEntryRuntimeErrorHttpResponse(new ProductEntryRestrictedSessionError()), {
+      status: 403,
+      body: { type: "ForbiddenForRestrictedSession" },
+    });
     assert.deepEqual(productEntryRuntimeErrorHttpResponse(new ProductEntryTrustedContextUnavailableError()), {
       status: 503,
       body: {

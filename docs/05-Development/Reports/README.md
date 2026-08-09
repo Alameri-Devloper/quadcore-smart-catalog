@@ -13,10 +13,13 @@
 - [Task 3.14.9-D Mobile Product Entry UI and Two-Phase Save Integration](Task-3.14.9-D-Final-Report.md)
 - [Task 3.14.9-D-R1 Product Entry Media Metadata Operations, Safe Reset, Complete Localization, and Worker Failure Correction](Task-3.14.9-D-R1-Final-Report.md)
 - [Task 3.14.9-D-R2 Deterministic Media Ordering, Dependency-Safe Resume, Persisted Add-New Safety, and Localization Completion](Task-3.14.9-D-R2-Final-Report.md)
+- [Task 3.15.1-B Server Sessions and Trusted Workspace/Actor Context](QSC-Task-3.15.1-B-Final-Report.md)
 
 This directory contains the Git-tracked final report for every approved implementation task. Name reports `<task-id>-Final-Report.md` and record their review status accurately. After verification, the automated review bundle re-reads, copies, and sanitizes the final-state report. Final ZIP/checksum names are published only after temporary-pair verification and repository-stability checks; the bundle does not replace this source report. Final Markdown reports belong in Git. Generated bundle directories, ZIP archives, detached checksums, and temporary files do not belong in Git.
 
 ## العربية
+
+- [المهمة 3.15.1-B — جلسات الخادم وسياق مساحة العمل/الممثل الموثوق](QSC-Task-3.15.1-B-Final-Report.md)
 
 - [المهمة 3.14.9-B — تنسيق رفع وسائط إدخال المنتج](Task-3.14.9-B-Final-Report.md)
 - [المهمة 3.14.9-B-R1 — تصحيح متطلبات مصدر استئناف الوسائط](Task-3.14.9-B-R1-Final-Report.md)

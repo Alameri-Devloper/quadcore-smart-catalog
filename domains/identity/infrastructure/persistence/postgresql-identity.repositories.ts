@@ -1,14 +1,15 @@
-import { and, eq, gte, inArray, ne } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { PlatformDatabase } from "../../../../shared/infrastructure/persistence/database";
 import { E164PhoneNumber } from "../../../../shared/domain/e164-phone-number";
-import { ActorId, ChallengeId, WorkspaceId } from "../../../../shared/domain/scoped-identity";
+import { ActorId, ChallengeId, SessionId, WorkspaceId } from "../../../../shared/domain/scoped-identity";
 import { Account, type AccountStatus } from "../../domain/account";
 import { LoginProtection } from "../../domain/login-protection";
-import type { WorkspaceMemberProfile, WorkspaceMembership, WorkspaceRole } from "../../domain/member";
+import { createMembership, type WorkspaceMemberProfile, type WorkspaceMembership, type WorkspaceRole } from "../../domain/member";
 import { PasswordCredential } from "../../domain/password-credential";
 import { PasswordHash } from "../../domain/password";
 import { PasswordRecoveryChallenge } from "../../domain/password-recovery-challenge";
 import { Username } from "../../domain/username";
+import { ServerSession, type SessionClass, type SessionDigestValue, type SessionRevocationReason } from "../../domain/session";
 import type {
   AccountCreateOutcome,
   AccountRepository,
@@ -18,6 +19,7 @@ import type {
   MembershipRepository,
   PasswordCredentialRepository,
   PasswordRecoveryChallengeRepository,
+  SessionRepository,
 } from "../../repositories/identity.repositories";
 import {
   identityAccounts,
@@ -26,6 +28,7 @@ import {
   identityMemberships,
   identityPasswordCredentials,
   identityPasswordRecoveryChallenges,
+  identitySessions,
 } from "./schema";
 
 const accountScope = (workspaceId: WorkspaceId, actorId: ActorId) => and(
@@ -346,17 +349,151 @@ export class PostgreSqlMembershipRepository implements MembershipRepository {
       actorId: membership.actorId.value,
       role: membership.role,
       branchScope: membership.branchScope,
+      authorizationVersion: membership.authorizationVersion,
       createdAt: membership.createdAt,
       updatedAt: membership.updatedAt,
     });
   }
 
+  async findByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceMembership | null> {
+    const base = this.database.select().from(identityMemberships).where(and(
+      eq(identityMemberships.workspaceId, workspaceId.value),
+      eq(identityMemberships.actorId, actorId.value),
+    )).limit(1);
+    const rows = options?.forUpdate ? await base.for("update") : await base;
+    const row = rows[0];
+    return row ? createMembership({
+      workspaceId,
+      actorId,
+      role: row.role as WorkspaceRole,
+      branchScope: row.branchScope as WorkspaceMembership["branchScope"],
+      authorizationVersion: row.authorizationVersion,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }) : null;
+  }
+
   async findRole(workspaceId: WorkspaceId, actorId: ActorId): Promise<WorkspaceRole | null> {
-    const rows = await this.database.select({ role: identityMemberships.role })
-      .from(identityMemberships).where(and(
-        eq(identityMemberships.workspaceId, workspaceId.value),
-        eq(identityMemberships.actorId, actorId.value),
-      )).limit(1);
-    return rows[0] ? rows[0].role as WorkspaceRole : null;
+    return (await this.findByActorId(workspaceId, actorId))?.role ?? null;
+  }
+}
+
+const mapSession = (row: typeof identitySessions.$inferSelect): ServerSession => ServerSession.rehydrate({
+  workspaceId: WorkspaceId.create(row.workspaceId),
+  sessionId: SessionId.create(row.sessionId),
+  digest: { value: row.digest, keyVersion: row.digestKeyVersion },
+  actorId: ActorId.create(row.actorId),
+  sessionClass: row.sessionClass as SessionClass,
+  authorizationVersion: row.authorizationVersion,
+  passwordVersion: row.passwordVersion,
+  createdAt: row.createdAt,
+  lastSeenAt: row.lastSeenAt,
+  idleExpiresAt: row.idleExpiresAt,
+  absoluteExpiresAt: row.absoluteExpiresAt,
+  revokedAt: row.revokedAt,
+  revocationReason: row.revocationReason as SessionRevocationReason | null,
+});
+
+const sessionValues = (session: ServerSession): typeof identitySessions.$inferInsert => ({
+  workspaceId: session.workspaceId.value,
+  sessionId: session.sessionId.value,
+  digest: session.digest.value,
+  digestKeyVersion: session.digest.keyVersion,
+  actorId: session.actorId.value,
+  sessionClass: session.sessionClass,
+  authorizationVersion: session.authorizationVersion,
+  passwordVersion: session.passwordVersion,
+  createdAt: session.createdAt,
+  lastSeenAt: session.lastSeenAt,
+  idleExpiresAt: session.idleExpiresAt,
+  absoluteExpiresAt: session.absoluteExpiresAt,
+  revokedAt: session.revokedAt,
+  revocationReason: session.revocationReason,
+});
+
+export class PostgreSqlSessionRepository implements SessionRepository {
+  constructor(private readonly database: PlatformDatabase) {}
+
+  async create(session: ServerSession): Promise<"Created" | "SessionIdConflict" | "DigestConflict"> {
+    const inserted = await this.database.insert(identitySessions).values(sessionValues(session))
+      .onConflictDoNothing().returning({ sessionId: identitySessions.sessionId });
+    if (inserted.length === 1) return "Created";
+    const idMatch = await this.findById(session.workspaceId, session.sessionId);
+    return idMatch ? "SessionIdConflict" : "DigestConflict";
+  }
+
+  async findByDigests(digests: readonly SessionDigestValue[], options?: { readonly forUpdate?: boolean }): Promise<ServerSession | null> {
+    if (digests.length === 0) return null;
+    const predicate = or(...digests.map((candidate) => and(
+      eq(identitySessions.digestKeyVersion, candidate.keyVersion),
+      eq(identitySessions.digest, candidate.value),
+    )));
+    const base = this.database.select().from(identitySessions).where(predicate).limit(1);
+    const rows = options?.forUpdate ? await base.for("update") : await base;
+    return rows[0] ? mapSession(rows[0]) : null;
+  }
+
+  async findById(workspaceId: WorkspaceId, sessionId: SessionId, options?: { readonly forUpdate?: boolean }): Promise<ServerSession | null> {
+    const base = this.database.select().from(identitySessions).where(and(
+      eq(identitySessions.workspaceId, workspaceId.value),
+      eq(identitySessions.sessionId, sessionId.value),
+    )).limit(1);
+    const rows = options?.forUpdate ? await base.for("update") : await base;
+    return rows[0] ? mapSession(rows[0]) : null;
+  }
+
+  async save(session: ServerSession): Promise<void> {
+    await this.database.update(identitySessions).set({
+      lastSeenAt: session.lastSeenAt,
+      idleExpiresAt: session.idleExpiresAt,
+      revokedAt: session.revokedAt,
+      revocationReason: session.revocationReason,
+    }).where(and(
+      eq(identitySessions.workspaceId, session.workspaceId.value),
+      eq(identitySessions.sessionId, session.sessionId.value),
+    ));
+  }
+
+  async revokeAllForActor(workspaceId: WorkspaceId, actorId: ActorId, reason: SessionRevocationReason, at: Date): Promise<number> {
+    const rows = await this.database.update(identitySessions).set({ revokedAt: at, revocationReason: reason }).where(and(
+      eq(identitySessions.workspaceId, workspaceId.value),
+      eq(identitySessions.actorId, actorId.value),
+      isNull(identitySessions.revokedAt),
+    )).returning({ sessionId: identitySessions.sessionId });
+    return rows.length;
+  }
+
+  async revokeOtherSessions(
+    workspaceId: WorkspaceId,
+    actorId: ActorId,
+    exceptSessionId: SessionId,
+    reason: SessionRevocationReason,
+    at: Date,
+  ): Promise<number> {
+    const rows = await this.database.update(identitySessions).set({ revokedAt: at, revocationReason: reason }).where(and(
+      eq(identitySessions.workspaceId, workspaceId.value),
+      eq(identitySessions.actorId, actorId.value),
+      ne(identitySessions.sessionId, exceptSessionId.value),
+      isNull(identitySessions.revokedAt),
+    )).returning({ sessionId: identitySessions.sessionId });
+    return rows.length;
+  }
+
+  async deleteCleanupEligible(at: Date, revokedBefore: Date, limit: number): Promise<number> {
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10_000) throw new Error("SessionCleanupLimitInvalid");
+    const result = await this.database.execute<{ session_id: string }>(sql`
+      DELETE FROM identity_sessions
+      WHERE (workspace_id, session_id) IN (
+        SELECT workspace_id, session_id
+        FROM identity_sessions
+        WHERE (revoked_at IS NOT NULL AND revoked_at <= ${revokedBefore})
+           OR (revoked_at IS NULL AND (idle_expires_at <= ${at} OR absolute_expires_at <= ${at}))
+        ORDER BY COALESCE(revoked_at, idle_expires_at, absolute_expires_at)
+        LIMIT ${limit}
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING session_id
+    `);
+    return result.rows.length;
   }
 }

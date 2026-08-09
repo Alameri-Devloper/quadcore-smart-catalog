@@ -17,7 +17,8 @@ export type ProductEntryTrustedContextEnvironment = Readonly<{
 export class DevelopmentEnvironmentProductEntryTrustedContextResolver implements ProductEntryTrustedContextResolver {
   constructor(private readonly environment: ProductEntryTrustedContextEnvironment = process.env) {}
 
-  async resolve(): Promise<ProductEntryExecutionContext> {
+  async resolve(request: Request): Promise<ProductEntryExecutionContext> {
+    void request;
     if (this.environment.NODE_ENV !== "development" && this.environment.NODE_ENV !== "test") {
       throw new ProductEntryTrustedContextUnavailableError();
     }
@@ -51,7 +52,8 @@ export class DevelopmentEnvironmentProductEntryTrustedContextResolver implements
 }
 
 export class FailClosedProductEntryTrustedContextResolver implements ProductEntryTrustedContextResolver {
-  async resolve(): Promise<ProductEntryExecutionContext> {
+  async resolve(request: Request): Promise<ProductEntryExecutionContext> {
+    void request;
     throw new ProductEntryTrustedContextUnavailableError();
   }
 }

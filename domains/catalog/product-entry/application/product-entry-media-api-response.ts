@@ -1,5 +1,7 @@
 import {
   PRODUCT_ENTRY_TRUSTED_CONTEXT_UNAVAILABLE_CODE,
+  ProductEntryAuthenticationRequiredError,
+  ProductEntryRestrictedSessionError,
   ProductEntryTrustedContextUnavailableError,
 } from "../ports/product-entry-trusted-context.port";
 import type { GetProductEntrySubmissionMediaStatusResult } from "./get-product-entry-submission-media-status.use-case";
@@ -7,8 +9,16 @@ import type { UploadProductEntrySubmissionMediaResult } from "./upload-product-e
 
 export const PRODUCT_ENTRY_MEDIA_SERVICE_UNAVAILABLE_CODE = "PRODUCT_ENTRY_MEDIA_SERVICE_UNAVAILABLE" as const;
 
-export const productEntryMediaRuntimeErrorHttpResponse = (error: unknown) =>
-  error instanceof ProductEntryTrustedContextUnavailableError
+export const productEntryMediaRuntimeErrorHttpResponse = (error: unknown) => {
+  if (error instanceof ProductEntryAuthenticationRequiredError) return {
+    status: 401 as const,
+    body: { type: "AuthenticationRequired" as const },
+  };
+  if (error instanceof ProductEntryRestrictedSessionError) return {
+    status: 403 as const,
+    body: { type: "ForbiddenForRestrictedSession" as const },
+  };
+  return error instanceof ProductEntryTrustedContextUnavailableError
     ? {
         status: 503 as const,
         body: {
@@ -23,6 +33,7 @@ export const productEntryMediaRuntimeErrorHttpResponse = (error: unknown) =>
           code: PRODUCT_ENTRY_MEDIA_SERVICE_UNAVAILABLE_CODE,
         },
       };
+};
 
 export const uploadProductEntryMediaHttpStatus = (result: UploadProductEntrySubmissionMediaResult): number => {
   switch (result.type) {

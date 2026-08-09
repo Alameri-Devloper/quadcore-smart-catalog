@@ -126,6 +126,7 @@ export class WorkspaceBootstrapUseCase {
           actorId,
           role: "Owner",
           branchScope: "AllBranches",
+          authorizationVersion: 1,
           createdAt: now,
           updatedAt: now,
         }));

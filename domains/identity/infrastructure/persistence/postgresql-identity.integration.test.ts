@@ -7,15 +7,18 @@ import { ActorId, ChallengeId, WorkspaceId } from "../../../../shared/domain/sco
 import { assertSafeIntegrationTestDatabaseUrl } from "../../../catalog/infrastructure/persistence/integration-test-database-safety";
 import { CreateAccountUseCase } from "../../application/create-account.use-case";
 import { CompletePasswordRecoveryUseCase, CreatePasswordRecoveryChallengeUseCase, VerifyPasswordRecoveryChallengeUseCase } from "../../application/password-recovery.use-cases";
-import { OwnerResetPasswordUseCase } from "../../application/password-reset.use-cases";
+import { EmergencyOwnerPasswordResetUseCase, OwnerResetPasswordUseCase } from "../../application/password-reset.use-cases";
 import { WorkspaceBootstrapUseCase } from "../../application/workspace-bootstrap.use-case";
+import { ChangePasswordAndRotateSessionUseCase } from "../../application/change-password-and-rotate-session.use-case";
+import { CleanupSessionsUseCase, LoginUseCase, LogoutUseCase, ResolveSessionUseCase } from "../../application/session.use-cases";
 import { Username } from "../../domain/username";
 import { Argon2idPasswordHasher } from "../crypto/argon2-password-hasher";
 import { CryptographicRecoveryCodeGenerator, HmacSha256RecoveryCodeDigest } from "../crypto/hmac-recovery-code-digest";
-import { RandomIdentityIdentifierGenerator } from "../system-identity-adapters";
+import { CryptographicSessionTokenGenerator, HmacSha256SessionTokenDigest } from "../crypto/session-token-crypto";
+import { RandomIdentityIdentifierGenerator, RandomSessionIdentifierGenerator } from "../system-identity-adapters";
 import { PostgreSqlIdentityUnitOfWork } from "./postgresql-identity-unit-of-work";
 import { PostgreSqlAccountRepository, PostgreSqlPasswordCredentialRepository, PostgreSqlPasswordRecoveryChallengeRepository } from "./postgresql-identity.repositories";
-import { identityPasswordCredentials, identityPasswordRecoveryChallenges } from "./schema";
+import { identityMemberships, identityPasswordCredentials, identityPasswordRecoveryChallenges, identitySessions } from "./schema";
 
 const connectionUrl = process.env.TEST_DATABASE_URL;
 assertSafeIntegrationTestDatabaseUrl(connectionUrl, process.env.DATABASE_URL);
@@ -38,6 +41,18 @@ const createRecovery = new CreatePasswordRecoveryChallengeUseCase(
 const verifyRecovery = new VerifyPasswordRecoveryChallengeUseCase(unitOfWork, digest, clock);
 const completeRecovery = new CompletePasswordRecoveryUseCase(unitOfWork, hasher, clock);
 const ownerReset = new OwnerResetPasswordUseCase(unitOfWork, hasher, clock);
+const emergencyReset = new EmergencyOwnerPasswordResetUseCase(unitOfWork, hasher, clock);
+const sessionDigest = new HmacSha256SessionTokenDigest([{ version: 1, keyBytes: Buffer.alloc(32, 21) }], 1);
+const sessionIssuance = {
+  identifiers: new RandomSessionIdentifierGenerator(),
+  values: new CryptographicSessionTokenGenerator(),
+  digest: sessionDigest,
+} as const;
+const login = new LoginUseCase(unitOfWork, hasher, clock, sessionIssuance);
+const resolveSession = new ResolveSessionUseCase(unitOfWork, sessionDigest, clock);
+const logout = new LogoutUseCase(unitOfWork, sessionDigest, clock);
+const changePassword = new ChangePasswordAndRotateSessionUseCase(unitOfWork, hasher, sessionDigest, clock, sessionIssuance);
+const cleanupSessions = new CleanupSessionsUseCase(unitOfWork, clock);
 
 const bootstrapCommand = (code: string, username: string) => ({
   companyId: "company-integration",
@@ -158,6 +173,171 @@ describe("PostgreSQL Identity bootstrap and isolation", () => {
       targetActorId: first.value.actorId,
       newTemporaryPassword: "Cross tenant reset 123",
     }), { ok: false, error: "AccountNotFound" });
+  });
+});
+
+describe("PostgreSQL server sessions", () => {
+  it("persists only the digest, enforces global digest uniqueness, and rejects cross-Workspace actor references", async () => {
+    const owner = await bootstrap.execute(bootstrapCommand("integration-01", "owner-one"));
+    assert.ok(owner.ok);
+    const authenticated = await login.execute({
+      workspaceCode: "integration-01",
+      username: "owner-one",
+      password: "Integration temporary 123",
+    });
+    assert.ok(authenticated.ok && owner.ok);
+    if (!authenticated.ok || !owner.ok) return;
+    const rows = await connection.database.select().from(identitySessions);
+    assert.equal(rows.length, 1);
+    assert.match(rows[0]!.digest, /^[a-f0-9]{64}$/);
+    assert.equal(rows[0]!.digest.includes(authenticated.value.opaqueValue), false);
+    const columns = await connection.database.execute<{ column_name: string }>(sql`
+      SELECT column_name FROM information_schema.columns WHERE table_name = 'identity_sessions'
+    `);
+    assert.equal(columns.rows.some((row) => row.column_name === 'token'), false);
+    assert.equal(columns.rows.some((row) => row.column_name === 'token_hash'), true);
+
+    await assert.rejects(
+      connection.database.execute(sql`
+        INSERT INTO identity_sessions
+        SELECT workspace_id, ${"duplicate-session"}, token_hash, token_key_version, actor_id, session_class,
+               authorization_version, password_version, created_at, last_seen_at, idle_expires_at,
+               absolute_expires_at, revoked_at, revocation_reason
+        FROM identity_sessions LIMIT 1
+      `),
+      (error: unknown) => (error as { cause?: { constraint?: string } }).cause?.constraint === "identity_sessions_token_hash_uq",
+    );
+
+    const second = await bootstrap.execute(bootstrapCommand("integration-02", "owner-two"));
+    assert.ok(second.ok);
+    if (!second.ok) return;
+    await assert.rejects(
+      connection.database.execute(sql`
+        INSERT INTO identity_sessions
+        SELECT ${second.value.workspaceId}, ${"foreign-session"}, ${"f".repeat(64)}, token_key_version,
+               actor_id, session_class, authorization_version, password_version, created_at, last_seen_at,
+               idle_expires_at, absolute_expires_at, revoked_at, revocation_reason
+        FROM identity_sessions WHERE workspace_id = ${owner.value.workspaceId} LIMIT 1
+      `),
+      (error: unknown) => [
+        "identity_sessions_account_fk",
+        "identity_sessions_credential_fk",
+        "identity_sessions_membership_fk",
+      ].includes((error as { cause?: { constraint?: string } }).cause?.constraint ?? ""),
+    );
+  });
+
+  it("allows simultaneous successful logins and serializes concurrent failed-attempt increments", async () => {
+    await bootstrap.execute(bootstrapCommand("integration-01", "owner"));
+    const successful = await Promise.all([
+      login.execute({ workspaceCode: "integration-01", username: "owner", password: "Integration temporary 123" }),
+      login.execute({ workspaceCode: "INTEGRATION-01", username: "OWNER", password: "Integration temporary 123" }),
+    ]);
+    assert.equal(successful.filter((result) => result.ok).length, 2);
+    assert.equal((await connection.database.select().from(identitySessions)).length, 2);
+
+    const failures = await Promise.all(Array.from({ length: 5 }, () => login.execute({
+      workspaceCode: "integration-01",
+      username: "owner",
+      password: "Incorrect integration value",
+    })));
+    assert.equal(failures.filter((result) => !result.ok).length, 5);
+    const protection = await connection.database.execute<{ failed_attempt_count: number; lock_level: number; locked_until: Date | null }>(sql`
+      SELECT failed_attempt_count, lock_level, locked_until FROM identity_login_protection
+    `);
+    assert.equal(protection.rows[0]!.failed_attempt_count, 0);
+    assert.equal(protection.rows[0]!.lock_level, 1);
+    assert.ok(protection.rows[0]!.locked_until);
+    assert.equal((await connection.database.select().from(identitySessions)).length, 2);
+  });
+
+  it("rotates restricted authority and rejects every concurrent stale authorization read", async () => {
+    const owner = await bootstrap.execute(bootstrapCommand("integration-01", "owner"));
+    assert.ok(owner.ok);
+    const restricted = await login.execute({
+      workspaceCode: "integration-01",
+      username: "owner",
+      password: "Integration temporary 123",
+    });
+    assert.ok(restricted.ok && owner.ok);
+    if (!restricted.ok || !owner.ok) return;
+    const rotated = await changePassword.execute({
+      rawSessionValue: restricted.value.opaqueValue,
+      currentPassword: "Integration temporary 123",
+      newPassword: "Integration permanent 456",
+    });
+    assert.ok(rotated.ok);
+    if (!rotated.ok) return;
+    assert.deepEqual(await resolveSession.execute({ rawSessionValue: restricted.value.opaqueValue, requiredClass: "Any" }), {
+      ok: false,
+      error: "SessionRevoked",
+    });
+    assert.ok((await resolveSession.execute({ rawSessionValue: rotated.value.opaqueValue, requiredClass: "Full" })).ok);
+
+    await connection.database.update(identityMemberships).set({ authorizationVersion: 2 }).where(sql`
+      ${identityMemberships.workspaceId} = ${owner.value.workspaceId}
+      AND ${identityMemberships.actorId} = ${owner.value.actorId}
+    `);
+    const concurrent = await Promise.all([
+      resolveSession.execute({ rawSessionValue: rotated.value.opaqueValue, requiredClass: "Full" }),
+      resolveSession.execute({ rawSessionValue: rotated.value.opaqueValue, requiredClass: "Full" }),
+    ]);
+    assert.equal(concurrent.some((result) => result.ok), false);
+    assert.equal(concurrent.some((result) => !result.ok && result.error === "SessionStaleAuthorizationVersion"), true);
+  });
+
+  it("integrates actor-wide reset revocation, idempotent logout, expiry cleanup, and retention cleanup", async () => {
+    const owner = await bootstrap.execute(bootstrapCommand("integration-01", "owner"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const firstLogin = await login.execute({
+      workspaceCode: "integration-01",
+      username: "owner",
+      password: "Integration temporary 123",
+    });
+    assert.ok(firstLogin.ok);
+    if (!firstLogin.ok) return;
+    assert.ok((await emergencyReset.execute({
+      workspaceCode: "integration-01",
+      ownerUsername: "owner",
+      newTemporaryPassword: "Owner reset value 456",
+    })).ok);
+    assert.deepEqual(await resolveSession.execute({ rawSessionValue: firstLogin.value.opaqueValue, requiredClass: "Any" }), {
+      ok: false,
+      error: "SessionRevoked",
+    });
+
+    const ownerLogin = await login.execute({
+      workspaceCode: "integration-01",
+      username: "owner",
+      password: "Owner reset value 456",
+    });
+    assert.ok(ownerLogin.ok);
+    if (!ownerLogin.ok) return;
+    assert.deepEqual(await logout.execute(ownerLogin.value.opaqueValue), { ok: true, value: null });
+    assert.deepEqual(await logout.execute(ownerLogin.value.opaqueValue), { ok: true, value: null });
+    await connection.database.execute(sql`
+      UPDATE identity_sessions SET revoked_at = now() - interval '8 days'
+      WHERE revocation_reason = 'Logout'
+    `);
+
+    const expiring = await login.execute({
+      workspaceCode: "integration-01",
+      username: "owner",
+      password: "Owner reset value 456",
+    });
+    assert.ok(expiring.ok);
+    await connection.database.execute(sql`
+      UPDATE identity_sessions
+      SET created_at = now() - interval '13 hours',
+          last_seen_at = now() - interval '3 hours',
+          idle_expires_at = now() - interval '1 hour',
+          absolute_expires_at = now() - interval '30 minutes'
+      WHERE revoked_at IS NULL
+    `);
+    const cleanup = await cleanupSessions.execute();
+    assert.ok(cleanup.ok);
+    if (cleanup.ok) assert.equal(cleanup.value.deletedCount, 2);
   });
 });
 
@@ -287,7 +467,7 @@ describe("PostgreSQL Identity concurrency and lifecycle", () => {
     assert.deepEqual(results.flatMap((result) => result.ok ? [result.value.passwordVersion] : []).sort(), [2, 3]);
   });
 
-  it("applies the 0007 migration with all scoped Identity tables", async () => {
+  it("applies the 0008 migration with scoped Identity sessions and authorization version", async () => {
     const result = await connection.database.execute<{
       workspace: string | null;
       account: string | null;
@@ -295,6 +475,8 @@ describe("PostgreSQL Identity concurrency and lifecycle", () => {
       protection: string | null;
       challenge: string | null;
       audit: string | null;
+      session: string | null;
+      authorizationVersion: string | null;
       migration: string | null;
     }>(sql`
       SELECT
@@ -304,6 +486,9 @@ describe("PostgreSQL Identity concurrency and lifecycle", () => {
         to_regclass('identity_login_protection')::text AS protection,
         to_regclass('identity_password_recovery_challenges')::text AS challenge,
         to_regclass('security_audit_events')::text AS audit,
+        to_regclass('identity_sessions')::text AS session,
+        (SELECT data_type FROM information_schema.columns
+         WHERE table_name = 'identity_memberships' AND column_name = 'authorization_version') AS "authorizationVersion",
         (SELECT hash FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1) AS migration
     `);
     assert.deepEqual({ ...result.rows[0], migration: typeof result.rows[0]?.migration }, {
@@ -313,6 +498,8 @@ describe("PostgreSQL Identity concurrency and lifecycle", () => {
       protection: "identity_login_protection",
       challenge: "identity_password_recovery_challenges",
       audit: "security_audit_events",
+      session: "identity_sessions",
+      authorizationVersion: "bigint",
       migration: "string",
     });
   });

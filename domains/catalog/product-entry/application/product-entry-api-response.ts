@@ -1,14 +1,25 @@
 import type { GetProductEntrySubmissionResult } from "./get-product-entry-submission.use-case";
 import {
   PRODUCT_ENTRY_TRUSTED_CONTEXT_UNAVAILABLE_CODE,
+  ProductEntryAuthenticationRequiredError,
+  ProductEntryRestrictedSessionError,
   ProductEntryTrustedContextUnavailableError,
 } from "../ports/product-entry-trusted-context.port";
 import type { SubmitProductEntryResult } from "./submit-product-entry.use-case";
 
 export const PRODUCT_ENTRY_SERVICE_UNAVAILABLE_CODE = "PRODUCT_ENTRY_SERVICE_UNAVAILABLE" as const;
 
-export const productEntryRuntimeErrorHttpResponse = (error: unknown) => error instanceof ProductEntryTrustedContextUnavailableError
-  ? {
+export const productEntryRuntimeErrorHttpResponse = (error: unknown) => {
+  if (error instanceof ProductEntryAuthenticationRequiredError) return {
+    status: 401 as const,
+    body: { type: "AuthenticationRequired" as const },
+  };
+  if (error instanceof ProductEntryRestrictedSessionError) return {
+    status: 403 as const,
+    body: { type: "ForbiddenForRestrictedSession" as const },
+  };
+  return error instanceof ProductEntryTrustedContextUnavailableError
+    ? {
       status: 503 as const,
       body: {
         type: "AuthenticationContextUnavailable" as const,
@@ -22,6 +33,7 @@ export const productEntryRuntimeErrorHttpResponse = (error: unknown) => error in
         code: PRODUCT_ENTRY_SERVICE_UNAVAILABLE_CODE,
       },
     };
+};
 
 export const submitProductEntryHttpStatus = (result: SubmitProductEntryResult): number => {
   switch (result.type) {
