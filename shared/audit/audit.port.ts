@@ -26,6 +26,17 @@ export const SECURITY_AUDIT_EVENT_TYPES = {
   restrictedSessionUpgraded: "RestrictedSessionUpgraded",
   sessionRejectedCredentialVersion: "SessionRejectedPasswordVersion",
   sessionRejectedAuthorizationVersion: "SessionRejectedAuthorizationVersion",
+  workspaceMemberCreated: "WorkspaceMemberCreated",
+  workspaceMemberProfileUpdated: "WorkspaceMemberProfileUpdated",
+  workspaceMemberWhatsAppChanged: "WorkspaceMemberWhatsAppChanged",
+  workspaceMemberPermissionsChanged: "WorkspaceMemberPermissionsChanged",
+  workspaceMemberBranchScopeChanged: "WorkspaceMemberBranchScopeChanged",
+  workspaceMemberPromotedToOwner: "WorkspaceMemberPromotedToOwner",
+  workspaceOwnerDemotedToStaff: "WorkspaceOwnerDemotedToStaff",
+  workspaceMemberSuspended: "WorkspaceMemberSuspended",
+  workspaceMemberReactivated: "WorkspaceMemberReactivated",
+  workspaceCommunicationSettingsChanged: "WorkspaceCommunicationSettingsChanged",
+  lastActiveOwnerOperationRejected: "LastActiveOwnerOperationRejected",
 } as const;
 
 export type SecurityAuditEventType =

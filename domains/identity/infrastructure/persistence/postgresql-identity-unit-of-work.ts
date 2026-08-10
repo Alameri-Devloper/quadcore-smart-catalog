@@ -1,11 +1,12 @@
 import type { PlatformDatabase } from "../../../../shared/infrastructure/persistence/database";
 import { PostgreSqlSecurityAuditRepository } from "../../../../shared/audit/infrastructure/persistence/postgresql-security-audit.repository";
-import { PostgreSqlWorkspaceCommunicationSettingsRepository, PostgreSqlWorkspaceRepository } from "../../../workspace/infrastructure/persistence/postgresql-workspace.repository";
+import { PostgreSqlWorkspaceBranchReferenceRepository, PostgreSqlWorkspaceCommunicationSettingsRepository, PostgreSqlWorkspaceRepository } from "../../../workspace/infrastructure/persistence/postgresql-workspace.repository";
 import type { IdentityTransactionDecision, IdentityTransactionalContext, IdentityUnitOfWork } from "../../repositories/identity.repositories";
 import {
   PostgreSqlAccountRepository,
   PostgreSqlLoginProtectionRepository,
   PostgreSqlMemberProfileRepository,
+  PostgreSqlMemberAdministrationReadRepository,
   PostgreSqlMembershipRepository,
   PostgreSqlPasswordCredentialRepository,
   PostgreSqlPasswordRecoveryChallengeRepository,
@@ -28,12 +29,14 @@ export class PostgreSqlIdentityUnitOfWork implements IdentityUnitOfWork {
         const context: IdentityTransactionalContext = Object.freeze({
           workspaceRepository: new PostgreSqlWorkspaceRepository(database),
           workspaceCommunicationSettingsRepository: new PostgreSqlWorkspaceCommunicationSettingsRepository(database),
+          workspaceBranchReferenceRepository: new PostgreSqlWorkspaceBranchReferenceRepository(database),
           accountRepository: new PostgreSqlAccountRepository(database),
           passwordCredentialRepository: new PostgreSqlPasswordCredentialRepository(database),
           loginProtectionRepository: new PostgreSqlLoginProtectionRepository(database),
           passwordRecoveryChallengeRepository: new PostgreSqlPasswordRecoveryChallengeRepository(database),
           memberProfileRepository: new PostgreSqlMemberProfileRepository(database),
           membershipRepository: new PostgreSqlMembershipRepository(database),
+          memberAdministrationReadRepository: new PostgreSqlMemberAdministrationReadRepository(database),
           sessionRepository: new PostgreSqlSessionRepository(database),
           audit: new PostgreSqlSecurityAuditRepository(database),
         });

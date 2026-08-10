@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, foreignKey, index, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const workspaces = pgTable(
   "workspaces",
@@ -35,5 +35,28 @@ export const workspaceCommunicationSettings = pgTable(
     primaryKey({ name: "workspace_communication_settings_pk", columns: [table.workspaceId] }),
     check("workspace_communication_settings_phone", sql`${table.defaultWhatsAppPhone} ~ '^\\+[1-9][0-9]{7,14}$'`),
     check("workspace_communication_settings_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+  ],
+);
+
+export const workspaceBranchReferences = pgTable(
+  "workspace_branch_references",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    branchId: text("branch_id").notNull(),
+    status: text("status").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "workspace_branch_references_pk", columns: [table.workspaceId, table.branchId] }),
+    foreignKey({
+      name: "workspace_branch_references_workspace_fk",
+      columns: [table.workspaceId],
+      foreignColumns: [workspaces.workspaceId],
+    }).onDelete("restrict"),
+    index("workspace_branch_references_lookup_idx").on(table.branchId, table.workspaceId, table.status),
+    check("workspace_branch_references_branch_id", sql`btrim(${table.branchId}) <> ''`),
+    check("workspace_branch_references_status", sql`${table.status} IN ('Active','Inactive')`),
+    check("workspace_branch_references_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
   ],
 );

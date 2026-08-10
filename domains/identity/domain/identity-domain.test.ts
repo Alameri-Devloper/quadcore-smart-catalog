@@ -130,6 +130,7 @@ describe("Workspace membership branch scope", () => {
     actorId,
     role,
     branchScope,
+    branchIds: branchScope === "SelectedBranches" ? ["branch-a"] : [],
     authorizationVersion: 1,
     createdAt: start,
     updatedAt: start,
@@ -150,7 +151,7 @@ describe("Workspace membership branch scope", () => {
     assert.doesNotThrow(() => createMembership(membership("Owner", "AllBranches")));
     assert.throws(
       () => createMembership(membership("Owner", "SelectedBranches")),
-      /OwnerBranchScopeInvalid/,
+      /OwnerAuthorizationInvalid/,
     );
   });
 });

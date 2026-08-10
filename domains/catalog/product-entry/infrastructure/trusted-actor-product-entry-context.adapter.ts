@@ -18,12 +18,10 @@ import {
   type ProductEntryTrustedContextResolver,
 } from "../ports/product-entry-trusted-context.port";
 
-const OWNER_PRODUCT_ENTRY_PERMISSIONS: readonly ProductEntryPermission[] = Object.freeze(
-  Object.values(PRODUCT_ENTRY_PERMISSIONS),
-);
+const PRODUCT_ENTRY_PERMISSION_SET = new Set<string>(Object.values(PRODUCT_ENTRY_PERMISSIONS));
 
 const permissionsFor = (context: TrustedActorContext): ReadonlySet<ProductEntryPermission> =>
-  new Set(context.role === "Owner" ? OWNER_PRODUCT_ENTRY_PERMISSIONS : []);
+  new Set(context.permissions.filter((permission): permission is ProductEntryPermission => PRODUCT_ENTRY_PERMISSION_SET.has(permission)));
 
 export class TrustedActorProductEntryContextAdapter implements ProductEntryTrustedContextResolver {
   constructor(private readonly authenticated: AuthenticatedRequestContextResolver) {}

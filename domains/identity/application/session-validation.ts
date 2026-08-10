@@ -6,6 +6,7 @@ import type { WorkspaceMemberProfile, WorkspaceMembership } from "../domain/memb
 import type { PasswordCredential } from "../domain/password-credential";
 import type { ServerSession } from "../domain/session";
 import type { Workspace } from "../../workspace/domain/workspace";
+import { ownerEffectivePermissionCodes, staffEffectivePermissionCodes } from "../domain/permission";
 import { identityFailure, type IdentityResult } from "./identity-results";
 
 export interface ValidatedSessionState {
@@ -22,10 +23,12 @@ const trustedContext = (membership: WorkspaceMembership): TrustedActorContext =>
   workspaceId: membership.workspaceId.value,
   actorId: membership.actorId.value,
   role: membership.role,
-  permissions: Object.freeze([]),
+  permissions: membership.role === "Owner"
+    ? ownerEffectivePermissionCodes()
+    : staffEffectivePermissionCodes(membership.permissionCodes),
   branchScope: membership.branchScope === "AllBranches"
     ? Object.freeze({ type: "AllBranches" as const })
-    : Object.freeze({ type: "SelectedBranches" as const, branchIds: Object.freeze([]) }),
+    : Object.freeze({ type: "SelectedBranches" as const, branchIds: Object.freeze([...membership.branchIds]) }),
   authorizationVersion: membership.authorizationVersion,
 });
 

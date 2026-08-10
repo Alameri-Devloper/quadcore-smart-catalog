@@ -1,5 +1,5 @@
 import type { SecurityAuditRecord } from "../../../shared/audit/audit.port";
-import type { WorkspaceCommunicationSettings, Workspace } from "../../workspace/domain/workspace";
+import type { WorkspaceBranchReference, WorkspaceCommunicationSettings, Workspace } from "../../workspace/domain/workspace";
 import type { IdentityTransactionalContext, IdentityTransactionDecision, IdentityUnitOfWork } from "../repositories/identity.repositories";
 import { Account } from "../domain/account";
 import { LoginProtection } from "../domain/login-protection";
@@ -14,6 +14,7 @@ export interface MemoryIdentityState {
   readonly workspaces: Map<string, Workspace>;
   readonly workspaceCodes: Map<string, string>;
   readonly communicationSettings: Map<string, WorkspaceCommunicationSettings>;
+  readonly branchReferences: Map<string, WorkspaceBranchReference>;
   readonly accounts: Map<string, Account>;
   readonly credentials: Map<string, PasswordCredential>;
   readonly protections: Map<string, LoginProtection>;
@@ -93,6 +94,7 @@ const cloneState = (state: MemoryIdentityState): MemoryIdentityState => ({
   workspaces: new Map(state.workspaces),
   workspaceCodes: new Map(state.workspaceCodes),
   communicationSettings: new Map(state.communicationSettings),
+  branchReferences: new Map(state.branchReferences),
   accounts: cloneMap(state.accounts, cloneAccount),
   credentials: cloneMap(state.credentials, cloneCredential),
   protections: cloneMap(state.protections, cloneProtection),
@@ -107,6 +109,7 @@ const emptyState = (): MemoryIdentityState => ({
   workspaces: new Map(),
   workspaceCodes: new Map(),
   communicationSettings: new Map(),
+  branchReferences: new Map(),
   accounts: new Map(),
   credentials: new Map(),
   protections: new Map(),
@@ -146,10 +149,28 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
           const id = state.workspaceCodes.get(code.value);
           return id ? state.workspaces.get(id) ?? null : null;
         },
+        update: async (workspace, expectedUpdatedAt) => {
+          const persisted = state.workspaces.get(workspace.workspaceId.value);
+          if (!persisted) return "WorkspaceNotFound";
+          if (persisted.updatedAt.getTime() !== expectedUpdatedAt.getTime()) return "WorkspaceUpdateConflict";
+          state.workspaces.set(workspace.workspaceId.value, workspace);
+          return "Updated";
+        },
       },
       workspaceCommunicationSettingsRepository: {
         create: async (settings) => { state.communicationSettings.set(settings.workspaceId.value, settings); },
         findByWorkspaceId: async (workspaceId) => state.communicationSettings.get(workspaceId.value) ?? null,
+        update: async (settings, expectedUpdatedAt) => {
+          const persisted = state.communicationSettings.get(settings.workspaceId.value);
+          if (!persisted) return "SettingsNotFound";
+          if (persisted.updatedAt.getTime() !== expectedUpdatedAt.getTime()) return "SettingsUpdateConflict";
+          state.communicationSettings.set(settings.workspaceId.value, settings);
+          return "Updated";
+        },
+      },
+      workspaceBranchReferenceRepository: {
+        findByIds: async (workspaceId, branchIds) => [...state.branchReferences.values()].filter((reference) =>
+          reference.workspaceId.equals(workspaceId) && branchIds.includes(reference.branchId)),
       },
       accountRepository: {
         create: async (account) => {
@@ -247,13 +268,98 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
         },
       },
       memberProfileRepository: {
-        create: async (profile) => { state.profiles.set(scoped(profile.workspaceId.value, profile.actorId.value), profile); },
+        create: async (profile) => {
+          const duplicate = [...state.profiles.values()].some((candidate) =>
+            candidate.workspaceId.equals(profile.workspaceId) && candidate.recoveryPhone.value === profile.recoveryPhone.value);
+          if (duplicate) return "WhatsAppAlreadyInUse";
+          state.profiles.set(scoped(profile.workspaceId.value, profile.actorId.value), profile);
+          return "Created";
+        },
         findByActorId: async (workspaceId, actorId) => state.profiles.get(scoped(workspaceId.value, actorId.value)) ?? null,
+        findByRecoveryPhone: async (workspaceId, recoveryPhone) => [...state.profiles.values()].find((candidate) =>
+          candidate.workspaceId.equals(workspaceId) && candidate.recoveryPhone.value === recoveryPhone) ?? null,
+        update: async (profile, expectedRecoveryContactVersion, expectedUpdatedAt) => {
+          const key = scoped(profile.workspaceId.value, profile.actorId.value);
+          const persisted = state.profiles.get(key);
+          if (!persisted) return "MemberNotFound";
+          if (
+            persisted.recoveryContactVersion !== expectedRecoveryContactVersion
+            || persisted.updatedAt.getTime() !== expectedUpdatedAt.getTime()
+          ) return "ProfileUpdateConflict";
+          const duplicate = [...state.profiles.values()].some((candidate) =>
+            !candidate.actorId.equals(profile.actorId)
+            && candidate.workspaceId.equals(profile.workspaceId)
+            && candidate.recoveryPhone.value === profile.recoveryPhone.value);
+          if (duplicate) throw new Error("WhatsAppAlreadyInUse");
+          state.profiles.set(key, profile);
+          return "Updated";
+        },
       },
       membershipRepository: {
         create: async (membership) => { state.memberships.set(scoped(membership.workspaceId.value, membership.actorId.value), membership); },
         findByActorId: async (workspaceId, actorId) => state.memberships.get(scoped(workspaceId.value, actorId.value)) ?? null,
         findRole: async (workspaceId, actorId) => state.memberships.get(scoped(workspaceId.value, actorId.value))?.role ?? null,
+        updateAuthorization: async (membership, expectedAuthorizationVersion) => {
+          const key = scoped(membership.workspaceId.value, membership.actorId.value);
+          const persisted = state.memberships.get(key);
+          if (!persisted) return "MemberNotFound";
+          if (persisted.authorizationVersion !== expectedAuthorizationVersion) return "AuthorizationConflict";
+          state.memberships.set(key, membership);
+          return "Updated";
+        },
+        countActiveOwners: async (workspaceId) => [...state.memberships.values()].filter((membership) => {
+          const account = state.accounts.get(scoped(workspaceId.value, membership.actorId.value));
+          return membership.workspaceId.equals(workspaceId) && membership.role === "Owner" && account?.status === "Active";
+        }).length,
+      },
+      memberAdministrationReadRepository: {
+        list: async (workspaceId) => [...state.memberships.values()]
+          .filter((membership) => membership.workspaceId.equals(workspaceId))
+          .map((membership) => {
+            const key = scoped(workspaceId.value, membership.actorId.value);
+            const account = state.accounts.get(key)!;
+            const profile = state.profiles.get(key)!;
+            const credential = state.credentials.get(key)!;
+            const lastSession = [...state.sessions.values()]
+              .filter((session) => session.workspaceId.equals(workspaceId) && session.actorId.equals(membership.actorId))
+              .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
+            return Object.freeze({
+              actorId: membership.actorId.value,
+              displayName: profile.displayName,
+              username: account.username.value,
+              role: membership.role,
+              accountStatus: account.status,
+              passwordChangeRequired: credential.lifecycle === "Temporary",
+              whatsappPhoneE164: profile.recoveryPhone.value,
+              locale: profile.locale,
+              branchScope: membership.branchScope,
+              branchIds: membership.branchIds,
+              permissionCodes: membership.permissionCodes,
+              authorizationVersion: membership.authorizationVersion,
+              recoveryContactVersion: profile.recoveryContactVersion,
+              createdAt: account.createdAt,
+              lastSuccessfulLoginAt: lastSession?.createdAt ?? null,
+            });
+          }),
+        findByActorId: async (workspaceId, actorId) => {
+          const membership = state.memberships.get(scoped(workspaceId.value, actorId.value));
+          if (!membership) return null;
+          const key = scoped(workspaceId.value, actorId.value);
+          const account = state.accounts.get(key)!;
+          const profile = state.profiles.get(key)!;
+          const credential = state.credentials.get(key)!;
+          const lastSession = [...state.sessions.values()]
+            .filter((session) => session.workspaceId.equals(workspaceId) && session.actorId.equals(actorId))
+            .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
+          return Object.freeze({
+            actorId: actorId.value, displayName: profile.displayName, username: account.username.value,
+            role: membership.role, accountStatus: account.status, passwordChangeRequired: credential.lifecycle === "Temporary",
+            whatsappPhoneE164: profile.recoveryPhone.value, locale: profile.locale, branchScope: membership.branchScope,
+            branchIds: membership.branchIds, permissionCodes: membership.permissionCodes,
+            authorizationVersion: membership.authorizationVersion, recoveryContactVersion: profile.recoveryContactVersion,
+            createdAt: account.createdAt, lastSuccessfulLoginAt: lastSession?.createdAt ?? null,
+          });
+        },
       },
       sessionRepository: {
         create: async (session) => {

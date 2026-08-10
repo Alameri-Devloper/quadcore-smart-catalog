@@ -69,7 +69,13 @@ describe("Product Entry trusted context adapters", () => {
       workspaceId: "trusted-workspace",
       actorId: "trusted-actor",
       role: "Owner",
-      permissions: [],
+      permissions: [
+        "catalog.product.create",
+        "catalog.product.edit",
+        "catalog.product-entry-submission.read",
+        "catalog.product-entry-media.upload",
+        "catalog.product.reference-cost.read",
+      ],
       branchScope: { type: "AllBranches" },
       authorizationVersion: 4,
     };
@@ -98,17 +104,17 @@ describe("Product Entry trusted context adapters", () => {
     await assert.rejects(() => adapter.resolve(request), ProductEntryRestrictedSessionError);
   });
 
-  it("preserves the forward-compatible Staff branch seam without inventing Task C permissions", async () => {
+  it("maps real persisted Staff permissions and selected Branch IDs", async () => {
     const adapter = new TrustedActorProductEntryContextAdapter({ resolve: async () => ({
       workspaceId: "trusted-workspace",
       actorId: "staff-actor",
       role: "Staff",
-      permissions: [],
+      permissions: ["catalog.product.create"],
       branchScope: { type: "SelectedBranches", branchIds: ["branch-a"] },
       authorizationVersion: 2,
     }) });
     const context = await adapter.resolve(request);
-    assert.deepEqual([...context.permissions], []);
+    assert.deepEqual([...context.permissions], ["catalog.product.create"]);
     assert.deepEqual([...(context.branchScope?.branchIds ?? [])], ["branch-a"]);
   });
 
