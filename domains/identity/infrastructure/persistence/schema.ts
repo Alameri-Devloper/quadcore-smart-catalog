@@ -11,7 +11,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { workspaces } from "../../../workspace/infrastructure/persistence/schema";
+import { workspaceBranchReferences, workspaces } from "../../../workspace/infrastructure/persistence/schema";
 
 export const identityAccounts = pgTable(
   "identity_accounts",
@@ -99,6 +99,7 @@ export const identityMemberProfiles = pgTable(
     displayName: text("display_name").notNull(),
     recoveryPhone: text("recovery_phone").notNull(),
     recoveryContactVersion: bigint("recovery_contact_version", { mode: "number" }).notNull(),
+    locale: text("locale").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
   },
@@ -111,6 +112,8 @@ export const identityMemberProfiles = pgTable(
     }).onDelete("restrict"),
     check("identity_member_profiles_display_name", sql`btrim(${table.displayName}) <> ''`),
     check("identity_member_profiles_phone", sql`${table.recoveryPhone} ~ '^\\+[1-9][0-9]{7,14}$'`),
+    uniqueIndex("identity_member_profiles_workspace_phone_uq").on(table.workspaceId, table.recoveryPhone),
+    check("identity_member_profiles_locale", sql`${table.locale} IN ('ar','en')`),
     check("identity_member_profiles_version", sql`${table.recoveryContactVersion} BETWEEN 1 AND 9007199254740991`),
     check("identity_member_profiles_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
   ],
@@ -140,6 +143,57 @@ export const identityMemberships = pgTable(
     check("identity_memberships_owner_scope", sql`${table.role} <> 'Owner' OR ${table.branchScope} = 'AllBranches'`),
     check("identity_memberships_authorization_version", sql`${table.authorizationVersion} BETWEEN 1 AND 9007199254740991`),
     check("identity_memberships_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+  ],
+);
+
+export const identityMembershipPermissions = pgTable(
+  "identity_membership_permissions",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    actorId: text("actor_id").notNull(),
+    permissionCode: text("permission_code").notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "identity_membership_permissions_pk", columns: [table.workspaceId, table.actorId, table.permissionCode] }),
+    foreignKey({
+      name: "identity_membership_permissions_membership_fk",
+      columns: [table.workspaceId, table.actorId],
+      foreignColumns: [identityMemberships.workspaceId, identityMemberships.actorId],
+    }).onDelete("cascade"),
+    check("identity_membership_permissions_known_code", sql`${table.permissionCode} IN (
+      'catalog.product.create','catalog.product.edit','catalog.product-entry-submission.read',
+      'catalog.product-entry-media.upload','catalog.product.reference-cost.read','catalog.products.view',
+      'catalog.products.create','catalog.products.edit','catalog.products.archive','catalog.productEntry.submit',
+      'catalog.productMedia.upload','catalog.productMedia.retry','catalog.productMedia.reconciliation.manage',
+      'catalog.productMedia.source.replace','catalog.sharing.create','catalog.sharing.aiRecommendation.generate',
+      'pricing.view','pricing.manage','pricing.wholesale.view','pricing.branchOverride.manage',
+      'referenceCost.view','referenceCost.manage','referenceCost.branchOverride.manage',
+      'inventory.availability.view','inventory.quantity.view','inventory.receive','inventory.issue',
+      'inventory.reserve','inventory.transfer','inventory.damage','inventory.adjust',
+      'workspace.settings.view','workspace.settings.manage','workspace.audit.view'
+    )`),
+  ],
+);
+
+export const identityMembershipBranches = pgTable(
+  "identity_membership_branches",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    actorId: text("actor_id").notNull(),
+    branchId: text("branch_id").notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "identity_membership_branches_pk", columns: [table.workspaceId, table.actorId, table.branchId] }),
+    foreignKey({
+      name: "identity_membership_branches_membership_fk",
+      columns: [table.workspaceId, table.actorId],
+      foreignColumns: [identityMemberships.workspaceId, identityMemberships.actorId],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "identity_membership_branches_reference_fk",
+      columns: [table.workspaceId, table.branchId],
+      foreignColumns: [workspaceBranchReferences.workspaceId, workspaceBranchReferences.branchId],
+    }).onDelete("restrict"),
   ],
 );
 

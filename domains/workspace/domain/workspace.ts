@@ -43,11 +43,19 @@ export class Workspace {
     if (input.createdAt.getTime() !== input.updatedAt.getTime()) {
       throw new Error("WorkspaceTimestampsInvalid");
     }
-    return new Workspace({
-      ...input,
-      createdAt: new Date(input.createdAt),
-      updatedAt: new Date(input.updatedAt),
-    });
+    return Workspace.rehydrate(input);
+  }
+
+  static rehydrate(input: WorkspaceState): Workspace {
+    if (
+      !input.companyId
+      || input.companyId.trim() !== input.companyId
+      || !input.displayName
+      || input.displayName.trim() !== input.displayName
+      || !["OwnerManagedOnly", "WhatsAppOtpWithOwnerFallback"].includes(input.passwordRecoveryPolicy)
+      || input.createdAt > input.updatedAt
+    ) throw new Error("WorkspaceStateInvalid");
+    return new Workspace({ ...input, createdAt: new Date(input.createdAt), updatedAt: new Date(input.updatedAt) });
   }
 
   get workspaceId(): WorkspaceId { return this.state.workspaceId; }
@@ -65,3 +73,37 @@ export interface WorkspaceCommunicationSettings {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
+
+export type WorkspaceBranchReferenceStatus = "Active" | "Inactive";
+
+export interface WorkspaceBranchReference {
+  readonly workspaceId: WorkspaceId;
+  readonly branchId: string;
+  readonly status: WorkspaceBranchReferenceStatus;
+}
+
+export const updateWorkspaceRecoveryPolicy = (
+  workspace: Workspace,
+  passwordRecoveryPolicy: PasswordRecoveryPolicy,
+  at: Date,
+): Workspace => {
+  if (at < workspace.updatedAt) throw new Error("WorkspaceTimestampInvalid");
+  return Workspace.rehydrate({
+    workspaceId: workspace.workspaceId,
+    companyId: workspace.companyId,
+    code: workspace.code,
+    displayName: workspace.displayName,
+    passwordRecoveryPolicy,
+    createdAt: workspace.createdAt,
+    updatedAt: at,
+  });
+};
+
+export const updateWorkspaceCommunicationSettings = (
+  settings: WorkspaceCommunicationSettings,
+  defaultWhatsAppPhone: E164PhoneNumber,
+  at: Date,
+): WorkspaceCommunicationSettings => {
+  if (at < settings.updatedAt) throw new Error("WorkspaceCommunicationSettingsInvalid");
+  return Object.freeze({ ...settings, defaultWhatsAppPhone, updatedAt: new Date(at) });
+};

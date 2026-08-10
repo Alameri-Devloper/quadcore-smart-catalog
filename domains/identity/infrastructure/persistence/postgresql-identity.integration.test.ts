@@ -10,6 +10,13 @@ import { CompletePasswordRecoveryUseCase, CreatePasswordRecoveryChallengeUseCase
 import { EmergencyOwnerPasswordResetUseCase, OwnerResetPasswordUseCase } from "../../application/password-reset.use-cases";
 import { WorkspaceBootstrapUseCase } from "../../application/workspace-bootstrap.use-case";
 import { ChangePasswordAndRotateSessionUseCase } from "../../application/change-password-and-rotate-session.use-case";
+import { ActivateAccountUseCase } from "../../application/account-lifecycle.use-cases";
+import {
+  ChangeWorkspaceMemberPermissionsUseCase,
+  CreateWorkspaceMemberUseCase,
+  DemoteWorkspaceOwnerToStaffUseCase,
+  SuspendWorkspaceMemberUseCase,
+} from "../../application/member-administration.use-cases";
 import { CleanupSessionsUseCase, LoginUseCase, LogoutUseCase, ResolveSessionUseCase } from "../../application/session.use-cases";
 import { Username } from "../../domain/username";
 import { Argon2idPasswordHasher } from "../crypto/argon2-password-hasher";
@@ -18,7 +25,18 @@ import { CryptographicSessionTokenGenerator, HmacSha256SessionTokenDigest } from
 import { RandomIdentityIdentifierGenerator, RandomSessionIdentifierGenerator } from "../system-identity-adapters";
 import { PostgreSqlIdentityUnitOfWork } from "./postgresql-identity-unit-of-work";
 import { PostgreSqlAccountRepository, PostgreSqlPasswordCredentialRepository, PostgreSqlPasswordRecoveryChallengeRepository } from "./postgresql-identity.repositories";
-import { identityMemberships, identityPasswordCredentials, identityPasswordRecoveryChallenges, identitySessions } from "./schema";
+import {
+  identityMembershipBranches,
+  identityMembershipPermissions,
+  identityMemberships,
+  identityPasswordCredentials,
+  identityPasswordRecoveryChallenges,
+  identitySessions,
+} from "./schema";
+import { workspaceBranchReferences } from "../../../workspace/infrastructure/persistence/schema";
+import { PostgreSqlWorkspaceBranchReferenceRepository } from "../../../workspace/infrastructure/persistence/postgresql-workspace.repository";
+import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
+import { ownerEffectivePermissionCodes } from "../../domain/permission";
 
 const connectionUrl = process.env.TEST_DATABASE_URL;
 assertSafeIntegrationTestDatabaseUrl(connectionUrl, process.env.DATABASE_URL);
@@ -53,6 +71,11 @@ const resolveSession = new ResolveSessionUseCase(unitOfWork, sessionDigest, cloc
 const logout = new LogoutUseCase(unitOfWork, sessionDigest, clock);
 const changePassword = new ChangePasswordAndRotateSessionUseCase(unitOfWork, hasher, sessionDigest, clock, sessionIssuance);
 const cleanupSessions = new CleanupSessionsUseCase(unitOfWork, clock);
+const activateAccount = new ActivateAccountUseCase(unitOfWork, hasher, clock);
+const createMember = new CreateWorkspaceMemberUseCase(unitOfWork, hasher, clock, identifiers);
+const changeMemberPermissions = new ChangeWorkspaceMemberPermissionsUseCase(unitOfWork, clock);
+const suspendMember = new SuspendWorkspaceMemberUseCase(unitOfWork, clock);
+const demoteOwner = new DemoteWorkspaceOwnerToStaffUseCase(unitOfWork, clock);
 
 const bootstrapCommand = (code: string, username: string) => ({
   companyId: "company-integration",
@@ -62,6 +85,15 @@ const bootstrapCommand = (code: string, username: string) => ({
   ownerDisplayName: "Integration Owner",
   ownerRecoveryPhone: "+967711234567",
   temporaryPassword: "Integration temporary 123",
+});
+
+const ownerContext = (workspaceId: string, actorId: string): TrustedActorContext => ({
+  workspaceId,
+  actorId,
+  role: "Owner",
+  permissions: ownerEffectivePermissionCodes(),
+  branchScope: { type: "AllBranches" },
+  authorizationVersion: 1,
 });
 
 before(async () => migrate(connection.database, { migrationsFolder: "drizzle" }));
@@ -502,5 +534,214 @@ describe("PostgreSQL Identity concurrency and lifecycle", () => {
       authorizationVersion: "bigint",
       migration: "string",
     });
+  });
+});
+
+describe("PostgreSQL Owner-managed member administration", () => {
+  it("persists explicit Staff permissions and selected Branch IDs and resolves real trusted authority", async () => {
+    const owner = await bootstrap.execute(bootstrapCommand("member-01", "owner"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    await connection.database.insert(workspaceBranchReferences).values({
+      workspaceId: owner.value.workspaceId,
+      branchId: "branch-a",
+      status: "Active",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const staff = await createMember.execute({
+      context: ownerContext(owner.value.workspaceId, owner.value.actorId),
+      username: "catalog.staff",
+      displayName: "Catalog Staff",
+      whatsappPhoneE164: "+967722222222",
+      locale: "en",
+      role: "Staff",
+      permissionCodes: ["catalog.product.create", "catalog.product-entry-submission.read"],
+      branchScope: { type: "SelectedBranches", branchIds: ["branch-a"] },
+      temporaryPassword: "Staff temporary 123",
+    });
+    assert.ok(staff.ok);
+    if (!staff.ok) return;
+    assert.deepEqual((await connection.database.select().from(identityMembershipPermissions)).map(({ permissionCode }) => permissionCode).sort(), [
+      "catalog.product-entry-submission.read",
+      "catalog.product.create",
+    ]);
+    assert.deepEqual((await connection.database.select().from(identityMembershipBranches)).map(({ branchId }) => branchId), ["branch-a"]);
+
+    assert.ok((await activateAccount.execute({
+      workspaceId: owner.value.workspaceId,
+      actorId: staff.value.actorId,
+      newPermanentPassword: "Staff permanent 123",
+    })).ok);
+    const staffLogin = await login.execute({ workspaceCode: "member-01", username: "catalog.staff", password: "Staff permanent 123" });
+    assert.ok(staffLogin.ok);
+    if (!staffLogin.ok) return;
+    const trusted = await resolveSession.execute({ rawSessionValue: staffLogin.value.opaqueValue, requiredClass: "Full" });
+    assert.ok(trusted.ok);
+    if (!trusted.ok) return;
+    assert.equal(trusted.value.context.role, "Staff");
+    assert.deepEqual(trusted.value.context.permissions, ["catalog.product-entry-submission.read", "catalog.product.create"]);
+    assert.deepEqual(trusted.value.context.branchScope, { type: "SelectedBranches", branchIds: ["branch-a"] });
+
+    const changed = await changeMemberPermissions.execute({
+      context: ownerContext(owner.value.workspaceId, owner.value.actorId),
+      targetActorId: staff.value.actorId,
+      permissionCodes: ["pricing.view"],
+    });
+    assert.deepEqual(changed, { ok: true, value: { authorizationVersion: 2, revokedSessionCount: 1 } });
+    assert.deepEqual(await resolveSession.execute({ rawSessionValue: staffLogin.value.opaqueValue, requiredClass: "Any" }), {
+      ok: false,
+      error: "SessionRevoked",
+    });
+  });
+
+  it("queries Branch references inside trusted Workspace scope and hides foreign-only IDs", async () => {
+    const first = await bootstrap.execute(bootstrapCommand("branch-scope-01", "owner-one"));
+    const second = await bootstrap.execute(bootstrapCommand("branch-scope-02", "owner-two"));
+    assert.ok(first.ok && second.ok);
+    if (!first.ok || !second.ok) return;
+    const now = new Date();
+    await connection.database.insert(workspaceBranchReferences).values([
+      { workspaceId: first.value.workspaceId, branchId: "branch-01", status: "Active", createdAt: now, updatedAt: now },
+      { workspaceId: second.value.workspaceId, branchId: "branch-01", status: "Active", createdAt: now, updatedAt: now },
+      { workspaceId: second.value.workspaceId, branchId: "foreign-only-branch", status: "Active", createdAt: now, updatedAt: now },
+      { workspaceId: first.value.workspaceId, branchId: "inactive-branch", status: "Inactive", createdAt: now, updatedAt: now },
+    ]);
+    const branchRepository = new PostgreSqlWorkspaceBranchReferenceRepository(connection.database);
+    const scopedReferences = await branchRepository.findByIds(
+      WorkspaceId.create(first.value.workspaceId),
+      ["branch-01", "foreign-only-branch"],
+    );
+    assert.deepEqual(scopedReferences.map(({ workspaceId, branchId, status }) => ({
+      workspaceId: workspaceId.value, branchId, status,
+    })), [{ workspaceId: first.value.workspaceId, branchId: "branch-01", status: "Active" }]);
+
+    const createSelected = (username: string, phone: string, branchId: string) => createMember.execute({
+      context: ownerContext(first.value.workspaceId, first.value.actorId),
+      username,
+      displayName: username,
+      whatsappPhoneE164: phone,
+      locale: "en" as const,
+      role: "Staff" as const,
+      permissionCodes: [],
+      branchScope: { type: "SelectedBranches" as const, branchIds: [branchId] },
+      temporaryPassword: "Staff temporary 123",
+    });
+    assert.ok((await createSelected("staff.same", "+967733333331", "branch-01")).ok);
+    assert.deepEqual(await createSelected("staff.foreign", "+967733333332", "foreign-only-branch"), {
+      ok: false, error: "BranchNotFound",
+    });
+    assert.deepEqual(await createSelected("staff.missing", "+967733333333", "missing-branch"), {
+      ok: false, error: "BranchNotFound",
+    });
+    assert.deepEqual(await createSelected("staff.inactive", "+967733333334", "inactive-branch"), {
+      ok: false, error: "BranchInactive",
+    });
+  });
+
+  it("serializes same-Workspace WhatsApp claims and allows cross-Workspace reuse", async () => {
+    const first = await bootstrap.execute(bootstrapCommand("member-01", "owner-one"));
+    const second = await bootstrap.execute({ ...bootstrapCommand("member-02", "owner-two"), ownerRecoveryPhone: "+967722222222" });
+    assert.ok(first.ok && second.ok);
+    if (!first.ok || !second.ok) return;
+    const create = (username: string) => createMember.execute({
+      context: ownerContext(first.value.workspaceId, first.value.actorId),
+      username,
+      displayName: username,
+      whatsappPhoneE164: "+967733333333",
+      locale: "ar" as const,
+      role: "Staff" as const,
+      permissionCodes: [],
+      branchScope: { type: "AllBranches" as const },
+      temporaryPassword: "Staff temporary 123",
+    });
+    const concurrent = await Promise.all([create("staff.one"), create("staff.two")]);
+    assert.equal(concurrent.filter((result) => result.ok).length, 1);
+    assert.equal(concurrent.filter((result) => !result.ok && result.error === "WhatsAppAlreadyInUse").length, 1);
+    assert.ok((await createMember.execute({
+      context: ownerContext(second.value.workspaceId, second.value.actorId),
+      username: "staff.other",
+      displayName: "Other Workspace Staff",
+      whatsappPhoneE164: "+967733333333",
+      locale: "ar",
+      role: "Staff",
+      permissionCodes: [],
+      branchScope: { type: "AllBranches" },
+      temporaryPassword: "Staff temporary 123",
+    })).ok);
+  });
+
+  it("uses a Workspace row lock so concurrent suspend/demote cannot remove all Active Owners", async () => {
+    const firstOwner = await bootstrap.execute(bootstrapCommand("member-01", "owner-one"));
+    assert.ok(firstOwner.ok);
+    if (!firstOwner.ok) return;
+    assert.ok((await activateAccount.execute({
+      workspaceId: firstOwner.value.workspaceId,
+      actorId: firstOwner.value.actorId,
+      newPermanentPassword: "Owner one permanent 123",
+    })).ok);
+    const secondOwner = await createMember.execute({
+      context: ownerContext(firstOwner.value.workspaceId, firstOwner.value.actorId),
+      username: "owner.two",
+      displayName: "Second Owner",
+      whatsappPhoneE164: "+967722222222",
+      locale: "ar",
+      role: "Owner",
+      branchScope: { type: "AllBranches" },
+      temporaryPassword: "Owner two temporary 123",
+    });
+    assert.ok(secondOwner.ok);
+    if (!secondOwner.ok) return;
+    assert.ok((await activateAccount.execute({
+      workspaceId: firstOwner.value.workspaceId,
+      actorId: secondOwner.value.actorId,
+      newPermanentPassword: "Owner two permanent 123",
+    })).ok);
+    const context = ownerContext(firstOwner.value.workspaceId, firstOwner.value.actorId);
+    const results = await Promise.all([
+      suspendMember.execute({ context, targetActorId: firstOwner.value.actorId }),
+      demoteOwner.execute({
+        context,
+        targetActorId: secondOwner.value.actorId,
+        permissionCodes: ["catalog.product.create"],
+        branchScope: { type: "AllBranches" },
+      }),
+    ]);
+    assert.equal(results.filter((result) => result.ok).length, 1);
+    assert.equal(results.filter((result) => !result.ok && result.error === "LastActiveOwnerProtected").length, 1);
+    const remaining = await connection.database.execute<{ count: string }>(sql`
+      SELECT count(*)::text AS count
+      FROM identity_memberships memberships
+      INNER JOIN identity_accounts accounts USING (workspace_id, actor_id)
+      WHERE memberships.workspace_id = ${firstOwner.value.workspaceId}
+        AND memberships.role = 'Owner' AND accounts.status = 'Active'
+    `);
+    assert.equal(remaining.rows[0]!.count, "1");
+  });
+
+  it("applies migration 0009 with normalized tables, locale, scoped FKs, and known-code constraints", async () => {
+    const schema = await connection.database.execute<{
+      permissions: string | null; branches: string | null; references: string | null; locale: string | null;
+    }>(sql`
+      SELECT to_regclass('identity_membership_permissions')::text AS permissions,
+             to_regclass('identity_membership_branches')::text AS branches,
+             to_regclass('workspace_branch_references')::text AS references,
+             (SELECT data_type FROM information_schema.columns
+               WHERE table_name = 'identity_member_profiles' AND column_name = 'locale') AS locale
+    `);
+    assert.deepEqual(schema.rows[0], {
+      permissions: "identity_membership_permissions",
+      branches: "identity_membership_branches",
+      references: "workspace_branch_references",
+      locale: "text",
+    });
+    const owner = await bootstrap.execute(bootstrapCommand("member-01", "owner"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    await assert.rejects(connection.database.insert(identityMembershipPermissions).values({
+      workspaceId: owner.value.workspaceId,
+      actorId: owner.value.actorId,
+      permissionCode: "unknown.permission",
+    }), (error: unknown) => (error as { cause?: { constraint?: string } }).cause?.constraint === "identity_membership_permissions_known_code");
   });
 });

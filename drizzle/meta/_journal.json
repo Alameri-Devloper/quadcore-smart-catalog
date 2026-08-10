@@ -64,6 +64,13 @@
       "when": 1786251269579,
       "tag": "0008_supreme_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786256995782,
+      "tag": "0009_identity_member_administration",
+      "breakpoints": true
     }
   ]
 }

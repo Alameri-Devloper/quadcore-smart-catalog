@@ -1,4 +1,4 @@
-import type { WorkspaceCommunicationSettingsRepository, WorkspaceRepository } from "../../workspace/repositories/workspace.repository";
+import type { WorkspaceBranchReferenceRepository, WorkspaceCommunicationSettingsRepository, WorkspaceRepository } from "../../workspace/repositories/workspace.repository";
 import type { SecurityAuditPort } from "../../../shared/audit/audit.port";
 import type { ActorId, ChallengeId, SessionId, WorkspaceId } from "../../../shared/domain/scoped-identity";
 import type { Account, AccountStatus } from "../domain/account";
@@ -41,14 +41,41 @@ export interface PasswordRecoveryChallengeRepository {
 }
 
 export interface MemberProfileRepository {
-  create(profile: WorkspaceMemberProfile): Promise<void>;
-  findByActorId(workspaceId: WorkspaceId, actorId: ActorId): Promise<WorkspaceMemberProfile | null>;
+  create(profile: WorkspaceMemberProfile): Promise<"Created" | "WhatsAppAlreadyInUse">;
+  findByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceMemberProfile | null>;
+  findByRecoveryPhone(workspaceId: WorkspaceId, recoveryPhone: string): Promise<WorkspaceMemberProfile | null>;
+  update(profile: WorkspaceMemberProfile, expectedRecoveryContactVersion: number, expectedUpdatedAt: Date): Promise<"Updated" | "MemberNotFound" | "ProfileUpdateConflict">;
 }
 
 export interface MembershipRepository {
   create(membership: WorkspaceMembership): Promise<void>;
   findByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceMembership | null>;
   findRole(workspaceId: WorkspaceId, actorId: ActorId): Promise<WorkspaceRole | null>;
+  updateAuthorization(membership: WorkspaceMembership, expectedAuthorizationVersion: number): Promise<"Updated" | "MemberNotFound" | "AuthorizationConflict">;
+  countActiveOwners(workspaceId: WorkspaceId): Promise<number>;
+}
+
+export interface MemberAdministrationReadModel {
+  readonly actorId: string;
+  readonly displayName: string;
+  readonly username: string;
+  readonly role: WorkspaceRole;
+  readonly accountStatus: AccountStatus;
+  readonly passwordChangeRequired: boolean;
+  readonly whatsappPhoneE164: string;
+  readonly locale: "ar" | "en";
+  readonly branchScope: WorkspaceMembership["branchScope"];
+  readonly branchIds: readonly string[];
+  readonly permissionCodes: readonly string[];
+  readonly authorizationVersion: number;
+  readonly recoveryContactVersion: number;
+  readonly createdAt: Date;
+  readonly lastSuccessfulLoginAt: Date | null;
+}
+
+export interface MemberAdministrationReadRepository {
+  list(workspaceId: WorkspaceId): Promise<readonly MemberAdministrationReadModel[]>;
+  findByActorId(workspaceId: WorkspaceId, actorId: ActorId): Promise<MemberAdministrationReadModel | null>;
 }
 
 export interface SessionRepository {
@@ -75,12 +102,14 @@ export interface SessionRepository {
 export interface IdentityTransactionalContext {
   readonly workspaceRepository: WorkspaceRepository;
   readonly workspaceCommunicationSettingsRepository: WorkspaceCommunicationSettingsRepository;
+  readonly workspaceBranchReferenceRepository: WorkspaceBranchReferenceRepository;
   readonly accountRepository: AccountRepository;
   readonly passwordCredentialRepository: PasswordCredentialRepository;
   readonly loginProtectionRepository: LoginProtectionRepository;
   readonly passwordRecoveryChallengeRepository: PasswordRecoveryChallengeRepository;
   readonly memberProfileRepository: MemberProfileRepository;
   readonly membershipRepository: MembershipRepository;
+  readonly memberAdministrationReadRepository: MemberAdministrationReadRepository;
   readonly sessionRepository: SessionRepository;
   readonly audit: SecurityAuditPort;
 }

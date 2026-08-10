@@ -4,7 +4,7 @@ import { E164PhoneNumber } from "../../../../shared/domain/e164-phone-number";
 import { ActorId, ChallengeId, SessionId, WorkspaceId } from "../../../../shared/domain/scoped-identity";
 import { Account, type AccountStatus } from "../../domain/account";
 import { LoginProtection } from "../../domain/login-protection";
-import { createMembership, type WorkspaceMemberProfile, type WorkspaceMembership, type WorkspaceRole } from "../../domain/member";
+import { createMembership, rehydrateMemberProfile, type WorkspaceMemberProfile, type WorkspaceMembership, type WorkspaceRole } from "../../domain/member";
 import { PasswordCredential } from "../../domain/password-credential";
 import { PasswordHash } from "../../domain/password";
 import { PasswordRecoveryChallenge } from "../../domain/password-recovery-challenge";
@@ -16,6 +16,8 @@ import type {
   CredentialReplaceOutcome,
   LoginProtectionRepository,
   MemberProfileRepository,
+  MemberAdministrationReadModel,
+  MemberAdministrationReadRepository,
   MembershipRepository,
   PasswordCredentialRepository,
   PasswordRecoveryChallengeRepository,
@@ -25,6 +27,8 @@ import {
   identityAccounts,
   identityLoginProtection,
   identityMemberProfiles,
+  identityMembershipBranches,
+  identityMembershipPermissions,
   identityMemberships,
   identityPasswordCredentials,
   identityPasswordRecoveryChallenges,
@@ -309,34 +313,77 @@ export class PostgreSqlPasswordRecoveryChallengeRepository implements PasswordRe
 export class PostgreSqlMemberProfileRepository implements MemberProfileRepository {
   constructor(private readonly database: PlatformDatabase) {}
 
-  async create(profile: WorkspaceMemberProfile): Promise<void> {
-    await this.database.insert(identityMemberProfiles).values({
+  async create(profile: WorkspaceMemberProfile): Promise<"Created" | "WhatsAppAlreadyInUse"> {
+    const inserted = await this.database.insert(identityMemberProfiles).values({
       workspaceId: profile.workspaceId.value,
       actorId: profile.actorId.value,
       displayName: profile.displayName,
       recoveryPhone: profile.recoveryPhone.value,
       recoveryContactVersion: profile.recoveryContactVersion,
+      locale: profile.locale,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
-    });
+    }).onConflictDoNothing().returning({ actorId: identityMemberProfiles.actorId });
+    return inserted.length === 1 ? "Created" : "WhatsAppAlreadyInUse";
   }
 
-  async findByActorId(workspaceId: WorkspaceId, actorId: ActorId): Promise<WorkspaceMemberProfile | null> {
-    const rows = await this.database.select().from(identityMemberProfiles).where(and(
+  async findByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceMemberProfile | null> {
+    const base = this.database.select().from(identityMemberProfiles).where(and(
       eq(identityMemberProfiles.workspaceId, workspaceId.value),
       eq(identityMemberProfiles.actorId, actorId.value),
     )).limit(1);
+    const rows = options?.forUpdate ? await base.for("update") : await base;
     const row = rows[0];
     if (!row) return null;
-    return Object.freeze({
+    return rehydrateMemberProfile({
       workspaceId,
       actorId,
       displayName: row.displayName,
       recoveryPhone: E164PhoneNumber.create(row.recoveryPhone),
       recoveryContactVersion: row.recoveryContactVersion,
+      locale: row.locale as "ar" | "en",
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
     });
+  }
+
+  async findByRecoveryPhone(workspaceId: WorkspaceId, recoveryPhone: string): Promise<WorkspaceMemberProfile | null> {
+    const rows = await this.database.select().from(identityMemberProfiles).where(and(
+      eq(identityMemberProfiles.workspaceId, workspaceId.value),
+      eq(identityMemberProfiles.recoveryPhone, recoveryPhone),
+    )).limit(1);
+    const row = rows[0];
+    return row ? rehydrateMemberProfile({
+      workspaceId,
+      actorId: ActorId.create(row.actorId),
+      displayName: row.displayName,
+      recoveryPhone: E164PhoneNumber.create(row.recoveryPhone),
+      recoveryContactVersion: row.recoveryContactVersion,
+      locale: row.locale as "ar" | "en",
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }) : null;
+  }
+
+  async update(profile: WorkspaceMemberProfile, expectedRecoveryContactVersion: number, expectedUpdatedAt: Date): Promise<"Updated" | "MemberNotFound" | "ProfileUpdateConflict"> {
+    const updated = await this.database.update(identityMemberProfiles).set({
+      displayName: profile.displayName,
+      recoveryPhone: profile.recoveryPhone.value,
+      recoveryContactVersion: profile.recoveryContactVersion,
+      locale: profile.locale,
+      updatedAt: profile.updatedAt,
+    }).where(and(
+      eq(identityMemberProfiles.workspaceId, profile.workspaceId.value),
+      eq(identityMemberProfiles.actorId, profile.actorId.value),
+      eq(identityMemberProfiles.recoveryContactVersion, expectedRecoveryContactVersion),
+      eq(identityMemberProfiles.updatedAt, expectedUpdatedAt),
+    )).returning({ actorId: identityMemberProfiles.actorId });
+    if (updated.length === 1) return "Updated";
+    const exists = await this.database.select({ actorId: identityMemberProfiles.actorId }).from(identityMemberProfiles).where(and(
+      eq(identityMemberProfiles.workspaceId, profile.workspaceId.value),
+      eq(identityMemberProfiles.actorId, profile.actorId.value),
+    )).limit(1);
+    return exists.length === 0 ? "MemberNotFound" : "ProfileUpdateConflict";
   }
 }
 
@@ -353,6 +400,20 @@ export class PostgreSqlMembershipRepository implements MembershipRepository {
       createdAt: membership.createdAt,
       updatedAt: membership.updatedAt,
     });
+    if (membership.permissionCodes.length > 0) {
+      await this.database.insert(identityMembershipPermissions).values(membership.permissionCodes.map((permissionCode) => ({
+        workspaceId: membership.workspaceId.value,
+        actorId: membership.actorId.value,
+        permissionCode,
+      })));
+    }
+    if (membership.branchIds.length > 0) {
+      await this.database.insert(identityMembershipBranches).values(membership.branchIds.map((branchId) => ({
+        workspaceId: membership.workspaceId.value,
+        actorId: membership.actorId.value,
+        branchId,
+      })));
+    }
   }
 
   async findByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceMembership | null> {
@@ -362,19 +423,156 @@ export class PostgreSqlMembershipRepository implements MembershipRepository {
     )).limit(1);
     const rows = options?.forUpdate ? await base.for("update") : await base;
     const row = rows[0];
-    return row ? createMembership({
+    if (!row) return null;
+    const [permissionRows, branchRows] = await Promise.all([
+      this.database.select({ permissionCode: identityMembershipPermissions.permissionCode })
+        .from(identityMembershipPermissions).where(and(
+          eq(identityMembershipPermissions.workspaceId, workspaceId.value),
+          eq(identityMembershipPermissions.actorId, actorId.value),
+        )),
+      this.database.select({ branchId: identityMembershipBranches.branchId })
+        .from(identityMembershipBranches).where(and(
+          eq(identityMembershipBranches.workspaceId, workspaceId.value),
+          eq(identityMembershipBranches.actorId, actorId.value),
+        )),
+    ]);
+    return createMembership({
       workspaceId,
       actorId,
       role: row.role as WorkspaceRole,
       branchScope: row.branchScope as WorkspaceMembership["branchScope"],
+      permissionCodes: permissionRows.map(({ permissionCode }) => permissionCode),
+      branchIds: branchRows.map(({ branchId }) => branchId),
       authorizationVersion: row.authorizationVersion,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-    }) : null;
+    });
   }
 
   async findRole(workspaceId: WorkspaceId, actorId: ActorId): Promise<WorkspaceRole | null> {
     return (await this.findByActorId(workspaceId, actorId))?.role ?? null;
+  }
+
+  async updateAuthorization(membership: WorkspaceMembership, expectedAuthorizationVersion: number): Promise<"Updated" | "MemberNotFound" | "AuthorizationConflict"> {
+    const updated = await this.database.update(identityMemberships).set({
+      role: membership.role,
+      branchScope: membership.branchScope,
+      authorizationVersion: membership.authorizationVersion,
+      updatedAt: membership.updatedAt,
+    }).where(and(
+      eq(identityMemberships.workspaceId, membership.workspaceId.value),
+      eq(identityMemberships.actorId, membership.actorId.value),
+      eq(identityMemberships.authorizationVersion, expectedAuthorizationVersion),
+    )).returning({ actorId: identityMemberships.actorId });
+    if (updated.length === 0) {
+      const exists = await this.database.select({ actorId: identityMemberships.actorId }).from(identityMemberships).where(and(
+        eq(identityMemberships.workspaceId, membership.workspaceId.value),
+        eq(identityMemberships.actorId, membership.actorId.value),
+      )).limit(1);
+      return exists.length === 0 ? "MemberNotFound" : "AuthorizationConflict";
+    }
+    await this.database.delete(identityMembershipPermissions).where(and(
+      eq(identityMembershipPermissions.workspaceId, membership.workspaceId.value),
+      eq(identityMembershipPermissions.actorId, membership.actorId.value),
+    ));
+    await this.database.delete(identityMembershipBranches).where(and(
+      eq(identityMembershipBranches.workspaceId, membership.workspaceId.value),
+      eq(identityMembershipBranches.actorId, membership.actorId.value),
+    ));
+    if (membership.permissionCodes.length > 0) await this.database.insert(identityMembershipPermissions).values(
+      membership.permissionCodes.map((permissionCode) => ({
+        workspaceId: membership.workspaceId.value,
+        actorId: membership.actorId.value,
+        permissionCode,
+      })),
+    );
+    if (membership.branchIds.length > 0) await this.database.insert(identityMembershipBranches).values(
+      membership.branchIds.map((branchId) => ({
+        workspaceId: membership.workspaceId.value,
+        actorId: membership.actorId.value,
+        branchId,
+      })),
+    );
+    return "Updated";
+  }
+
+  async countActiveOwners(workspaceId: WorkspaceId): Promise<number> {
+    const rows = await this.database.execute<{ count: string }>(sql`
+      SELECT count(*)::text AS count
+      FROM identity_memberships memberships
+      INNER JOIN identity_accounts accounts
+        ON accounts.workspace_id = memberships.workspace_id
+       AND accounts.actor_id = memberships.actor_id
+      WHERE memberships.workspace_id = ${workspaceId.value}
+        AND memberships.role = 'Owner'
+        AND accounts.status = 'Active'
+    `);
+    return Number(rows.rows[0]?.count ?? 0);
+  }
+}
+
+export class PostgreSqlMemberAdministrationReadRepository implements MemberAdministrationReadRepository {
+  constructor(private readonly database: PlatformDatabase) {}
+
+  async list(workspaceId: WorkspaceId): Promise<readonly MemberAdministrationReadModel[]> {
+    const rows = await this.database.execute<{
+      actorId: string; displayName: string; username: string; role: WorkspaceRole; accountStatus: AccountStatus;
+      passwordLifecycle: "Temporary" | "Permanent"; whatsappPhoneE164: string; locale: "ar" | "en";
+      branchScope: WorkspaceMembership["branchScope"]; authorizationVersion: number; recoveryContactVersion: number;
+      createdAt: Date; lastSuccessfulLoginAt: Date | null;
+    }>(sql`
+      SELECT accounts.actor_id AS "actorId", profiles.display_name AS "displayName", accounts.username,
+             memberships.role, accounts.status AS "accountStatus",
+             credentials.password_lifecycle AS "passwordLifecycle",
+             profiles.recovery_phone AS "whatsappPhoneE164", profiles.locale,
+             memberships.branch_scope AS "branchScope",
+             memberships.authorization_version AS "authorizationVersion",
+             profiles.recovery_contact_version AS "recoveryContactVersion",
+             accounts.created_at AS "createdAt", max(sessions.created_at) AS "lastSuccessfulLoginAt"
+      FROM identity_accounts accounts
+      INNER JOIN identity_member_profiles profiles USING (workspace_id, actor_id)
+      INNER JOIN identity_memberships memberships USING (workspace_id, actor_id)
+      INNER JOIN identity_password_credentials credentials USING (workspace_id, actor_id)
+      LEFT JOIN identity_sessions sessions USING (workspace_id, actor_id)
+      WHERE accounts.workspace_id = ${workspaceId.value}
+      GROUP BY accounts.actor_id, profiles.display_name, accounts.username, memberships.role, accounts.status,
+               credentials.password_lifecycle, profiles.recovery_phone, profiles.locale, memberships.branch_scope,
+               memberships.authorization_version, profiles.recovery_contact_version, accounts.created_at
+      ORDER BY profiles.display_name, accounts.actor_id
+    `);
+    if (rows.rows.length === 0) return Object.freeze([]);
+    const actorIds = rows.rows.map(({ actorId }) => actorId);
+    const [permissionRows, branchRows] = await Promise.all([
+      this.database.select().from(identityMembershipPermissions).where(and(
+        eq(identityMembershipPermissions.workspaceId, workspaceId.value),
+        inArray(identityMembershipPermissions.actorId, actorIds),
+      )),
+      this.database.select().from(identityMembershipBranches).where(and(
+        eq(identityMembershipBranches.workspaceId, workspaceId.value),
+        inArray(identityMembershipBranches.actorId, actorIds),
+      )),
+    ]);
+    return Object.freeze(rows.rows.map((row) => Object.freeze({
+      actorId: row.actorId,
+      displayName: row.displayName,
+      username: row.username,
+      role: row.role,
+      accountStatus: row.accountStatus,
+      passwordChangeRequired: row.passwordLifecycle === "Temporary",
+      whatsappPhoneE164: row.whatsappPhoneE164,
+      locale: row.locale,
+      branchScope: row.branchScope,
+      branchIds: Object.freeze(branchRows.filter((item) => item.actorId === row.actorId).map(({ branchId }) => branchId).sort()),
+      permissionCodes: Object.freeze(permissionRows.filter((item) => item.actorId === row.actorId).map(({ permissionCode }) => permissionCode).sort()),
+      authorizationVersion: row.authorizationVersion,
+      recoveryContactVersion: row.recoveryContactVersion,
+      createdAt: new Date(row.createdAt),
+      lastSuccessfulLoginAt: row.lastSuccessfulLoginAt ? new Date(row.lastSuccessfulLoginAt) : null,
+    })));
+  }
+
+  async findByActorId(workspaceId: WorkspaceId, actorId: ActorId): Promise<MemberAdministrationReadModel | null> {
+    return (await this.list(workspaceId)).find((member) => member.actorId === actorId.value) ?? null;
   }
 }
 

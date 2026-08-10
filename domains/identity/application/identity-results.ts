@@ -31,7 +31,24 @@ export type IdentityErrorCode =
   | "InvalidCurrentPassword"
   | "SessionCreateConflict"
   | "InfrastructureUnavailable"
-  | "BootstrapInputInvalid";
+  | "BootstrapInputInvalid"
+  | "MemberNotFound"
+  | "WhatsAppAlreadyInUse"
+  | "InvalidRole"
+  | "InvalidPermissionCode"
+  | "InvalidPermissionTemplate"
+  | "InvalidBranchScope"
+  | "BranchNotFound"
+  | "BranchInactive"
+  | "LastActiveOwnerProtected"
+  | "TargetAlreadySuspended"
+  | "TargetNotSuspended"
+  | "AuthorizationConflict"
+  | "OwnerMustUseAllBranches"
+  | "TemporaryPasswordInvalid"
+  | "MemberProfileInvalid"
+  | "WhatsAppInvalid"
+  | "WorkspaceCommunicationSettingsInvalid";
 
 export type IdentityResult<T> =
   | { readonly ok: true; readonly value: T }

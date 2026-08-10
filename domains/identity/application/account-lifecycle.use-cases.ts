@@ -83,11 +83,27 @@ export class SuspendAccountUseCase {
     const now = this.clock.now();
     try {
       return await this.unitOfWork.execute(async (context) => {
+        if (!await context.workspaceRepository.findById(workspaceId, { forUpdate: true })) {
+          return rollbackIdentityTransaction(identityFailure<null>("WorkspaceNotFound"));
+        }
         if (await context.membershipRepository.findRole(workspaceId, requestedBy) !== "Owner") {
           return rollbackIdentityTransaction(identityFailure<null>("OwnerRequired"));
         }
         const account = await context.accountRepository.findByActorId(workspaceId, targetActorId, { forUpdate: true });
         if (!account) return rollbackIdentityTransaction(identityFailure<null>("AccountNotFound"));
+        const membership = await context.membershipRepository.findByActorId(workspaceId, targetActorId, { forUpdate: true });
+        if (!membership) return rollbackIdentityTransaction(identityFailure<null>("MemberNotFound"));
+        if (membership.role === "Owner" && account.status === "Active" && await context.membershipRepository.countActiveOwners(workspaceId) <= 1) {
+          await context.audit.append([{
+            workspaceId,
+            eventType: SECURITY_AUDIT_EVENT_TYPES.lastActiveOwnerOperationRejected,
+            actorId: requestedBy,
+            subjectActorId: targetActorId,
+            resultCode: "Suspend",
+            occurredAt: now,
+          }]);
+          return commitIdentityTransaction(identityFailure<null>("LastActiveOwnerProtected"));
+        }
         const expectedStatus = account.status;
         try { account.suspend(now); }
         catch { return rollbackIdentityTransaction(identityFailure<null>("AccountTransitionInvalid")); }
@@ -138,9 +154,18 @@ export class SuspendAccountUseCase {
 }
 
 export class ReactivateAccountUseCase {
-  constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
+  constructor(
+    private readonly unitOfWork: IdentityUnitOfWork,
+    private readonly passwordHasher: PasswordHasher,
+    private readonly clock: IdentityClock,
+  ) {}
 
-  async execute(command: { readonly workspaceId: string; readonly requestedByActorId: string; readonly targetActorId: string }): Promise<IdentityResult<null>> {
+  async execute(command: { readonly workspaceId: string; readonly requestedByActorId: string; readonly targetActorId: string; readonly newTemporaryPassword: string }): Promise<IdentityResult<{ readonly passwordVersion: number }>> {
+    try { validatePassword(command.newTemporaryPassword); }
+    catch { return identityFailure("TemporaryPasswordInvalid"); }
+    let hash;
+    try { hash = await this.passwordHasher.hash(command.newTemporaryPassword); }
+    catch { return identityFailure("InfrastructureUnavailable"); }
     const workspaceId = WorkspaceId.create(command.workspaceId);
     const requestedBy = ActorId.create(command.requestedByActorId);
     const targetActorId = ActorId.create(command.targetActorId);
@@ -148,20 +173,28 @@ export class ReactivateAccountUseCase {
     try {
       return await this.unitOfWork.execute(async (context) => {
         if (await context.membershipRepository.findRole(workspaceId, requestedBy) !== "Owner") {
-          return rollbackIdentityTransaction(identityFailure<null>("OwnerRequired"));
+          return rollbackIdentityTransaction(identityFailure<{ readonly passwordVersion: number }>("OwnerRequired"));
         }
         const account = await context.accountRepository.findByActorId(workspaceId, targetActorId, { forUpdate: true });
-        if (!account) return rollbackIdentityTransaction(identityFailure<null>("AccountNotFound"));
+        const profile = await context.memberProfileRepository.findByActorId(workspaceId, targetActorId, { forUpdate: true });
+        const credential = await context.passwordCredentialRepository.findByActorId(workspaceId, targetActorId, { forUpdate: true });
+        if (!account || !profile || !credential) return rollbackIdentityTransaction(identityFailure<{ readonly passwordVersion: number }>("MemberNotFound"));
         try { account.reactivate(now); }
-        catch { return rollbackIdentityTransaction(identityFailure<null>("AccountTransitionInvalid")); }
+        catch { return rollbackIdentityTransaction(identityFailure<{ readonly passwordVersion: number }>("TargetNotSuspended")); }
+        const expectedCredentialVersion = credential.replace(hash, "Temporary", now);
+        if (await context.passwordCredentialRepository.replace(credential, expectedCredentialVersion) !== "Updated") {
+          return rollbackIdentityTransaction(identityFailure<{ readonly passwordVersion: number }>("CredentialUpdateConflict"));
+        }
         if (await context.accountRepository.updateStatus(account, "Suspended") !== "Updated") {
-          return rollbackIdentityTransaction(identityFailure<null>("AccountTransitionInvalid"));
+          return rollbackIdentityTransaction(identityFailure<{ readonly passwordVersion: number }>("AccountTransitionInvalid"));
         }
         const protection = await context.loginProtectionRepository.findByActorId(workspaceId, targetActorId, { forUpdate: true });
         if (protection) {
           protection.clear(now);
           await context.loginProtectionRepository.save(protection);
         }
+        const invalidatedCount = await context.passwordRecoveryChallengeRepository.invalidateOpenByActorId(workspaceId, targetActorId, now);
+        const revokedCount = await context.sessionRepository.revokeAllForActor(workspaceId, targetActorId, "AdministrativeRevocation", now);
         await context.audit.append([
           {
             workspaceId,
@@ -170,6 +203,7 @@ export class ReactivateAccountUseCase {
             subjectActorId: targetActorId,
             resultCode: "Active",
             occurredAt: now,
+            metadata: { passwordVersion: credential.passwordVersion, invalidatedCount, revokedCount },
           },
           {
             workspaceId,
@@ -180,7 +214,7 @@ export class ReactivateAccountUseCase {
             occurredAt: now,
           },
         ]);
-        return commitIdentityTransaction(identitySuccess(null));
+        return commitIdentityTransaction(identitySuccess({ passwordVersion: credential.passwordVersion }));
       });
     } catch {
       return identityFailure("InfrastructureUnavailable");

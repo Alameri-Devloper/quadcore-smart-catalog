@@ -71,7 +71,7 @@ const createFixture = () => {
     createAccount: new CreateAccountUseCase(unitOfWork, passwordHasher, clock, identifiers),
     activateAccount: new ActivateAccountUseCase(unitOfWork, passwordHasher, clock),
     suspendAccount: new SuspendAccountUseCase(unitOfWork, clock),
-    reactivateAccount: new ReactivateAccountUseCase(unitOfWork, clock),
+    reactivateAccount: new ReactivateAccountUseCase(unitOfWork, passwordHasher, clock),
     ownerReset: new OwnerResetPasswordUseCase(unitOfWork, passwordHasher, clock),
     emergencyReset: new EmergencyOwnerPasswordResetUseCase(unitOfWork, passwordHasher, clock),
     createRecovery: new CreatePasswordRecoveryChallengeUseCase(unitOfWork, digest, codes, clock, identifiers),
@@ -133,7 +133,7 @@ describe("Workspace bootstrap application", () => {
 });
 
 describe("Account creation and reset application", () => {
-  it("activates with a Permanent password and invalidates recovery on suspension", async () => {
+  it("activates with a Permanent password and protects the last Active Owner", async () => {
     const fixture = createFixture();
     const bootstrap = await fixture.bootstrap.execute(bootstrapCommand("store-01", "owner"));
     assert.ok(bootstrap.ok);
@@ -149,18 +149,11 @@ describe("Account creation and reset application", () => {
       workspaceId: bootstrap.value.workspaceId,
       requestedByActorId: bootstrap.value.actorId,
       targetActorId: bootstrap.value.actorId,
-    }), { ok: true, value: null });
+    }), { ok: false, error: "LastActiveOwnerProtected" });
     const account = [...fixture.unitOfWork.state.accounts.values()][0]!;
     const challenge = [...fixture.unitOfWork.state.challenges.values()][0]!;
-    assert.equal(account.status, "Suspended");
-    assert.equal(challenge.status, "Invalidated");
-    assert.deepEqual(await fixture.createRecovery.execute({ workspaceId: bootstrap.value.workspaceId, actorId: bootstrap.value.actorId }), { ok: false, error: "AccountSuspended" });
-    assert.deepEqual(await fixture.reactivateAccount.execute({
-      workspaceId: bootstrap.value.workspaceId,
-      requestedByActorId: bootstrap.value.actorId,
-      targetActorId: bootstrap.value.actorId,
-    }), { ok: true, value: null });
-    assert.equal([...fixture.unitOfWork.state.accounts.values()][0]!.status, "Active");
+    assert.equal(account.status, "Active");
+    assert.equal(challenge.status, "Active");
     assert.equal([...fixture.unitOfWork.state.credentials.values()][0]!.lifecycle, "Permanent");
   });
 
