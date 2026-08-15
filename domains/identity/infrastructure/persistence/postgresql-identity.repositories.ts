@@ -519,7 +519,7 @@ export class PostgreSqlMemberAdministrationReadRepository implements MemberAdmin
       actorId: string; displayName: string; username: string; role: WorkspaceRole; accountStatus: AccountStatus;
       passwordLifecycle: "Temporary" | "Permanent"; whatsappPhoneE164: string; locale: "ar" | "en";
       branchScope: WorkspaceMembership["branchScope"]; authorizationVersion: number; recoveryContactVersion: number;
-      createdAt: Date; lastSuccessfulLoginAt: Date | null;
+      profileUpdatedAt: Date; createdAt: Date; lastSessionIssuedAt: Date | null;
     }>(sql`
       SELECT accounts.actor_id AS "actorId", profiles.display_name AS "displayName", accounts.username,
              memberships.role, accounts.status AS "accountStatus",
@@ -528,7 +528,8 @@ export class PostgreSqlMemberAdministrationReadRepository implements MemberAdmin
              memberships.branch_scope AS "branchScope",
              memberships.authorization_version AS "authorizationVersion",
              profiles.recovery_contact_version AS "recoveryContactVersion",
-             accounts.created_at AS "createdAt", max(sessions.created_at) AS "lastSuccessfulLoginAt"
+             profiles.updated_at AS "profileUpdatedAt", accounts.created_at AS "createdAt",
+             max(sessions.created_at) AS "lastSessionIssuedAt"
       FROM identity_accounts accounts
       INNER JOIN identity_member_profiles profiles USING (workspace_id, actor_id)
       INNER JOIN identity_memberships memberships USING (workspace_id, actor_id)
@@ -537,7 +538,7 @@ export class PostgreSqlMemberAdministrationReadRepository implements MemberAdmin
       WHERE accounts.workspace_id = ${workspaceId.value}
       GROUP BY accounts.actor_id, profiles.display_name, accounts.username, memberships.role, accounts.status,
                credentials.password_lifecycle, profiles.recovery_phone, profiles.locale, memberships.branch_scope,
-               memberships.authorization_version, profiles.recovery_contact_version, accounts.created_at
+               memberships.authorization_version, profiles.recovery_contact_version, profiles.updated_at, accounts.created_at
       ORDER BY profiles.display_name, accounts.actor_id
     `);
     if (rows.rows.length === 0) return Object.freeze([]);
@@ -566,8 +567,9 @@ export class PostgreSqlMemberAdministrationReadRepository implements MemberAdmin
       permissionCodes: Object.freeze(permissionRows.filter((item) => item.actorId === row.actorId).map(({ permissionCode }) => permissionCode).sort()),
       authorizationVersion: row.authorizationVersion,
       recoveryContactVersion: row.recoveryContactVersion,
+      profileUpdatedAt: new Date(row.profileUpdatedAt),
       createdAt: new Date(row.createdAt),
-      lastSuccessfulLoginAt: row.lastSuccessfulLoginAt ? new Date(row.lastSuccessfulLoginAt) : null,
+      lastSessionIssuedAt: row.lastSessionIssuedAt ? new Date(row.lastSessionIssuedAt) : null,
     })));
   }
 

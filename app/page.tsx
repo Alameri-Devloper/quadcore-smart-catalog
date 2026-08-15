@@ -7,6 +7,7 @@ import { CatalogSelector } from "@/domains/catalog/components/CatalogSelector";
 import { ProductService } from "@/domains/catalog/services/product.service";
 import { SpecificationValueService } from "@/domains/catalog/services/specification-value.service";
 import { SpecificationFieldService } from "@/domains/catalog/services/specification-field.service";
+import { AuthenticatedBoundary } from "@/domains/identity/presentation/components/authenticated-boundary";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -30,6 +31,7 @@ export default function Home() {
     );
   });
   return (
+    <AuthenticatedBoundary>
     <main className="min-h-screen bg-gray-100 p-4">
       {/* Header */}
       <div className="bg-white p-4 rounded-xl shadow">
@@ -112,5 +114,6 @@ export default function Home() {
         })}
       </div>
     </main>
+    </AuthenticatedBoundary>
   );
 }

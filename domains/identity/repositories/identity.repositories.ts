@@ -69,8 +69,9 @@ export interface MemberAdministrationReadModel {
   readonly permissionCodes: readonly string[];
   readonly authorizationVersion: number;
   readonly recoveryContactVersion: number;
+  readonly profileUpdatedAt: Date;
   readonly createdAt: Date;
-  readonly lastSuccessfulLoginAt: Date | null;
+  readonly lastSessionIssuedAt: Date | null;
 }
 
 export interface MemberAdministrationReadRepository {

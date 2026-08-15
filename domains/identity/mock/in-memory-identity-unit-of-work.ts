@@ -171,6 +171,9 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
       workspaceBranchReferenceRepository: {
         findByIds: async (workspaceId, branchIds) => [...state.branchReferences.values()].filter((reference) =>
           reference.workspaceId.equals(workspaceId) && branchIds.includes(reference.branchId)),
+        findActiveByWorkspace: async (workspaceId) => [...state.branchReferences.values()].filter((reference) =>
+          reference.workspaceId.equals(workspaceId) && reference.status === "Active")
+          .sort((left, right) => left.branchId.localeCompare(right.branchId)),
       },
       accountRepository: {
         create: async (account) => {
@@ -337,8 +340,9 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
               permissionCodes: membership.permissionCodes,
               authorizationVersion: membership.authorizationVersion,
               recoveryContactVersion: profile.recoveryContactVersion,
+              profileUpdatedAt: profile.updatedAt,
               createdAt: account.createdAt,
-              lastSuccessfulLoginAt: lastSession?.createdAt ?? null,
+              lastSessionIssuedAt: lastSession?.createdAt ?? null,
             });
           }),
         findByActorId: async (workspaceId, actorId) => {
@@ -357,7 +361,7 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
             whatsappPhoneE164: profile.recoveryPhone.value, locale: profile.locale, branchScope: membership.branchScope,
             branchIds: membership.branchIds, permissionCodes: membership.permissionCodes,
             authorizationVersion: membership.authorizationVersion, recoveryContactVersion: profile.recoveryContactVersion,
-            createdAt: account.createdAt, lastSuccessfulLoginAt: lastSession?.createdAt ?? null,
+            profileUpdatedAt: profile.updatedAt, createdAt: account.createdAt, lastSessionIssuedAt: lastSession?.createdAt ?? null,
           });
         },
       },
