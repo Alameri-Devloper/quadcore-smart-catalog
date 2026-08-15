@@ -32,11 +32,15 @@ Suspension preserves identity/history, invalidates recovery, and revokes all ses
 
 Every effective role, permission, or branch-scope change locks the Membership, increments `authorizationVersion` exactly once, replaces normalized authorization rows, proactively revokes sessions, and audits the result in one Application-owned transaction. Session validation independently rejects stale versions as defense in depth. Profile, locale, and WhatsApp-only changes do not increment the authorization version.
 
+Task D-R1 adds browser-observed optimistic tokens without delegating authority. Authorization mutations compare `expectedAuthorizationRevision` with the locked Membership before validation/no-op mutation logic. Profile updates compare `expectedProfileRevision` with the locked profile `updatedAt`; WhatsApp compares `expectedRecoveryContactRevision` with `recoveryContactVersion`; communication settings compare `expectedSettingsRevision` with the locked settings `updatedAt`. A mismatch rolls back as Conflict, preserves the newer row, and performs no successful-change audit, session revocation, or recovery-challenge invalidation.
+
+Task D-R2 makes a successful communication-settings PATCH return the committed safe DTO, including the server-authored next `settingsRevision`. Presentation adopts that response and echoes the returned token on the next explicit save. It does not calculate timestamps, and failed or uncertain responses do not advance its confirmed revision. The locked comparison and 409 behavior remain unchanged.
+
 Suspension and demotion of an Active Owner first lock the Workspace row and then count Active Owners. All removal paths use the same lock order. Concurrent operations therefore cannot both remove the final coverage; the rejected operation returns `LastActiveOwnerProtected` and is audited.
 
 ### HTTP and read models
 
-Backend routes under `/api/workspace` expose members, member details, focused profile/WhatsApp/permission/branch/role/lifecycle operations, permission definitions/templates, and communication settings. Routes resolve a full server session, reject restricted sessions, require Owner, map transport DTOs, and delegate all rules to Application use cases. Read models expose safe profile, lifecycle, authorization summary, and last successful session-creation time. They never expose credential hashes, session/OTP/recovery digests, or secrets.
+Backend routes under `/api/workspace` expose members, member details, focused profile/WhatsApp/permission/branch/role/lifecycle operations, permission definitions/templates, and communication settings. Routes resolve a full server session, reject restricted sessions, require Owner, map transport DTOs, and delegate all rules to Application use cases. The list DTO excludes permission and optimistic metadata. The details DTO adds only edit data plus concurrency-named revisions; it omits the internal version names and session-issuance history. Neither DTO serializes the application read model directly or exposes credential hashes, session/OTP/recovery digests, or secrets.
 
 ### Persistence
 
@@ -84,11 +88,15 @@ The migration backfills existing profile locale to `ar` and removes the temporar
 
 يقفل كل تغيير فعلي للدور أو الصلاحيات أو نطاق الفروع صف العضوية، ويرفع `authorizationVersion` مرة واحدة، ويستبدل الصفوف المطبعة، ويلغي الجلسات استباقياً، ويسجل التدقيق ضمن معاملة ينسقها التطبيق. كما يرفض التحقق من الجلسة النسخ القديمة كدفاع إضافي. لا ترفع تغييرات الملف أو اللغة أو واتساب إصدار الصلاحيات.
 
+تضيف المهمة D-R1 رموز تزامن قرأها المتصفح دون منحه أي سلطة. تقارن عمليات التفويض `expectedAuthorizationRevision` بالعضوية المقفلة، ويقارن الملف `expectedProfileRevision` مع `updatedAt` المقفل، ويقارن واتساب `expectedRecoveryContactRevision` مع `recoveryContactVersion`، وتقارن إعدادات الاتصال `expectedSettingsRevision` مع `updatedAt` المقفل. يؤدي الاختلاف إلى تعارض وتراجع كامل يحفظ البيانات الأحدث، ولا يسجل نجاحًا أو يلغي جلسات أو يبطل تحديات استعادة إضافية.
+
+تجعل المهمة D-R2 عملية PATCH الناجحة لإعدادات الاتصال تعيد DTO الآمن المحفوظ، بما فيه `settingsRevision` التالي الصادر من الخادم. تعتمد طبقة العرض هذه الاستجابة وتعيد الرمز المستلم في الحفظ الصريح التالي. لا تحسب الطوابع الزمنية، ولا ترفع النتيجة الفاشلة أو غير المؤكدة رمز المراجعة المؤكد. تبقى المقارنة تحت القفل واستجابة 409 كما هما.
+
 قبل إيقاف مالك نشط أو تخفيضه إلى موظف، تُقفل مساحة العمل ثم يُحسب المالكون النشطون. تستخدم جميع المسارات ترتيب القفل نفسه، لذلك لا يمكن لعمليتين متزامنتين إزالة آخر تغطية للمالك. تعيد العملية المرفوضة `LastActiveOwnerProtected` وتسجل حدث تدقيق.
 
 ### HTTP ونماذج القراءة
 
-توفر مسارات `/api/workspace` عمليات الأعضاء المركزة، وسجل الصلاحيات والقوالب، وإعدادات الاتصال. تتحقق المسارات من جلسة خادم كاملة، وترفض الجلسة المقيدة، وتشترط دور المالك، ثم تحول DTO وتفوض القواعد إلى طبقة التطبيق. نماذج القراءة آمنة ولا تعرض تجزئات كلمات المرور أو الجلسات أو OTP أو الاستعادة أو أي أسرار.
+توفر مسارات `/api/workspace` عمليات الأعضاء المركزة، وسجل الصلاحيات والقوالب، وإعدادات الاتصال. تتحقق المسارات من جلسة خادم كاملة، وترفض الجلسة المقيدة، وتشترط دور المالك، ثم تحول DTO وتفوض القواعد إلى طبقة التطبيق. يحذف DTO القائمة الصلاحيات وبيانات التزامن، ويضيف DTO التفاصيل رموز المراجعة الدنيا المسماة للتزامن فقط. لا يُسلسل نموذج قراءة التطبيق مباشرة، ولا تُعرض الأسماء الداخلية للإصدارات أو وقت إصدار الجلسة أو تجزئات كلمات المرور والجلسات وOTP والاستعادة أو أي أسرار.
 
 ### التخزين والتسليم اللاحق
 

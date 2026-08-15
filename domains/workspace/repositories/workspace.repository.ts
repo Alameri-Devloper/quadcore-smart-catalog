@@ -13,10 +13,11 @@ export interface WorkspaceRepository {
 
 export interface WorkspaceCommunicationSettingsRepository {
   create(settings: WorkspaceCommunicationSettings): Promise<void>;
-  findByWorkspaceId(workspaceId: WorkspaceId): Promise<WorkspaceCommunicationSettings | null>;
+  findByWorkspaceId(workspaceId: WorkspaceId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceCommunicationSettings | null>;
   update(settings: WorkspaceCommunicationSettings, expectedUpdatedAt: Date): Promise<"Updated" | "SettingsNotFound" | "SettingsUpdateConflict">;
 }
 
 export interface WorkspaceBranchReferenceRepository {
   findByIds(workspaceId: WorkspaceId, branchIds: readonly string[]): Promise<readonly WorkspaceBranchReference[]>;
+  findActiveByWorkspace(workspaceId: WorkspaceId): Promise<readonly WorkspaceBranchReference[]>;
 }

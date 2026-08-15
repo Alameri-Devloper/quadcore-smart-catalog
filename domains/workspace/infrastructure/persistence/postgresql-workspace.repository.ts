@@ -75,9 +75,10 @@ export class PostgreSqlWorkspaceCommunicationSettingsRepository implements Works
     });
   }
 
-  async findByWorkspaceId(workspaceId: WorkspaceId): Promise<WorkspaceCommunicationSettings | null> {
-    const rows = await this.database.select().from(workspaceCommunicationSettings)
+  async findByWorkspaceId(workspaceId: WorkspaceId, options?: { readonly forUpdate?: boolean }): Promise<WorkspaceCommunicationSettings | null> {
+    const base = this.database.select().from(workspaceCommunicationSettings)
       .where(eq(workspaceCommunicationSettings.workspaceId, workspaceId.value)).limit(1);
+    const rows = options?.forUpdate ? await base.for("update") : await base;
     const row = rows[0];
     if (!row) return null;
     return Object.freeze({
@@ -122,5 +123,21 @@ export class PostgreSqlWorkspaceBranchReferenceRepository implements WorkspaceBr
       branchId: row.branchId,
       status: row.status as WorkspaceBranchReferenceStatus,
     })));
+  }
+
+  async findActiveByWorkspace(workspaceId: WorkspaceId) {
+    const rows = await this.database.select({
+      workspaceId: workspaceBranchReferences.workspaceId,
+      branchId: workspaceBranchReferences.branchId,
+      status: workspaceBranchReferences.status,
+    }).from(workspaceBranchReferences).where(and(
+      eq(workspaceBranchReferences.workspaceId, workspaceId.value),
+      eq(workspaceBranchReferences.status, "Active"),
+    ));
+    return Object.freeze(rows.map((row) => Object.freeze({
+      workspaceId: WorkspaceId.create(row.workspaceId),
+      branchId: row.branchId,
+      status: row.status as WorkspaceBranchReferenceStatus,
+    })).sort((left, right) => left.branchId.localeCompare(right.branchId)));
   }
 }

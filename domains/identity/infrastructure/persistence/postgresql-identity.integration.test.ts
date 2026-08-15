@@ -12,10 +12,17 @@ import { WorkspaceBootstrapUseCase } from "../../application/workspace-bootstrap
 import { ChangePasswordAndRotateSessionUseCase } from "../../application/change-password-and-rotate-session.use-case";
 import { ActivateAccountUseCase } from "../../application/account-lifecycle.use-cases";
 import {
+  ChangeWorkspaceMemberBranchScopeUseCase,
   ChangeWorkspaceMemberPermissionsUseCase,
   CreateWorkspaceMemberUseCase,
   DemoteWorkspaceOwnerToStaffUseCase,
+  GetWorkspaceCommunicationSettingsUseCase,
+  GetWorkspaceMemberDetailsUseCase,
+  PromoteWorkspaceMemberToOwnerUseCase,
   SuspendWorkspaceMemberUseCase,
+  UpdateWorkspaceCommunicationSettingsUseCase,
+  UpdateWorkspaceMemberProfileUseCase,
+  UpdateWorkspaceMemberWhatsAppUseCase,
 } from "../../application/member-administration.use-cases";
 import { CleanupSessionsUseCase, LoginUseCase, LogoutUseCase, ResolveSessionUseCase } from "../../application/session.use-cases";
 import { Username } from "../../domain/username";
@@ -44,7 +51,9 @@ const connection = createPlatformDatabaseConnection(connectionUrl!);
 const hasher = new Argon2idPasswordHasher();
 const unitOfWork = new PostgreSqlIdentityUnitOfWork(connection.database);
 const identifiers = new RandomIdentityIdentifierGenerator();
-const clock = { now: () => new Date() };
+let clockOffsetMs = 0;
+const clock = { now: () => new Date(Date.now() + clockOffsetMs) };
+const tickClock = () => { clockOffsetMs += 1_000; };
 const digest = new HmacSha256RecoveryCodeDigest([{ version: 1, secret: Buffer.alloc(32, 9) }], 1);
 
 const bootstrap = new WorkspaceBootstrapUseCase(unitOfWork, hasher, clock, identifiers);
@@ -74,6 +83,13 @@ const cleanupSessions = new CleanupSessionsUseCase(unitOfWork, clock);
 const activateAccount = new ActivateAccountUseCase(unitOfWork, hasher, clock);
 const createMember = new CreateWorkspaceMemberUseCase(unitOfWork, hasher, clock, identifiers);
 const changeMemberPermissions = new ChangeWorkspaceMemberPermissionsUseCase(unitOfWork, clock);
+const changeMemberBranches = new ChangeWorkspaceMemberBranchScopeUseCase(unitOfWork, clock);
+const promoteMember = new PromoteWorkspaceMemberToOwnerUseCase(unitOfWork, clock);
+const updateMemberProfile = new UpdateWorkspaceMemberProfileUseCase(unitOfWork, clock);
+const updateMemberWhatsApp = new UpdateWorkspaceMemberWhatsAppUseCase(unitOfWork, clock);
+const getMemberDetails = new GetWorkspaceMemberDetailsUseCase(unitOfWork);
+const getCommunicationSettings = new GetWorkspaceCommunicationSettingsUseCase(unitOfWork);
+const updateCommunicationSettings = new UpdateWorkspaceCommunicationSettingsUseCase(unitOfWork, clock);
 const suspendMember = new SuspendWorkspaceMemberUseCase(unitOfWork, clock);
 const demoteOwner = new DemoteWorkspaceOwnerToStaffUseCase(unitOfWork, clock);
 
@@ -97,7 +113,10 @@ const ownerContext = (workspaceId: string, actorId: string): TrustedActorContext
 });
 
 before(async () => migrate(connection.database, { migrationsFolder: "drizzle" }));
-beforeEach(async () => connection.database.execute(sql`TRUNCATE TABLE workspaces CASCADE`));
+beforeEach(async () => {
+  clockOffsetMs = 0;
+  await connection.database.execute(sql`TRUNCATE TABLE workspaces CASCADE`);
+});
 after(async () => connection.close());
 
 describe("PostgreSQL Identity bootstrap and isolation", () => {
@@ -587,12 +606,177 @@ describe("PostgreSQL Owner-managed member administration", () => {
       context: ownerContext(owner.value.workspaceId, owner.value.actorId),
       targetActorId: staff.value.actorId,
       permissionCodes: ["pricing.view"],
+      expectedAuthorizationRevision: 1,
     });
     assert.deepEqual(changed, { ok: true, value: { authorizationVersion: 2, revokedSessionCount: 1 } });
     assert.deepEqual(await resolveSession.execute({ rawSessionValue: staffLogin.value.opaqueValue, requiredClass: "Any" }), {
       ok: false,
       error: "SessionRevoked",
     });
+  });
+
+  it("persists browser-observed concurrency conflicts without overwriting newer member or settings state", async () => {
+    const owner = await bootstrap.execute(bootstrapCommand("stale-01", "owner"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
+    await connection.database.insert(workspaceBranchReferences).values({
+      workspaceId: owner.value.workspaceId,
+      branchId: "branch-a",
+      status: "Active",
+      createdAt: clock.now(),
+      updatedAt: clock.now(),
+    });
+    const staff = await createMember.execute({
+      context,
+      username: "staff.stale",
+      displayName: "Stale Staff",
+      whatsappPhoneE164: "+967722222222",
+      locale: "en",
+      role: "Staff",
+      permissionCodes: ["catalog.product.create"],
+      branchScope: { type: "AllBranches" },
+      temporaryPassword: "Staff temporary 123",
+    });
+    assert.ok(staff.ok);
+    if (!staff.ok) return;
+    const otherOwner = await createMember.execute({
+      context,
+      username: "settings.owner",
+      displayName: "Settings Owner",
+      whatsappPhoneE164: "+967788000000",
+      locale: "en",
+      role: "Owner",
+      permissionCodes: [],
+      branchScope: { type: "AllBranches" },
+      temporaryPassword: "Settings temporary 123",
+    });
+    assert.ok(otherOwner.ok);
+    if (!otherOwner.ok) return;
+    assert.ok((await activateAccount.execute({
+      workspaceId: owner.value.workspaceId,
+      actorId: otherOwner.value.actorId,
+      newPermanentPassword: "Settings permanent 123",
+    })).ok);
+    const otherOwnerContext = ownerContext(owner.value.workspaceId, otherOwner.value.actorId);
+
+    tickClock();
+    assert.ok((await changeMemberPermissions.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      permissionCodes: ["pricing.view"],
+      expectedAuthorizationRevision: 1,
+    })).ok);
+    assert.deepEqual(await changeMemberPermissions.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      permissionCodes: ["catalog.products.view"],
+      expectedAuthorizationRevision: 1,
+    }), { ok: false, error: "AuthorizationConflict" });
+
+    tickClock();
+    assert.ok((await changeMemberBranches.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      branchScope: { type: "SelectedBranches", branchIds: ["branch-a"] },
+      expectedAuthorizationRevision: 2,
+    })).ok);
+    assert.deepEqual(await changeMemberBranches.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      branchScope: { type: "AllBranches" },
+      expectedAuthorizationRevision: 2,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.deepEqual(await promoteMember.execute({
+      context, targetActorId: staff.value.actorId, expectedAuthorizationRevision: 2,
+    }), { ok: false, error: "AuthorizationConflict" });
+
+    const observedDetails = await getMemberDetails.execute({ context, targetActorId: staff.value.actorId });
+    assert.ok(observedDetails.ok);
+    if (!observedDetails.ok) return;
+    tickClock();
+    assert.ok((await updateMemberProfile.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      displayName: "Current Staff",
+      locale: "ar",
+      expectedProfileRevision: observedDetails.value.profileUpdatedAt.toISOString(),
+    })).ok);
+    tickClock();
+    assert.deepEqual(await updateMemberProfile.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      displayName: "Stale Staff Overwrite",
+      locale: "en",
+      expectedProfileRevision: observedDetails.value.profileUpdatedAt.toISOString(),
+    }), { ok: false, error: "AuthorizationConflict" });
+
+    tickClock();
+    assert.ok((await updateMemberWhatsApp.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      whatsappPhoneE164: "+967733333333",
+      expectedRecoveryContactRevision: 1,
+    })).ok);
+    assert.deepEqual(await updateMemberWhatsApp.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      whatsappPhoneE164: "+967744444444",
+      expectedRecoveryContactRevision: 1,
+    }), { ok: false, error: "AuthorizationConflict" });
+
+    const settings = await getCommunicationSettings.execute({ context });
+    assert.ok(settings.ok);
+    if (!settings.ok) return;
+    tickClock();
+    const firstSettingsSave = await updateCommunicationSettings.execute({
+      context,
+      defaultWhatsAppPhoneE164: "+967755555555",
+      passwordRecoveryPolicy: "OwnerManagedOnly",
+      expectedSettingsRevision: settings.value.settingsRevision,
+    });
+    assert.ok(firstSettingsSave.ok);
+    if (!firstSettingsSave.ok) return;
+    assert.notEqual(firstSettingsSave.value.settingsRevision, settings.value.settingsRevision);
+
+    tickClock();
+    const secondSettingsSave = await updateCommunicationSettings.execute({
+      context,
+      defaultWhatsAppPhoneE164: "+967766666666",
+      passwordRecoveryPolicy: "WhatsAppOtpWithOwnerFallback",
+      expectedSettingsRevision: firstSettingsSave.value.settingsRevision,
+    });
+    assert.ok(secondSettingsSave.ok);
+    if (!secondSettingsSave.ok) return;
+
+    tickClock();
+    const concurrentSettingsSave = await updateCommunicationSettings.execute({
+      context: otherOwnerContext,
+      defaultWhatsAppPhoneE164: "+967777777777",
+      passwordRecoveryPolicy: "OwnerManagedOnly",
+      expectedSettingsRevision: secondSettingsSave.value.settingsRevision,
+    });
+    assert.ok(concurrentSettingsSave.ok);
+    if (!concurrentSettingsSave.ok) return;
+
+    assert.deepEqual(await updateCommunicationSettings.execute({
+      context,
+      defaultWhatsAppPhoneE164: "+967788888888",
+      passwordRecoveryPolicy: "WhatsAppOtpWithOwnerFallback",
+      expectedSettingsRevision: secondSettingsSave.value.settingsRevision,
+    }), { ok: false, error: "AuthorizationConflict" });
+
+    const currentDetails = await getMemberDetails.execute({ context, targetActorId: staff.value.actorId });
+    const currentSettings = await getCommunicationSettings.execute({ context });
+    assert.ok(currentDetails.ok && currentSettings.ok);
+    if (!currentDetails.ok || !currentSettings.ok) return;
+    assert.deepEqual(currentDetails.value.permissionCodes, ["pricing.view"]);
+    assert.equal(currentDetails.value.branchScope, "SelectedBranches");
+    assert.equal(currentDetails.value.displayName, "Current Staff");
+    assert.equal(currentDetails.value.whatsappPhoneE164, "+967733333333");
+    assert.equal(currentSettings.value.defaultWhatsAppPhoneE164, "+967777777777");
+    assert.equal(currentSettings.value.passwordRecoveryPolicy, "OwnerManagedOnly");
+    assert.equal(currentSettings.value.settingsRevision, concurrentSettingsSave.value.settingsRevision);
   });
 
   it("queries Branch references inside trusted Workspace scope and hides foreign-only IDs", async () => {
@@ -613,6 +797,10 @@ describe("PostgreSQL Owner-managed member administration", () => {
       ["branch-01", "foreign-only-branch"],
     );
     assert.deepEqual(scopedReferences.map(({ workspaceId, branchId, status }) => ({
+      workspaceId: workspaceId.value, branchId, status,
+    })), [{ workspaceId: first.value.workspaceId, branchId: "branch-01", status: "Active" }]);
+    const activeReferences = await branchRepository.findActiveByWorkspace(WorkspaceId.create(first.value.workspaceId));
+    assert.deepEqual(activeReferences.map(({ workspaceId, branchId, status }) => ({
       workspaceId: workspaceId.value, branchId, status,
     })), [{ workspaceId: first.value.workspaceId, branchId: "branch-01", status: "Active" }]);
 
@@ -705,6 +893,7 @@ describe("PostgreSQL Owner-managed member administration", () => {
         targetActorId: secondOwner.value.actorId,
         permissionCodes: ["catalog.product.create"],
         branchScope: { type: "AllBranches" },
+        expectedAuthorizationRevision: 1,
       }),
     ]);
     assert.equal(results.filter((result) => result.ok).length, 1);

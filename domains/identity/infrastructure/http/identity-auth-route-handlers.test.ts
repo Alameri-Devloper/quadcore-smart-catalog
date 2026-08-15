@@ -117,6 +117,16 @@ describe("Identity authentication HTTP boundary", () => {
     assert.match(response.headers.get("set-cookie")!, /Max-Age=0/);
   });
 
+  it("keeps the session cookie available for retry when server-side logout cannot be confirmed", async () => {
+    const handlers = createIdentityAuthRouteHandlers(() => application({
+      logout: { execute: async () => ({ ok: false, error: "InfrastructureUnavailable" }) },
+    }));
+    const response = await handlers.logout(writeRequest("/api/auth/logout", {}, "qsc_session=browser-value"));
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { type: "AuthenticationServiceUnavailable" });
+    assert.equal(response.headers.get("set-cookie"), null);
+  });
+
   it("returns a redacted current-session view and maps expired state to 401", async () => {
     const handlers = createIdentityAuthRouteHandlers(() => application());
     const response = await handlers.me(new Request("https://qsc.example/api/auth/me", {

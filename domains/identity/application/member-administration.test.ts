@@ -215,7 +215,7 @@ describe("Owner-managed Workspace members", () => {
     }));
     test.clock.tick();
     assert.deepEqual(await test.permissions.execute({
-      context, targetActorId: staff.value.actorId, permissionCodes: ["pricing.view"],
+      context, targetActorId: staff.value.actorId, permissionCodes: ["pricing.view"], expectedAuthorizationRevision: 1,
     }), { ok: true, value: { authorizationVersion: 2, revokedSessionCount: 1 } });
     assert.equal(test.unitOfWork.state.sessions.get(`${owner.value.workspaceId}\0session-a`)!.revocationReason, "AuthorizationChanged");
     test.unitOfWork.state.branchReferences.set(`${owner.value.workspaceId}\0branch-a`, Object.freeze({
@@ -235,9 +235,10 @@ describe("Owner-managed Workspace members", () => {
     assert.deepEqual(await test.branches.execute({
       context, targetActorId: staff.value.actorId,
       branchScope: { type: "SelectedBranches", branchIds: ["branch-a"] },
+      expectedAuthorizationRevision: 2,
     }), { ok: true, value: { authorizationVersion: 3, revokedSessionCount: 1 } });
     test.clock.tick();
-    const promoted = await test.promote.execute({ context, targetActorId: staff.value.actorId });
+    const promoted = await test.promote.execute({ context, targetActorId: staff.value.actorId, expectedAuthorizationRevision: 3 });
     assert.ok(promoted.ok);
     const details = await test.details.execute({ context, targetActorId: staff.value.actorId });
     assert.ok(details.ok);
@@ -307,10 +308,11 @@ describe("Owner-managed Workspace members", () => {
       createdAt: test.clock.now(),
     }));
     const before = test.unitOfWork.state.memberships.get(`${owner.value.workspaceId}\0${owner.value.actorId}`)!.authorizationVersion;
+    const profileRevision = test.unitOfWork.state.profiles.get(memberKey)!.updatedAt.toISOString();
     test.clock.tick();
-    assert.ok((await test.profile.execute({ context, targetActorId: owner.value.actorId, displayName: "Renamed Owner", locale: "en" })).ok);
+    assert.ok((await test.profile.execute({ context, targetActorId: owner.value.actorId, displayName: "Renamed Owner", locale: "en", expectedProfileRevision: profileRevision })).ok);
     test.clock.tick();
-    const changed = await test.whatsapp.execute({ context, targetActorId: owner.value.actorId, whatsappPhoneE164: "+967733333333" });
+    const changed = await test.whatsapp.execute({ context, targetActorId: owner.value.actorId, whatsappPhoneE164: "+967733333333", expectedRecoveryContactRevision: 1 });
     assert.deepEqual(changed, { ok: true, value: { recoveryContactVersion: 2 } });
     assert.equal(test.unitOfWork.state.memberships.get(`${owner.value.workspaceId}\0${owner.value.actorId}`)!.authorizationVersion, before);
     assert.equal(test.unitOfWork.state.sessions.get(`${owner.value.workspaceId}\0profile-session`)!.revokedAt, null);
@@ -330,7 +332,7 @@ describe("Owner-managed Workspace members", () => {
     await activate(test, owner.value.workspaceId, owner.value.actorId, "Owner permanent 123");
     const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
     assert.deepEqual(await test.demote.execute({
-      context, targetActorId: owner.value.actorId, permissionCodes: ["catalog.product.create"], branchScope: { type: "AllBranches" },
+      context, targetActorId: owner.value.actorId, permissionCodes: ["catalog.product.create"], branchScope: { type: "AllBranches" }, expectedAuthorizationRevision: 1,
     }), { ok: false, error: "LastActiveOwnerProtected" });
   });
 
@@ -340,11 +342,15 @@ describe("Owner-managed Workspace members", () => {
     assert.ok(owner.ok);
     if (!owner.ok) return;
     const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
+    const observed = await test.getSettings.execute({ context });
+    assert.ok(observed.ok);
+    if (!observed.ok) return;
     test.clock.tick();
     assert.ok((await test.updateSettings.execute({
       context,
       defaultWhatsAppPhoneE164: "+967799999999",
       passwordRecoveryPolicy: "OwnerManagedOnly",
+      expectedSettingsRevision: observed.value.settingsRevision,
     })).ok);
     const settings = await test.getSettings.execute({ context });
     assert.ok(settings.ok);
@@ -355,5 +361,208 @@ describe("Owner-managed Workspace members", () => {
       test.unitOfWork.state.profiles.get(`${owner.value.workspaceId}\0${owner.value.actorId}`)!.recoveryPhone.value,
       "+967711111111",
     );
+  });
+
+  it("rejects stale permission, Branch-scope, promotion, and demotion revisions without overwriting current authorization", async () => {
+    const test = fixture();
+    const owner = await test.bootstrap.execute(bootstrapInput("stale-auth", "+967711111111"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
+    const staff = await test.create.execute({
+      context,
+      username: "staff.stale",
+      displayName: "Stale Staff",
+      whatsappPhoneE164: "+967722222222",
+      locale: "en",
+      role: "Staff",
+      permissionCodes: ["catalog.product.create"],
+      branchScope: { type: "AllBranches" },
+      temporaryPassword: "Staff temporary 123",
+    });
+    assert.ok(staff.ok);
+    if (!staff.ok) return;
+    const key = `${owner.value.workspaceId}\0${staff.value.actorId}`;
+    test.unitOfWork.state.branchReferences.set(`${owner.value.workspaceId}\0branch-a`, Object.freeze({
+      workspaceId: WorkspaceId.create(owner.value.workspaceId), branchId: "branch-a", status: "Active",
+    }));
+
+    test.clock.tick();
+    assert.ok((await test.permissions.execute({
+      context, targetActorId: staff.value.actorId, permissionCodes: ["pricing.view"], expectedAuthorizationRevision: 1,
+    })).ok);
+    assert.deepEqual(await test.permissions.execute({
+      context, targetActorId: staff.value.actorId, permissionCodes: ["catalog.products.view"], expectedAuthorizationRevision: 1,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.deepEqual(test.unitOfWork.state.memberships.get(key)!.permissionCodes, ["pricing.view"]);
+
+    test.clock.tick();
+    assert.ok((await test.branches.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      branchScope: { type: "SelectedBranches", branchIds: ["branch-a"] },
+      expectedAuthorizationRevision: 2,
+    })).ok);
+    assert.deepEqual(await test.branches.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      branchScope: { type: "AllBranches" },
+      expectedAuthorizationRevision: 2,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.equal(test.unitOfWork.state.memberships.get(key)!.branchScope, "SelectedBranches");
+    assert.deepEqual(test.unitOfWork.state.memberships.get(key)!.branchIds, ["branch-a"]);
+
+    assert.deepEqual(await test.promote.execute({
+      context, targetActorId: staff.value.actorId, expectedAuthorizationRevision: 2,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.equal(test.unitOfWork.state.memberships.get(key)!.role, "Staff");
+    test.clock.tick();
+    assert.ok((await test.promote.execute({
+      context, targetActorId: staff.value.actorId, expectedAuthorizationRevision: 3,
+    })).ok);
+    assert.deepEqual(await test.demote.execute({
+      context,
+      targetActorId: staff.value.actorId,
+      permissionCodes: ["catalog.product.create"],
+      branchScope: { type: "AllBranches" },
+      expectedAuthorizationRevision: 3,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.equal(test.unitOfWork.state.memberships.get(key)!.role, "Owner");
+  });
+
+  it("rejects a stale profile revision and preserves the newer profile", async () => {
+    const test = fixture();
+    const owner = await test.bootstrap.execute(bootstrapInput("stale-profile", "+967711111111"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
+    const key = `${owner.value.workspaceId}\0${owner.value.actorId}`;
+    const observedRevision = test.unitOfWork.state.profiles.get(key)!.updatedAt.toISOString();
+    test.clock.tick();
+    assert.ok((await test.profile.execute({
+      context,
+      targetActorId: owner.value.actorId,
+      displayName: "Owner B",
+      locale: "en",
+      expectedProfileRevision: observedRevision,
+    })).ok);
+    test.clock.tick();
+    assert.deepEqual(await test.profile.execute({
+      context,
+      targetActorId: owner.value.actorId,
+      displayName: "Owner A stale",
+      locale: "ar",
+      expectedProfileRevision: observedRevision,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.equal(test.unitOfWork.state.profiles.get(key)!.displayName, "Owner B");
+    assert.equal(test.unitOfWork.state.profiles.get(key)!.locale, "en");
+  });
+
+  it("rejects a stale recovery-contact revision without changing the phone or invalidating another challenge", async () => {
+    const test = fixture();
+    const owner = await test.bootstrap.execute(bootstrapInput("stale-phone", "+967711111111"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
+    const workspaceId = WorkspaceId.create(owner.value.workspaceId);
+    const actorId = test.unitOfWork.state.memberships.get(`${owner.value.workspaceId}\0${owner.value.actorId}`)!.actorId;
+    test.clock.tick();
+    assert.ok((await test.whatsapp.execute({
+      context,
+      targetActorId: owner.value.actorId,
+      whatsappPhoneE164: "+967722222222",
+      expectedRecoveryContactRevision: 1,
+    })).ok);
+    const challenge = PasswordRecoveryChallenge.create({
+      workspaceId,
+      challengeId: ChallengeId.create("challenge-after-current-change"),
+      actorId,
+      channel: "PrimaryRecoveryContact",
+      destinationVersion: 2,
+      digest: { value: "e".repeat(64), keyVersion: 1 },
+      createdAt: test.clock.now(),
+    });
+    test.unitOfWork.state.challenges.set(`${owner.value.workspaceId}\0challenge-after-current-change`, challenge);
+
+    test.clock.tick();
+    assert.deepEqual(await test.whatsapp.execute({
+      context,
+      targetActorId: owner.value.actorId,
+      whatsappPhoneE164: "+967733333333",
+      expectedRecoveryContactRevision: 1,
+    }), { ok: false, error: "AuthorizationConflict" });
+    assert.equal(test.unitOfWork.state.profiles.get(`${owner.value.workspaceId}\0${owner.value.actorId}`)!.recoveryPhone.value, "+967722222222");
+    assert.equal(test.unitOfWork.state.challenges.get(`${owner.value.workspaceId}\0challenge-after-current-change`)!.status, "Active");
+  });
+
+  it("returns each committed settings revision for sequential saves and rejects a genuinely stale revision", async () => {
+    const test = fixture();
+    const owner = await test.bootstrap.execute(bootstrapInput("stale-settings", "+967711111111"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const context = ownerContext(owner.value.workspaceId, owner.value.actorId);
+    const otherOwner = await test.create.execute({
+      context,
+      username: "settings.owner",
+      displayName: "Settings Owner",
+      whatsappPhoneE164: "+967788888888",
+      locale: "en",
+      role: "Owner",
+      permissionCodes: [],
+      branchScope: { type: "AllBranches" },
+      temporaryPassword: "Settings temporary 123",
+    });
+    assert.ok(otherOwner.ok);
+    if (!otherOwner.ok) return;
+    await activate(test, owner.value.workspaceId, otherOwner.value.actorId, "Settings permanent 123");
+    const otherOwnerContext = ownerContext(owner.value.workspaceId, otherOwner.value.actorId);
+    const observed = await test.getSettings.execute({ context });
+    assert.ok(observed.ok);
+    if (!observed.ok) return;
+    test.clock.tick();
+    const first = await test.updateSettings.execute({
+      context,
+      defaultWhatsAppPhoneE164: "+967722222222",
+      passwordRecoveryPolicy: "OwnerManagedOnly",
+      expectedSettingsRevision: observed.value.settingsRevision,
+    });
+    assert.ok(first.ok);
+    if (!first.ok) return;
+    assert.notEqual(first.value.settingsRevision, observed.value.settingsRevision);
+
+    test.clock.tick();
+    const second = await test.updateSettings.execute({
+      context,
+      defaultWhatsAppPhoneE164: "+967733333333",
+      passwordRecoveryPolicy: "WhatsAppOtpWithOwnerFallback",
+      expectedSettingsRevision: first.value.settingsRevision,
+    });
+    assert.ok(second.ok);
+    if (!second.ok) return;
+    assert.notEqual(second.value.settingsRevision, first.value.settingsRevision);
+
+    test.clock.tick();
+    const concurrent = await test.updateSettings.execute({
+      context: otherOwnerContext,
+      defaultWhatsAppPhoneE164: "+967744444444",
+      passwordRecoveryPolicy: "OwnerManagedOnly",
+      expectedSettingsRevision: second.value.settingsRevision,
+    });
+    assert.ok(concurrent.ok);
+    if (!concurrent.ok) return;
+
+    test.clock.tick();
+    assert.deepEqual(await test.updateSettings.execute({
+      context,
+      defaultWhatsAppPhoneE164: "+967755555555",
+      passwordRecoveryPolicy: "WhatsAppOtpWithOwnerFallback",
+      expectedSettingsRevision: second.value.settingsRevision,
+    }), { ok: false, error: "AuthorizationConflict" });
+    const current = await test.getSettings.execute({ context });
+    assert.ok(current.ok);
+    if (!current.ok) return;
+    assert.equal(current.value.defaultWhatsAppPhoneE164, "+967744444444");
+    assert.equal(current.value.passwordRecoveryPolicy, "OwnerManagedOnly");
+    assert.equal(current.value.settingsRevision, concurrent.value.settingsRevision);
   });
 });

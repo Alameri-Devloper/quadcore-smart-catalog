@@ -84,8 +84,9 @@ export const createIdentityAuthRouteHandlers = (open: IdentityServerApplicationF
   logout: (request: Request): Promise<Response> => withApplication(open, async (application) => {
     if (!application.origin.allows(request)) return json({ type: "OriginNotAllowed" }, 403);
     const result = await application.logout.execute(application.cookie.read(request));
+    if (!result.ok) return unavailable();
     return new Response(null, {
-      status: result.ok ? 204 : 503,
+      status: 204,
       headers: { "cache-control": "no-store", "set-cookie": application.cookie.clear() },
     });
   }),

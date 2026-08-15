@@ -101,6 +101,9 @@ const validateBranchReferences = async (
 const sameValues = (left: readonly string[], right: readonly string[]): boolean =>
   left.length === right.length && left.every((value, index) => value === right[index]);
 
+const observedRevisionMatches = (observed: string, persisted: Date): boolean =>
+  observed === persisted.toISOString();
+
 const effectiveReadModel = (member: MemberAdministrationReadModel): MemberAdministrationReadModel => member.role === "Owner"
   ? Object.freeze({ ...member, permissionCodes: ownerEffectivePermissionCodes(), branchScope: "AllBranches", branchIds: Object.freeze([]) })
   : member;
@@ -303,7 +306,12 @@ export class CreateWorkspaceMemberUseCase {
 export class UpdateWorkspaceMemberProfileUseCase {
   constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
 
-  async execute(command: MemberAdministrationContextCommand & { readonly targetActorId: string; readonly displayName: string; readonly locale: MemberLocale }): Promise<IdentityResult<null>> {
+  async execute(command: MemberAdministrationContextCommand & {
+    readonly targetActorId: string;
+    readonly displayName: string;
+    readonly locale: MemberLocale;
+    readonly expectedProfileRevision: string;
+  }): Promise<IdentityResult<null>> {
     const scope = adminScope(command.context);
     const target = ActorId.create(command.targetActorId);
     const now = this.clock.now();
@@ -312,6 +320,9 @@ export class UpdateWorkspaceMemberProfileUseCase {
         if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
         const profile = await transaction.memberProfileRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         if (!profile) return rollbackIdentityTransaction(identityFailure("MemberNotFound"));
+        if (!observedRevisionMatches(command.expectedProfileRevision, profile.updatedAt)) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         const expectedUpdatedAt = profile.updatedAt;
         let changed;
         try { changed = updateMemberProfileDetails(profile, command.displayName, command.locale, now); }
@@ -329,7 +340,11 @@ export class UpdateWorkspaceMemberProfileUseCase {
 export class UpdateWorkspaceMemberWhatsAppUseCase {
   constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
 
-  async execute(command: MemberAdministrationContextCommand & { readonly targetActorId: string; readonly whatsappPhoneE164: string }): Promise<IdentityResult<{ readonly recoveryContactVersion: number }>> {
+  async execute(command: MemberAdministrationContextCommand & {
+    readonly targetActorId: string;
+    readonly whatsappPhoneE164: string;
+    readonly expectedRecoveryContactRevision: number;
+  }): Promise<IdentityResult<{ readonly recoveryContactVersion: number }>> {
     let phone: E164PhoneNumber;
     try { phone = E164PhoneNumber.create(command.whatsappPhoneE164); }
     catch { return identityFailure("WhatsAppInvalid"); }
@@ -344,6 +359,9 @@ export class UpdateWorkspaceMemberWhatsAppUseCase {
         if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
         const profile = await transaction.memberProfileRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         if (!profile) return rollbackIdentityTransaction(identityFailure("MemberNotFound"));
+        if (profile.recoveryContactVersion !== command.expectedRecoveryContactRevision) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         if (profile.recoveryPhone.value === phone.value) {
           return commitIdentityTransaction(identitySuccess({ recoveryContactVersion: profile.recoveryContactVersion }));
         }
@@ -368,7 +386,12 @@ export class UpdateWorkspaceMemberWhatsAppUseCase {
 export class ChangeWorkspaceMemberPermissionsUseCase {
   constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
 
-  async execute(command: MemberAdministrationContextCommand & { readonly targetActorId: string; readonly permissionCodes?: readonly string[]; readonly permissionTemplateId?: string }): Promise<IdentityResult<{ readonly authorizationVersion: number; readonly revokedSessionCount: number }>> {
+  async execute(command: MemberAdministrationContextCommand & {
+    readonly targetActorId: string;
+    readonly permissionCodes?: readonly string[];
+    readonly permissionTemplateId?: string;
+    readonly expectedAuthorizationRevision: number;
+  }): Promise<IdentityResult<{ readonly authorizationVersion: number; readonly revokedSessionCount: number }>> {
     let permissionCodes: readonly string[];
     try {
       if (command.permissionTemplateId && command.permissionCodes) return identityFailure("InvalidPermissionTemplate");
@@ -386,6 +409,9 @@ export class ChangeWorkspaceMemberPermissionsUseCase {
         if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
         const membership = await transaction.membershipRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         if (!membership) return rollbackIdentityTransaction(identityFailure("MemberNotFound"));
+        if (membership.authorizationVersion !== command.expectedAuthorizationRevision) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         if (membership.role !== "Staff") return rollbackIdentityTransaction(identityFailure("InvalidRole"));
         if (sameValues(membership.permissionCodes, permissionCodes)) {
           return commitIdentityTransaction(identitySuccess({ authorizationVersion: membership.authorizationVersion, revokedSessionCount: 0 }));
@@ -405,7 +431,11 @@ export class ChangeWorkspaceMemberPermissionsUseCase {
 export class ChangeWorkspaceMemberBranchScopeUseCase {
   constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
 
-  async execute(command: MemberAdministrationContextCommand & { readonly targetActorId: string; readonly branchScope: BranchScopeCommand }): Promise<IdentityResult<{ readonly authorizationVersion: number; readonly revokedSessionCount: number }>> {
+  async execute(command: MemberAdministrationContextCommand & {
+    readonly targetActorId: string;
+    readonly branchScope: BranchScopeCommand;
+    readonly expectedAuthorizationRevision: number;
+  }): Promise<IdentityResult<{ readonly authorizationVersion: number; readonly revokedSessionCount: number }>> {
     let branchScope: ReturnType<typeof normalizeBranchScope>;
     try { branchScope = normalizeBranchScope(command.branchScope); }
     catch { return identityFailure("InvalidBranchScope"); }
@@ -417,6 +447,9 @@ export class ChangeWorkspaceMemberBranchScopeUseCase {
         if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
         const membership = await transaction.membershipRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         if (!membership) return rollbackIdentityTransaction(identityFailure("MemberNotFound"));
+        if (membership.authorizationVersion !== command.expectedAuthorizationRevision) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         if (membership.role === "Owner" && branchScope.type !== "AllBranches") {
           return rollbackIdentityTransaction(identityFailure("OwnerMustUseAllBranches"));
         }
@@ -444,7 +477,10 @@ export class ChangeWorkspaceMemberBranchScopeUseCase {
 export class PromoteWorkspaceMemberToOwnerUseCase {
   constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
 
-  async execute(command: MemberAdministrationContextCommand & { readonly targetActorId: string }): Promise<IdentityResult<AuthorizationMutationReceipt>> {
+  async execute(command: MemberAdministrationContextCommand & {
+    readonly targetActorId: string;
+    readonly expectedAuthorizationRevision: number;
+  }): Promise<IdentityResult<AuthorizationMutationReceipt>> {
     const scope = adminScope(command.context);
     const target = ActorId.create(command.targetActorId);
     const now = this.clock.now();
@@ -453,6 +489,9 @@ export class PromoteWorkspaceMemberToOwnerUseCase {
         if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
         const membership = await transaction.membershipRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         if (!membership) return rollbackIdentityTransaction(identityFailure("MemberNotFound"));
+        if (membership.authorizationVersion !== command.expectedAuthorizationRevision) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         if (membership.role !== "Staff") return rollbackIdentityTransaction(identityFailure("InvalidRole"));
         const changed = changeMembershipAuthorization(membership, {
           role: "Owner", branchScope: "AllBranches", branchIds: Object.freeze([]), permissionCodes: Object.freeze([]),
@@ -475,6 +514,7 @@ export class DemoteWorkspaceOwnerToStaffUseCase {
     readonly targetActorId: string;
     readonly permissionCodes: readonly string[];
     readonly branchScope: BranchScopeCommand;
+    readonly expectedAuthorizationRevision: number;
   }): Promise<IdentityResult<AuthorizationMutationReceipt>> {
     let permissions: readonly string[];
     let branchScope: ReturnType<typeof normalizeBranchScope>;
@@ -496,6 +536,9 @@ export class DemoteWorkspaceOwnerToStaffUseCase {
         const membership = await transaction.membershipRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         const account = await transaction.accountRepository.findByActorId(scope.workspaceId, target, { forUpdate: true });
         if (!membership || !account) return rollbackIdentityTransaction(identityFailure("MemberNotFound"));
+        if (membership.authorizationVersion !== command.expectedAuthorizationRevision) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         if (membership.role !== "Owner") return rollbackIdentityTransaction(identityFailure("InvalidRole"));
         if (account.status === "Active" && await transaction.membershipRepository.countActiveOwners(scope.workspaceId) <= 1) {
           await auditAuthorizationChange(transaction, scope, target, SECURITY_AUDIT_EVENT_TYPES.lastActiveOwnerOperationRejected, "Demote", now);
@@ -672,6 +715,23 @@ export class GetPermissionTemplatesUseCase {
   }
 }
 
+export class ListActiveWorkspaceBranchReferencesUseCase {
+  constructor(private readonly unitOfWork: IdentityUnitOfWork) {}
+  async execute(command: MemberAdministrationContextCommand) {
+    const scope = adminScope(command.context);
+    try {
+      return await this.unitOfWork.execute(async (transaction) => {
+        if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
+        const references = await transaction.workspaceBranchReferenceRepository.findActiveByWorkspace(scope.workspaceId);
+        return commitIdentityTransaction(identitySuccess(Object.freeze(references.map((reference) => Object.freeze({
+          branchId: reference.branchId,
+          status: "Active" as const,
+        })))));
+      });
+    } catch { return identityFailure("InfrastructureUnavailable"); }
+  }
+}
+
 export class GetWorkspaceCommunicationSettingsUseCase {
   constructor(private readonly unitOfWork: IdentityUnitOfWork) {}
   async execute(command: MemberAdministrationContextCommand) {
@@ -685,7 +745,7 @@ export class GetWorkspaceCommunicationSettingsUseCase {
         return commitIdentityTransaction(identitySuccess(Object.freeze({
           defaultWhatsAppPhoneE164: settings.defaultWhatsAppPhone.value,
           passwordRecoveryPolicy: workspace.passwordRecoveryPolicy,
-          updatedAt: settings.updatedAt,
+          settingsRevision: settings.updatedAt.toISOString(),
         })));
       });
     } catch { return identityFailure("InfrastructureUnavailable"); }
@@ -697,7 +757,12 @@ export class UpdateWorkspaceCommunicationSettingsUseCase {
   async execute(command: MemberAdministrationContextCommand & {
     readonly defaultWhatsAppPhoneE164: string;
     readonly passwordRecoveryPolicy: PasswordRecoveryPolicy;
-  }): Promise<IdentityResult<null>> {
+    readonly expectedSettingsRevision: string;
+  }): Promise<IdentityResult<{
+    readonly defaultWhatsAppPhoneE164: string;
+    readonly passwordRecoveryPolicy: PasswordRecoveryPolicy;
+    readonly settingsRevision: string;
+  }>> {
     let phone: E164PhoneNumber;
     try {
       phone = E164PhoneNumber.create(command.defaultWhatsAppPhoneE164);
@@ -710,8 +775,11 @@ export class UpdateWorkspaceCommunicationSettingsUseCase {
         const workspace = await transaction.workspaceRepository.findById(scope.workspaceId, { forUpdate: true });
         if (!workspace) return rollbackIdentityTransaction(identityFailure("WorkspaceNotFound"));
         if (!await requireOwner(transaction, scope, command.context)) return rollbackIdentityTransaction(identityFailure("OwnerRequired"));
-        const settings = await transaction.workspaceCommunicationSettingsRepository.findByWorkspaceId(scope.workspaceId);
+        const settings = await transaction.workspaceCommunicationSettingsRepository.findByWorkspaceId(scope.workspaceId, { forUpdate: true });
         if (!settings) return rollbackIdentityTransaction(identityFailure("WorkspaceNotFound"));
+        if (!observedRevisionMatches(command.expectedSettingsRevision, settings.updatedAt)) {
+          return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
+        }
         const changedWorkspace = updateWorkspaceRecoveryPolicy(workspace, command.passwordRecoveryPolicy, now);
         const changedSettings = updateWorkspaceCommunicationSettings(settings, phone, now);
         if (await transaction.workspaceRepository.update(changedWorkspace, workspace.updatedAt) !== "Updated") {
@@ -725,7 +793,11 @@ export class UpdateWorkspaceCommunicationSettingsUseCase {
           SECURITY_AUDIT_EVENT_TYPES.workspaceCommunicationSettingsChanged,
           command.passwordRecoveryPolicy, now,
         );
-        return commitIdentityTransaction(identitySuccess(null));
+        return commitIdentityTransaction(identitySuccess(Object.freeze({
+          defaultWhatsAppPhoneE164: changedSettings.defaultWhatsAppPhone.value,
+          passwordRecoveryPolicy: changedWorkspace.passwordRecoveryPolicy,
+          settingsRevision: changedSettings.updatedAt.toISOString(),
+        })));
       });
     } catch { return identityFailure("InfrastructureUnavailable"); }
   }

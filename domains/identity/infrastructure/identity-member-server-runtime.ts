@@ -6,6 +6,7 @@ import {
   DemoteWorkspaceOwnerToStaffUseCase,
   GetPermissionRegistryUseCase,
   GetPermissionTemplatesUseCase,
+  ListActiveWorkspaceBranchReferencesUseCase,
   GetWorkspaceCommunicationSettingsUseCase,
   GetWorkspaceMemberDetailsUseCase,
   ListWorkspaceMembersUseCase,
@@ -41,6 +42,7 @@ export interface IdentityMemberServerApplication {
   readonly resetCredential: Pick<OwnerResetPasswordUseCase, "execute">;
   readonly permissionRegistry: Pick<GetPermissionRegistryUseCase, "execute">;
   readonly permissionTemplates: Pick<GetPermissionTemplatesUseCase, "execute">;
+  readonly branchReferences: Pick<ListActiveWorkspaceBranchReferencesUseCase, "execute">;
   readonly getCommunicationSettings: Pick<GetWorkspaceCommunicationSettingsUseCase, "execute">;
   readonly updateCommunicationSettings: Pick<UpdateWorkspaceCommunicationSettingsUseCase, "execute">;
   readonly cookie: SessionCookieAdapter;
@@ -74,6 +76,7 @@ export const openIdentityMemberServerApplication: IdentityMemberServerApplicatio
       resetCredential: new OwnerResetPasswordUseCase(unitOfWork, hasher, clock),
       permissionRegistry: new GetPermissionRegistryUseCase(unitOfWork),
       permissionTemplates: new GetPermissionTemplatesUseCase(unitOfWork),
+      branchReferences: new ListActiveWorkspaceBranchReferencesUseCase(unitOfWork),
       getCommunicationSettings: new GetWorkspaceCommunicationSettingsUseCase(unitOfWork),
       updateCommunicationSettings: new UpdateWorkspaceCommunicationSettingsUseCase(unitOfWork, clock),
       cookie: sessionCookieFromEnvironment(),
