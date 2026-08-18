@@ -1,6 +1,6 @@
 # Identity Authentication and Member Presentation | واجهة المصادقة وإدارة الأعضاء
 
-**Status:** Implemented, R2 correction pending independent review | **Task:** 3.15.1-D / D-R1 / D-R2 | **Last Updated:** 2026-08-16
+**Status:** Implemented; Task E recovery integration pending independent review | **Task:** 3.15.1-D / D-R1 / D-R2 / E | **Last Updated:** 2026-08-17
 
 ## English
 
@@ -28,7 +28,9 @@ Restricted and active users share `/change-password`. Password inputs preserve t
 
 `/recover-password` and `/recover-password/verify` implement the enumeration-safe form, generic public message, 8-Western-digit entry, full-code paste, numeric keyboard metadata, accessible labels, new-password confirmation, and 60-second resend countdown. OTP, password, and recovery identity values remain component memory only.
 
-Tasks A–C expose no public recovery delivery or verification HTTP route. Therefore Task D deliberately reports `RecoveryUnavailable` and directs the user to an Owner without claiming a message was sent or a reset succeeded. It does not create a fake provider or production success. Task E must add provider-neutral delivery routes and WhatsApp integration before these controls can submit or resend.
+Tasks A–C exposed no public recovery delivery or verification HTTP route. Task D therefore originally reported `RecoveryUnavailable` and directed the user to an Owner without claiming a message was sent or a reset succeeded. It did not create a fake provider or production success.
+
+Task E now supplies that boundary. The request page calls the enumeration-safe public endpoint and retains only the opaque reference in root React memory. The verify page performs OTP verification, resend, and then password reset through distinct typed calls. It never places the reference, OTP, or password in a URL or Web Storage. A reload intentionally requires a new request. Production remains honestly unavailable until an approved provider is configured.
 
 ### Member management
 
@@ -78,7 +80,9 @@ Passwords, temporary passwords, and OTPs live only in local component state and 
 
 تنفذ مسارات الاستعادة نموذج الطلب الآمن ضد تعداد الحسابات، ورسالة عامة، وحقل OTP من ثمانية أرقام غربية، واللصق الكامل، ولوحة أرقام، وتأكيد كلمة المرور، وعدّاد 60 ثانية. تبقى القيم الحساسة في ذاكرة المكون فقط.
 
-لا توفر المهام A–C مسار HTTP عامًا للتوصيل أو التحقق. لذلك تعرض المهمة D حالة `RecoveryUnavailable` بصدق وتوجه المستخدم إلى المالك، ولا تدعي إرسال رسالة أو نجاح إعادة الضبط، ولا تنشئ مزودًا وهميًا. يجب أن تضيف المهمة E عقود التوصيل وتكامل واتساب قبل تفعيل الإرسال وإعادة الإرسال.
+لم توفر المهام A–C مسار HTTP عامًا للتوصيل أو التحقق، ولذلك عرضت المهمة D أصلًا حالة `RecoveryUnavailable` بصدق ووجهت المستخدم إلى المالك دون ادعاء إرسال رسالة أو نجاح إعادة الضبط أو إنشاء مزود وهمي.
+
+توفر المهمة E الآن هذا الحد. تستدعي صفحة الطلب المسار العام الآمن ضد التعداد، وتحفظ المرجع المعتم فقط في ذاكرة React. تنفذ صفحة التحقق عمليات OTP وإعادة الإرسال ثم إعادة ضبط كلمة المرور عبر استدعاءات منفصلة. لا يوضع المرجع أو OTP أو كلمة المرور في الرابط أو Web Storage، ويتطلب تحديث الصفحة طلبًا جديدًا. تبقى Production غير متاحة بصدق حتى تهيئة مزوّد معتمد.
 
 ### إدارة الأعضاء
 

@@ -91,6 +91,31 @@ describe("Identity Presentation utilities", () => {
 });
 
 describe("Identity API client", () => {
+  it("uses typed recovery endpoints without placing recovery authority in URLs", async () => {
+    const requests: Array<{ path: string; body: string }> = [];
+    const responses = [
+      { type: "RecoveryRequestAccepted", recoveryReference: "opaque-reference", retryAfterSeconds: 60 },
+      { type: "RecoveryCodeVerified", recoveryReference: "opaque-reference" },
+      { type: "RecoveryResendAccepted", recoveryReference: "replacement-reference", retryAfterSeconds: 60 },
+      { type: "RecoveryResetCompleted" },
+    ];
+    const client = new IdentityApiClient(async (path, init) => {
+      requests.push({ path: String(path), body: String(init?.body) });
+      return Response.json(responses.shift());
+    });
+    assert.ok((await client.requestRecovery({ workspaceCode: "store-01", username: "owner" })).ok);
+    assert.ok((await client.verifyRecovery("opaque-reference", "00148293")).ok);
+    assert.ok((await client.resendRecovery("opaque-reference")).ok);
+    assert.ok((await client.resetRecovery("replacement-reference", "Permanent recovered 123")).ok);
+    assert.deepEqual(requests.map((entry) => entry.path), [
+      "/api/auth/recovery/request",
+      "/api/auth/recovery/verify",
+      "/api/auth/recovery/resend",
+      "/api/auth/recovery/reset",
+    ]);
+    assert.equal(requests.some((entry) => entry.path.includes("opaque-reference") || entry.path.includes("00148293")), false);
+  });
+
   it("sends credentials through the HTTP boundary without token handling", async () => {
     let captured: RequestInit | undefined;
     const client = new IdentityApiClient(async (_input, init) => {

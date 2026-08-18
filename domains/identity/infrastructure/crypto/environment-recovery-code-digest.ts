@@ -1,8 +1,13 @@
 import { HmacSha256RecoveryCodeDigest, type RecoveryDigestSecret } from "./hmac-recovery-code-digest";
 
-export const createEnvironmentRecoveryCodeDigest = (
+export interface EnvironmentRecoveryDigestConfiguration {
+  readonly activeVersion: number;
+  readonly secrets: readonly RecoveryDigestSecret[];
+}
+
+export const readEnvironmentRecoveryDigestConfiguration = (
   environment: Readonly<Record<string, string | undefined>> = process.env,
-): HmacSha256RecoveryCodeDigest => {
+): EnvironmentRecoveryDigestConfiguration => {
   const activeVersion = Number(environment.QSC_RECOVERY_HMAC_ACTIVE_VERSION);
   if (!Number.isSafeInteger(activeVersion) || activeVersion < 1) {
     throw new Error("RecoveryDigestEnvironmentInvalid");
@@ -28,5 +33,12 @@ export const createEnvironmentRecoveryCodeDigest = (
     }
     secrets.push({ version, secret });
   }
-  return new HmacSha256RecoveryCodeDigest(secrets, activeVersion);
+  return Object.freeze({ activeVersion, secrets });
+};
+
+export const createEnvironmentRecoveryCodeDigest = (
+  environment: Readonly<Record<string, string | undefined>> = process.env,
+): HmacSha256RecoveryCodeDigest => {
+  const configuration = readEnvironmentRecoveryDigestConfiguration(environment);
+  return new HmacSha256RecoveryCodeDigest(configuration.secrets, configuration.activeVersion);
 };

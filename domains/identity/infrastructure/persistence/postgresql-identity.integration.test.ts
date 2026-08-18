@@ -477,6 +477,28 @@ describe("PostgreSQL Identity concurrency and lifecycle", () => {
     if (successful?.ok) assert.equal(rows[0]!.digest.includes(successful.value.code), false);
   });
 
+  it("applies migration 0010 and resolves a globally unique opaque recovery reference into its Workspace scope", async () => {
+    const owner = await bootstrap.execute(bootstrapCommand("integration-01", "owner"));
+    assert.ok(owner.ok);
+    if (!owner.ok) return;
+    const challenge = await createRecovery.execute({ workspaceId: owner.value.workspaceId, actorId: owner.value.actorId });
+    assert.ok(challenge.ok);
+    if (!challenge.ok) return;
+    const repository = new PostgreSqlPasswordRecoveryChallengeRepository(connection.database);
+    const resolved = await repository.findByPublicReference(ChallengeId.create(challenge.value.challengeId));
+    assert.equal(resolved?.workspaceId.value, owner.value.workspaceId);
+    assert.equal(resolved?.actorId.value, owner.value.actorId);
+    const index = await connection.database.execute<{ indexdef: string }>(sql`
+      SELECT indexdef
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname = 'identity_password_recovery_challenges_public_reference_uq'
+    `);
+    assert.equal(index.rows.length, 1);
+    assert.match(index.rows[0]!.indexdef, /UNIQUE INDEX/);
+    assert.match(index.rows[0]!.indexdef, /challenge_id/);
+  });
+
   it("consumes a verified challenge once and increments password version safely", async () => {
     const owner = await bootstrap.execute(bootstrapCommand("integration-01", "owner"));
     assert.ok(owner.ok);

@@ -98,3 +98,5 @@ export function generateTemporaryPassword(cryptoSource: Pick<Crypto, "getRandomV
 
 export const secondsRemaining = (availableAt: number, now: number): number =>
   Math.max(0, Math.ceil((availableAt - now) / 1000));
+
+export const currentBrowserTime = (): number => Date.now();

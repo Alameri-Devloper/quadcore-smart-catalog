@@ -4,7 +4,7 @@ import { PasswordRecoveryChallenge, RECOVERY_MAX_SENDS_PER_WINDOW, RECOVERY_RESE
 import { validatePassword } from "../domain/password";
 import { commitIdentityTransaction, rollbackIdentityTransaction, type IdentityUnitOfWork } from "../repositories/identity.repositories";
 import { identityFailure, identitySuccess, type IdentityResult } from "./identity-results";
-import type { IdentityClock, IdentityIdentifierGenerator, PasswordHasher, RecoveryCodeDigest, RecoveryCodeGenerator } from "./ports";
+import type { IdentityClock, IdentityIdentifierGenerator, PasswordHasher, RecoveryCodeDigest, RecoveryCodeGenerator, RecoveryDeliveryResult } from "./ports";
 
 const challengeStatusFailure = <T>(status: PasswordRecoveryChallenge["status"]): IdentityResult<T> => {
   switch (status) {
@@ -22,12 +22,19 @@ export interface CreatePasswordRecoveryChallengeCommand {
 }
 
 export interface TrustedRecoveryDelivery {
+  readonly workspaceId: string;
+  readonly workspaceDisplayName: string;
   readonly challengeId: string;
+  readonly deliveryIdempotencyKey: string;
   readonly channel: "PrimaryRecoveryContact";
   readonly destination: string;
+  readonly locale: "ar" | "en";
   readonly code: string;
   readonly expiresAt: Date;
 }
+
+const recoveryDeliveryIdempotencyKey = (challengeId: ChallengeId): string =>
+  `identity-recovery-delivery:${challengeId.value}`;
 
 export class CreatePasswordRecoveryChallengeUseCase {
   constructor(
@@ -50,7 +57,7 @@ export class CreatePasswordRecoveryChallengeUseCase {
 
     try {
       return await this.unitOfWork.execute(async (context) => {
-        const workspace = await context.workspaceRepository.findById(workspaceId);
+        const workspace = await context.workspaceRepository.findById(workspaceId, { forUpdate: true });
         if (!workspace) return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("WorkspaceNotFound"));
         if (workspace.passwordRecoveryPolicy !== "WhatsAppOtpWithOwnerFallback") {
           return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryNotAllowed"));
@@ -61,8 +68,8 @@ export class CreatePasswordRecoveryChallengeUseCase {
         const profile = await context.memberProfileRepository.findByActorId(workspaceId, actorId);
         if (!profile) return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryNotAllowed"));
 
-        const open = await context.passwordRecoveryChallengeRepository.findOpenByActorId(workspaceId, actorId, { forUpdate: true });
-        if (open && now.getTime() - open.createdAt.getTime() < RECOVERY_RESEND_INTERVAL_MS) {
+        const latest = await context.passwordRecoveryChallengeRepository.findLatestByActorId(workspaceId, actorId, { forUpdate: true });
+        if (latest && now.getTime() - latest.createdAt.getTime() < RECOVERY_RESEND_INTERVAL_MS) {
           return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryRateLimited"));
         }
         const sends = await context.passwordRecoveryChallengeRepository.countCreatedSince(
@@ -108,9 +115,13 @@ export class CreatePasswordRecoveryChallengeUseCase {
           },
         ]);
         return commitIdentityTransaction(identitySuccess({
+          workspaceId: workspaceId.value,
+          workspaceDisplayName: workspace.displayName,
           challengeId: challengeId.value,
+          deliveryIdempotencyKey: recoveryDeliveryIdempotencyKey(challengeId),
           channel: "PrimaryRecoveryContact",
           destination: profile.recoveryPhone.value,
+          locale: profile.locale,
           code,
           expiresAt: challenge.expiresAt,
         }));
@@ -140,11 +151,21 @@ export class VerifyPasswordRecoveryChallengeUseCase {
     const now = this.clock.now();
     try {
       return await this.unitOfWork.execute(async (context) => {
+        const workspace = await context.workspaceRepository.findById(workspaceId, { forUpdate: true });
+        if (!workspace || workspace.passwordRecoveryPolicy !== "WhatsAppOtpWithOwnerFallback") {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string }>("RecoveryNotAllowed"));
+        }
         const challenge = await context.passwordRecoveryChallengeRepository.findById(workspaceId, challengeId, { forUpdate: true });
         if (!challenge) return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string }>("RecoveryChallengeNotFound"));
         const account = await context.accountRepository.findByActorId(workspaceId, challenge.actorId, { forUpdate: true });
         if (!account) return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string }>("AccountNotFound"));
         if (account.status === "Suspended") return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string }>("AccountSuspended"));
+        const profile = await context.memberProfileRepository.findByActorId(workspaceId, challenge.actorId, { forUpdate: true });
+        if (!profile || profile.recoveryContactVersion !== challenge.destinationVersion) {
+          challenge.invalidate(now);
+          await context.passwordRecoveryChallengeRepository.save(challenge);
+          return commitIdentityTransaction(identityFailure<{ readonly actorId: string }>("RecoveryChallengeInvalidated"));
+        }
         if (challenge.expireIfNeeded(now)) {
           await context.passwordRecoveryChallengeRepository.save(challenge);
           return commitIdentityTransaction(identityFailure<{ readonly actorId: string }>("RecoveryChallengeExpired"));
@@ -208,13 +229,19 @@ export class CompletePasswordRecoveryUseCase {
     catch { return identityFailure("PasswordInvalid"); }
     const workspaceId = WorkspaceId.create(command.workspaceId);
     const challengeId = ChallengeId.create(command.challengeId);
-    const now = this.clock.now();
+    const preflight = await this.preflight(workspaceId, challengeId, this.clock.now());
+    if (!preflight.ok) return preflight;
     let hash;
     try { hash = await this.passwordHasher.hash(command.newPassword); }
     catch { return identityFailure("InfrastructureUnavailable"); }
+    const now = this.clock.now();
 
     try {
       return await this.unitOfWork.execute(async (context) => {
+        const workspace = await context.workspaceRepository.findById(workspaceId, { forUpdate: true });
+        if (!workspace || workspace.passwordRecoveryPolicy !== "WhatsAppOtpWithOwnerFallback") {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryNotAllowed"));
+        }
         const challenge = await context.passwordRecoveryChallengeRepository.findById(workspaceId, challengeId, { forUpdate: true });
         if (!challenge) return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryChallengeNotFound"));
         if (challenge.expireIfNeeded(now)) {
@@ -227,6 +254,12 @@ export class CompletePasswordRecoveryUseCase {
         const account = await context.accountRepository.findByActorId(workspaceId, challenge.actorId, { forUpdate: true });
         if (!account) return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("AccountNotFound"));
         if (account.status === "Suspended") return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("AccountSuspended"));
+        const profile = await context.memberProfileRepository.findByActorId(workspaceId, challenge.actorId, { forUpdate: true });
+        if (!profile || profile.recoveryContactVersion !== challenge.destinationVersion) {
+          challenge.invalidate(now);
+          await context.passwordRecoveryChallengeRepository.save(challenge);
+          return commitIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryChallengeInvalidated"));
+        }
         const credential = await context.passwordCredentialRepository.findByActorId(workspaceId, challenge.actorId, { forUpdate: true });
         if (!credential) return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("AccountNotFound"));
         const expectedVersion = credential.replace(hash, "Permanent", now);
@@ -292,6 +325,219 @@ export class CompletePasswordRecoveryUseCase {
           passwordVersion: credential.passwordVersion,
         }));
       });
+    } catch {
+      return identityFailure("InfrastructureUnavailable");
+    }
+  }
+
+  private async preflight(
+    workspaceId: WorkspaceId,
+    challengeId: ChallengeId,
+    now: Date,
+  ): Promise<IdentityResult<{ readonly actorId: string; readonly passwordVersion: number }>> {
+    try {
+      return await this.unitOfWork.execute(async (context) => {
+        const workspace = await context.workspaceRepository.findById(workspaceId);
+        if (!workspace || workspace.passwordRecoveryPolicy !== "WhatsAppOtpWithOwnerFallback") {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryNotAllowed"));
+        }
+        const challenge = await context.passwordRecoveryChallengeRepository.findById(workspaceId, challengeId);
+        if (!challenge) {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryChallengeNotFound"));
+        }
+        if (challenge.expiresAt.getTime() <= now.getTime()) {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryChallengeExpired"));
+        }
+        if (challenge.status !== "Verified") {
+          return rollbackIdentityTransaction(challengeStatusFailure<{ readonly actorId: string; readonly passwordVersion: number }>(challenge.status));
+        }
+        const account = await context.accountRepository.findByActorId(workspaceId, challenge.actorId);
+        if (!account) {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("AccountNotFound"));
+        }
+        if (account.status === "Suspended") {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("AccountSuspended"));
+        }
+        const profile = await context.memberProfileRepository.findByActorId(workspaceId, challenge.actorId);
+        if (!profile || profile.recoveryContactVersion !== challenge.destinationVersion) {
+          return rollbackIdentityTransaction(identityFailure<{ readonly actorId: string; readonly passwordVersion: number }>("RecoveryChallengeInvalidated"));
+        }
+        return rollbackIdentityTransaction(identitySuccess({ actorId: challenge.actorId.value, passwordVersion: 0 }));
+      });
+    } catch {
+      return identityFailure("InfrastructureUnavailable");
+    }
+  }
+}
+
+export interface ResendPasswordRecoveryChallengeCommand {
+  readonly workspaceId: string;
+  readonly challengeId: string;
+}
+
+export class ResendPasswordRecoveryChallengeUseCase {
+  constructor(
+    private readonly unitOfWork: IdentityUnitOfWork,
+    private readonly digest: RecoveryCodeDigest,
+    private readonly codeGenerator: RecoveryCodeGenerator,
+    private readonly clock: IdentityClock,
+    private readonly identifiers: IdentityIdentifierGenerator,
+  ) {}
+
+  async execute(command: ResendPasswordRecoveryChallengeCommand): Promise<IdentityResult<TrustedRecoveryDelivery>> {
+    const workspaceId = WorkspaceId.create(command.workspaceId);
+    const currentChallengeId = ChallengeId.create(command.challengeId);
+    const replacementChallengeId = ChallengeId.create(this.identifiers.challengeId());
+    const now = this.clock.now();
+    const code = this.codeGenerator.generate();
+    let digestValue;
+    try { digestValue = await this.digest.create(code); }
+    catch { return identityFailure("InfrastructureUnavailable"); }
+
+    try {
+      return await this.unitOfWork.execute(async (context) => {
+        const workspace = await context.workspaceRepository.findById(workspaceId, { forUpdate: true });
+        if (!workspace || workspace.passwordRecoveryPolicy !== "WhatsAppOtpWithOwnerFallback") {
+          return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryNotAllowed"));
+        }
+        const current = await context.passwordRecoveryChallengeRepository.findById(workspaceId, currentChallengeId, { forUpdate: true });
+        if (!current || current.status !== "Active") {
+          return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryChallengeNotFound"));
+        }
+        const account = await context.accountRepository.findByActorId(workspaceId, current.actorId, { forUpdate: true });
+        const profile = await context.memberProfileRepository.findByActorId(workspaceId, current.actorId, { forUpdate: true });
+        if (!account || account.status === "Suspended" || !profile || profile.recoveryContactVersion !== current.destinationVersion) {
+          current.invalidate(now);
+          await context.passwordRecoveryChallengeRepository.save(current);
+          return commitIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryChallengeInvalidated"));
+        }
+        if (current.expireIfNeeded(now)) {
+          await context.passwordRecoveryChallengeRepository.save(current);
+          return commitIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryChallengeExpired"));
+        }
+        if (now.getTime() - current.createdAt.getTime() < RECOVERY_RESEND_INTERVAL_MS) {
+          return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryRateLimited"));
+        }
+        const sends = await context.passwordRecoveryChallengeRepository.countCreatedSince(
+          workspaceId,
+          current.actorId,
+          new Date(now.getTime() - RECOVERY_SEND_WINDOW_MS),
+        );
+        if (sends >= RECOVERY_MAX_SENDS_PER_WINDOW) {
+          return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryRateLimited"));
+        }
+        const invalidatedCount = await context.passwordRecoveryChallengeRepository.invalidateOpenByActorId(workspaceId, current.actorId, now);
+        const replacement = PasswordRecoveryChallenge.create({
+          workspaceId,
+          challengeId: replacementChallengeId,
+          actorId: current.actorId,
+          channel: current.channel,
+          destinationVersion: profile.recoveryContactVersion,
+          digest: digestValue,
+          createdAt: now,
+        });
+        if (await context.passwordRecoveryChallengeRepository.create(replacement) !== "Created") {
+          return rollbackIdentityTransaction(identityFailure<TrustedRecoveryDelivery>("RecoveryRateLimited"));
+        }
+        await context.audit.append([{
+          workspaceId,
+          eventType: SECURITY_AUDIT_EVENT_TYPES.recoveryChallengeInvalidated,
+          actorId: current.actorId,
+          subjectActorId: current.actorId,
+          resultCode: "Resent",
+          occurredAt: now,
+          metadata: { invalidatedCount },
+        }, {
+          workspaceId,
+          eventType: SECURITY_AUDIT_EVENT_TYPES.recoveryChallengeCreated,
+          actorId: current.actorId,
+          subjectActorId: current.actorId,
+          resultCode: "Active",
+          occurredAt: now,
+          metadata: { channel: replacement.channel, destinationVersion: replacement.destinationVersion },
+        }]);
+        return commitIdentityTransaction(identitySuccess({
+          workspaceId: workspaceId.value,
+          workspaceDisplayName: workspace.displayName,
+          challengeId: replacement.challengeId.value,
+          deliveryIdempotencyKey: recoveryDeliveryIdempotencyKey(replacement.challengeId),
+          channel: replacement.channel,
+          destination: profile.recoveryPhone.value,
+          locale: profile.locale,
+          code,
+          expiresAt: replacement.expiresAt,
+        }));
+      });
+    } catch {
+      return identityFailure("InfrastructureUnavailable");
+    }
+  }
+}
+
+export class FinalizeRecoveryDeliveryUseCase {
+  constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
+
+  async execute(command: {
+    readonly workspaceId: string;
+    readonly challengeId: string;
+    readonly adapterName: string;
+    readonly latencyMs: number;
+    readonly result: RecoveryDeliveryResult;
+  }): Promise<IdentityResult<null>> {
+    const workspaceId = WorkspaceId.create(command.workspaceId);
+    const challengeId = ChallengeId.create(command.challengeId);
+    const now = this.clock.now();
+    try {
+      return await this.unitOfWork.execute(async (context) => {
+        const challenge = await context.passwordRecoveryChallengeRepository.findById(workspaceId, challengeId, { forUpdate: true });
+        if (!challenge) return rollbackIdentityTransaction(identityFailure<null>("RecoveryChallengeNotFound"));
+        const definitivelyNotDelivered = !command.result.ok && [
+          "ConfigurationMissing",
+          "ProviderRejected",
+          "PermanentFailure",
+        ].includes(command.result.error);
+        if (definitivelyNotDelivered && challenge.invalidate(now)) {
+          await context.passwordRecoveryChallengeRepository.save(challenge);
+        }
+        await context.audit.append([{
+          workspaceId,
+          eventType: SECURITY_AUDIT_EVENT_TYPES.recoveryDeliveryAttempted,
+          actorId: challenge.actorId,
+          subjectActorId: challenge.actorId,
+          resultCode: "Attempted",
+          occurredAt: now,
+          metadata: { adapterName: command.adapterName, latencyMs: Math.max(0, Math.round(command.latencyMs)) },
+        }, {
+          workspaceId,
+          eventType: command.result.ok
+            ? SECURITY_AUDIT_EVENT_TYPES.recoveryDeliverySucceeded
+            : SECURITY_AUDIT_EVENT_TYPES.recoveryDeliveryFailed,
+          actorId: challenge.actorId,
+          subjectActorId: challenge.actorId,
+          resultCode: command.result.ok ? "Delivered" : command.result.error,
+          occurredAt: now,
+          metadata: { adapterName: command.adapterName },
+        }]);
+        return commitIdentityTransaction(identitySuccess(null));
+      });
+    } catch {
+      return identityFailure("InfrastructureUnavailable");
+    }
+  }
+}
+
+export class CleanupPasswordRecoveryChallengesUseCase {
+  constructor(private readonly unitOfWork: IdentityUnitOfWork, private readonly clock: IdentityClock) {}
+
+  async execute(input: { readonly retentionMs: number; readonly limit: number }): Promise<IdentityResult<{ readonly deletedCount: number }>> {
+    if (!Number.isSafeInteger(input.retentionMs) || input.retentionMs < 0 || !Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 1_000) {
+      return identityFailure("RecoveryNotAllowed");
+    }
+    const before = new Date(this.clock.now().getTime() - input.retentionMs);
+    try {
+      return await this.unitOfWork.execute(async (context) => commitIdentityTransaction(identitySuccess({
+        deletedCount: await context.passwordRecoveryChallengeRepository.deleteCleanupEligible(before, input.limit),
+      })));
     } catch {
       return identityFailure("InfrastructureUnavailable");
     }

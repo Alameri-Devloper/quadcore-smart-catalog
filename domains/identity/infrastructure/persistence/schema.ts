@@ -267,6 +267,7 @@ export const identityPasswordRecoveryChallenges = pgTable(
   },
   (table) => [
     primaryKey({ name: "identity_password_recovery_challenges_pk", columns: [table.workspaceId, table.challengeId] }),
+    uniqueIndex("identity_password_recovery_challenges_public_reference_uq").on(table.challengeId),
     foreignKey({
       name: "identity_password_recovery_challenges_account_fk",
       columns: [table.workspaceId, table.actorId],

@@ -1,6 +1,6 @@
 # Identity Boundary | حدود الهوية
 
-**Status:** Foundation implemented; D-R2 correction pending review · **Last Updated:** 2026-08-16 · **Scope:** Identity domain
+**Status:** Recovery delivery implemented; pending independent review · **Last Updated:** 2026-08-17 · **Scope:** Identity domain
 
 ## English
 
@@ -18,6 +18,8 @@ See [Identity Accounts, Recovery, and Bootstrap](../../05-Development/Identity-A
 
 Task D Presentation details are documented bilingually in [Identity Authentication and Member Presentation](../../05-Development/Identity-Authentication-and-Member-Presentation.md).
 
+Task 3.15.1-E now completes provider-neutral self-service recovery, the WhatsApp delivery contract, explicit Development/Test capture, public request/resend/verify/reset routes, server-enforced limits, session revocation, and the real recovery Presentation integration. Production fails closed until an approved concrete WhatsApp provider is injected. See [Identity Recovery Delivery and WhatsApp OTP](../../05-Development/Identity-Recovery-Delivery-and-WhatsApp-OTP.md).
+
 تفاصيل طبقة العرض في المهمة D موثقة بالعربية والإنجليزية في [واجهة المصادقة وإدارة الأعضاء](../../05-Development/Identity-Authentication-and-Member-Presentation.md).
 
 ## العربية
@@ -31,3 +33,5 @@ Task D Presentation details are documented bilingually in [Identity Authenticati
 تكمل المهمة 3.15.1-D-R2 دورة حفظ إعدادات الاتصال: تعيد عملية PATCH المؤكدة DTO الآمن المحفوظ ورمز المراجعة الصادر من الخادم، وتعتمده طبقة العرض للحفظ الصريح التالي. لا ترفع النتائج غير المؤكدة الرمز، وتبقى الكتابة القديمة الحقيقية تعيد 409.
 
 راجع [حسابات الهوية والاستعادة والتهيئة](../../05-Development/Identity-Accounts-Recovery-Bootstrap.md) لتفاصيل دورات الحياة والأمن والمخطط وأوامر CLI وحدود المهام.
+
+تكمل المهمة 3.15.1-E الاستعادة الذاتية المحايدة للمزوّد وعقد واتساب ومحول التطوير/الاختبار والمسارات العامة والحدود الأمنية وإلغاء الجلسات وربط الواجهة الفعلي. تفشل بيئة الإنتاج بإغلاق آمن حتى حقن مزوّد واتساب معتمد. راجع [توصيل استعادة الهوية ورمز واتساب](../../05-Development/Identity-Recovery-Delivery-and-WhatsApp-OTP.md).
