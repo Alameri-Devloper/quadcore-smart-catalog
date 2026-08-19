@@ -788,10 +788,14 @@ export class UpdateWorkspaceCommunicationSettingsUseCase {
         if (await transaction.workspaceCommunicationSettingsRepository.update(changedSettings, settings.updatedAt) !== "Updated") {
           return rollbackIdentityTransaction(identityFailure("AuthorizationConflict"));
         }
+        const invalidatedChallengeCount = workspace.passwordRecoveryPolicy !== "OwnerManagedOnly"
+          && changedWorkspace.passwordRecoveryPolicy === "OwnerManagedOnly"
+          ? await transaction.passwordRecoveryChallengeRepository.invalidateOpenByWorkspaceId(scope.workspaceId, now)
+          : 0;
         await auditAuthorizationChange(
           transaction, scope, scope.actorId,
           SECURITY_AUDIT_EVENT_TYPES.workspaceCommunicationSettingsChanged,
-          command.passwordRecoveryPolicy, now,
+          command.passwordRecoveryPolicy, now, { invalidatedChallengeCount },
         );
         return commitIdentityTransaction(identitySuccess(Object.freeze({
           defaultWhatsAppPhoneE164: changedSettings.defaultWhatsAppPhone.value,

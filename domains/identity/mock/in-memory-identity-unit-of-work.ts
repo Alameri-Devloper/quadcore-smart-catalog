@@ -242,11 +242,21 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
           const challenge = state.challenges.get(scoped(workspaceId.value, challengeId.value));
           return challenge ? cloneChallenge(challenge) : null;
         },
+        findByPublicReference: async (challengeId) => {
+          const challenge = [...state.challenges.values()].find((candidate) => candidate.challengeId.equals(challengeId));
+          return challenge ? cloneChallenge(challenge) : null;
+        },
         findOpenByActorId: async (workspaceId, actorId) => {
           const challenge = [...state.challenges.values()].find((candidate) =>
             candidate.workspaceId.equals(workspaceId)
             && candidate.actorId.equals(actorId)
             && ["Active", "Verified"].includes(candidate.status));
+          return challenge ? cloneChallenge(challenge) : null;
+        },
+        findLatestByActorId: async (workspaceId, actorId) => {
+          const challenge = [...state.challenges.values()]
+            .filter((candidate) => candidate.workspaceId.equals(workspaceId) && candidate.actorId.equals(actorId))
+            .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
           return challenge ? cloneChallenge(challenge) : null;
         },
         countCreatedSince: async (workspaceId, actorId, since) => [...state.challenges.values()].filter((candidate) =>
@@ -268,6 +278,26 @@ export class InMemoryIdentityUnitOfWork implements IdentityUnitOfWork {
             }
           }
           return count;
+        },
+        invalidateOpenByWorkspaceId: async (workspaceId, at) => {
+          let count = 0;
+          for (const [key, challenge] of state.challenges) {
+            if (challenge.workspaceId.equals(workspaceId) && challenge.invalidate(at)) {
+              state.challenges.set(key, cloneChallenge(challenge));
+              count += 1;
+            }
+          }
+          return count;
+        },
+        deleteCleanupEligible: async (before, limit) => {
+          const keys = [...state.challenges.entries()]
+            .filter(([, challenge]) => (
+              !["Active", "Verified"].includes(challenge.status) && challenge.createdAt < before
+            ) || (["Active", "Verified"].includes(challenge.status) && challenge.expiresAt < before))
+            .slice(0, limit)
+            .map(([key]) => key);
+          for (const key of keys) state.challenges.delete(key);
+          return keys.length;
         },
       },
       memberProfileRepository: {

@@ -7,6 +7,9 @@ import type {
   MemberListView,
   PermissionDefinitionView,
   PermissionTemplateView,
+  RecoveryRequestView,
+  RecoveryResendView,
+  RecoveryVerifiedView,
   SafeActorView,
   WorkspaceRole,
   Locale,
@@ -76,6 +79,22 @@ export class IdentityApiClient {
     readonly sessionClass: "Full";
     readonly passwordChangeRequired: false;
   }>> { return request(this.fetchPort, "/api/auth/change-password", { method: "POST", body: JSON.stringify(input) }); }
+
+  requestRecovery(input: { readonly workspaceCode: string; readonly username: string }): Promise<ApiResult<RecoveryRequestView>> {
+    return request(this.fetchPort, "/api/auth/recovery/request", { method: "POST", body: JSON.stringify(input) });
+  }
+
+  resendRecovery(recoveryReference: string): Promise<ApiResult<RecoveryResendView>> {
+    return request(this.fetchPort, "/api/auth/recovery/resend", { method: "POST", body: JSON.stringify({ recoveryReference }) });
+  }
+
+  verifyRecovery(recoveryReference: string, otp: string): Promise<ApiResult<RecoveryVerifiedView>> {
+    return request(this.fetchPort, "/api/auth/recovery/verify", { method: "POST", body: JSON.stringify({ recoveryReference, otp }) });
+  }
+
+  resetRecovery(recoveryReference: string, newPassword: string): Promise<ApiResult<{ readonly type: "RecoveryResetCompleted" }>> {
+    return request(this.fetchPort, "/api/auth/recovery/reset", { method: "POST", body: JSON.stringify({ recoveryReference, newPassword }) });
+  }
 
   members(): Promise<ApiResult<readonly MemberListView[]>> { return request(this.fetchPort, "/api/workspace/members"); }
   member(actorId: string): Promise<ApiResult<MemberDetailsView>> { return request(this.fetchPort, `/api/workspace/members/${encodeURIComponent(actorId)}`); }

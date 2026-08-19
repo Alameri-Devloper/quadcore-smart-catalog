@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import type { PlatformDatabase } from "../../../../shared/infrastructure/persistence/database";
 import { E164PhoneNumber } from "../../../../shared/domain/e164-phone-number";
 import { ActorId, ChallengeId, SessionId, WorkspaceId } from "../../../../shared/domain/scoped-identity";
@@ -262,6 +262,13 @@ export class PostgreSqlPasswordRecoveryChallengeRepository implements PasswordRe
     return rows[0] ? mapChallenge(rows[0]) : null;
   }
 
+  async findByPublicReference(challengeId: ChallengeId): Promise<PasswordRecoveryChallenge | null> {
+    const rows = await this.database.select().from(identityPasswordRecoveryChallenges).where(
+      eq(identityPasswordRecoveryChallenges.challengeId, challengeId.value),
+    ).limit(1);
+    return rows[0] ? mapChallenge(rows[0]) : null;
+  }
+
   async findOpenByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<PasswordRecoveryChallenge | null> {
     const base = this.database.select().from(identityPasswordRecoveryChallenges).where(and(
       eq(identityPasswordRecoveryChallenges.workspaceId, workspaceId.value),
@@ -307,6 +314,50 @@ export class PostgreSqlPasswordRecoveryChallengeRepository implements PasswordRe
       invalidatedAt: at,
     }).where(and(...scope)).returning({ challengeId: identityPasswordRecoveryChallenges.challengeId });
     return updated.length;
+  }
+
+  async findLatestByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<PasswordRecoveryChallenge | null> {
+    const base = this.database.select().from(identityPasswordRecoveryChallenges).where(and(
+      eq(identityPasswordRecoveryChallenges.workspaceId, workspaceId.value),
+      eq(identityPasswordRecoveryChallenges.actorId, actorId.value),
+    )).orderBy(desc(identityPasswordRecoveryChallenges.createdAt)).limit(1);
+    const rows = options?.forUpdate ? await base.for("update") : await base;
+    return rows[0] ? mapChallenge(rows[0]) : null;
+  }
+
+  async invalidateOpenByWorkspaceId(workspaceId: WorkspaceId, at: Date): Promise<number> {
+    const updated = await this.database.update(identityPasswordRecoveryChallenges).set({
+      status: "Invalidated",
+      invalidatedAt: at,
+    }).where(and(
+      eq(identityPasswordRecoveryChallenges.workspaceId, workspaceId.value),
+      inArray(identityPasswordRecoveryChallenges.status, ["Active", "Verified"]),
+    )).returning({ challengeId: identityPasswordRecoveryChallenges.challengeId });
+    return updated.length;
+  }
+
+  async deleteCleanupEligible(before: Date, limit: number): Promise<number> {
+    const candidates = await this.database.select({
+      workspaceId: identityPasswordRecoveryChallenges.workspaceId,
+      challengeId: identityPasswordRecoveryChallenges.challengeId,
+    }).from(identityPasswordRecoveryChallenges).where(or(
+      and(
+        inArray(identityPasswordRecoveryChallenges.status, ["Consumed", "Invalidated", "Expired"]),
+        lt(identityPasswordRecoveryChallenges.createdAt, before),
+      ),
+      and(
+        inArray(identityPasswordRecoveryChallenges.status, ["Active", "Verified"]),
+        lt(identityPasswordRecoveryChallenges.expiresAt, before),
+      ),
+    )).orderBy(identityPasswordRecoveryChallenges.createdAt).limit(limit);
+    if (candidates.length === 0) return 0;
+    const deleted = await this.database.delete(identityPasswordRecoveryChallenges).where(or(
+      ...candidates.map((candidate) => and(
+        eq(identityPasswordRecoveryChallenges.workspaceId, candidate.workspaceId),
+        eq(identityPasswordRecoveryChallenges.challengeId, candidate.challengeId),
+      )),
+    )).returning({ challengeId: identityPasswordRecoveryChallenges.challengeId });
+    return deleted.length;
   }
 }
 

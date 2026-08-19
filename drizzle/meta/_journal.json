@@ -71,6 +71,13 @@
       "when": 1786256995782,
       "tag": "0009_identity_member_administration",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786943317154,
+      "tag": "0010_bent_chronomancer",
+      "breakpoints": true
     }
   ]
 }

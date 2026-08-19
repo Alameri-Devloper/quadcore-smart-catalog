@@ -17,6 +17,55 @@ export interface RecoveryCodeGenerator {
   generate(): string;
 }
 
+export interface RecoveryRequestCostPort {
+  perform(): Promise<void>;
+}
+
+export type PublicRecoveryOperation = "Request" | "Resend" | "Verify" | "Reset";
+
+export interface PublicRecoveryTimingPort {
+  waitForMinimum(operation: PublicRecoveryOperation, startedAt: Date): Promise<void>;
+}
+
+export interface PublicRecoveryFlowToken {
+  readonly kind: "Real" | "Decoy";
+  readonly challengeId: string;
+  readonly issuedAt: Date;
+}
+
+export interface PublicRecoveryFlowTokenPort {
+  issue(flow: PublicRecoveryFlowToken): string;
+  read(reference: string): PublicRecoveryFlowToken | null;
+}
+
+export type RecoveryDeliveryFailureCode =
+  | "ConfigurationMissing"
+  | "ProviderUnavailable"
+  | "ProviderRejected"
+  | "TemporaryFailure"
+  | "Timeout"
+  | "PermanentFailure";
+
+export type RecoveryDeliveryResult =
+  | { readonly ok: true; readonly providerReference?: string }
+  | { readonly ok: false; readonly error: RecoveryDeliveryFailureCode };
+
+export interface RecoveryDeliveryPort {
+  readonly adapterName: string;
+  readonly available: boolean;
+  deliverCode(input: {
+    readonly workspaceId: string;
+    readonly workspaceDisplayName: string;
+    readonly recoveryReference: string;
+    readonly idempotencyKey: string;
+    readonly channel: "PrimaryRecoveryContact";
+    readonly destination: string;
+    readonly locale: "ar" | "en";
+    readonly code: string;
+    readonly expiresAt: Date;
+  }): Promise<RecoveryDeliveryResult>;
+}
+
 export interface IdentityClock {
   now(): Date;
 }

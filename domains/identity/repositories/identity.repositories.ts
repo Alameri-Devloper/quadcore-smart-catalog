@@ -34,10 +34,14 @@ export interface LoginProtectionRepository {
 export interface PasswordRecoveryChallengeRepository {
   create(challenge: PasswordRecoveryChallenge): Promise<"Created" | "OpenChallengeConflict">;
   findById(workspaceId: WorkspaceId, challengeId: ChallengeId, options?: { readonly forUpdate?: boolean }): Promise<PasswordRecoveryChallenge | null>;
+  findByPublicReference(challengeId: ChallengeId): Promise<PasswordRecoveryChallenge | null>;
   findOpenByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<PasswordRecoveryChallenge | null>;
+  findLatestByActorId(workspaceId: WorkspaceId, actorId: ActorId, options?: { readonly forUpdate?: boolean }): Promise<PasswordRecoveryChallenge | null>;
   countCreatedSince(workspaceId: WorkspaceId, actorId: ActorId, since: Date): Promise<number>;
   save(challenge: PasswordRecoveryChallenge): Promise<void>;
   invalidateOpenByActorId(workspaceId: WorkspaceId, actorId: ActorId, at: Date, exceptChallengeId?: ChallengeId): Promise<number>;
+  invalidateOpenByWorkspaceId(workspaceId: WorkspaceId, at: Date): Promise<number>;
+  deleteCleanupEligible(before: Date, limit: number): Promise<number>;
 }
 
 export interface MemberProfileRepository {

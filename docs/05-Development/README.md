@@ -1,6 +1,6 @@
 # Development Documentation | توثيق التطوير
 
-**Status:** Active · **Last Updated:** 2026-08-09 · **Scope:** Delivery and governance
+**Status:** Active · **Last Updated:** 2026-08-17 · **Scope:** Delivery and governance
 
 ## English
 
@@ -15,6 +15,8 @@ The [Product Entry Submission Registry](Product-Entry-Submission-Registry.md) do
 The [Identity Accounts, Recovery, and Bootstrap](Identity-Accounts-Recovery-Bootstrap.md) guide documents Task 3.15.1-A account/credential separation, Workspace login codes, Argon2id, login protection, HMAC recovery challenges, atomic bootstrap, emergency Owner reset, multi-tenant persistence, and the boundaries reserved for Tasks B–E. | يوثق دليل [حسابات الهوية والاستعادة والتهيئة](Identity-Accounts-Recovery-Bootstrap.md) فصل الحساب وبيانات الاعتماد ورموز الدخول وحماية تسجيل الدخول وتحديات HMAC والتهيئة الذرية وإعادة ضبط المالك الطارئة وعزل المستأجرين.
 
 The [Identity Server Sessions and Trusted Context](Identity-Server-Sessions-and-Trusted-Context.md) guide documents Task 3.15.1-B opaque sessions, secure cookies, restricted first login, expiry, revocation, trusted actor resolution, version validation, redacted HTTP routes, and Task C/D/E handoff. | يوثق دليل [جلسات الهوية على الخادم والسياق الموثوق](Identity-Server-Sessions-and-Trusted-Context.md) الجلسات المبهمة وملفات الارتباط الآمنة والجلسة المقيدة والانتهاء والإبطال والسياق الموثوق والتحقق من الإصدارات وحدود المهام التالية.
+
+The [Identity Recovery Delivery and WhatsApp OTP](Identity-Recovery-Delivery-and-WhatsApp-OTP.md) guide documents Task 3.15.1-E provider-neutral delivery, WhatsApp V1 composition, enumeration resistance, OTP lifecycle and limits, provider transaction boundaries, Development/Test capture, production fail-closed configuration, session revocation, and Presentation integration. | يوثق دليل [توصيل استعادة الهوية ورمز واتساب](Identity-Recovery-Delivery-and-WhatsApp-OTP.md) حدود التوصيل المحايدة وواتساب ومقاومة التعداد ودورة OTP وحدود المعاملة ومحول الاختبار وتهيئة الإنتاج وإلغاء الجلسات وربط الواجهة.
 
 The [Product Entry Media Upload Coordination](Product-Entry-Media-Upload-Coordination.md) guide documents Task 3.14.9-B Phase 2 multipart mapping, double source verification, Media idempotency, workflow resume, partial success, tenancy, and HTTP behavior.
 

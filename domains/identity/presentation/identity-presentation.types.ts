@@ -78,6 +78,23 @@ export interface CommunicationSettingsView {
   readonly settingsRevision: string;
 }
 
+export interface RecoveryRequestView {
+  readonly type: "RecoveryRequestAccepted";
+  readonly recoveryReference: string;
+  readonly retryAfterSeconds: number;
+}
+
+export interface RecoveryResendView {
+  readonly type: "RecoveryResendAccepted";
+  readonly recoveryReference: string;
+  readonly retryAfterSeconds: number;
+}
+
+export interface RecoveryVerifiedView {
+  readonly type: "RecoveryCodeVerified";
+  readonly recoveryReference: string;
+}
+
 export type ApiFailureKind =
   | "Unauthorized"
   | "Forbidden"

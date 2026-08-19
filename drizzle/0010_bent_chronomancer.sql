@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "identity_password_recovery_challenges_public_reference_uq" ON "identity_password_recovery_challenges" USING btree ("challenge_id");

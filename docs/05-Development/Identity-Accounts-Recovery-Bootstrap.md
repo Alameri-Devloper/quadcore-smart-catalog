@@ -44,7 +44,7 @@ Login protection is persisted separately. Five failures inside 15 minutes create
 
 ### Recovery challenges and HMAC storage
 
-Identity uses the provider-neutral channel `PrimaryRecoveryContact`. It does not encode WhatsApp delivery in the challenge model. Task E will map the trusted delivery result to a WhatsApp provider adapter.
+Identity uses the provider-neutral channel `PrimaryRecoveryContact`. It does not encode WhatsApp delivery in the challenge model. Task E maps the trusted delivery result through the provider-neutral port to the WhatsApp Infrastructure adapter.
 
 Each code is exactly eight numeric digits, valid for ten minutes, limited to five verification attempts, subject to a 60-second resend interval and three sends per hour, and single-use. Only one `Active` or `Verified` challenge may exist per account. A replacement invalidates the previous open challenge. Other states are `Consumed`, `Invalidated`, and `Expired`.
 
@@ -85,7 +85,7 @@ No public bootstrap, emergency-reset, or recovery route exists. Task B adds only
 - Task B (implemented): opaque sessions, cookies, trusted actor resolution, logout, and `/api/auth/me`.
 - Task C: final Owner member/profile/role/permission/branch-scope operations.
 - Task D: login, password, recovery, and member-management presentation.
-- Task E: WhatsApp delivery adapter and provider-facing security limits.
+- Task E (implemented, pending review): provider-neutral WhatsApp delivery, public recovery orchestration, provider-facing security limits, and Presentation integration.
 
 ## العربية
 
@@ -119,7 +119,7 @@ No public bootstrap, emergency-reset, or recovery route exists. Task B adds only
 
 ### تحديات الاستعادة وتخزين HMAC
 
-يستخدم المجال القناة المحايدة `PrimaryRecoveryContact` ولا يضع واتساب داخل نموذج التحدي. ستحول المهمة E نتيجة التسليم الموثوقة إلى محول مزود واتساب.
+يستخدم المجال القناة المحايدة `PrimaryRecoveryContact` ولا يضع واتساب داخل نموذج التحدي. تحول المهمة E نتيجة التسليم الموثوقة عبر المنفذ المحايد إلى محول واتساب في Infrastructure.
 
 يتكون الرمز من ثمانية أرقام، وصلاحيته عشر دقائق، وله خمس محاولات، وفاصل إعادة إرسال 60 ثانية، وثلاث عمليات إرسال في الساعة، ويستخدم مرة واحدة. لا يبقى أكثر من تحدٍ `Active` أو `Verified` للحساب، ويُبطل التحدي الجديد السابق. الحالات الأخرى هي `Consumed` و`Invalidated` و`Expired`.
 
@@ -146,4 +146,4 @@ No public bootstrap, emergency-reset, or recovery route exists. Task B adds only
 - المهمة B: الجلسات والرموز وملفات الارتباط والسياق الموثوق والخروج و`/api/auth/me`.
 - المهمة C: إدارة الأعضاء والأدوار والصلاحيات ونطاق الفروع وملفات الاتصال.
 - المهمة D: واجهات الدخول وكلمات المرور والاستعادة وإدارة الأعضاء.
-- المهمة E: محول تسليم واتساب وحدود الأمان الخاصة بالمزود.
+- المهمة E (منفذة وبانتظار المراجعة): توصيل واتساب المحايد للمزوّد وتنسيق الاستعادة العامة وحدود أمان المزوّد وربط الواجهة.
