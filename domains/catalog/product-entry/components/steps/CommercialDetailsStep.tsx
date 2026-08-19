@@ -1,16 +1,20 @@
 "use client";
 
-import {
-  PRODUCT_ENTRY_AVAILABILITY_OPTIONS,
-  PRODUCT_ENTRY_CONDITION_OPTIONS,
-  PRODUCT_ENTRY_CURRENCY_OPTIONS,
-} from "../../product-entry-commercial-options";
 import { useProductEntryWorkflow } from "../../react/product-entry-workflow-adapter";
 import { PRODUCT_ENTRY_PRESENTATION_TEXT } from "../../presentation/product-entry-i18n";
+import type { ProductEntryCatalogReferenceData } from "../../ports/product-entry-catalog-reference-data.port";
+import type { ProductCondition } from "../../../types/product.entity";
 
 const inputClass = "mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100";
 
-export function CommercialDetailsStep({ locale }: { readonly locale: "en" | "ar" }) {
+interface CommercialDetailsStepProps {
+  readonly conditions: ProductEntryCatalogReferenceData["conditions"];
+  readonly currencies: ProductEntryCatalogReferenceData["currencies"];
+  readonly locale: "en" | "ar";
+  readonly supplyStatuses: ProductEntryCatalogReferenceData["supplyStatuses"];
+}
+
+export function CommercialDetailsStep({ conditions, currencies, locale, supplyStatuses }: CommercialDetailsStepProps) {
   const { setValue, validation, values } = useProductEntryWorkflow();
   const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
   const issuesByField = new Map(
@@ -30,15 +34,9 @@ export function CommercialDetailsStep({ locale }: { readonly locale: "en" | "ar"
     rawValue: string,
     valueAsNumber: number,
   ) => void setValue(field, rawValue === "" ? null : valueAsNumber);
-  const availabilityText = {
-    available: text.inStock,
-    "arrived-at-port": text.arrivedAtPort,
-    "on-the-way": text.onTheWay,
-  } as const;
-  const conditionText = { new: text.newCondition, used: text.usedCondition } as const;
-  const availabilityOption = PRODUCT_ENTRY_AVAILABILITY_OPTIONS.find((option) => option.value === values.availabilityStatus);
-  const availabilityLabel = availabilityOption ? availabilityText[availabilityOption.value] : undefined;
-  const conditionLabel = values.condition ? conditionText[values.condition] : undefined;
+  const conditionText: Record<string, string> = { new: text.newCondition, used: text.usedCondition, refurbished: locale === "ar" ? "مجدّد" : "Refurbished" };
+  const availabilityLabel = supplyStatuses.find(({ id }) => id === values.availabilityStatus)?.displayName;
+  const conditionLabel = values.condition ? (conditionText[values.condition] ?? values.condition) : undefined;
   const validSummary = validation?.valid === true;
 
   return (
@@ -72,7 +70,7 @@ export function CommercialDetailsStep({ locale }: { readonly locale: "en" | "ar"
         <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           <div><label className="text-sm font-semibold text-slate-900" htmlFor="retailPrice">{text.retailPrice} <span className="font-normal text-slate-600">({text.required})</span></label><input aria-describedby={fieldDescription("retailPrice")} aria-invalid={issuesByField.has("retailPrice")} className={inputClass} id="retailPrice" inputMode="decimal" min="0" onChange={(event) => setNumber("retailPrice", event.target.value, event.target.valueAsNumber)} required step="any" type="number" value={values.retailPrice !== null && Number.isFinite(values.retailPrice) ? values.retailPrice : ""} />{issuesByField.has("retailPrice") ? <p className="mt-2 text-sm font-medium text-red-700" id="retailPrice-error">{issueFor("retailPrice")}</p> : null}</div>
           <div><label className="text-sm font-semibold text-slate-900" htmlFor="wholesalePrice">{text.wholesalePrice} <span className="font-normal text-slate-600">({text.optional})</span></label><input aria-describedby={fieldDescription("wholesalePrice")} aria-invalid={issuesByField.has("wholesalePrice")} className={inputClass} id="wholesalePrice" inputMode="decimal" min="0" onChange={(event) => setNumber("wholesalePrice", event.target.value, event.target.valueAsNumber)} step="any" type="number" value={values.wholesalePrice !== null && Number.isFinite(values.wholesalePrice) ? values.wholesalePrice : ""} />{issuesByField.has("wholesalePrice") ? <p className="mt-2 text-sm font-medium text-red-700" id="wholesalePrice-error">{issueFor("wholesalePrice")}</p> : null}</div>
-          <div><label className="text-sm font-semibold text-slate-900" htmlFor="currency">{text.currency} <span className="font-normal text-slate-600">({text.required})</span></label><select aria-describedby={fieldDescription("currency")} aria-invalid={issuesByField.has("currency")} className={inputClass} id="currency" onChange={(event) => void setValue("currency", event.target.value)} required value={values.currency}><option value="">{text.chooseCurrency}</option>{PRODUCT_ENTRY_CURRENCY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.value === "USD" ? text.usdDollar : option.label}</option>)}</select>{issuesByField.has("currency") ? <p className="mt-2 text-sm font-medium text-red-700" id="currency-error">{issueFor("currency")}</p> : null}</div>
+          <div><label className="text-sm font-semibold text-slate-900" htmlFor="currency">{text.currency} <span className="font-normal text-slate-600">({text.required})</span></label><select aria-describedby={fieldDescription("currency")} aria-invalid={issuesByField.has("currency")} className={inputClass} id="currency" onChange={(event) => void setValue("currency", event.target.value)} required value={values.currency}><option value="">{text.chooseCurrency}</option>{currencies.map((option) => <option key={option.code} value={option.code}>{option.code}</option>)}</select>{issuesByField.has("currency") ? <p className="mt-2 text-sm font-medium text-red-700" id="currency-error">{issueFor("currency")}</p> : null}</div>
         </div>
         {values.retailPrice !== null && values.wholesalePrice !== null && values.wholesalePrice > values.retailPrice ? <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">{text.wholesaleWarning}</p> : null}
       </section>
@@ -80,8 +78,8 @@ export function CommercialDetailsStep({ locale }: { readonly locale: "en" | "ar"
       <section className="mt-9 border-t border-slate-200 pt-8" aria-labelledby="commercial-availability-heading">
         <h3 className="text-lg font-semibold text-slate-950" id="commercial-availability-heading">{text.availability}</h3>
         <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
-          <fieldset aria-describedby={fieldDescription("condition")}><legend className="text-sm font-semibold text-slate-900">{text.condition} <span className="font-normal text-slate-600">({text.required})</span></legend><div className="mt-2 grid grid-cols-2 gap-3">{PRODUCT_ENTRY_CONDITION_OPTIONS.map((option) => <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 focus-within:ring-4 focus-within:ring-blue-200" key={option.value}><input checked={values.condition === option.value} name="condition" onChange={() => void setValue("condition", option.value)} required type="radio" /><span>{conditionText[option.value]}</span></label>)}</div>{issuesByField.has("condition") ? <p className="mt-2 text-sm font-medium text-red-700" id="condition-error">{issueFor("condition")}</p> : null}</fieldset>
-          <div><label className="text-sm font-semibold text-slate-900" htmlFor="availabilityStatus">{text.availabilityStatus} <span className="font-normal text-slate-600">({text.required})</span></label><select aria-describedby={fieldDescription("availabilityStatus")} aria-invalid={issuesByField.has("availabilityStatus")} className={inputClass} id="availabilityStatus" onChange={(event) => void setValue("availabilityStatus", event.target.value as typeof values.availabilityStatus)} required value={values.availabilityStatus ?? ""}><option value="">{text.chooseAvailability}</option>{PRODUCT_ENTRY_AVAILABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{availabilityText[option.value]}</option>)}</select>{issuesByField.has("availabilityStatus") ? <p className="mt-2 text-sm font-medium text-red-700" id="availabilityStatus-error">{issueFor("availabilityStatus")}</p> : null}</div>
+          <fieldset aria-describedby={fieldDescription("condition")}><legend className="text-sm font-semibold text-slate-900">{text.condition} <span className="font-normal text-slate-600">({text.required})</span></legend><div className="mt-2 grid grid-cols-2 gap-3">{conditions.map((option) => <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 focus-within:ring-4 focus-within:ring-blue-200" key={option.code}><input checked={values.condition === option.code} name="condition" onChange={() => void setValue("condition", option.code as ProductCondition)} required type="radio" /><span>{conditionText[option.code] ?? option.code}</span></label>)}</div>{issuesByField.has("condition") ? <p className="mt-2 text-sm font-medium text-red-700" id="condition-error">{issueFor("condition")}</p> : null}</fieldset>
+          <div><label className="text-sm font-semibold text-slate-900" htmlFor="availabilityStatus">{text.availabilityStatus} <span className="font-normal text-slate-600">({text.required})</span></label><select aria-describedby={fieldDescription("availabilityStatus")} aria-invalid={issuesByField.has("availabilityStatus")} className={inputClass} id="availabilityStatus" onChange={(event) => void setValue("availabilityStatus", event.target.value || null)} required value={values.availabilityStatus ?? ""}><option value="">{text.chooseAvailability}</option>{supplyStatuses.map((option) => <option key={option.id} value={option.id}>{option.displayName}</option>)}</select>{issuesByField.has("availabilityStatus") ? <p className="mt-2 text-sm font-medium text-red-700" id="availabilityStatus-error">{issueFor("availabilityStatus")}</p> : null}</div>
         </div>
       </section>
 

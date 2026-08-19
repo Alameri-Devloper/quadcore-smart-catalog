@@ -12,15 +12,11 @@ import type {
   ProductEntryWorkflowContext,
 } from "./product-entry.types";
 import { isProductEntryMethodEnabled } from "./product-entry.types";
-import { ProductEntryCategoryService } from "./services/product-entry-category.service";
 import { ProductEntryDeviceClassService } from "./services/product-entry-device-class.service";
 import { ProductEntryProductModelService } from "./services/product-entry-product-model.service";
 import { ProductEntrySpecificationsService } from "./services/product-entry-specifications.service";
-import {
-  isApprovedProductAvailability,
-  isApprovedProductCondition,
-  isApprovedProductEntryCurrency,
-} from "./product-entry-commercial-options";
+import { isApprovedProductAvailability, isApprovedProductCondition, isApprovedProductEntryCurrency } from "./product-entry-commercial-options";
+import { ProductEntryCategoryService } from "./services/product-entry-category.service";
 
 export type ProductEntryValidator = WorkflowStepValidator<
   ProductEntryWorkflowContext,
@@ -59,16 +55,21 @@ const CATEGORY_MESSAGES = {
 } as const;
 
 export const validateCategory: ProductEntryValidator = async ({ context, values }) => {
-  const code = await ProductEntryCategoryService.validateSelection({
-    categoryId: values.categoryId,
-    departmentId: values.departmentId,
-    companyId: context.companyId,
-    workspaceId: context.workspaceId,
-  });
-
-  return code
-    ? invalidWorkflowStep([{ code, field: "categoryId", message: CATEGORY_MESSAGES[code] }])
-    : validWorkflowStep();
+  if (!context.referenceDepartmentIds || !context.referenceCategoryDepartmentById || !context.referenceProductTypeCategoryById) {
+    const code = await ProductEntryCategoryService.validateSelection({ categoryId: values.categoryId, departmentId: values.departmentId, companyId: context.companyId, workspaceId: context.workspaceId });
+    return code ? invalidWorkflowStep([{ code, field: "categoryId", message: CATEGORY_MESSAGES[code] }]) : validWorkflowStep();
+  }
+  if (!values.departmentId || !context.referenceDepartmentIds.includes(values.departmentId)) {
+    return invalidWorkflowStep([{ code: "department-unavailable", field: "departmentId", message: CATEGORY_MESSAGES["department-unavailable"] }]);
+  }
+  if (!values.categoryId) return invalidWorkflowStep([{ code: "required", field: "categoryId", message: CATEGORY_MESSAGES.required }]);
+  if (context.referenceCategoryDepartmentById[values.categoryId] !== values.departmentId) {
+    return invalidWorkflowStep([{ code: "department-mismatch", field: "categoryId", message: CATEGORY_MESSAGES["department-mismatch"] }]);
+  }
+  if (!values.productTypeId || context.referenceProductTypeCategoryById[values.productTypeId] !== values.categoryId) {
+    return invalidWorkflowStep([{ code: "required", field: "productTypeId", message: "Choose a Product Type to continue." }]);
+  }
+  return validWorkflowStep();
 };
 
 const DEVICE_CLASS_MESSAGES = {
@@ -79,21 +80,17 @@ const DEVICE_CLASS_MESSAGES = {
 } as const;
 
 export const validateDeviceClass: ProductEntryValidator = async ({ context, values }) => {
-  const categoryRequiresDeviceClass = Boolean(
-    values.categoryId &&
-      context.categoryRequiresDeviceClassByCategory[values.categoryId],
-  );
+  if (!context.referenceDeviceClassCodes) {
+    const categoryRequiresDeviceClass = Boolean(values.categoryId && context.categoryRequiresDeviceClassByCategory[values.categoryId]);
+    if (!categoryRequiresDeviceClass) return validWorkflowStep();
+    const code = await ProductEntryDeviceClassService.validateSelection({ categoryId: values.categoryId, deviceClassId: values.deviceClassId, companyId: context.companyId, workspaceId: context.workspaceId });
+    return code ? invalidWorkflowStep([{ code, field: "deviceClassId", message: DEVICE_CLASS_MESSAGES[code] }]) : validWorkflowStep();
+  }
+  const categoryRequiresDeviceClass = context.referenceDeviceClassCodes.length > 0;
   if (!categoryRequiresDeviceClass) return validWorkflowStep();
-
-  const code = await ProductEntryDeviceClassService.validateSelection({
-    categoryId: values.categoryId,
-    deviceClassId: values.deviceClassId,
-    companyId: context.companyId,
-    workspaceId: context.workspaceId,
-  });
-  return code
-    ? invalidWorkflowStep([{ code, field: "deviceClassId", message: DEVICE_CLASS_MESSAGES[code] }])
-    : validWorkflowStep();
+  return values.deviceClassId && context.referenceDeviceClassCodes.includes(values.deviceClassId)
+    ? validWorkflowStep()
+    : invalidWorkflowStep([{ code: values.deviceClassId ? "device-class-unavailable" : "required", field: "deviceClassId", message: values.deviceClassId ? DEVICE_CLASS_MESSAGES["device-class-unavailable"] : DEVICE_CLASS_MESSAGES.required }]);
 };
 
 const PRODUCT_MODEL_MESSAGES = {
@@ -107,6 +104,9 @@ const PRODUCT_MODEL_MESSAGES = {
 } as const;
 
 export const validateProductModel: ProductEntryValidator = async ({ context, values }) => {
+  if (context.referenceBrandIds && (!values.brandId || !context.referenceBrandIds.includes(values.brandId))) {
+    return invalidWorkflowStep([{ code: "brand-unavailable", field: "brandId", message: PRODUCT_MODEL_MESSAGES["brand-unavailable"] }]);
+  }
   const code = await ProductEntryProductModelService.validateProductModelContext({
     context: {
       companyId: context.companyId,
@@ -131,16 +131,12 @@ export const validateSpecifications: ProductEntryValidator = async ({
   context,
   values,
 }) => {
-  const resolution = await ProductEntrySpecificationsService.resolve({
-    companyId: context.companyId,
-    workspaceId: context.workspaceId,
-    categoryId: values.categoryId,
-    deviceClassId: values.deviceClassId,
-    categoryRequiresDeviceClass: Boolean(
-      values.categoryId &&
-        context.categoryRequiresDeviceClassByCategory[values.categoryId],
-    ),
-  });
+  const resolution = context.referenceSpecificationResolutionsByProductType
+    ? values.productTypeId
+      ? context.referenceSpecificationResolutionsByProductType[values.productTypeId]
+        ?? { status: "missing-template" as const, templateId: null, fields: [] as [] }
+      : { status: "invalid-context" as const, templateId: null, fields: [] as [] }
+    : await ProductEntrySpecificationsService.resolve({ companyId: context.companyId, workspaceId: context.workspaceId, categoryId: values.categoryId, deviceClassId: values.deviceClassId, categoryRequiresDeviceClass: Boolean(values.categoryId && context.categoryRequiresDeviceClassByCategory[values.categoryId]) });
   const issues = ProductEntrySpecificationsService.validateValues(
     resolution,
     values.specificationValues,
@@ -155,7 +151,7 @@ export const validateSpecifications: ProductEntryValidator = async ({
   return resultFromIssues(issues);
 };
 
-export const validateCommercialDetails: ProductEntryValidator = ({ values }) => {
+export const validateCommercialDetails: ProductEntryValidator = ({ context, values }) => {
   const issues: WorkflowValidationIssue[] = [];
 
   if (!values.productName.trim()) {
@@ -185,15 +181,15 @@ export const validateCommercialDetails: ProductEntryValidator = ({ values }) => 
     });
   }
 
-  if (!values.currency || !isApprovedProductEntryCurrency(values.currency)) {
+  if (!values.currency || !(context.referenceCurrencyCodes ? context.referenceCurrencyCodes.includes(values.currency) : isApprovedProductEntryCurrency(values.currency))) {
     issues.push(requiredIssue("currency", "Choose a currency."));
   }
 
-  if (!isApprovedProductCondition(values.condition)) {
+  if (!values.condition || !(context.referenceConditionCodes ? context.referenceConditionCodes.includes(values.condition) : isApprovedProductCondition(values.condition))) {
     issues.push(requiredIssue("condition", "Choose whether the product is new or used."));
   }
 
-  if (!isApprovedProductAvailability(values.availabilityStatus)) {
+  if (!values.availabilityStatus || !(context.referenceSupplyStatusIds ? context.referenceSupplyStatusIds.includes(values.availabilityStatus) : isApprovedProductAvailability(values.availabilityStatus))) {
     issues.push(
       requiredIssue(
         "availabilityStatus",

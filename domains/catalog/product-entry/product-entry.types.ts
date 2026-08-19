@@ -1,6 +1,7 @@
 import type { SpecificationValue } from "../types/specification-value.entity";
-import type { ProductCondition, ProductStatus } from "../types/product.entity";
+import type { ProductCondition } from "../types/product.entity";
 import { PRODUCT_ENTRY_COMMERCIAL_DEFAULTS } from "./product-entry-commercial-options";
+import type { ProductEntrySpecificationsResolution } from "./services/product-entry-specifications.service";
 
 export const PRODUCT_ENTRY_STEP_IDS = {
   entryMethod: "entry-method",
@@ -109,7 +110,7 @@ export interface ProductEntryState {
   wholesalePrice: number | null;
   currency: string;
   condition: ProductCondition | null;
-  availabilityStatus: ProductStatus | null;
+  availabilityStatus: string | null;
   isFeatured: boolean;
   publicationIntent: "SaveAsDraft" | "PublishWhenReady";
   images: ProductEntryImageReference[];
@@ -139,6 +140,15 @@ export interface ProductEntryWorkflowContext {
   compatibleDeviceClassIds: readonly string[];
   compatibleProductModelIds: readonly string[];
   resolvedProductModelBrandId?: string | null;
+  referenceDepartmentIds?: readonly string[];
+  referenceCategoryDepartmentById?: Readonly<Record<string, string>>;
+  referenceProductTypeCategoryById?: Readonly<Record<string, string>>;
+  referenceBrandIds?: readonly string[];
+  referenceDeviceClassCodes?: readonly string[];
+  referenceConditionCodes?: readonly string[];
+  referenceSupplyStatusIds?: readonly string[];
+  referenceCurrencyCodes?: readonly string[];
+  referenceSpecificationResolutionsByProductType?: Readonly<Record<string, ProductEntrySpecificationsResolution>>;
 }
 
 export const createInitialProductEntryState = (): ProductEntryState => ({

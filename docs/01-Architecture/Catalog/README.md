@@ -8,6 +8,10 @@ The immutable Product media-root registry and provider-neutral storage foundatio
 
 Catalog owns product definitions, Products, their specification values, images metadata, and lifecycle. Start with [Product Aggregate](Product-Aggregate.md) and [Lifecycle Foundation](Product-Lifecycle-Foundation.md). Existing detailed workflow, option-set, camera-template, recovery, quality, and contextual-rule knowledge remains indexed by the [audit](../../05-Development/Documentation-Audit.md).
 
+Workspace-scoped hierarchy, Brands, availability registries, and Specification Templates are defined by [Catalog Reference Data](Catalog-Reference-Data.md).
+
+تُوثق بنية الأقسام والتصنيفات وأنواع المنتجات والعلامات التجارية وسجلات الإتاحة وقوالب المواصفات المملوكة لمساحة العمل في [البيانات المرجعية للكتالوج](Catalog-Reference-Data.md).
+
 ## العربية
 
 يحدد [ADR-012](../ADR/ADR-012-Product-Media-Root-Registry-and-Local-Storage-Foundation.md) سجل جذور وسائط Product الثابت وأساس التخزين المحايد للمزوّد، وتبقى الجذور مستقلة عن Product Aggregate.

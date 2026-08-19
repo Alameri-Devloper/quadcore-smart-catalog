@@ -1,0 +1,43 @@
+# Catalog Reference Data | البيانات المرجعية للكتالوج
+
+**Status:** Implemented foundation with Product Entry live composition
+
+**Task:** 3.16
+
+**Scope:** Workspace-scoped Catalog Reference Data
+
+## English
+
+Catalog Reference Data is a dedicated Catalog submodule. PostgreSQL is canonical for Workspace-owned records and availability configuration. The application layer owns parent validation, authorization, transaction coordination, optimistic concurrency, and audit orchestration. Repositories receive `workspaceId` on every owned lookup and never discover a record globally before checking its Workspace.
+
+The only hierarchy is Department → Category → Product Type. Composite primary and foreign keys structurally prevent cross-Workspace parent references. Brand and Supply Status are independent Workspace records. Dynamic records use a server-generated UUID, stable lowercase ASCII code, one Unicode `displayName`, `Active`/`Inactive`, deterministic `sortOrder`, timestamps, and an optimistic `version`. Rename never changes ID or code. There are no hard-delete HTTP operations.
+
+Device Class is the fixed `personal`, `business`, `gaming`, and `workstation` registry. Condition is fixed as `new`, `used`, and the existing Product Entry compatibility code `refurbished`; Workspace enablement is persisted separately. Currency identity comes from the complete fixed ISO 4217 List One registry published by the ISO Maintenance Agency (SIX). Workspace rows persist only an ISO alpha-3 code, enablement, and order. PostgreSQL validates the alpha-3 storage shape while Application validates membership in the fixed registry, so a standards-registry update does not require a Workspace schema redesign. Exchange rates and prices remain outside this task. Fixed labels are localized in Presentation; Workspace `displayName` is never translated.
+
+Specification Definitions support `Text`, `Number`, and `Boolean` plus an optional 32-character unit descriptor. One stable template is configured per Product Type, with unique ordered Definition entries and optional required metadata. Updating a template changes future Product Entry defaults only; Product specification values are not rewritten.
+
+Read/use authority is `catalog.referenceData.view`; management authority is `catalog.referenceData.manage`. The Standard Catalog Staff template receives view/use only. Owner effective authority continues to derive from the complete registry. Full trusted server session context supplies Workspace and Actor authority. Restricted sessions, browser-supplied authority, cross-origin mutations, and foreign Workspace references fail closed.
+
+`GET /api/catalog/reference-data` returns active selection data by default for Product Entry. `includeInactive=true` is reserved for management authority. Resource-specific POST/PATCH/PUT routes provide management operations; there is no generic table mutation endpoint. Production Product Entry composes the typed HTTP adapter directly. Presentation coordination filters Department → Category → Product Type, clears incompatible descendants, projects Workspace Brand/Device Class/Condition/Supply Status/Currency choices, and resolves the selected Product Type template into new-entry Specification fields. React renders that trusted read model and sends no Workspace or Actor authority. An unavailable response fails closed, and an empty Workspace shows setup-needed state; production never falls back to reference-data mocks. Existing mocks remain test/fixture support, and existing persisted Product specification values are not rewritten.
+
+For Edit and restored local-draft initialization, Presentation hydrates the non-persisted Department from the saved Category only when that Category exists in the current Workspace-scoped active response. This derivation occurs before the workflow captures its initial baseline, so a compatible Edit opens clean and keeps its Category, Product Type, and historical specification values unchanged. Missing, inactive, foreign-Workspace, or incompatible saved references are never silently replaced: their historical IDs remain intact and Product Entry exposes a reclassification-required state that blocks validation until the user explicitly chooses an active compatible hierarchy. Create choices continue to contain active records only. Department remains workflow context and is not added to the Product Aggregate, submission payload, request fingerprint, schema, or migrations.
+
+No management page or IT Retail Starter bootstrap is included. Presentation and responsive browser QA therefore do not apply to this backend foundation. Inventory, Pricing, Search, Sharing, exchange rates, and arbitrary metadata are unchanged.
+
+## العربية
+
+البيانات المرجعية للكتالوج هي وحدة فرعية مستقلة داخل مجال Catalog. قاعدة PostgreSQL هي مصدر الحقيقة للسجلات المملوكة لمساحة العمل ولإعدادات الإتاحة. تمتلك طبقة التطبيق التحقق من الآباء والصلاحيات وتنسيق المعاملات والتزامن المتفائل والتدقيق. تستقبل المستودعات `workspaceId` في كل استعلام مملوك، ولا تبحث عن السجل عالميًا ثم تتحقق من مساحة العمل لاحقًا.
+
+التسلسل الوحيد هو: Department ثم Category ثم Product Type. تمنع المفاتيح الأساسية والخارجية المركبة الإشارات بين مساحات العمل بنيويًا. العلامة التجارية Brand وحالة التوريد Supply Status مستقلتان. يستخدم كل سجل ديناميكي UUID مولدًا من الخادم، ورمزًا ثابتًا بأحرف ASCII صغيرة، وحقل `displayName` واحدًا يدعم Unicode، وحالة `Active` أو `Inactive`، وترتيبًا حتميًا، وطوابع زمنية، وإصدارًا للتزامن المتفائل. لا يغيّر تعديل الاسم المعرّف أو الرمز، ولا توجد واجهات حذف نهائي.
+
+فئة الجهاز Device Class سجل نظام ثابت بالقيم `personal` و`business` و`gaming` و`workstation`. الحالة Condition ثابتة بالقيم `new` و`used` مع الاحتفاظ بالقيمة الحالية `refurbished` للتوافق مع Product Entry، وتُحفظ إتاحة كل قيمة لمساحة العمل بصورة منفصلة. تأتي هوية العملة من سجل ISO 4217 الكامل والثابت في القائمة الأولى المنشورة من جهة الصيانة الرسمية SIX. تحفظ مساحة العمل رمز ISO من ثلاثة أحرف والإتاحة والترتيب فقط. تتحقق PostgreSQL من شكل الرمز، بينما تتحقق طبقة التطبيق من عضويته في السجل الثابت؛ لذلك لا يتطلب تحديث سجل المعيار إعادة تصميم مخطط مساحة العمل. لا تشمل المهمة أسعار الصرف أو التسعير. تُعرض تسميات السجلات الثابتة في طبقة العرض، بينما لا يُترجم `displayName` المدخل من مساحة العمل تلقائيًا.
+
+تدعم تعريفات المواصفات الأنواع `Text` و`Number` و`Boolean` ووصف وحدة اختياريًا حتى 32 محرفًا. يوجد قالب ثابت واحد لكل نوع منتج، ويحتوي مراجع مرتبة وفريدة لتعريفات المواصفات مع وسم الإلزام الاختياري. يؤثر تعديل القالب في القيم الافتراضية لإدخال المنتجات مستقبلًا فقط، ولا يعيد كتابة مواصفات المنتجات المحفوظة.
+
+صلاحية القراءة والاستخدام هي `catalog.referenceData.view` وصلاحية الإدارة هي `catalog.referenceData.manage`. يحصل قالب موظف الكتالوج القياسي على القراءة والاستخدام فقط. تبقى صلاحيات المالك مشتقة من السجل الكامل. تأتي هوية مساحة العمل والممثل من جلسة خادم كاملة وموثوقة. تُرفض الجلسات المقيدة وصلاحيات المتصفح والطلبات الكتابية من أصل مختلف والمراجع التابعة لمساحة عمل أخرى بصورة آمنة.
+
+يعيد المسار `GET /api/catalog/reference-data` البيانات النشطة افتراضيًا لاستخدام Product Entry، ويتطلب `includeInactive=true` صلاحية الإدارة. توفر مسارات POST وPATCH وPUT المتخصصة عمليات الإدارة، ولا توجد واجهة عامة لتعديل الجداول. يركّب Product Entry في الإنتاج محول HTTP المكتوب بالأنواع مباشرة. تنسق طبقة العرض ترشيح Department ثم Category ثم Product Type، وتمسح الاختيارات التابعة غير المتوافقة، وتعرض Brand وDevice Class وCondition وSupply Status وCurrency من مساحة العمل، وتحول قالب نوع المنتج المختار إلى حقول مواصفات الإدخال الجديد. تعرض React نموذج القراءة الموثوق ولا ترسل هوية مساحة العمل أو الممثل. يفشل المسار بأمان عند تعذر الخدمة ويظهر احتياج الإعداد عند خلو البيانات، ولا يعود الإنتاج إلى قيم مرجعية وهمية. تبقى البيانات الوهمية للاختبارات والـfixtures فقط، ولا يعاد كتابة مواصفات المنتجات المحفوظة.
+
+عند تهيئة وضع التعديل أو استعادة المسودة المحلية، تشتق طبقة العرض Department غير المحفوظ من Category المحفوظة فقط إذا كانت الفئة موجودة في الاستجابة النشطة والمقيدة بمساحة العمل الحالية. يحدث الاشتقاق قبل تثبيت خط الأساس الأولي لسير العمل، لذلك يفتح التعديل المتوافق دون حالة تغييرات ويحافظ على Category وProduct Type وقيم المواصفات التاريخية كما هي. لا تُستبدل المراجع المحفوظة المفقودة أو غير النشطة أو التابعة لمساحة عمل أخرى أو غير المتوافقة بصمت؛ تبقى معرفاتها التاريخية محفوظة ويعرض Product Entry حالة صريحة تتطلب إعادة التصنيف وتمنع اجتياز التحقق حتى يختار المستخدم تسلسلاً نشطًا ومتوافقًا. تستمر خيارات الإنشاء في عرض السجلات النشطة فقط. يبقى Department ضمن سياق سير العمل ولا يضاف إلى Product Aggregate أو حمولة الطلب أو بصمة الطلب أو المخطط أو الترحيلات.
+
+لم تُضف صفحة إدارة أو حزمة IT Retail Starter في هذه المهمة، لذلك لا ينطبق اختبار العرض المتجاوب بالمتصفح على هذا الأساس الخلفي. لم تتغير مجالات المخزون والتسعير والبحث والمشاركة وأسعار الصرف ومحرك البيانات العامة.

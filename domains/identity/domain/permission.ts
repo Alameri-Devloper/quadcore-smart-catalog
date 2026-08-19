@@ -1,4 +1,6 @@
 export const PERMISSION_REGISTRY = [
+  { code: "catalog.referenceData.view", module: "Catalog", displayKey: "permissions.catalog.referenceData.view", descriptionKey: "permissions.catalog.referenceData.view.description", assignableToStaff: true, sensitive: false },
+  { code: "catalog.referenceData.manage", module: "Catalog", displayKey: "permissions.catalog.referenceData.manage", descriptionKey: "permissions.catalog.referenceData.manage.description", assignableToStaff: true, sensitive: true },
   { code: "catalog.product.create", module: "Catalog", displayKey: "permissions.catalog.product.create", descriptionKey: "permissions.catalog.product.create.description", assignableToStaff: true, sensitive: false },
   { code: "catalog.product.edit", module: "Catalog", displayKey: "permissions.catalog.product.edit", descriptionKey: "permissions.catalog.product.edit.description", assignableToStaff: true, sensitive: false },
   { code: "catalog.product-entry-submission.read", module: "Catalog", displayKey: "permissions.catalog.productEntrySubmission.read", descriptionKey: "permissions.catalog.productEntrySubmission.read.description", assignableToStaff: true, sensitive: false },
@@ -68,6 +70,7 @@ export const PERMISSION_TEMPLATES = Object.freeze([
     displayKey: "permissionTemplates.standardCatalogStaff",
     descriptionKey: "permissionTemplates.standardCatalogStaff.description",
     permissionCodes: validateStaffPermissionCodes([
+      "catalog.referenceData.view",
       "catalog.product.create",
       "catalog.product.edit",
       "catalog.product-entry-submission.read",

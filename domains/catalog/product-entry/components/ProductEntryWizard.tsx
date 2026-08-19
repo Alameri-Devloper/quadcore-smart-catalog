@@ -10,6 +10,7 @@ import {
   HttpProductEntrySubmissionClient,
   HttpProductEntryTrustedClientContextAdapter,
 } from "../infrastructure/browser/http-product-entry-clients";
+import { createProductionProductEntryCatalogReferenceDataCoordinator } from "../infrastructure/browser/product-entry-catalog-reference-data.composition";
 import {
   PRODUCT_ENTRY_STEP_IDS,
   createInitialProductEntryState,
@@ -35,13 +36,12 @@ import { ProductEntryTwoPhaseSaveCoordinator, type ProductEntryTwoPhaseSaveResul
 import { ProductEntryAddNewTransition, type ProductEntryAddNewTransitionResult } from "../presentation/product-entry-add-new.transition";
 import type { ProductEntryProductView, ProductEntryReferenceDataLoadErrorCode, ProductEntryTrustedClientContext } from "../presentation/product-entry-presentation.types";
 import { formatProductEntryWesternNumber, PRODUCT_ENTRY_PRESENTATION_TEXT, resolveProductEntryReferenceDataLoadError, type ProductEntryPresentationText } from "../presentation/product-entry-i18n";
-import { ProductEntryCategoryService, type ProductEntryCategoryQueryResult } from "../services/product-entry-category.service";
-import { ProductEntryDeviceClassService, type ProductEntryDeviceClassOption } from "../services/product-entry-device-class.service";
 import { ProductEntryIdentityService } from "../services/product-entry-identity.service";
 import { productEntryImagesService } from "../services/product-entry-images.service";
 import { ProductEntryProductModelService, type ProductEntryProductModelContext, type ProductEntryProductModelOption } from "../services/product-entry-product-model.service";
 import { ProductEntryReviewService } from "../services/product-entry-review.service";
-import { ProductEntrySpecificationsService, type ProductEntrySpecificationsResolution } from "../services/product-entry-specifications.service";
+import type { ProductEntryCatalogReferenceData } from "../ports/product-entry-catalog-reference-data.port";
+import type { ProductEntryCatalogReferenceDataCoordinator } from "../presentation/product-entry-catalog-reference-data.coordinator";
 import { ProductEntryExitDialog } from "./ProductEntryExitDialog";
 import { ProductEntryNavigation } from "./ProductEntryNavigation";
 import { ProductEntryProgress } from "./ProductEntryProgress";
@@ -51,29 +51,34 @@ import { ProductEntryStepContent } from "./ProductEntryStepContent";
 import { ProductEntryWizardHeader } from "./ProductEntryWizardHeader";
 import { ProductIdentityCard } from "./ProductIdentityCard";
 
-const EMPTY_CATEGORY_QUERY: ProductEntryCategoryQueryResult = {
-  categories: [], categoryRequiresDeviceClassByCategory: {}, deviceClassIdsByCategory: {},
-  brandIdByProductModel: {}, productModelIdsByCategory: {}, productModelIdsByCategoryAndDeviceClass: {},
-  specificationFieldIdsByCategory: {}, specificationFieldIdsByCategoryAndDeviceClass: {},
-  selectOptionValuesBySpecificationField: {},
-};
-
 const createWorkflowContext = (
   trusted: ProductEntryTrustedClientContext,
-  categoryQuery: ProductEntryCategoryQueryResult,
+  data: ProductEntryCatalogReferenceData,
+  coordinator: ProductEntryCatalogReferenceDataCoordinator,
 ): ProductEntryWorkflowContext => ({
   companyId: trusted.companyId,
   workspaceId: trusted.workspaceId,
-  categoryRequiresDeviceClassByCategory: categoryQuery.categoryRequiresDeviceClassByCategory,
-  deviceClassIdsByCategory: categoryQuery.deviceClassIdsByCategory,
-  brandIdByProductModel: categoryQuery.brandIdByProductModel,
-  productModelIdsByCategory: categoryQuery.productModelIdsByCategory,
-  productModelIdsByCategoryAndDeviceClass: categoryQuery.productModelIdsByCategoryAndDeviceClass,
-  specificationFieldIdsByCategory: categoryQuery.specificationFieldIdsByCategory,
-  specificationFieldIdsByCategoryAndDeviceClass: categoryQuery.specificationFieldIdsByCategoryAndDeviceClass,
-  selectOptionValuesBySpecificationField: categoryQuery.selectOptionValuesBySpecificationField,
+  categoryRequiresDeviceClassByCategory: Object.fromEntries(data.categories.map(({ id }) => [id, data.deviceClasses.length > 0])),
+  deviceClassIdsByCategory: Object.fromEntries(data.categories.map(({ id }) => [id, data.deviceClasses.map(({ code }) => code)])),
+  brandIdByProductModel: {},
+  productModelIdsByCategory: {},
+  productModelIdsByCategoryAndDeviceClass: {},
+  specificationFieldIdsByCategory: {},
+  specificationFieldIdsByCategoryAndDeviceClass: {},
+  selectOptionValuesBySpecificationField: {},
   compatibleDeviceClassIds: [], compatibleProductModelIds: [], compatibleSpecificationFieldIds: [],
   requiredSpecificationFieldIds: [], resolvedProductModelBrandId: undefined,
+  referenceDepartmentIds: data.departments.map(({ id }) => id),
+  referenceCategoryDepartmentById: Object.fromEntries(data.categories.map(({ id, departmentId }) => [id, departmentId])),
+  referenceProductTypeCategoryById: Object.fromEntries(data.productTypes.map(({ id, categoryId }) => [id, categoryId])),
+  referenceBrandIds: data.brands.map(({ id }) => id),
+  referenceDeviceClassCodes: data.deviceClasses.map(({ code }) => code),
+  referenceConditionCodes: data.conditions.map(({ code }) => code),
+  referenceSupplyStatusIds: data.supplyStatuses.map(({ id }) => id),
+  referenceCurrencyCodes: data.currencies.map(({ code }) => code),
+  referenceSpecificationResolutionsByProductType: Object.fromEntries(
+    data.productTypes.map(({ id }) => [id, coordinator.specificationResolution(data, id)]),
+  ),
 });
 
 export interface ProductEntryInitialContext {
@@ -148,18 +153,18 @@ interface ProductEntryWizardSessionProps {
   readonly bootstrap: ReadyBootstrap;
   readonly draftRuntime: BrowserProductEntryLocalDraftRuntime;
   readonly coordinator: ProductEntryTwoPhaseSaveCoordinator;
-  readonly categories: ProductEntryCategoryQueryResult["categories"];
-  readonly categoryRequiresDeviceClassByCategory: ProductEntryCategoryQueryResult["categoryRequiresDeviceClassByCategory"];
-  readonly categoryLoadErrorCode: ProductEntryReferenceDataLoadErrorCode | null;
-  readonly categoriesLoading: boolean;
-  readonly onRetryCategories: () => void;
+  readonly referenceCoordinator: ProductEntryCatalogReferenceDataCoordinator;
+  readonly referenceData: ProductEntryCatalogReferenceData;
+  readonly referenceLoadErrorCode: ProductEntryReferenceDataLoadErrorCode | null;
+  readonly referenceLoading: boolean;
+  readonly onRetryReferenceData: () => void;
   readonly locale: "en" | "ar";
   readonly onLocaleChange: (locale: "en" | "ar") => void;
   readonly onAddNew: (afterEstablished: () => void) => Promise<ProductEntryAddNewTransitionResult>;
   readonly onReloadEdit: () => Promise<void>;
 }
 
-function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categories, categoryRequiresDeviceClassByCategory, categoryLoadErrorCode, categoriesLoading, onRetryCategories, locale, onLocaleChange, onAddNew, onReloadEdit }: ProductEntryWizardSessionProps) {
+function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, referenceCoordinator, referenceData, referenceLoadErrorCode, referenceLoading, onRetryReferenceData, locale, onLocaleChange, onAddNew, onReloadEdit }: ProductEntryWizardSessionProps) {
   const router = useRouter();
   const workflow = useProductEntryWorkflow();
   const media = useProductEntryBrowserMedia();
@@ -171,17 +176,18 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
   const [addNewFailure, setAddNewFailure] = useState(false);
   const [replacementSelectionStates, setReplacementSelectionStates] = useState<Record<string, "Preparing" | "Ready" | "Failed">>({});
   const lastDraftPayload = useRef<string | null>(null);
-  const [deviceClassResult, setDeviceClassResult] = useState<{ categoryId: string; options: ProductEntryDeviceClassOption[] } | null>(null);
-  const [deviceClassError, setDeviceClassError] = useState<{ categoryId: string; code: ProductEntryReferenceDataLoadErrorCode } | null>(null);
   const [productModelResult, setProductModelResult] = useState<{ contextKey: string; options: ProductEntryProductModelOption[] } | null>(null);
   const [productModelError, setProductModelError] = useState<{ contextKey: string; code: ProductEntryReferenceDataLoadErrorCode } | null>(null);
-  const [specificationsResult, setSpecificationsResult] = useState<{ contextKey: string; resolution: ProductEntrySpecificationsResolution } | null>(null);
-  const [specificationsError, setSpecificationsError] = useState<{ contextKey: string; code: ProductEntryReferenceDataLoadErrorCode } | null>(null);
   const ar = locale === "ar";
   const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
-  const categoryLoadError = categoryLoadErrorCode
-    ? resolveProductEntryReferenceDataLoadError(categoryLoadErrorCode, text)
+  const categoryLoadError = referenceLoadErrorCode
+    ? resolveProductEntryReferenceDataLoadError(referenceLoadErrorCode, text)
     : null;
+  const hierarchyCompatibility = referenceCoordinator.hierarchyCompatibility(
+    referenceData,
+    workflow.values,
+    bootstrap.identity.mode === "Edit",
+  );
 
   useEffect(() => { dispatch({ type: "Edit", revalidationRequired: Boolean(bootstrap.notice) }); }, [bootstrap.notice]);
   useEffect(() => draftRuntime.controller.subscribe(() => setDraftState(draftRuntime.controller.draftState)), [draftRuntime]);
@@ -203,33 +209,17 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
   }, [bootstrap.identity, bootstrap.trusted, draftRuntime, workflow.isDirty, workflow.values]);
 
   const selectedCategoryId = workflow.values.categoryId;
-  const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
-  useEffect(() => {
-    if (selectedCategory && workflow.values.departmentId !== selectedCategory.departmentId) void workflow.setValue("departmentId", selectedCategory.departmentId);
-  }, [selectedCategory, workflow]);
-
-  const loadDeviceClasses = useCallback(() => {
-    if (!selectedCategoryId) return;
-    setDeviceClassError(null);
-    void ProductEntryDeviceClassService.getCompatibleDeviceClasses({
-      categoryId: selectedCategoryId, companyId: bootstrap.trusted.companyId, workspaceId: bootstrap.trusted.workspaceId,
-    }).then((options) => setDeviceClassResult({ categoryId: selectedCategoryId, options }))
-      .catch(() => setDeviceClassError({ categoryId: selectedCategoryId, code: "DeviceTypesLoadFailed" }));
-  }, [bootstrap.trusted, selectedCategoryId]);
-  useEffect(() => {
-    if (!selectedCategoryId) return;
-    void ProductEntryDeviceClassService.getCompatibleDeviceClasses({
-      categoryId: selectedCategoryId, companyId: bootstrap.trusted.companyId, workspaceId: bootstrap.trusted.workspaceId,
-    }).then((options) => setDeviceClassResult({ categoryId: selectedCategoryId, options }))
-      .catch(() => setDeviceClassError({ categoryId: selectedCategoryId, code: "DeviceTypesLoadFailed" }));
-  }, [bootstrap.trusted, selectedCategoryId]);
-  const deviceClasses = deviceClassResult?.categoryId === selectedCategoryId ? deviceClassResult.options : [];
-  const deviceClassesLoading = Boolean(selectedCategoryId) && deviceClassResult?.categoryId !== selectedCategoryId && deviceClassError?.categoryId !== selectedCategoryId;
-  const activeDeviceClassError = deviceClassError?.categoryId === selectedCategoryId
-    ? resolveProductEntryReferenceDataLoadError(deviceClassError.code, text)
-    : null;
+  const selectedDepartment = referenceData.departments.find(({ id }) => id === workflow.values.departmentId);
+  const selectedCategory = referenceData.categories.find(({ id }) => id === selectedCategoryId);
+  const selectedProductType = referenceData.productTypes.find(({ id }) => id === workflow.values.productTypeId);
+  const deviceClasses = referenceData.deviceClasses.map((deviceClass) => ({
+    id: deviceClass.code,
+    code: deviceClass.code,
+    name: deviceClass.labels[locale],
+    description: deviceClass.labels[locale],
+  }));
   const deviceClassSelectionValid = Boolean(workflow.values.deviceClassId && deviceClasses.some((option) => option.id === workflow.values.deviceClassId));
-  const categoryRequiresDeviceClass = Boolean(selectedCategoryId && categoryRequiresDeviceClassByCategory[selectedCategoryId]);
+  const categoryRequiresDeviceClass = referenceData.deviceClasses.length > 0;
 
   const productModelContext = useMemo<ProductEntryProductModelContext>(() => ({
     companyId: bootstrap.trusted.companyId, workspaceId: bootstrap.trusted.workspaceId,
@@ -251,46 +241,31 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
       .then((options) => setProductModelResult({ contextKey: productModelContextKey, options }))
       .catch(() => setProductModelError({ contextKey: productModelContextKey, code: "ProductModelsLoadFailed" }));
   }, [productModelContext, productModelContextKey, productModelContextValid]);
-  const productModels = productModelResult?.contextKey === productModelContextKey ? productModelResult.options : [];
+  const brandsById = new Map(referenceData.brands.map((brand) => [brand.id, brand]));
+  const productModels = (productModelResult?.contextKey === productModelContextKey ? productModelResult.options : [])
+    .flatMap((model) => {
+      const brand = brandsById.get(model.brandId);
+      return brand ? [{ ...model, brandName: brand.displayName }] : [];
+    });
   const productModelsLoading = productModelContextValid && productModelResult?.contextKey !== productModelContextKey && productModelError?.contextKey !== productModelContextKey;
   const activeProductModelError = productModelError?.contextKey === productModelContextKey
     ? resolveProductEntryReferenceDataLoadError(productModelError.code, text)
     : null;
   const selectedDeviceClass = deviceClasses.find((deviceClass) => deviceClass.id === workflow.values.deviceClassId);
   const selectedProductModel = productModels.find((productModel) => productModel.productModelId === workflow.values.productModelId && productModel.brandId === workflow.values.brandId);
-  const productModelContextLabel = [selectedDeviceClass?.name, selectedCategory?.name].filter(Boolean).join(" · ");
-
-  const specificationsContext = useMemo(() => ({
-    companyId: bootstrap.trusted.companyId, workspaceId: bootstrap.trusted.workspaceId,
-    categoryId: workflow.values.categoryId, deviceClassId: workflow.values.deviceClassId, categoryRequiresDeviceClass,
-  }), [bootstrap.trusted, categoryRequiresDeviceClass, workflow.values.categoryId, workflow.values.deviceClassId]);
-  const specificationsContextKey = JSON.stringify(specificationsContext);
-  const loadSpecifications = useCallback(() => {
-    setSpecificationsError(null);
-    void ProductEntrySpecificationsService.resolve(specificationsContext)
-      .then((resolution) => setSpecificationsResult({ contextKey: specificationsContextKey, resolution }))
-      .catch(() => setSpecificationsError({ contextKey: specificationsContextKey, code: "SpecificationFieldsLoadFailed" }));
-  }, [specificationsContext, specificationsContextKey]);
-  useEffect(() => {
-    void ProductEntrySpecificationsService.resolve(specificationsContext)
-      .then((resolution) => setSpecificationsResult({ contextKey: specificationsContextKey, resolution }))
-      .catch(() => setSpecificationsError({ contextKey: specificationsContextKey, code: "SpecificationFieldsLoadFailed" }));
-  }, [specificationsContext, specificationsContextKey]);
-  const specificationsResolution = specificationsResult?.contextKey === specificationsContextKey ? specificationsResult.resolution : null;
-  const specificationsLoading = specificationsResult?.contextKey !== specificationsContextKey && specificationsError?.contextKey !== specificationsContextKey;
-  const activeSpecificationsError = specificationsError?.contextKey === specificationsContextKey
-    ? resolveProductEntryReferenceDataLoadError(specificationsError.code, text)
-    : null;
+  const selectedBrand = referenceData.brands.find(({ id }) => id === workflow.values.brandId);
+  const productModelContextLabel = [selectedDeviceClass?.name, selectedProductType?.displayName].filter(Boolean).join(" · ");
+  const specificationsResolution = referenceCoordinator.specificationResolution(referenceData, workflow.values.productTypeId);
 
   const productIdentity = ProductEntryIdentityService.createViewModel({
-    values: workflow.values, steps: workflow.visibleSteps, categoryName: selectedCategory?.name,
-    deviceClassName: selectedDeviceClass?.name, brandName: selectedProductModel?.brandName,
+    values: workflow.values, steps: workflow.visibleSteps, categoryName: selectedProductType?.displayName,
+    deviceClassName: selectedDeviceClass?.name, brandName: selectedBrand?.displayName,
     productModelName: selectedProductModel?.name, specificationsResolution,
-    draftSaved: draftState === "Saved", identityError: Boolean(categoryLoadError || activeDeviceClassError || activeProductModelError),
+    draftSaved: draftState === "Saved", identityError: Boolean(categoryLoadError || activeProductModelError),
   });
   const review = ProductEntryReviewService.createViewModel({
     values: workflow.values, steps: workflow.visibleSteps, specificationsResolution, categoryRequiresDeviceClass,
-    names: { department: selectedCategory?.departmentName, category: selectedCategory?.name, deviceClass: selectedDeviceClass?.name, brand: selectedProductModel?.brandName, productModel: selectedProductModel?.name },
+    names: { department: selectedDepartment?.displayName, category: selectedCategory?.displayName, deviceClass: selectedDeviceClass?.name, brand: selectedBrand?.displayName, productModel: selectedProductModel?.name },
   });
 
   const sourceProvider = useCallback((operationIds: readonly string[], replacementOperationIds: readonly string[] = []) => {
@@ -429,8 +404,15 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
           {addNewFailure ? <p className="mt-2 text-xs font-semibold text-red-800" role="alert">{text.addNewFailed}</p> : null}
         </div>
         <ProductEntryProgress locale={locale} />
+        {hierarchyCompatibility.type === "ReclassificationRequired" ? (
+          <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-950" role="alert">
+            <p className="font-semibold">{locale === "ar" ? "إعادة تصنيف المنتج مطلوبة" : "Product reclassification is required"}</p>
+            <p className="mt-1">{locale === "ar" ? "لم تعد الفئة أو نوع المنتج المحفوظ متاحًا ضمن البيانات المرجعية النشطة لهذه المساحة. تبقى القيم التاريخية محفوظة حتى تختار تصنيفًا صالحًا." : "The saved Category or Product Type is not available in this Workspace's active reference data. Historical IDs remain unchanged until you choose a valid classification."}</p>
+            <code className="mt-2 block text-xs">{hierarchyCompatibility.reason}</code>
+          </div>
+        ) : null}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-          <div className="order-2 min-w-0 lg:order-1"><ProductEntryStepContent categories={categories} categoryLoadError={categoryLoadError} categoriesLoading={categoriesLoading} onRetryCategories={onRetryCategories} deviceClasses={deviceClasses} deviceClassLoadError={activeDeviceClassError} deviceClassesLoading={deviceClassesLoading} onRetryDeviceClasses={loadDeviceClasses} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={activeSpecificationsError} specificationsLoading={specificationsLoading} specificationsResolution={specificationsResolution} onRetrySpecifications={loadSpecifications} review={review} locale={locale} /></div>
+          <div className="order-2 min-w-0 lg:order-1"><ProductEntryStepContent referenceCoordinator={referenceCoordinator} referenceData={referenceData} referenceLoadError={categoryLoadError} referenceLoading={referenceLoading} onRetryReferenceData={onRetryReferenceData} deviceClasses={deviceClasses} deviceClassLoadError={null} deviceClassesLoading={false} onRetryDeviceClasses={onRetryReferenceData} productModels={productModels} productModelContextLabel={productModelContextLabel} productModelContextValid={productModelContextValid} productModelLoadError={activeProductModelError} productModelsLoading={productModelsLoading} onRetryProductModels={loadProductModels} specificationsLoadError={null} specificationsLoading={false} specificationsResolution={specificationsResolution} onRetrySpecifications={onRetryReferenceData} review={review} locale={locale} /></div>
           <div className="order-1 lg:order-2"><ProductIdentityCard identity={productIdentity} locale={locale} /></div>
         </div>
         <ProductEntryNavigation deviceClassSelectionValid={deviceClassSelectionValid} isBusy={busy} locale={locale} onSave={save} reviewReadyToSave={review.readyToSave} />
@@ -445,10 +427,11 @@ export function ProductEntryWizard({ mode = "Create", productId, submissionId, i
   const router = useRouter();
   const [draftRuntime] = useState(() => createBrowserProductEntryLocalDraftRuntime());
   const [coordinator] = useState(() => new ProductEntryTwoPhaseSaveCoordinator(new HttpProductEntrySubmissionClient(), new HttpProductEntryMediaClient()));
+  const [referenceCoordinator] = useState(() => createProductionProductEntryCatalogReferenceDataCoordinator());
   const [bootstrap, setBootstrap] = useState<BootstrapState>({ type: "Loading" });
-  const [categoryQuery, setCategoryQuery] = useState(EMPTY_CATEGORY_QUERY);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [categoryLoadErrorCode, setCategoryLoadErrorCode] = useState<ProductEntryReferenceDataLoadErrorCode | null>(null);
+  const [referenceData, setReferenceData] = useState<ProductEntryCatalogReferenceData | null>(null);
+  const [referenceLoading, setReferenceLoading] = useState(true);
+  const [referenceLoadErrorCode, setReferenceLoadErrorCode] = useState<ProductEntryReferenceDataLoadErrorCode | null>(null);
   const [localeOverride, setLocaleOverride] = useState<"en" | "ar" | null>(null);
   const [addNewTransition] = useState(() => new ProductEntryAddNewTransition());
 
@@ -490,19 +473,30 @@ export function ProductEntryWizard({ mode = "Create", productId, submissionId, i
   }, [draftRuntime, initialContext, mode, productId, router, submissionId]);
 
   const trusted = bootstrap.type === "Ready" ? bootstrap.trusted : bootstrap.type === "Recovery" || bootstrap.type === "Conflict" ? bootstrap.base.trusted : null;
-  const loadCategories = useCallback(() => {
+  const loadReferenceData = useCallback(() => {
     if (!trusted) return;
-    setCategoriesLoading(true); setCategoryLoadErrorCode(null);
-    void ProductEntryCategoryService.getAvailableCategories(trusted.companyId, trusted.workspaceId)
-      .then(setCategoryQuery).catch(() => setCategoryLoadErrorCode("ProductClassificationsLoadFailed"))
-      .finally(() => setCategoriesLoading(false));
-  }, [trusted]);
+    setReferenceLoading(true);
+    setReferenceLoadErrorCode(null);
+    void referenceCoordinator.load()
+      .then((result) => {
+        if (result.type === "Available") setReferenceData(result.value);
+        else { setReferenceData(null); setReferenceLoadErrorCode("ProductClassificationsLoadFailed"); }
+      })
+      .catch(() => { setReferenceData(null); setReferenceLoadErrorCode("ProductClassificationsLoadFailed"); })
+      .finally(() => setReferenceLoading(false));
+  }, [referenceCoordinator, trusted]);
   useEffect(() => {
     if (!trusted) return;
-    void ProductEntryCategoryService.getAvailableCategories(trusted.companyId, trusted.workspaceId)
-      .then(setCategoryQuery).catch(() => setCategoryLoadErrorCode("ProductClassificationsLoadFailed"))
-      .finally(() => setCategoriesLoading(false));
-  }, [trusted]);
+    const abort = new AbortController();
+    void referenceCoordinator.load(abort.signal)
+      .then((result) => {
+        if (result.type === "Available") setReferenceData(result.value);
+        else { setReferenceData(null); setReferenceLoadErrorCode("ProductClassificationsLoadFailed"); }
+      })
+      .catch(() => { if (!abort.signal.aborted) { setReferenceData(null); setReferenceLoadErrorCode("ProductClassificationsLoadFailed"); } })
+      .finally(() => { if (!abort.signal.aborted) setReferenceLoading(false); });
+    return () => abort.abort();
+  }, [referenceCoordinator, trusted]);
 
   const readyFromDecision = useCallback((base: ReadyBootstrap): ReadyBootstrap => {
     const accepted = draftRuntime.controller.resolveRestoreDecision(true);
@@ -561,11 +555,18 @@ export function ProductEntryWizard({ mode = "Create", productId, submissionId, i
   }
 
   const locale = localeOverride ?? bootstrap.trusted.locale;
-  const workflowContext = createWorkflowContext(bootstrap.trusted, categoryQuery);
+  if (referenceLoading && !referenceData) return <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6" role="status">{locale === "ar" ? "جارٍ تحميل البيانات المرجعية…" : "Loading catalog reference data…"}</main>;
+  if (!referenceData) return <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6"><section className="max-w-lg rounded-3xl border border-red-200 bg-white p-8" role="alert"><h1 className="text-xl font-bold text-slate-950">{bootstrapText.unavailableHeading}</h1><p className="mt-3 text-sm text-slate-600">{locale === "ar" ? "تعذر تحميل بيانات الكتالوج المرجعية لهذه المساحة بأمان." : "Catalog reference data is unavailable. Product Entry cannot use fallback values."}</p><button className="mt-4 min-h-11 rounded-lg border border-red-300 bg-white px-4 font-semibold" onClick={loadReferenceData} type="button">{locale === "ar" ? "إعادة المحاولة" : "Try again"}</button></section></main>;
+  const hydration = referenceCoordinator.hydrateInitialValues(
+    referenceData,
+    bootstrap.initialValues,
+    bootstrap.identity.mode === "Edit",
+  );
+  const workflowContext = createWorkflowContext(bootstrap.trusted, referenceData, referenceCoordinator);
   return (
-    <ProductEntryWorkflowProvider context={workflowContext} createInitialValues={() => bootstrap.initialValues} initialStep={PRODUCT_ENTRY_STEP_IDS.entryMethod} key={`${bootstrap.identity.mode}:${bootstrap.identity.submissionId}`} workflow={productEntryWorkflow}>
+    <ProductEntryWorkflowProvider context={workflowContext} createInitialValues={() => hydration.values} initialStep={PRODUCT_ENTRY_STEP_IDS.entryMethod} key={`${bootstrap.identity.mode}:${bootstrap.identity.submissionId}`} workflow={productEntryWorkflow}>
       <ProductEntryBrowserMediaProvider>
-        <ProductEntryWizardSession bootstrap={bootstrap} categories={categoryQuery.categories} categoriesLoading={categoriesLoading} categoryLoadErrorCode={categoryLoadErrorCode} categoryRequiresDeviceClassByCategory={categoryQuery.categoryRequiresDeviceClassByCategory} coordinator={coordinator} draftRuntime={draftRuntime} locale={locale} onAddNew={addNew} onLocaleChange={setLocaleOverride} onReloadEdit={reloadEdit} onRetryCategories={loadCategories} />
+        <ProductEntryWizardSession bootstrap={bootstrap} coordinator={coordinator} draftRuntime={draftRuntime} locale={locale} onAddNew={addNew} onLocaleChange={setLocaleOverride} onReloadEdit={reloadEdit} onRetryReferenceData={loadReferenceData} referenceCoordinator={referenceCoordinator} referenceData={referenceData} referenceLoadErrorCode={referenceLoadErrorCode} referenceLoading={referenceLoading} />
       </ProductEntryBrowserMediaProvider>
     </ProductEntryWorkflowProvider>
   );

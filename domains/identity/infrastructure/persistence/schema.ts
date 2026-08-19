@@ -161,6 +161,7 @@ export const identityMembershipPermissions = pgTable(
       foreignColumns: [identityMemberships.workspaceId, identityMemberships.actorId],
     }).onDelete("cascade"),
     check("identity_membership_permissions_known_code", sql`${table.permissionCode} IN (
+      'catalog.referenceData.view','catalog.referenceData.manage',
       'catalog.product.create','catalog.product.edit','catalog.product-entry-submission.read',
       'catalog.product-entry-media.upload','catalog.product.reference-cost.read','catalog.products.view',
       'catalog.products.create','catalog.products.edit','catalog.products.archive','catalog.productEntry.submit',

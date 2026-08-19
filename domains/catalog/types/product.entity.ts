@@ -6,7 +6,7 @@ export type ProductStatus =
   | "sold"
   | "hidden";
 
-export type ProductCondition = "new" | "used";
+export type ProductCondition = "new" | "used" | "refurbished";
 
 export interface ProductEntity {
   id: string;
