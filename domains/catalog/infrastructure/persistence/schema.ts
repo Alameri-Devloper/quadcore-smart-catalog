@@ -12,8 +12,134 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  type ExtraConfigColumn,
 } from "drizzle-orm/pg-core";
 import type { ProductEntrySaveReceipt } from "../../product-entry/repositories/product-entry-submission.repository";
+import { workspaces } from "../../../workspace/infrastructure/persistence/schema";
+
+const workspaceReferenceColumns = () => ({
+  workspaceId: text("workspace_id").notNull(),
+  code: text("code").notNull(),
+  displayName: text("display_name").notNull(),
+  status: text("status").notNull(),
+  sortOrder: integer("sort_order").notNull(),
+  version: bigint("version", { mode: "number" }).notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
+const referenceChecks = (table: Readonly<Record<"code" | "displayName" | "status" | "sortOrder" | "version" | "createdAt" | "updatedAt", ExtraConfigColumn>>) => [
+  check("catalog_reference_code_shape", sql`${table.code} ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(${table.code}) <= 64`),
+  check("catalog_reference_display_name", sql`btrim(${table.displayName}) <> '' AND length(${table.displayName}) <= 160`),
+  check("catalog_reference_status", sql`${table.status} IN ('Active','Inactive')`),
+  check("catalog_reference_sort_order", sql`${table.sortOrder} BETWEEN 0 AND 1000000`),
+  check("catalog_reference_version", sql`${table.version} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_reference_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+];
+
+export const catalogDepartments = pgTable("catalog_departments", {
+  ...workspaceReferenceColumns(), departmentId: text("department_id").notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_departments_pk", columns: [table.workspaceId, table.departmentId] }),
+  foreignKey({ name: "catalog_departments_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  uniqueIndex("catalog_departments_workspace_code_uq").on(table.workspaceId, table.code),
+  index("catalog_departments_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
+  ...referenceChecks(table),
+]);
+
+export const catalogCategories = pgTable("catalog_categories", {
+  ...workspaceReferenceColumns(), categoryId: text("category_id").notNull(), departmentId: text("department_id").notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_categories_pk", columns: [table.workspaceId, table.categoryId] }),
+  foreignKey({ name: "catalog_categories_department_fk", columns: [table.workspaceId, table.departmentId], foreignColumns: [catalogDepartments.workspaceId, catalogDepartments.departmentId] }).onDelete("restrict"),
+  uniqueIndex("catalog_categories_workspace_code_uq").on(table.workspaceId, table.code),
+  index("catalog_categories_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
+  index("catalog_categories_department_idx").on(table.workspaceId, table.departmentId, table.sortOrder),
+  ...referenceChecks(table),
+]);
+
+export const catalogProductTypes = pgTable("catalog_product_types", {
+  ...workspaceReferenceColumns(), productTypeId: text("product_type_id").notNull(), categoryId: text("category_id").notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_product_types_pk", columns: [table.workspaceId, table.productTypeId] }),
+  foreignKey({ name: "catalog_product_types_category_fk", columns: [table.workspaceId, table.categoryId], foreignColumns: [catalogCategories.workspaceId, catalogCategories.categoryId] }).onDelete("restrict"),
+  uniqueIndex("catalog_product_types_workspace_code_uq").on(table.workspaceId, table.code),
+  index("catalog_product_types_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
+  index("catalog_product_types_category_idx").on(table.workspaceId, table.categoryId, table.sortOrder),
+  ...referenceChecks(table),
+]);
+
+export const catalogBrands = pgTable("catalog_brands", {
+  ...workspaceReferenceColumns(), brandId: text("brand_id").notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_brands_pk", columns: [table.workspaceId, table.brandId] }),
+  foreignKey({ name: "catalog_brands_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  uniqueIndex("catalog_brands_workspace_code_uq").on(table.workspaceId, table.code),
+  index("catalog_brands_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
+  ...referenceChecks(table),
+]);
+
+export const catalogSupplyStatuses = pgTable("catalog_supply_statuses", {
+  ...workspaceReferenceColumns(), supplyStatusId: text("supply_status_id").notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_supply_statuses_pk", columns: [table.workspaceId, table.supplyStatusId] }),
+  foreignKey({ name: "catalog_supply_statuses_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  uniqueIndex("catalog_supply_statuses_workspace_code_uq").on(table.workspaceId, table.code),
+  index("catalog_supply_statuses_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
+  ...referenceChecks(table),
+]);
+
+export const workspaceConditionAvailability = pgTable("workspace_condition_availability", {
+  workspaceId: text("workspace_id").notNull(), conditionCode: text("condition_code").notNull(), enabled: boolean("enabled").notNull(), sortOrder: integer("sort_order").notNull(),
+}, (table) => [
+  primaryKey({ name: "workspace_condition_availability_pk", columns: [table.workspaceId, table.conditionCode] }),
+  foreignKey({ name: "workspace_condition_availability_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  index("workspace_condition_availability_selection_idx").on(table.workspaceId, table.enabled, table.sortOrder),
+  check("workspace_condition_availability_code", sql`${table.conditionCode} IN ('new','used','refurbished')`),
+  check("workspace_condition_availability_sort", sql`${table.sortOrder} BETWEEN 0 AND 1000000`),
+]);
+
+export const workspaceCurrencyAvailability = pgTable("workspace_currency_availability", {
+  workspaceId: text("workspace_id").notNull(), currencyCode: text("currency_code").notNull(), enabled: boolean("enabled").notNull(), sortOrder: integer("sort_order").notNull(),
+}, (table) => [
+  primaryKey({ name: "workspace_currency_availability_pk", columns: [table.workspaceId, table.currencyCode] }),
+  foreignKey({ name: "workspace_currency_availability_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  index("workspace_currency_availability_selection_idx").on(table.workspaceId, table.enabled, table.sortOrder),
+  check("workspace_currency_availability_code", sql`${table.currencyCode} ~ '^[A-Z]{3}$'`),
+  check("workspace_currency_availability_sort", sql`${table.sortOrder} BETWEEN 0 AND 1000000`),
+]);
+
+export const catalogSpecificationDefinitions = pgTable("catalog_specification_definitions", {
+  ...workspaceReferenceColumns(), specificationDefinitionId: text("specification_definition_id").notNull(), valueType: text("value_type").notNull(), unit: text("unit"),
+}, (table) => [
+  primaryKey({ name: "catalog_specification_definitions_pk", columns: [table.workspaceId, table.specificationDefinitionId] }),
+  foreignKey({ name: "catalog_specification_definitions_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  uniqueIndex("catalog_specification_definitions_workspace_code_uq").on(table.workspaceId, table.code),
+  index("catalog_specification_definitions_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
+  check("catalog_specification_definitions_value_type", sql`${table.valueType} IN ('Text','Number','Boolean')`),
+  check("catalog_specification_definitions_unit", sql`${table.unit} IS NULL OR (btrim(${table.unit}) <> '' AND length(${table.unit}) <= 32)`),
+  ...referenceChecks(table),
+]);
+
+export const catalogSpecificationTemplates = pgTable("catalog_specification_templates", {
+  workspaceId: text("workspace_id").notNull(), specificationTemplateId: text("specification_template_id").notNull(), productTypeId: text("product_type_id").notNull(), version: bigint("version", { mode: "number" }).notNull().default(1), createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(), updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_specification_templates_pk", columns: [table.workspaceId, table.specificationTemplateId] }),
+  foreignKey({ name: "catalog_specification_templates_product_type_fk", columns: [table.workspaceId, table.productTypeId], foreignColumns: [catalogProductTypes.workspaceId, catalogProductTypes.productTypeId] }).onDelete("restrict"),
+  uniqueIndex("catalog_specification_templates_product_type_uq").on(table.workspaceId, table.productTypeId),
+  check("catalog_specification_templates_version", sql`${table.version} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_specification_templates_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+]);
+
+export const catalogSpecificationTemplateEntries = pgTable("catalog_specification_template_entries", {
+  workspaceId: text("workspace_id").notNull(), specificationTemplateId: text("specification_template_id").notNull(), specificationDefinitionId: text("specification_definition_id").notNull(), sortOrder: integer("sort_order").notNull(), required: boolean("required").notNull().default(false),
+}, (table) => [
+  primaryKey({ name: "catalog_specification_template_entries_pk", columns: [table.workspaceId, table.specificationTemplateId, table.specificationDefinitionId] }),
+  foreignKey({ name: "catalog_specification_template_entries_template_fk", columns: [table.workspaceId, table.specificationTemplateId], foreignColumns: [catalogSpecificationTemplates.workspaceId, catalogSpecificationTemplates.specificationTemplateId] }).onDelete("cascade"),
+  foreignKey({ name: "catalog_specification_template_entries_definition_fk", columns: [table.workspaceId, table.specificationDefinitionId], foreignColumns: [catalogSpecificationDefinitions.workspaceId, catalogSpecificationDefinitions.specificationDefinitionId] }).onDelete("restrict"),
+  uniqueIndex("catalog_specification_template_entries_order_uq").on(table.workspaceId, table.specificationTemplateId, table.sortOrder),
+  check("catalog_specification_template_entries_sort", sql`${table.sortOrder} BETWEEN 0 AND 1000000`),
+]);
 
 export const catalogProducts = pgTable(
   "catalog_products",

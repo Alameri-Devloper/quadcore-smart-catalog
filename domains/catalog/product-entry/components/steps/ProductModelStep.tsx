@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import type { ProductEntryProductModelOption } from "../../services/product-entry-product-model.service";
 import { useProductEntryWorkflow } from "../../react/product-entry-workflow-adapter";
 import { PRODUCT_ENTRY_PRESENTATION_TEXT } from "../../presentation/product-entry-i18n";
+import type { ProductEntryReferenceOption } from "../../ports/product-entry-catalog-reference-data.port";
 
 interface ProductModelStepProps {
+  brands: readonly ProductEntryReferenceOption[];
   contextLabel: string;
   contextValid: boolean;
   loadError: string | null;
@@ -15,16 +17,17 @@ interface ProductModelStepProps {
   productModels: ProductEntryProductModelOption[];
 }
 
-export function ProductModelStep({ contextLabel, contextValid, loadError, loading, locale, onRetry, productModels }: ProductModelStepProps) {
+export function ProductModelStep({ brands, contextLabel, contextValid, loadError, loading, locale, onRetry, productModels }: ProductModelStepProps) {
   const { setValues, validation, values } = useProductEntryWorkflow();
   const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filteredModels = useMemo(
     () => productModels.filter((model) =>
+      (!values.brandId || model.brandId === values.brandId) &&
       [model.name, model.code, model.brandName]
         .some((value) => value.toLocaleLowerCase().includes(normalizedQuery))),
-    [normalizedQuery, productModels],
+    [normalizedQuery, productModels, values.brandId],
   );
   const selectedModel = productModels.find(
     (model) => model.productModelId === values.productModelId && model.brandId === values.brandId,
@@ -47,6 +50,14 @@ export function ProductModelStep({ contextLabel, contextValid, loadError, loadin
         {text.chooseProductModelHelp}
       </p>
       {contextLabel ? <p className="mt-3 text-sm font-semibold text-blue-800">{text.currentProductType}: {contextLabel}</p> : null}
+
+      <div className="mt-6 max-w-xl">
+        <label className="text-sm font-semibold text-slate-800" htmlFor="brandId">{text.brand}</label>
+        <select className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" id="brandId" onChange={(event) => void setValues({ ...values, brandId: event.target.value || null, productModelId: null })} value={values.brandId ?? ""}>
+          <option value="">{locale === "ar" ? "اختر العلامة التجارية" : "Choose Brand"}</option>
+          {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.displayName}</option>)}
+        </select>
+      </div>
 
       <div className="mt-6 max-w-xl">
         <label className="text-sm font-semibold text-slate-800" htmlFor="product-model-search">{text.searchModels}</label>

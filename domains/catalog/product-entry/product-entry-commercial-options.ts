@@ -12,6 +12,7 @@ export const PRODUCT_ENTRY_CURRENCY_OPTIONS = [
 export const PRODUCT_ENTRY_CONDITION_OPTIONS = [
   { value: "new", label: "New" },
   { value: "used", label: "Used" },
+  { value: "refurbished", label: "Refurbished" },
 ] as const satisfies readonly ProductEntryCommercialOption<ProductCondition>[];
 
 export const PRODUCT_ENTRY_AVAILABILITY_OPTIONS = [

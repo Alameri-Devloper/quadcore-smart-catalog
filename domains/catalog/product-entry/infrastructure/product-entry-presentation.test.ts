@@ -195,7 +195,7 @@ test("actual Product Images and Commercial Details component output is centraliz
   assert.match(imagesArabic, /إضافة صور/);
   assert.doesNotMatch(imagesArabic, />Add images</);
   const commercialArabic = renderStep(PRODUCT_ENTRY_STEP_IDS.commercialDetails,
-    createElement(CommercialDetailsStep, { locale: "ar" }));
+    createElement(CommercialDetailsStep, { conditions: [{ code: "new", sortOrder: 0 }], currencies: [{ code: "USD", sortOrder: 0 }], locale: "ar", supplyStatuses: [{ id: "available", code: "available", displayName: "Available" }] }));
   assert.match(commercialArabic, /إضافة التفاصيل التجارية/);
   assert.match(commercialArabic, /سعر التجزئة/);
   assert.doesNotMatch(commercialArabic, />Retail Price</);
@@ -229,7 +229,7 @@ test("every reference-data failure renders localized component output", () => {
   const scenarios = [
     { code: "ProductClassificationsLoadFailed" as const, step: PRODUCT_ENTRY_STEP_IDS.category, component: (message: string, locale: "en" | "ar") => createElement(CategoryStep, { categories: [], loadError: message, loading: false, locale, onRetry: () => undefined }) },
     { code: "DeviceTypesLoadFailed" as const, step: PRODUCT_ENTRY_STEP_IDS.deviceClass, component: (message: string, locale: "en" | "ar") => createElement(DeviceClassStep, { deviceClasses: [], loadError: message, loading: false, locale, onRetry: () => undefined }) },
-    { code: "ProductModelsLoadFailed" as const, step: PRODUCT_ENTRY_STEP_IDS.productModel, component: (message: string, locale: "en" | "ar") => createElement(ProductModelStep, { contextLabel: "", contextValid: true, loadError: message, loading: false, locale, onRetry: () => undefined, productModels: [] }) },
+    { code: "ProductModelsLoadFailed" as const, step: PRODUCT_ENTRY_STEP_IDS.productModel, component: (message: string, locale: "en" | "ar") => createElement(ProductModelStep, { brands: [], contextLabel: "", contextValid: true, loadError: message, loading: false, locale, onRetry: () => undefined, productModels: [] }) },
     { code: "SpecificationFieldsLoadFailed" as const, step: PRODUCT_ENTRY_STEP_IDS.specifications, component: (message: string, locale: "en" | "ar") => createElement(SpecificationsStep, { loadError: message, loading: false, locale, onRetry: () => undefined, resolution: null }) },
   ];
   for (const scenario of scenarios) {

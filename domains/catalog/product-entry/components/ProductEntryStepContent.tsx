@@ -6,8 +6,7 @@ import {
   type ProductEntryStepId,
 } from "../product-entry.types";
 import { EntryMethodStep } from "./steps/EntryMethodStep";
-import { CategoryStep } from "./steps/CategoryStep";
-import type { ProductEntryCategoryOption } from "../services/product-entry-category.service";
+import { CatalogHierarchyStep } from "./steps/CatalogHierarchyStep";
 import type { ProductEntryDeviceClassOption } from "../services/product-entry-device-class.service";
 import { DeviceClassStep } from "./steps/DeviceClassStep";
 import type { ProductEntryProductModelOption } from "../services/product-entry-product-model.service";
@@ -19,6 +18,8 @@ import { ProductImagesStep } from "./steps/ProductImagesStep";
 import { ProductReviewStep } from "./steps/ProductReviewStep";
 import type { ProductEntryReviewViewModel } from "../services/product-entry-review.service";
 import { PRODUCT_ENTRY_PRESENTATION_TEXT } from "../presentation/product-entry-i18n";
+import type { ProductEntryCatalogReferenceData } from "../ports/product-entry-catalog-reference-data.port";
+import type { ProductEntryCatalogReferenceDataCoordinator } from "../presentation/product-entry-catalog-reference-data.coordinator";
 
 const STEP_PRESENTATION: Record<
   ProductEntryStepId,
@@ -64,10 +65,11 @@ export function getProductEntryStepPresentation(stepId: string | null, locale: "
 }
 
 interface ProductEntryStepContentProps {
-  categories: ProductEntryCategoryOption[];
-  categoryLoadError: string | null;
-  categoriesLoading: boolean;
-  onRetryCategories: () => void;
+  referenceCoordinator: ProductEntryCatalogReferenceDataCoordinator;
+  referenceData: ProductEntryCatalogReferenceData;
+  referenceLoadError: string | null;
+  referenceLoading: boolean;
+  onRetryReferenceData: () => void;
   deviceClasses: ProductEntryDeviceClassOption[];
   deviceClassLoadError: string | null;
   deviceClassesLoading: boolean;
@@ -86,7 +88,7 @@ interface ProductEntryStepContentProps {
   locale: "en" | "ar";
 }
 
-export function ProductEntryStepContent({ categories, categoryLoadError, categoriesLoading, onRetryCategories, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications, review, locale }: ProductEntryStepContentProps) {
+export function ProductEntryStepContent({ referenceCoordinator, referenceData, referenceLoadError, referenceLoading, onRetryReferenceData, deviceClasses, deviceClassLoadError, deviceClassesLoading, onRetryDeviceClasses, productModels, productModelContextLabel, productModelContextValid, productModelLoadError, productModelsLoading, onRetryProductModels, specificationsLoadError, specificationsLoading, specificationsResolution, onRetrySpecifications, review, locale }: ProductEntryStepContentProps) {
   const { currentStepId, validation } = useProductEntryWorkflow();
   const presentation = getProductEntryStepPresentation(currentStepId, locale);
   const text = PRODUCT_ENTRY_PRESENTATION_TEXT[locale];
@@ -107,15 +109,15 @@ export function ProductEntryStepContent({ categories, categoryLoadError, categor
       {isEntryMethod ? (
         <EntryMethodStep locale={locale} />
       ) : isCategory ? (
-        <CategoryStep categories={categories} loadError={categoryLoadError} loading={categoriesLoading} locale={locale} onRetry={onRetryCategories} />
+        <CatalogHierarchyStep coordinator={referenceCoordinator} data={referenceData} loadError={referenceLoadError} loading={referenceLoading} locale={locale} onRetry={onRetryReferenceData} />
       ) : isDeviceClass ? (
         <DeviceClassStep deviceClasses={deviceClasses} loadError={deviceClassLoadError} loading={deviceClassesLoading} locale={locale} onRetry={onRetryDeviceClasses} />
       ) : isProductModel ? (
-        <ProductModelStep contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} locale={locale} onRetry={onRetryProductModels} productModels={productModels} />
+        <ProductModelStep brands={referenceData.brands} contextLabel={productModelContextLabel} contextValid={productModelContextValid} loadError={productModelLoadError} loading={productModelsLoading} locale={locale} onRetry={onRetryProductModels} productModels={productModels} />
       ) : isSpecifications ? (
         <SpecificationsStep loadError={specificationsLoadError} loading={specificationsLoading} locale={locale} onRetry={onRetrySpecifications} resolution={specificationsResolution} />
       ) : isCommercialDetails ? (
-        <CommercialDetailsStep locale={locale} />
+        <CommercialDetailsStep conditions={referenceData.conditions} currencies={referenceData.currencies} locale={locale} supplyStatuses={referenceData.supplyStatuses} />
       ) : isImages ? (
         <ProductImagesStep locale={locale} />
       ) : isReview ? (
