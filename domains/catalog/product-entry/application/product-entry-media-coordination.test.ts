@@ -39,6 +39,7 @@ const executionContext = (workspace = workspaceId): ProductEntryExecutionContext
   permissions: new Set([
     PRODUCT_ENTRY_PERMISSIONS.read,
     PRODUCT_ENTRY_PERMISSIONS.mediaUpload,
+    PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace,
   ]),
 });
 
@@ -134,6 +135,7 @@ const workflow = (status: ProductEntryMediaWorkflowView["status"] = "Completed")
 
 class MemoryCoordinator implements ProductEntryMediaWorkflowCoordinator {
   coordinateCalls: CoordinateProductEntryMediaWorkflowCommand[] = [];
+  replacementCalls: Parameters<ProductEntryMediaWorkflowCoordinator["replaceUnavailableSources"]>[0][] = [];
   queryCount = 0;
   nextWorkflow = workflow();
   existingWorkflow: ProductEntryMediaWorkflowView | null = null;
@@ -157,6 +159,15 @@ class MemoryCoordinator implements ProductEntryMediaWorkflowCoordinator {
       throw new ProductEntryMediaWorkflowCoordinationError("WorkflowConflict");
     }
     return this.existingWorkflow;
+  }
+  async replaceUnavailableSources(command: Parameters<ProductEntryMediaWorkflowCoordinator["replaceUnavailableSources"]>[0]) {
+    this.replacementCalls.push(command);
+    return {
+      type: "Replaced" as const,
+      workflow: this.nextWorkflow,
+      sourceAttempts: command.sources.map((source) => ({ operationId: source.operationId, sourceAttemptId: "b".repeat(32) })),
+      resumeUnavailableOperationIds: [],
+    };
   }
 }
 
@@ -427,13 +438,13 @@ describe("Product Entry Media coordinator use cases", () => {
       bytes,
       clientMediaType: null,
     }]);
-    assert.deepEqual(supplied, {
-      type: "NewSourceFlowNotImplemented",
-      code: "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED",
-      operationIds: ["replace-a"],
-    });
-    assert.equal(replacement.verifier.calls, 1);
+    assert.equal(supplied.type, "Completed");
+    if (supplied.type === "Completed") {
+      assert.deepEqual(supplied.sourceAttempts, [{ operationId: "replace-a", sourceAttemptId: "b".repeat(32) }]);
+    }
+    assert.equal(replacement.verifier.calls, 0);
     assert.equal(replacement.coordinator.coordinateCalls.length, 0);
+    assert.equal(replacement.coordinator.replacementCalls.length, 1);
   });
   it("hides a foreign Workspace submission and enforces upload permission", async () => {
     const value = setup();

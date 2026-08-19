@@ -239,6 +239,78 @@ export const catalogProductMediaOperations = pgTable(
   ],
 );
 
+export const catalogProductMediaSourceAttempts = pgTable(
+  "catalog_product_media_source_attempts",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    operationId: text("operation_id").notNull(),
+    sourceAttemptId: text("source_attempt_id").notNull(),
+    sourceFingerprint: text("source_fingerprint").notNull(),
+    status: text("status").notNull(),
+    createdByActorId: text("created_by_actor_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    verifiedSha256: text("verified_sha256"),
+    verifiedSizeBytes: bigint("verified_size_bytes", { mode: "number" }),
+    verifiedMimeType: text("verified_mime_type"),
+    verifiedWidth: integer("verified_width"),
+    verifiedHeight: integer("verified_height"),
+    stagingArtifactKey: text("staging_artifact_key"),
+    appliedAt: timestamp("applied_at", { withTimezone: true, mode: "date" }),
+    failedAt: timestamp("failed_at", { withTimezone: true, mode: "date" }),
+    failureCode: text("failure_code"),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_media_source_attempts_pk", columns: [table.workspaceId, table.sourceAttemptId] }),
+    foreignKey({
+      name: "catalog_product_media_source_attempts_operation_fk",
+      columns: [table.workspaceId, table.operationId],
+      foreignColumns: [catalogProductMediaOperations.workspaceId, catalogProductMediaOperations.operationId],
+    }).onDelete("cascade"),
+    uniqueIndex("catalog_product_media_source_attempts_active_uq")
+      .on(table.workspaceId, table.operationId)
+      .where(sql`${table.status} IN ('AwaitingUpload','Uploaded')`),
+    index("catalog_product_media_source_attempts_expiry_idx").on(table.workspaceId, table.expiresAt),
+    check("catalog_product_media_source_attempts_id", sql`${table.sourceAttemptId} ~ '^[a-f0-9]{32}$'`),
+    check("catalog_product_media_source_attempts_fingerprint", sql`${table.sourceFingerprint} ~ '^[a-f0-9]{64}$'`),
+    check("catalog_product_media_source_attempts_status", sql`${table.status} IN ('AwaitingUpload','Uploaded','Applied','Failed','Expired')`),
+    check("catalog_product_media_source_attempts_lifetime", sql`${table.expiresAt} = ${table.createdAt} + interval '14 days'`),
+    check("catalog_product_media_source_attempts_verified", sql`(
+      ${table.verifiedSha256} IS NULL AND ${table.verifiedSizeBytes} IS NULL AND ${table.verifiedMimeType} IS NULL
+      AND ${table.verifiedWidth} IS NULL AND ${table.verifiedHeight} IS NULL AND ${table.stagingArtifactKey} IS NULL
+    ) OR (
+      ${table.verifiedSha256} ~ '^[a-f0-9]{64}$' AND ${table.verifiedSizeBytes} > 0
+      AND ${table.verifiedMimeType} IN ('image/jpeg','image/png','image/webp')
+      AND ${table.verifiedWidth} > 0 AND ${table.verifiedHeight} > 0 AND btrim(${table.stagingArtifactKey}) <> ''
+    )`),
+  ],
+);
+
+export const catalogProductMediaSourceAttemptAudits = pgTable(
+  "catalog_product_media_source_attempt_audits",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    auditId: text("audit_id").notNull(),
+    operationId: text("operation_id").notNull(),
+    sourceAttemptId: text("source_attempt_id").notNull(),
+    eventType: text("event_type").notNull(),
+    actorId: text("actor_id").notNull(),
+    resultCode: text("result_code").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ name: "catalog_product_media_source_attempt_audits_pk", columns: [table.workspaceId, table.auditId] }),
+    foreignKey({
+      name: "catalog_product_media_source_attempt_audits_attempt_fk",
+      columns: [table.workspaceId, table.sourceAttemptId],
+      foreignColumns: [catalogProductMediaSourceAttempts.workspaceId, catalogProductMediaSourceAttempts.sourceAttemptId],
+    }).onDelete("restrict"),
+    index("catalog_product_media_source_attempt_audits_operation_idx").on(table.workspaceId, table.operationId, table.occurredAt),
+    check("catalog_product_media_source_attempt_audits_event", sql`${table.eventType} IN ('SourceAttemptCreated','SourceAttemptFailed','SourceAttemptApplied','SourceAttemptExpired')`),
+    check("catalog_product_media_source_attempt_audits_non_empty", sql`btrim(${table.actorId}) <> '' AND btrim(${table.resultCode}) <> ''`),
+  ],
+);
+
 export const catalogProductEntrySubmissions = pgTable(
   "catalog_product_entry_submissions",
   {

@@ -74,6 +74,7 @@ describe("Product Entry trusted context adapters", () => {
         "catalog.product.edit",
         "catalog.product-entry-submission.read",
         "catalog.product-entry-media.upload",
+        "catalog.productMedia.source.replace",
         "catalog.product.reference-cost.read",
       ],
       branchScope: { type: "AllBranches" },
@@ -93,6 +94,7 @@ describe("Product Entry trusted context adapters", () => {
       "catalog.product.edit",
       "catalog.product-entry-submission.read",
       "catalog.product-entry-media.upload",
+      "catalog.productMedia.source.replace",
       "catalog.product.reference-cost.read",
     ]);
   });

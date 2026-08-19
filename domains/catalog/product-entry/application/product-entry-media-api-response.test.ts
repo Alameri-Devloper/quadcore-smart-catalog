@@ -12,16 +12,13 @@ describe("Product Entry Media HTTP response policy", () => {
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "InvalidRequest", code: "SOURCE_REQUIRED", operationId: "add-a" }), 400);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "InvalidRequest", code: "SOURCE_TOO_LARGE", operationId: "add-a" }), 413);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "InvalidRequest", code: "SOURCE_MIME_UNSUPPORTED", operationId: "add-a" }), 415);
+    assert.equal(uploadProductEntryMediaHttpStatus({ type: "InvalidRequest", code: "SOURCE_MIME_MISMATCH", operationId: "add-a" }), 415);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "InvalidRequest", code: "SOURCE_IMAGE_INVALID", operationId: "add-a" }), 415);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "InvalidRequest", code: "SOURCE_SHA256_MISMATCH", operationId: "add-a" }), 422);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "PlanMismatch", code: "MEDIA_PLAN_INVALID" }), 422);
-    assert.equal(uploadProductEntryMediaHttpStatus({
-      type: "NewSourceFlowNotImplemented",
-      code: "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED",
-      operationIds: ["add-a"],
-    }), 409);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "Conflict", code: "WorkflowConflict" }), 409);
     assert.equal(uploadProductEntryMediaHttpStatus({ type: "NotFound", submissionId: "missing" }), 404);
+    assert.equal(uploadProductEntryMediaHttpStatus({ type: "InfrastructureUnavailable" }), 503);
   });
 
   it("sanitizes unexpected verifier and Infrastructure failures", () => {

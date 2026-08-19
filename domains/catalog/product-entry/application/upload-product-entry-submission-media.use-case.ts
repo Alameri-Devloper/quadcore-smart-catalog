@@ -19,9 +19,6 @@ import { ProductEntryMediaIdempotencyKeyService } from "./product-entry-media-id
 import { mapProductEntryMediaSources, type ProductEntryMediaUploadPart } from "./product-entry-media-source-mapping";
 import { ProductEntryMediaSourceRequirementsResolver } from "./product-entry-media-source-requirements";
 
-export const PRODUCT_ENTRY_MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED_CODE =
-  "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED" as const;
-
 export type UploadProductEntrySubmissionMediaResult =
   | {
       readonly type: "Completed" | "Accepted";
@@ -31,16 +28,14 @@ export type UploadProductEntrySubmissionMediaResult =
       readonly idempotentReplay: boolean;
       readonly resumed: boolean;
       readonly workflow: ProductEntryMediaWorkflowView;
+      readonly sourceAttempts: readonly { readonly operationId: string; readonly sourceAttemptId: string }[];
+      readonly resumeUnavailableOperationIds: readonly string[];
     }
   | { readonly type: "NotFound"; readonly submissionId: string }
   | { readonly type: "Forbidden"; readonly permission: string }
   | { readonly type: "InvalidRequest"; readonly code: ProductEntryMediaSourceErrorCode; readonly operationId: string | null }
   | { readonly type: "PlanMismatch"; readonly code: "MEDIA_PLAN_INVALID" }
-  | {
-      readonly type: "NewSourceFlowNotImplemented";
-      readonly code: typeof PRODUCT_ENTRY_MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED_CODE;
-      readonly operationIds: readonly string[];
-    }
+  | { readonly type: "InfrastructureUnavailable" }
   | { readonly type: "Conflict"; readonly code: string };
 
 interface UploadProductEntrySubmissionMediaDependencies {
@@ -122,9 +117,6 @@ export class UploadProductEntrySubmissionMediaUseCase {
     submissionIdValue: string,
     parts: readonly ProductEntryMediaUploadPart[],
   ): Promise<UploadProductEntrySubmissionMediaResult> {
-    if (!context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.mediaUpload)) {
-      return { type: "Forbidden", permission: PRODUCT_ENTRY_PERMISSIONS.mediaUpload };
-    }
     let submissionId: ProductEntrySubmissionId;
     try {
       submissionId = ProductEntrySubmissionId.create(submissionIdValue);
@@ -176,6 +168,15 @@ export class UploadProductEntrySubmissionMediaUseCase {
     if (sourceRequirements.type === "WorkflowMismatch") {
       return { type: "Conflict", code: "WorkflowConflict" };
     }
+    const newSourceOperationIds = new Set(sourceRequirements.newSourceRequiredOperationIds);
+    const regularSourceOperationIds = sourceRequirements.requiredSourceOperationIds
+      .filter((operationId) => !newSourceOperationIds.has(operationId));
+    if (regularSourceOperationIds.length > 0 && !context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.mediaUpload)) {
+      return { type: "Forbidden", permission: PRODUCT_ENTRY_PERMISSIONS.mediaUpload };
+    }
+    if (newSourceOperationIds.size > 0 && !context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace)) {
+      return { type: "Forbidden", permission: PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace };
+    }
 
     const mapped = mapProductEntryMediaSources(
       snapshot.plan,
@@ -185,6 +186,7 @@ export class UploadProductEntrySubmissionMediaUseCase {
     if (mapped.type === "Rejected") return { type: "InvalidRequest", code: mapped.code, operationId: mapped.operationId };
     const verified = new Map<string, VerifiedProductEntryMediaSource>();
     for (const source of mapped.sources) {
+      if (newSourceOperationIds.has(source.operation.operationId)) continue;
       const expectedSha256 = source.operation.expectedSourceSha256;
       const expectedByteLength = source.operation.expectedSourceByteLength;
       if (expectedSha256 === null || expectedByteLength === null) {
@@ -203,21 +205,14 @@ export class UploadProductEntrySubmissionMediaUseCase {
       verified.set(result.source.operationId, result.source);
     }
 
-    if (sourceRequirements.newSourceRequiredOperationIds.length > 0) {
-      return {
-        type: "NewSourceFlowNotImplemented",
-        code: PRODUCT_ENTRY_MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED_CODE,
-        operationIds: sourceRequirements.newSourceRequiredOperationIds,
-      };
-    }
     let coordinated;
-    if (existingWorkflow?.status === "Completed") {
+    if (existingWorkflow?.status === "Completed" && newSourceOperationIds.size === 0) {
       coordinated = {
         workflow: existingWorkflow,
         idempotentReplay: true,
         resumed: false,
       };
-    } else {
+    } else if (newSourceOperationIds.size === 0 || regularSourceOperationIds.length > 0 || !existingWorkflow) {
       try {
         coordinated = await this.dependencies.workflowCoordinator.coordinate({
           context,
@@ -235,6 +230,37 @@ export class UploadProductEntrySubmissionMediaUseCase {
         if (error.code === "ProductNotFound") return { type: "Conflict", code: "SUBMISSION_PRODUCT_NOT_FOUND" };
         return { type: "Conflict", code: error.code };
       }
+    } else {
+      coordinated = { workflow: existingWorkflow, idempotentReplay: true, resumed: true };
+    }
+
+    let sourceAttempts: readonly { readonly operationId: string; readonly sourceAttemptId: string }[] = [];
+    let resumeUnavailableOperationIds: readonly string[] = [];
+    if (newSourceOperationIds.size > 0) {
+      if (!existingWorkflow) return { type: "Conflict", code: "WorkflowConflict" };
+      const replacement = await this.dependencies.workflowCoordinator.replaceUnavailableSources({
+        context,
+        workflowId: existingWorkflow.workflowId,
+        sources: mapped.sources.filter((source) => newSourceOperationIds.has(source.operation.operationId)).map((source) => ({
+          operationId: source.operation.operationId,
+          bytes: source.bytes,
+          clientMediaType: source.clientMediaType,
+        })),
+        effectiveTime: this.dependencies.clock.now(),
+      });
+      if (replacement.type === "Rejected") {
+        if (replacement.code === "Forbidden") {
+          return { type: "Forbidden", permission: PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace };
+        }
+        if (replacement.code === "InfrastructureUnavailable") return { type: "InfrastructureUnavailable" };
+        if (Object.values(PRODUCT_ENTRY_MEDIA_SOURCE_ERROR_CODES).includes(replacement.code as ProductEntryMediaSourceErrorCode)) {
+          return { type: "InvalidRequest", code: replacement.code as ProductEntryMediaSourceErrorCode, operationId: replacement.operationId };
+        }
+        return { type: "Conflict", code: replacement.code };
+      }
+      coordinated = { workflow: replacement.workflow, idempotentReplay: true, resumed: true };
+      sourceAttempts = replacement.sourceAttempts;
+      resumeUnavailableOperationIds = replacement.resumeUnavailableOperationIds;
     }
 
     const submissionStatus = coordinated.workflow.status === "Completed" ? "Completed" : "PartiallyCompleted";
@@ -256,6 +282,8 @@ export class UploadProductEntrySubmissionMediaUseCase {
       idempotentReplay: coordinated.idempotentReplay,
       resumed: coordinated.resumed,
       workflow: coordinated.workflow,
+      sourceAttempts,
+      resumeUnavailableOperationIds,
     };
   }
 }

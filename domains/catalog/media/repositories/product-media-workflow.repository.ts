@@ -47,6 +47,7 @@ export interface ProductMediaOperationTransition {
 
 export interface ProductMediaWorkflowRepository {
   findById(workspaceId: WorkspaceId, workflowId: string): Promise<ProductMediaWorkflowState | null>;
+  findByOperationId(workspaceId: WorkspaceId, operationId: string): Promise<ProductMediaWorkflowState | null>;
   findByIdempotencyKey(workspaceId: WorkspaceId, idempotencyKey: string): Promise<ProductMediaWorkflowState | null>;
   create(workflow: ProductMediaWorkflowState): Promise<CreateProductMediaWorkflowResult>;
   claimOperation(workspaceId: WorkspaceId, workflowId: string, operationId: string, expectedVersion: number, attemptedAt: Date): Promise<ClaimProductMediaOperationResult>;

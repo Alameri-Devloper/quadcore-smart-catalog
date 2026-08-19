@@ -45,6 +45,7 @@ describe("Identity permission registry and templates", () => {
       "workspace.audit.view",
       "workspace.settings.manage",
       "catalog.productMedia.reconciliation.manage",
+      "catalog.productMedia.source.replace",
       "referenceCost.manage",
       "inventory.adjust",
     ]) assert.equal(template.permissionCodes.includes(excluded as never), false);

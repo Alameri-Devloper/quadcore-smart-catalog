@@ -20,6 +20,13 @@ import { ProductMediaStoragePartialOperationError, type ProductMediaStorageFailu
 import type { ProductMediaRootRepository } from "../repositories/product-media-root.repository";
 import type { ProductMediaOperationTransition, ProductMediaWorkflowRepository, StageProductMediaOperationTransition } from "../repositories/product-media-workflow.repository";
 
+const persistedStagingKey = (
+  operation: ProductMediaOperationState,
+  root: Parameters<typeof ProductMediaStagingKey.create>[0],
+): ProductMediaStagingKey => operation.stagedArtifactKey
+  ? ProductMediaStagingKey.rehydrate(root, operation.stagedArtifactKey)
+  : ProductMediaStagingKey.create(root, operation.operationId);
+
 export interface IncomingMediaSource { readonly bytes: Uint8Array }
 export type ProductMediaCommandOperation =
   | { readonly operationId: string; readonly type: "Add"; readonly source?: IncomingMediaSource; readonly sourceSha256?: string; readonly requestedDisplayOrder?: number; readonly selectAsCover?: boolean }
@@ -780,7 +787,7 @@ export class ExecuteProductMediaWorkflowUseCase {
   }
 
   private staged(operation: ProductMediaOperationState, root: Parameters<typeof ProductMediaStagingKey.create>[0]): StagedProductMediaObject {
-    return { key: ProductMediaStagingKey.create(root, operation.operationId), sha256: operation.stagedSha256!, byteLength: operation.stagedByteLength!, mediaType: "image/webp", width: operation.stagedWidth!, height: operation.stagedHeight! };
+    return { key: persistedStagingKey(operation, root), sha256: operation.stagedSha256!, byteLength: operation.stagedByteLength!, mediaType: "image/webp", width: operation.stagedWidth!, height: operation.stagedHeight! };
   }
 
   private async executeInitialEffect(operation: ProductMediaOperationState, state: ProductMediaState, root: Parameters<typeof ProductMediaStagingKey.create>[0], actor: TrustedActorContext, now: Date): Promise<InitialEffectOutcome> {
@@ -914,7 +921,7 @@ export class RetryProductMediaOperationUseCase {
         if (status !== "SourceUnavailable") throw new ProductMediaWorkflowError("ProductMediaReconciliationRequired");
         throw new ProductMediaWorkflowError("ProductMediaSourceUnavailable");
       }
-      const stagingKey = ProductMediaStagingKey.create(root.storageRootKey, operation.operationId);
+      const stagingKey = persistedStagingKey(operation, root.storageRootKey);
       let exists;
       try { exists = await this.dependencies.storage.temporaryExists(stagingKey); }
       catch (error) {
@@ -1060,7 +1067,7 @@ export class RetryProductMediaOperationUseCase {
   }
 
   private staged(operation: ProductMediaOperationState, root: Parameters<typeof ProductMediaStagingKey.create>[0]): StagedProductMediaObject {
-    return { key: ProductMediaStagingKey.create(root, operation.operationId), sha256: operation.stagedSha256!, byteLength: operation.stagedByteLength!, mediaType: "image/webp", width: operation.stagedWidth!, height: operation.stagedHeight! };
+    return { key: persistedStagingKey(operation, root), sha256: operation.stagedSha256!, byteLength: operation.stagedByteLength!, mediaType: "image/webp", width: operation.stagedWidth!, height: operation.stagedHeight! };
   }
   private async safeCompensate(compensation: Compensation): Promise<boolean> { try { return await compensation(); } catch { return false; } }
 
@@ -1108,7 +1115,7 @@ export class CancelProductMediaOperationUseCase {
       const root = await this.dependencies.roots.findByProduct(command.actorContext.workspaceId, workflow.productId);
       if (!root) throw new ProductMediaWorkflowError("ProductMediaStorageFailed");
       let discarded;
-      try { discarded = await this.dependencies.storage.discardTemporary({ stagingKey: ProductMediaStagingKey.create(root.storageRootKey, operation.operationId) }); }
+      try { discarded = await this.dependencies.storage.discardTemporary({ stagingKey: persistedStagingKey(operation, root.storageRootKey) }); }
       catch { discarded = { type: "Failed" as const, code: "UnsafeKey" as const }; }
       if (discarded.type === "Failed" && discarded.code !== "TemporaryObjectMissing") {
         await establishTerminalAfterExternalEffect(this.dependencies, {
@@ -1229,7 +1236,7 @@ export class CleanupExpiredMediaStagingUseCase {
           continue;
         }
         let discarded;
-        try { discarded = await this.dependencies.storage.discardTemporary({ stagingKey: ProductMediaStagingKey.create(root.storageRootKey, operation.operationId) }); }
+        try { discarded = await this.dependencies.storage.discardTemporary({ stagingKey: persistedStagingKey(operation, root.storageRootKey) }); }
         catch { discarded = { type: "Failed" as const, code: "UnsafeKey" as const }; }
         const knownAbsent = discarded.type === "Discarded" || discarded.code === "TemporaryObjectMissing";
         const established = await establishTerminalAfterExternalEffect(this.dependencies, {

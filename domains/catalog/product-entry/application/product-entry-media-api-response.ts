@@ -41,12 +41,12 @@ export const uploadProductEntryMediaHttpStatus = (result: UploadProductEntrySubm
     case "Accepted": return 202;
     case "NotFound": return 404;
     case "Forbidden": return 403;
-    case "NewSourceFlowNotImplemented": return 409;
+    case "InfrastructureUnavailable": return 503;
     case "Conflict": return 409;
     case "PlanMismatch": return 422;
     case "InvalidRequest":
       if (result.code === "SOURCE_TOO_LARGE") return 413;
-      if (result.code === "SOURCE_MIME_UNSUPPORTED" || result.code === "SOURCE_IMAGE_INVALID") return 415;
+      if (result.code === "SOURCE_MIME_UNSUPPORTED" || result.code === "SOURCE_MIME_MISMATCH" || result.code === "SOURCE_IMAGE_INVALID") return 415;
       if (["SOURCE_SHA256_MISMATCH", "SOURCE_BYTE_LENGTH_MISMATCH", "SOURCE_DIMENSIONS_UNSUPPORTED"].includes(result.code)) return 422;
       return 400;
   }

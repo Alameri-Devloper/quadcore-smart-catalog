@@ -130,9 +130,7 @@ const safePresentationMessage = (state: ProductEntryPresentationState, text: Pro
     case "UploadingMedia": return text.statusUploadingMedia;
     case "MediaPartiallyCompleted": return state.code === "MEDIA_SOURCE_RESELECTION_REQUIRED"
       ? text.statusMediaReselection
-      : state.code === "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED"
-        ? text.statusMediaNewSource
-        : text.statusMediaPartial;
+      : text.statusMediaPartial;
     case "Completed": return state.mediaStatus === null
       ? text.statusCompletedWithoutMedia
       : text.statusCompletedWithMedia;
@@ -171,6 +169,7 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
   const [draftState, setDraftState] = useState(draftRuntime.controller.draftState);
   const [addNewBusy, setAddNewBusy] = useState(false);
   const [addNewFailure, setAddNewFailure] = useState(false);
+  const [replacementSelectionStates, setReplacementSelectionStates] = useState<Record<string, "Preparing" | "Ready" | "Failed">>({});
   const lastDraftPayload = useRef<string | null>(null);
   const [deviceClassResult, setDeviceClassResult] = useState<{ categoryId: string; options: ProductEntryDeviceClassOption[] } | null>(null);
   const [deviceClassError, setDeviceClassError] = useState<{ categoryId: string; code: ProductEntryReferenceDataLoadErrorCode } | null>(null);
@@ -294,12 +293,14 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
     names: { department: selectedCategory?.departmentName, category: selectedCategory?.name, deviceClass: selectedDeviceClass?.name, brand: selectedProductModel?.brandName, productModel: selectedProductModel?.name },
   });
 
-  const sourceProvider = useCallback((operationIds: readonly string[]) => {
+  const sourceProvider = useCallback((operationIds: readonly string[], replacementOperationIds: readonly string[] = []) => {
     const selected = media.requiredSources(operationIds);
     if (selected.type === "Missing") return selected;
+    const replacements = new Set(replacementOperationIds);
     const mismatch = selected.sources.filter((source) => {
       const descriptor = workflow.values.images.find((image) => image.operationId === source.operationId);
-      return !descriptor || descriptor.expectedSourceSha256 !== source.sha256 || descriptor.expectedSourceByteLength !== source.byteLength;
+      return !replacements.has(source.operationId)
+        && (!descriptor || descriptor.expectedSourceSha256 !== source.sha256 || descriptor.expectedSourceByteLength !== source.byteLength);
     }).map((source) => source.operationId);
     return mismatch.length > 0 ? { type: "Missing" as const, operationIds: mismatch } : selected;
   }, [media, workflow.values.images]);
@@ -371,6 +372,20 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
   const receipt = "receipt" in presentation ? presentation.receipt : coordinator.productReceipt;
   const busy = productEntryPresentationIsBusy(presentation);
   const statusMessage = safePresentationMessage(presentation, text);
+  const partialMediaStatus = presentation.type === "MediaPartiallyCompleted" ? presentation.status : null;
+  const replacementOperationIds = partialMediaStatus?.canReplaceSource
+    ? partialMediaStatus.operations.filter((operation) =>
+      operation.status === "SourceUnavailable" && operation.requiresNewSource).map((operation) => operation.operationId)
+    : [];
+
+  const chooseReplacement = async (operationId: string, file: File) => {
+    setReplacementSelectionStates((current) => ({ ...current, [operationId]: "Preparing" }));
+    const result = await media.select(operationId, file);
+    setReplacementSelectionStates((current) => ({
+      ...current,
+      [operationId]: result.type === "Hashed" ? "Ready" : "Failed",
+    }));
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 sm:py-10" dir={ar ? "rtl" : "ltr"} lang={locale}>
@@ -380,8 +395,35 @@ function ProductEntryWizardSession({ bootstrap, draftRuntime, coordinator, categ
           <p className="font-semibold">{statusMessage || text.readyToEdit}</p>
           <p className="mt-1 text-xs opacity-80">{text.localDraft}: {draftState === "Saving" ? text.draftSaving : draftState === "Saved" ? text.draftSaved : draftState === "Unavailable" ? text.draftUnavailable : text.draftIdle}</p>
           {receipt ? <p className="mt-1 text-xs">{text.productId}: {receipt.productId} · {text.revision}: {formatProductEntryWesternNumber(receipt.productRevision, locale)}</p> : null}
+          {replacementOperationIds.length > 0 ? (
+            <section aria-labelledby="media-source-replacement-heading" className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950">
+              <h2 className="font-semibold" id="media-source-replacement-heading">{text.replaceMediaSource}</h2>
+              <p className="mt-1 text-xs leading-5">{text.replaceMediaSourceDescription}</p>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {replacementOperationIds.map((operationId) => (
+                  <div className="min-w-0 rounded-lg border border-amber-200 bg-white p-3" key={operationId}>
+                    <p className="truncate text-xs font-mono" title={operationId}>{operationId}</p>
+                    <label className="mt-2 inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-lg bg-amber-700 px-3 text-center text-sm font-semibold text-white focus-within:ring-4 focus-within:ring-amber-200">
+                      {text.chooseReplacementFile}
+                      <input accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void chooseReplacement(operationId, file);
+                        event.target.value = "";
+                      }} type="file" />
+                    </label>
+                    <p aria-live="polite" className="mt-2 text-xs">
+                      {replacementSelectionStates[operationId] === "Preparing" ? text.preparingReplacement
+                        : replacementSelectionStates[operationId] === "Ready" ? text.replacementReady
+                          : replacementSelectionStates[operationId] === "Failed" ? text.replacementFailed
+                            : text.reselectAfterReload}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
-            {receipt && presentation.type !== "Completed" ? <button className="min-h-11 rounded-lg border border-emerald-300 bg-white px-4 font-semibold" disabled={busy} onClick={() => void retryMedia()} type="button">{text.retryMedia}</button> : null}
+            {receipt && presentation.type !== "Completed" ? <button className="min-h-11 rounded-lg border border-emerald-300 bg-white px-4 font-semibold" disabled={busy} onClick={() => void retryMedia()} type="button">{replacementOperationIds.length > 0 ? text.applyReplacement : text.retryMedia}</button> : null}
             {receipt && bootstrap.identity.mode === "Create" ? <button className="min-h-11 rounded-lg bg-blue-600 px-4 font-semibold text-white" disabled={busy || addNewBusy} onClick={startAnotherProduct} type="button">{text.addNewProduct}</button> : null}
           </div>
           {addNewFailure ? <p className="mt-2 text-xs font-semibold text-red-800" role="alert">{text.addNewFailed}</p> : null}

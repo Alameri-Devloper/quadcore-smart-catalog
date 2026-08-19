@@ -78,6 +78,13 @@
       "when": 1786943317154,
       "tag": "0010_bent_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787097600000,
+      "tag": "0011_product_media_source_attempts",
+      "breakpoints": true
     }
   ]
 }
