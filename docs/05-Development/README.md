@@ -20,6 +20,8 @@ The [Identity Recovery Delivery and WhatsApp OTP](Identity-Recovery-Delivery-and
 
 The [Product Entry Media Upload Coordination](Product-Entry-Media-Upload-Coordination.md) guide documents Task 3.14.9-B Phase 2 multipart mapping, double source verification, Media idempotency, workflow resume, partial success, tenancy, and HTTP behavior.
 
+The [Product Media Source Replacement](Product-Media-Source-Replacement.md) guide documents Task 3.15.2 Source Attempt identity, stable workflow operation identity, dedicated source fingerprints, one-active-attempt concurrency, 14-day expiry, permission enforcement, server validation, retry-safe resume, browser-file safety, audit, and cleanup handoff. | يوثق دليل [استبدال مصدر وسائط المنتج](Product-Media-Source-Replacement.md) هوية محاولة المصدر وثبات العملية والتزامن والانتهاء والتفويض والتحقق والاستئناف الآمن وعدم حفظ بايتات الملف في المتصفح وتسليم التنظيف.
+
 Task 3.14.9-B-R1 corrects that contract so completed replay and retained-Staging retry need no re-upload, GET and POST share durable source requirements, and bounded multipart guards run before application opening.
 
 The [Product Entry Local Draft Recovery](Product-Entry-Local-Draft-Recovery.md) guide documents Task 3.14.9-C IndexedDB identities, retention, schema migration, explicit recovery, Edit revision conflicts, Media reselection, security filtering, autosave serialization, revalidation, and the Task 3.14.9-D Presentation boundary.

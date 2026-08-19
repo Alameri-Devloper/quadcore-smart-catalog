@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { PostgreSqlProductMediaRootRepository } from "../../infrastructure/persistence/postgresql-product-media-root.repository";
+import { PostgreSqlMediaSourceAttemptRepository } from "../../infrastructure/persistence/postgresql-media-source-attempt.repository";
 import { PostgreSqlProductMediaWorkflowRepository } from "../../infrastructure/persistence/postgresql-product-media-workflow.repository";
 import { PostgreSqlProductRepository } from "../../infrastructure/persistence/postgresql-product.repository";
 import type { CatalogDatabase } from "../../infrastructure/persistence/database";
@@ -15,6 +16,7 @@ import {
   RetryProductMediaOperationUseCase,
   type ProductMediaCommandOperation,
 } from "../../media/services/product-media-workflow";
+import { ReplaceProductMediaSourceUseCase } from "../../media/services/replace-product-media-source";
 import type { ProductId } from "../../types/product-identity.value-object";
 import { PRODUCT_ENTRY_PERMISSIONS, type ProductEntryExecutionContext } from "../application/product-entry-execution-context";
 import {
@@ -145,15 +147,15 @@ export class ProductEntryMediaWorkflowCoordinatorAdapter implements ProductEntry
   private readonly roots: PostgreSqlProductMediaRootRepository;
 
   constructor(
-    database: CatalogDatabase,
+    private readonly database: CatalogDatabase,
     private readonly processor: ProductImageProcessor,
     private readonly processingConfiguration: ProductImageProcessingConfiguration,
     private readonly storage: ProductMediaStoragePort | undefined,
     private readonly allocateWorkflowId: WorkflowIdAllocator = randomUUID,
   ) {
-    this.workflows = new PostgreSqlProductMediaWorkflowRepository(database);
-    this.products = PostgreSqlProductRepository.transactional(database);
-    this.roots = new PostgreSqlProductMediaRootRepository(database);
+    this.workflows = new PostgreSqlProductMediaWorkflowRepository(this.database);
+    this.products = PostgreSqlProductRepository.transactional(this.database);
+    this.roots = new PostgreSqlProductMediaRootRepository(this.database);
   }
 
   async coordinate(
@@ -300,9 +302,51 @@ export class ProductEntryMediaWorkflowCoordinatorAdapter implements ProductEntry
     }
   }
 
+  async replaceUnavailableSources(
+    command: Parameters<ProductEntryMediaWorkflowCoordinator["replaceUnavailableSources"]>[0],
+  ): ReturnType<ProductEntryMediaWorkflowCoordinator["replaceUnavailableSources"]> {
+    if (!this.storage) throw new Error("Product Media storage is unavailable for source replacement.");
+    const authorization = this.authorization(command.context, PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace);
+    const useCase = new ReplaceProductMediaSourceUseCase({
+      attempts: new PostgreSqlMediaSourceAttemptRepository(this.database),
+      workflows: this.workflows,
+      products: this.products,
+      roots: this.roots,
+      authorization,
+      processor: this.processor,
+      processingConfiguration: this.processingConfiguration,
+      storage: this.storage,
+    });
+    const sourceAttempts: { operationId: string; sourceAttemptId: string }[] = [];
+    const resumeUnavailableOperationIds: string[] = [];
+    for (const source of command.sources) {
+      const result = await useCase.execute({
+        actorContext: actorFrom(command.context),
+        operationId: source.operationId,
+        bytes: source.bytes,
+        clientMediaType: source.clientMediaType,
+        effectiveTime: command.effectiveTime,
+      });
+      if (result.type === "MediaWorkflowResumed" || result.type === "MediaWorkflowResumeUnavailable") {
+        sourceAttempts.push({ operationId: source.operationId, sourceAttemptId: result.sourceAttemptId });
+        if (result.type === "MediaWorkflowResumeUnavailable") resumeUnavailableOperationIds.push(source.operationId);
+        continue;
+      }
+      return { type: "Rejected", code: result.type === "SourceValidationFailed" ? result.code : result.type, operationId: source.operationId };
+    }
+    const workflow = await this.workflows.findById(command.context.workspaceId, command.workflowId);
+    if (!workflow) return { type: "Rejected", code: "MediaOperationNotFound", operationId: command.sources[0]?.operationId ?? "unknown" };
+    return {
+      type: "Replaced",
+      workflow: projectWorkflow(workflow),
+      sourceAttempts: Object.freeze(sourceAttempts),
+      resumeUnavailableOperationIds: Object.freeze(resumeUnavailableOperationIds),
+    };
+  }
+
   private authorization(
     expected: ProductEntryExecutionContext,
-    permission: typeof PRODUCT_ENTRY_PERMISSIONS.mediaUpload | typeof PRODUCT_ENTRY_PERMISSIONS.read,
+    permission: typeof PRODUCT_ENTRY_PERMISSIONS.mediaUpload | typeof PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace | typeof PRODUCT_ENTRY_PERMISSIONS.read,
   ): ProductEditAuthorizationPort {
     return {
       canEditProduct: async (actor: TrustedActorContext, productId: ProductId): Promise<boolean> =>
@@ -317,7 +361,7 @@ export class ProductEntryMediaWorkflowCoordinatorAdapter implements ProductEntry
     context: ProductEntryExecutionContext,
     linkedWorkflowId: string | undefined,
     idempotencyKey: string,
-    permission: typeof PRODUCT_ENTRY_PERMISSIONS.mediaUpload | typeof PRODUCT_ENTRY_PERMISSIONS.read,
+    permission: typeof PRODUCT_ENTRY_PERMISSIONS.mediaUpload | typeof PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace | typeof PRODUCT_ENTRY_PERMISSIONS.read,
   ): Promise<ProductMediaWorkflowState | null> {
     const authorization = this.authorization(context, permission);
     const actor = actorFrom(context);

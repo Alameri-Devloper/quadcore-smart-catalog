@@ -23,6 +23,8 @@ GET is read-only. It returns the Submission status, Product and workflow linkage
 
 GET and POST use the same Application source-requirement projection. The projection distinguishes `RequiredFromPlan`, `RetainedSourceAvailable`, `NewSourceRequired`, `Completed`, and `NotRequired`; client-supplied workflow state is never authoritative.
 
+Task 3.15.2 implements `NewSourceRequired` through a persisted Product Media [Source Attempt](Product-Media-Source-Replacement.md). The same multipart boundary accepts the deliberately different replacement source without rebuilding the Product Entry request or changing its fingerprint. | تنفذ المهمة 3.15.2 حالة المصدر الجديد عبر [محاولة مصدر](Product-Media-Source-Replacement.md) محفوظة في Product Media، ويقبل حد multipart نفسه الملف البديل المختلف دون إعادة بناء طلب Product Entry أو تغيير بصمته.
+
 The App Router rejects a malformed or clearly oversized `Content-Length` before `request.formData()`, limits multipart requests to 32 entries, and still performs authoritative byte-length checks on every parsed file. The early request limit is 32 configured maximum-size sources plus 1 MiB of multipart overhead. `Content-Length` is only an early guard, never proof of the actual body size. The current App Router transport buffers multipart content; true streaming upload remains outside this correction.
 
 ### Persisted plan and double verification
@@ -37,19 +39,19 @@ Stable source codes are `SOURCE_SHA256_MISMATCH`, `SOURCE_BYTE_LENGTH_MISMATCH`,
 
 The Media idempotency key is lowercase SHA-256 over the unambiguous UTF-8 JSON tuple `[workspaceId, submissionId, productId, requestFingerprint]`. The linked workflow and the idempotency-key workflow are both resolved and must agree before any upload is mapped or verified. The workflow repository's Workspace-scoped unique constraint remains the resolve-or-create authority under concurrency. A completed replay accepts zero files, skips source verification and coordination, and returns the existing workflow without another image mutation. A retained-Staging retry also accepts zero files and invokes only the canonical Product Media retry path. Durable source hashes reconstruct the unchanged Product Media request fingerprint when a different Pending operation still needs bytes; completed operations are not re-executed. Staged sources use the existing 14-day lifecycle. Expiry produces `SourceUnavailable`, `retryAllowed=false`, and `requiresNewSource=true`. There is no worker or scheduler.
 
-The approved Product Media API does not currently support safely replacing the source of an existing `SourceUnavailable` non-retryable operation. POST therefore maps and independently verifies the one required replacement file, then returns the stable typed `MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED` result without staging or mutating Media. A separately approved new-source flow is required to proceed.
+Task 3.15.2 now handles an existing `SourceUnavailable` operation through a persisted Source Attempt. POST accepts the required replacement file, creates or reuses the attempt by its dedicated source fingerprint, validates and stages it, atomically attaches it to the same operation, and invokes the canonical retry path without changing the Product Entry request fingerprint.
 
 After coordination, a separate PostgreSQL transaction atomically and idempotently links the workflow and marks the Submission `Completed` or `PartiallyCompleted`. There is deliberately no distributed transaction with filesystem work. If the linkage transaction fails after Media completion, a later POST or GET resolves the same workflow by idempotency key and can restore the link without duplicating Media. Storage ambiguity remains durable as `ReconciliationRequired`.
 
 ### Authorization, tenancy, and responses
 
-The Application layer requires `catalog.product-entry-media.upload` for POST and the existing submission read permission for GET. Workspace and actor come only from the trusted-context resolver. Submission, plan, Product, workflow, and every repository lookup use exact Workspace scope; foreign Workspace resources are not found. Production remains fail-closed until a real authentication adapter is composed.
+The Application layer requires `catalog.product-entry-media.upload` for ordinary Phase 2 sources and `catalog.productMedia.source.replace` for replacement Source Attempts; GET requires the existing submission read permission. Workspace and actor come only from the trusted-context resolver. Submission, plan, Product, workflow, and every repository lookup use exact Workspace scope; foreign Workspace resources are not found. Production remains fail-closed until a real authentication adapter is composed.
 
-Response policy: `200` completed/existing; `202` accepted, partial, or retryable; `400` malformed multipart/source mapping or multipart-entry overflow; `403` permission denied; `404` Workspace-scoped Submission missing; `409` lifecycle/workflow/link conflict or the explicitly unavailable new-source flow; `413` configured raw-size or clear request-size limit; `415` unsupported or invalid image; `422` raw integrity, dimensions, or plan mismatch; `503` trusted context or unexpected service failure. Unexpected failures expose only `PRODUCT_ENTRY_MEDIA_SERVICE_UNAVAILABLE`; trusted-context failure keeps `AUTHENTICATION_CONTEXT_UNAVAILABLE`.
+Response policy: `200` completed/existing; `202` accepted, partial, retryable, or accepted-source/resume-unavailable; `400` malformed multipart/source mapping or multipart-entry overflow; `403` permission denied; `404` Workspace-scoped Submission missing; `409` lifecycle/workflow/link or active-attempt conflict; `413` configured raw-size or clear request-size limit; `415` unsupported, invalid, or declared/detected MIME mismatch; `422` raw integrity, dimensions, or plan mismatch; `503` trusted context, storage, or unexpected service failure. Unexpected failures expose only `PRODUCT_ENTRY_MEDIA_SERVICE_UNAVAILABLE`; trusted-context failure keeps `AUTHENTICATION_CONTEXT_UNAVAILABLE`.
 
 ### Known limitations
 
-There is no Product Entry UI, IndexedDB draft, browser worker hashing, automatic retry, scheduler, object-storage adapter, permanent Trash deletion, true streaming multipart parser, or real Production authentication provider. A source that has become unavailable requires a later approved new-source flow; this correction validates the replacement request but does not restage it. An empty Media Plan is not executable through the upload endpoint. This task adds no migration and no dependency.
+There is no automatic retry, scheduler, object-storage adapter, permanent Trash deletion, true streaming multipart parser, or additional authentication provider in this capability. Task 3.20 owns scheduled Source Attempt cleanup. An empty Media Plan is not executable through the upload endpoint. Task 3.15.2 adds migration `0011` and no dependency.
 
 ## العربية
 
@@ -75,7 +77,7 @@ There is no Product Entry UI, IndexedDB draft, browser worker hashing, automatic
 
 ### Idempotency والاستئناف والنجاح الجزئي
 
-يقبل تكرار دورة مكتملة طلباً بلا ملفات، ويتجاوز مدقق المصدر والتجهيز والتنفيذ، ويعيد النتيجة المحفوظة دون تكرار صورة أو دورة. كما تعيد محاولة المصدر المرحلي المحفوظ استخدام الدورة والمصدر نفسيهما بلا رفع جديد. إذا كانت العملية `SourceUnavailable` وتحتاج مصدراً جديداً، يتحقق الخادم من الملف المطلوب ثم يعيد النتيجة المنمطة `MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED` دون تعديل الوسائط، لأن واجهة Product Media المعتمدة لا تدعم بعد استبدال مصدر عملية غير قابلة للإعادة.
+يقبل تكرار دورة مكتملة طلباً بلا ملفات، ويتجاوز مدقق المصدر والتجهيز والتنفيذ، ويعيد النتيجة المحفوظة دون تكرار صورة أو دورة. كما تعيد محاولة المصدر المرحلي المحفوظ استخدام الدورة والمصدر نفسيهما بلا رفع جديد. وإذا كانت العملية `SourceUnavailable` وتحتاج مصدراً جديداً، تنشئ المهمة 3.15.2 محاولة مصدر محفوظة أو تعيد استخدامها حسب بصمتها، ثم تتحقق من الملف وتربطه بالعملية نفسها وتستأنف مسار الإعادة المعتمد دون تغيير بصمة طلب Product Entry.
 
 مفتاح Media هو SHA-256 للصفيف الحتمي `[workspaceId, submissionId, productId, requestFingerprint]`. يمنع القيد الفريد المقيد بمساحة العمل إنشاء دورتين للمفتاح نفسه. تعيد الطلبات المكتملة الدورة نفسها دون تكرار تعديل الصورة، ويستأنف POST المتكرر العمليات Pending ويعيد صراحةً محاولة العمليات التي ما زال مصدرها المرحلي صالحاً. تبقى المصادر المرحلية 14 يوماً، وبعد الانتهاء تصبح `SourceUnavailable` مع منع الإعادة وطلب مصدر جديد. لا توجد خدمة خلفية أو مجدول.
 
@@ -83,6 +85,6 @@ There is no Product Entry UI, IndexedDB draft, browser worker hashing, automatic
 
 ### الأمن والقيود
 
-يتطلب POST صلاحية `catalog.product-entry-media.upload` ويتطلب GET صلاحية القراءة الحالية. تأتي مساحة العمل وهوية الممثل من محلل السياق الموثوق فقط، وتكون جميع القراءات والروابط مقيدة بمساحة العمل. يبقى Production مغلقاً حتى تركيب محول مصادقة حقيقي.
+يتطلب POST صلاحية `catalog.product-entry-media.upload` للمصادر العادية وصلاحية `catalog.productMedia.source.replace` لمحاولات الاستبدال، ويتطلب GET صلاحية القراءة الحالية. تأتي مساحة العمل وهوية الممثل من محلل السياق الموثوق فقط، وتكون جميع القراءات والروابط مقيدة بمساحة العمل.
 
-لا تنفذ هذه المهمة واجهة Product Entry أو مسودات IndexedDB أو Web Worker أو إعادة تلقائية أو مجدولاً أو تخزين كائنات أو حذفاً دائماً لسلة المحذوفات أو مزود مصادقة حقيقياً. يعرض GET الحاجة إلى مصدر جديد ولا يرفعه تلقائياً. لا تنفذ نقطة الرفع خطة وسائط فارغة. لم تتم إضافة ترحيل أو اعتماد جديد.
+لا تضيف هذه القدرة إعادة تلقائية أو مجدولاً أو تخزين كائنات أو حذفاً دائماً لسلة المحذوفات أو مزود مصادقة جديداً، وتملك المهمة 3.20 تشغيل التنظيف المجدول. لا تنفذ نقطة الرفع خطة وسائط فارغة. أضيف الترحيل `0011` دون اعتماد جديد.

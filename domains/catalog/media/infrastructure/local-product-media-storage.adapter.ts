@@ -176,7 +176,32 @@ export class LocalProductMediaStorageAdapter implements ProductMediaStoragePort 
     } catch (error) {
       if (error instanceof ProductMediaStoragePartialOperationError) throw error;
       if (error instanceof UnsafeMediaPathError) return { type: "Failed", code: "UnsafeKey" };
-      if (errorCode(error) === "EEXIST") return { type: "Failed", code: "TargetConflict" };
+      if (errorCode(error) === "EEXIST" && path) {
+        try {
+          const storedBytes = new Uint8Array(await (this.fileSystem.readFile ?? readFile)(path));
+          const inspection = await this.processor.inspect(storedBytes);
+          const hash = createHash("sha256").update(storedBytes).digest("hex");
+          if (
+            inspection.type === "Inspected"
+            && inspection.inspection.format === "webp"
+            && storedBytes.byteLength === input.image.bytes.byteLength
+            && hash === input.image.sha256
+            && inspection.inspection.width === input.image.width
+            && inspection.inspection.height === input.image.height
+          ) return { type: "Staged", object: Object.freeze({
+            key: input.stagingKey,
+            sha256: hash,
+            byteLength: storedBytes.byteLength,
+            mediaType: "image/webp",
+            width: inspection.inspection.width,
+            height: inspection.inspection.height,
+          }) };
+        } catch (inspectionError) {
+          if (inspectionError instanceof UnsafeMediaPathError) return { type: "Failed", code: "UnsafeKey" };
+          if (errorCode(inspectionError) !== "ENOENT") return this.infrastructure("inspect-existing-stage");
+        }
+        return { type: "Failed", code: "TargetConflict" };
+      }
       if (owned && path) {
         try {
           await this.fileSystem.unlink(path);

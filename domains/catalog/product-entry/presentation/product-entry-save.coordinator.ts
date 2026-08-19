@@ -18,7 +18,10 @@ export type ProductEntryTwoPhaseSaveResult =
   | { readonly type: "MediaRetryableFailure"; readonly receipt: ProductEntryProductSaveReceipt; readonly code: string }
   | { readonly type: "MediaFatalFailure"; readonly receipt: ProductEntryProductSaveReceipt; readonly code: string };
 
-export type ProductEntryRequiredSourceProvider = (operationIds: readonly string[]) =>
+export type ProductEntryRequiredSourceProvider = (
+  operationIds: readonly string[],
+  replacementOperationIds?: readonly string[],
+) =>
   | { readonly type: "Ready"; readonly sources: readonly ProductEntrySelectedMediaSource[] }
   | { readonly type: "Missing"; readonly operationIds: readonly string[] };
 
@@ -90,13 +93,7 @@ export class ProductEntryTwoPhaseSaveCoordinator {
     if (status.submissionStatus === "Completed" || status.workflowStatus === "Completed") {
       return { type: "Completed", receipt, mediaStatus: status };
     }
-    if (status.requiresNewSourceOperationIds.length > 0) return {
-      type: "MediaPartiallyCompleted",
-      receipt,
-      status,
-      code: "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED",
-    };
-    const selected = sources(status.requiredSourceOperationIds);
+    const selected = sources(status.requiredSourceOperationIds, status.requiresNewSourceOperationIds);
     if (selected.type === "Missing") return {
       type: "MediaRequiresSources",
       receipt,
@@ -107,7 +104,6 @@ export class ProductEntryTwoPhaseSaveCoordinator {
     if (!this.isCurrent(request)) return { type: "MediaRetryableFailure", receipt, code: "REQUEST_CANCELLED" };
     if (upload.type === "Completed") return { type: "Completed", receipt, mediaStatus: upload.status };
     if (upload.type === "PartiallyCompleted") return { type: "MediaPartiallyCompleted", receipt, status: upload.status, code: "MEDIA_PARTIALLY_COMPLETED" };
-    if (upload.type === "NewSourceFlowNotImplemented") return { type: "MediaPartiallyCompleted", receipt, status, code: upload.code };
     if (upload.type === "Rejected") return { type: "MediaPartiallyCompleted", receipt, status, code: upload.code };
     if (upload.type === "RetryableFailure") return { type: "MediaRetryableFailure", receipt, code: upload.code };
     return { type: "MediaFatalFailure", receipt, code: "code" in upload ? upload.code : "INVALID_MEDIA_RESPONSE" };

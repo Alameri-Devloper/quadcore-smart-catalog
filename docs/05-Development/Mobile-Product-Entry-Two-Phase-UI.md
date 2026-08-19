@@ -75,7 +75,7 @@ Save flushes the Local Draft, validates the full wizard, validates source readin
 
 After Product success, Phase 2 reads durable Media status. It uploads only exact `requiredSourceOperationIds` using multipart field names `source:<operationId>`. A no-Media plan skips Phase 2. Completed replay uses zero files. Retained Staging retry may also use zero files. Normal Media retry calls only Phase 2 and never repeats Product Smart Save.
 
-Product and Media outcomes remain separate. Product is not rolled back when Media partially completes or fails. The UI distinguishes Product failure before Media start, Product success with Media completion, partial completion, retry, reselection, and `MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED`.
+Product and Media outcomes remain separate. Product is not rolled back when Media partially completes or fails. Task 3.15.2 adds the permission-aware replacement panel for unavailable sources, with in-memory file selection, typed preparation/upload states, and resume of the existing operation.
 
 ### Responsive, RTL/LTR, and accessibility
 
@@ -147,7 +147,7 @@ Deterministic manual QA checklist:
 
 يفرغ الحفظ المسودة ثم يتحقق من المعالج ومصادر الوسائط ويبني طلب المرحلة الأولى الحالي بنفس معرف الطلب. بعد نجاح المنتج تقرأ المرحلة الثانية الحالة الدائمة وترفع المصادر المطلوبة فقط بأسماء `source:<operationId>`. تتجاوز الخطة الفارغة المرحلة الثانية، ولا تحتاج الإعادة المكتملة أو إعادة محاولة Staging المحفوظ إلى ملفات جديدة. لا تعيد محاولة الوسائط تنفيذ Smart Save للمنتج.
 
-تبقى نتيجة المنتج مستقلة عن نتيجة الوسائط. لا يُتراجع عن المنتج عند فشل الوسائط أو اكتمالها الجزئي، وتعرض الواجهة النجاح الجزئي وإعادة المحاولة وإعادة التحديد والحالة `MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED` بوضوح.
+تبقى نتيجة المنتج مستقلة عن نتيجة الوسائط. لا يُتراجع عن المنتج عند فشل الوسائط أو اكتمالها الجزئي، وتضيف المهمة 3.15.2 لوحة استبدال خاضعة للصلاحية للمصادر غير المتاحة مع اختيار الملف في الذاكرة وحالات تجهيز ورفع نمطية واستئناف العملية نفسها.
 
 ### الاستجابة وإتاحة الوصول والاتجاه
 

@@ -103,6 +103,7 @@ const mediaStatus = (body: Readonly<Record<string, unknown>>): ProductEntryMedia
     retryableOperationIds: strings(status.retryableOperationIds),
     requiresNewSourceOperationIds: strings(status.requiresNewSourceOperationIds),
     operations,
+    canReplaceSource: status.canReplaceSource === true,
   };
 };
 
@@ -141,7 +142,7 @@ export class HttpProductEntryMediaClient implements ProductEntryMediaClient {
           submissionStatus: text(body.submissionStatus) ?? "Unknown",
           productId: null,
           workflowStatus: text(record(body.workflow)?.status),
-          plannedOperationIds: [], requiredSourceOperationIds: [], retryableOperationIds: [], requiresNewSourceOperationIds: [], operations: [],
+          plannedOperationIds: [], requiredSourceOperationIds: [], retryableOperationIds: [], requiresNewSourceOperationIds: [], operations: [], canReplaceSource: false,
         };
         return {
           type: body.type === "Completed" ? "Completed" : "PartiallyCompleted",
@@ -150,11 +151,6 @@ export class HttpProductEntryMediaClient implements ProductEntryMediaClient {
           resumed: body.resumed === true,
         };
       }
-      if (body.type === "NewSourceFlowNotImplemented") return {
-        type: "NewSourceFlowNotImplemented",
-        code: "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED",
-        operationIds: strings(body.operationIds),
-      };
       if (body.type === "InvalidRequest" || body.type === "PlanMismatch") return {
         type: "Rejected",
         code: text(body.code) ?? "MEDIA_REQUEST_REJECTED",

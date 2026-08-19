@@ -2,6 +2,7 @@ export const PRODUCT_ENTRY_MEDIA_SOURCE_ERROR_CODES = {
   sha256Mismatch: "SOURCE_SHA256_MISMATCH",
   byteLengthMismatch: "SOURCE_BYTE_LENGTH_MISMATCH",
   mimeUnsupported: "SOURCE_MIME_UNSUPPORTED",
+  mimeMismatch: "SOURCE_MIME_MISMATCH",
   imageInvalid: "SOURCE_IMAGE_INVALID",
   dimensionsUnsupported: "SOURCE_DIMENSIONS_UNSUPPORTED",
   tooLarge: "SOURCE_TOO_LARGE",

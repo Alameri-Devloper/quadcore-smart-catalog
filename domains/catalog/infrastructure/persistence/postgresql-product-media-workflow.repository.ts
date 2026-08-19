@@ -81,6 +81,16 @@ export class PostgreSqlProductMediaWorkflowRepository implements ProductMediaWor
     return row ? this.hydrate(row) : null;
   }
 
+  async findByOperationId(workspaceId: WorkspaceId, operationId: string): Promise<ProductMediaWorkflowState | null> {
+    const [operation] = await this.database.select({ workflowId: catalogProductMediaOperations.workflowId })
+      .from(catalogProductMediaOperations)
+      .where(and(
+        eq(catalogProductMediaOperations.workspaceId, workspaceId.value),
+        eq(catalogProductMediaOperations.operationId, operationId),
+      )).limit(1);
+    return operation ? this.findById(workspaceId, operation.workflowId) : null;
+  }
+
   async findByIdempotencyKey(workspaceId: WorkspaceId, idempotencyKey: string): Promise<ProductMediaWorkflowState | null> {
     const [row] = await this.database.select().from(catalogProductMediaWorkflows).where(and(eq(catalogProductMediaWorkflows.workspaceId, workspaceId.value), eq(catalogProductMediaWorkflows.idempotencyKey, idempotencyKey))).limit(1);
     return row ? this.hydrate(row) : null;
@@ -216,8 +226,26 @@ export class PostgreSqlProductMediaWorkflowRepository implements ProductMediaWor
           eq(catalogProductMediaWorkflows.workspaceId, workflow.workspaceId.value), eq(catalogProductMediaWorkflows.workflowId, workflow.workflowId), eq(catalogProductMediaWorkflows.version, expectedWorkflowVersion),
         )).returning({ id: catalogProductMediaWorkflows.workflowId });
         if (!updatedWorkflow.length) throw new PersistenceConflict("Workflow");
-        await transaction.delete(catalogProductMediaOperations).where(and(eq(catalogProductMediaOperations.workspaceId, workflow.workspaceId.value), eq(catalogProductMediaOperations.workflowId, workflow.workflowId)));
-        if (workflow.operations.length) await transaction.insert(catalogProductMediaOperations).values(workflow.operations.map(operationRow));
+        const persistedOperations = await transaction.select({ operationId: catalogProductMediaOperations.operationId })
+          .from(catalogProductMediaOperations)
+          .where(and(
+            eq(catalogProductMediaOperations.workspaceId, workflow.workspaceId.value),
+            eq(catalogProductMediaOperations.workflowId, workflow.workflowId),
+          ));
+        const requestedOperationIds = new Set(workflow.operations.map((operation) => operation.operationId));
+        if (
+          persistedOperations.length !== workflow.operations.length
+          || persistedOperations.some(({ operationId }) => !requestedOperationIds.has(operationId))
+        ) throw new PersistenceConflict("Workflow");
+        for (const operation of workflow.operations) {
+          const { workspaceId, operationId, ...update } = operationRow(operation);
+          const updatedOperation = await transaction.update(catalogProductMediaOperations).set(update).where(and(
+            eq(catalogProductMediaOperations.workspaceId, workspaceId),
+            eq(catalogProductMediaOperations.workflowId, workflow.workflowId),
+            eq(catalogProductMediaOperations.operationId, operationId),
+          )).returning({ operationId: catalogProductMediaOperations.operationId });
+          if (updatedOperation.length !== 1) throw new PersistenceConflict("Workflow");
+        }
         const [existingState] = await transaction.select({ revision: catalogProductMediaStates.revision }).from(catalogProductMediaStates).where(and(eq(catalogProductMediaStates.workspaceId, mediaState.workspaceId.value), eq(catalogProductMediaStates.productId, mediaState.productId.value))).limit(1);
         if (!existingState) {
           if (expectedMediaRevision !== 0) throw new PersistenceConflict("Media");

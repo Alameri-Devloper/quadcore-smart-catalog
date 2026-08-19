@@ -111,6 +111,34 @@ export class ProductMediaStagingKey extends ProductMediaRootedKey {
   static create(root: ProductMediaStorageRootKey, operationId: string): ProductMediaStagingKey {
     return new ProductMediaStagingKey(root, `${root.value}/_staging/${ProductMediaOperationId.create(operationId).value}.webp`);
   }
+
+  static createForSourceAttempt(
+    root: ProductMediaStorageRootKey,
+    operationId: string,
+    sourceAttemptId: string,
+  ): ProductMediaStagingKey {
+    if (!/^[a-f0-9]{32}$/.test(sourceAttemptId)) {
+      throw new Error("SourceAttemptId must be an opaque 128-bit lowercase hexadecimal value.");
+    }
+    return new ProductMediaStagingKey(
+      root,
+      `${root.value}/_staging/${ProductMediaOperationId.create(operationId).value}--${sourceAttemptId}.webp`,
+    );
+  }
+
+  static rehydrate(root: ProductMediaStorageRootKey, value: string): ProductMediaStagingKey {
+    const prefix = `${root.value}/_staging/`;
+    if (!value.startsWith(prefix)) throw new Error("Product media staging key must belong to its Product root.");
+    const fileName = value.slice(prefix.length);
+    const match = /^(.+?)(?:--([a-f0-9]{32}))?\.webp$/.exec(fileName);
+    try {
+      if (!match) throw new Error();
+      ProductMediaOperationId.create(match[1]);
+    } catch {
+      throw new Error("Product media staging key must use a canonical operation or Source Attempt filename.");
+    }
+    return new ProductMediaStagingKey(root, value);
+  }
 }
 
 export class ProductMediaTrashKey extends ProductMediaRootedKey {

@@ -21,6 +21,7 @@ export interface ProductEntrySubmissionMediaStatusView {
   readonly requiredSourceOperationIds: readonly string[];
   readonly retryableOperationIds: readonly string[];
   readonly requiresNewSourceOperationIds: readonly string[];
+  readonly canReplaceSource: boolean;
 }
 
 export type GetProductEntrySubmissionMediaStatusResult =
@@ -102,6 +103,7 @@ export class GetProductEntrySubmissionMediaStatusUseCase {
         requiredSourceOperationIds: requirements.requiredSourceOperationIds,
         retryableOperationIds: workflow?.operations.filter((operation) => operation.retryAllowed).map((operation) => operation.operationId) ?? [],
         requiresNewSourceOperationIds: workflow?.operations.filter((operation) => operation.requiresNewSource).map((operation) => operation.operationId) ?? [],
+        canReplaceSource: context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.mediaSourceReplace),
       },
     };
   }

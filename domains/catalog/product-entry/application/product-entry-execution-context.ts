@@ -18,6 +18,7 @@ export const PRODUCT_ENTRY_PERMISSIONS = {
   edit: "catalog.product.edit",
   read: "catalog.product-entry-submission.read",
   mediaUpload: "catalog.product-entry-media.upload",
+  mediaSourceReplace: "catalog.productMedia.source.replace",
   readReferenceCost: "catalog.product.reference-cost.read",
 } as const;
 

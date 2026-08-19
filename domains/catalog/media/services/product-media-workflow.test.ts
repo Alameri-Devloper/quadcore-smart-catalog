@@ -34,6 +34,7 @@ class MemoryWorkflows implements ProductMediaWorkflowRepository {
   stageTransitionInterception?: { readonly operationId: string; readonly concurrentStatus?: ProductMediaWorkflowState["operations"][number]["status"]; readonly compatible?: boolean };
   transitionInterception?: { readonly operationId: string; readonly advanceOperationId?: string; readonly concurrentStatus?: ProductMediaWorkflowState["operations"][number]["status"] };
   async findById(scope: WorkspaceId, id: string) { return scope.value === workspaceId.value && this.workflow?.workflowId === id ? cloneWorkflow(this.workflow) : null; }
+  async findByOperationId(scope: WorkspaceId, operationId: string) { return scope.value === workspaceId.value && this.workflow?.operations.some((operation) => operation.operationId === operationId) ? cloneWorkflow(this.workflow) : null; }
   async findByIdempotencyKey(scope: WorkspaceId, key: string) { return scope.value === workspaceId.value && this.workflow?.idempotencyKey === key ? cloneWorkflow(this.workflow) : null; }
   async create(workflow: ProductMediaWorkflowState) { if (this.workflow) return { type: "IdempotencyConflict" as const }; this.workflow = cloneWorkflow(workflow); return { type: "Created" as const }; }
   async claimOperation(scope: WorkspaceId, workflowId: string, operationId: string, expected: number, now: Date) {

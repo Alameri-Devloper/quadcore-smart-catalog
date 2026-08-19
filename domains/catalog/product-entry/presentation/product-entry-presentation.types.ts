@@ -89,6 +89,7 @@ export interface ProductEntryMediaStatusView {
   readonly retryableOperationIds: readonly string[];
   readonly requiresNewSourceOperationIds: readonly string[];
   readonly operations: readonly ProductEntryMediaWorkflowOperationView[];
+  readonly canReplaceSource: boolean;
 }
 
 export type ProductEntryMediaClientResult =
@@ -97,11 +98,6 @@ export type ProductEntryMediaClientResult =
       readonly status: ProductEntryMediaStatusView;
       readonly idempotentReplay: boolean;
       readonly resumed: boolean;
-    }
-  | {
-      readonly type: "NewSourceFlowNotImplemented";
-      readonly code: "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED";
-      readonly operationIds: readonly string[];
     }
   | { readonly type: "Rejected"; readonly code: string; readonly operationId: string | null }
   | { readonly type: "RetryableFailure"; readonly code: string }

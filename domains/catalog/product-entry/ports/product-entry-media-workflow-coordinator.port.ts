@@ -93,4 +93,22 @@ export interface ProductEntryMediaWorkflowCoordinator {
     context: ProductEntryExecutionContext,
     idempotencyKey: string,
   ): Promise<ProductEntryMediaWorkflowView | null>;
+  replaceUnavailableSources(command: {
+    readonly context: ProductEntryExecutionContext;
+    readonly workflowId: string;
+    readonly sources: readonly {
+      readonly operationId: string;
+      readonly bytes: Uint8Array;
+      readonly clientMediaType: string | null;
+    }[];
+    readonly effectiveTime: Date;
+  }): Promise<
+    | {
+        readonly type: "Replaced";
+        readonly workflow: ProductEntryMediaWorkflowView;
+        readonly sourceAttempts: readonly { readonly operationId: string; readonly sourceAttemptId: string }[];
+        readonly resumeUnavailableOperationIds: readonly string[];
+      }
+    | { readonly type: "Rejected"; readonly code: string; readonly operationId: string }
+  >;
 }

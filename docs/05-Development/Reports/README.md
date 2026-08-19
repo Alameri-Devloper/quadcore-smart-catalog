@@ -14,6 +14,8 @@
 - [Task 3.14.9-D-R1 Product Entry Media Metadata Operations, Safe Reset, Complete Localization, and Worker Failure Correction](Task-3.14.9-D-R1-Final-Report.md)
 - [Task 3.14.9-D-R2 Deterministic Media Ordering, Dependency-Safe Resume, Persisted Add-New Safety, and Localization Completion](Task-3.14.9-D-R2-Final-Report.md)
 - [Task 3.15.1-B Server Sessions and Trusted Workspace/Actor Context](QSC-Task-3.15.1-B-Final-Report.md)
+- [Task 3.15.2 Replace Unavailable Product Media Source](QSC-Task-3.15.2-Final-Report.md)
+- [Task 3.15.2-R1 Base Reconciliation, Migration Chain, and PostgreSQL Verification](QSC-Task-3.15.2-R1-Final-Report.md)
 
 This directory contains the Git-tracked final report for every approved implementation task. Name reports `<task-id>-Final-Report.md` and record their review status accurately. After verification, the automated review bundle re-reads, copies, and sanitizes the final-state report. Final ZIP/checksum names are published only after temporary-pair verification and repository-stability checks; the bundle does not replace this source report. Final Markdown reports belong in Git. Generated bundle directories, ZIP archives, detached checksums, and temporary files do not belong in Git.
 

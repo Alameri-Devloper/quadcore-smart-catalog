@@ -43,7 +43,7 @@ const receipt: ProductEntryProductSaveReceipt = {
 const status = (overrides: Partial<ProductEntryMediaStatusView> = {}): ProductEntryMediaStatusView => ({
   submissionId: receipt.submissionId, submissionStatus: "ProductSaved", productId: receipt.productId,
   workflowStatus: null, plannedOperationIds: ["operation-1"], requiredSourceOperationIds: ["operation-1"],
-  retryableOperationIds: [], requiresNewSourceOperationIds: [], operations: [], ...overrides,
+  retryableOperationIds: [], requiresNewSourceOperationIds: [], operations: [], canReplaceSource: false, ...overrides,
 });
 const command = (media = true): SubmitProductEntryCommand => ({
   submissionId: receipt.submissionId,
@@ -101,7 +101,7 @@ test("no-media save skips Phase 2 and completed replay uploads zero files", asyn
   assert.equal(mediaCalls, 1);
 });
 
-test("retained staging retry permits zero-file upload and new-source limitation stays separate from Product success", async () => {
+test("retained staging retry permits zero-file upload and replacement source resumes without repeating Product save", async () => {
   let suppliedCount = -1;
   const submission: ProductEntrySubmissionClient = { async submit() { return { type: "Accepted", receipt }; } };
   const retained: ProductEntryMediaClient = {
@@ -113,15 +113,18 @@ test("retained staging retry permits zero-file upload and new-source limitation 
   assert.equal(suppliedCount, 0);
 
   const newSource: ProductEntryMediaClient = {
-    async getStatus() { return { type: "Found", status: status({ requiredSourceOperationIds: [], requiresNewSourceOperationIds: ["operation-1"] }) }; },
-    async upload() { throw new Error("must not invent a new source flow"); },
+    async getStatus() { return { type: "Found", status: status({ requiredSourceOperationIds: ["operation-1"], requiresNewSourceOperationIds: ["operation-1"], canReplaceSource: true }) }; },
+    async upload(_id, sources) {
+      assert.equal(sources[0]?.operationId, "operation-1");
+      return { type: "Completed", status: status({ submissionStatus: "Completed", workflowStatus: "Completed", requiredSourceOperationIds: [] }), idempotentReplay: true, resumed: true };
+    },
   };
-  const unavailable = await new ProductEntryTwoPhaseSaveCoordinator(submission, newSource).save(command(), () => ({ type: "Ready", sources: [] }));
-  assert.equal(unavailable.type, "MediaPartiallyCompleted");
-  if (unavailable.type === "MediaPartiallyCompleted") {
-    assert.equal(unavailable.code, "MEDIA_NEW_SOURCE_FLOW_NOT_IMPLEMENTED");
-    assert.equal(unavailable.receipt.productId, receipt.productId);
-  }
+  const file = new File(["new"], "new.png", { type: "image/png" });
+  const unavailable = await new ProductEntryTwoPhaseSaveCoordinator(submission, newSource).save(command(), (_ids, replacements) => {
+    assert.deepEqual(replacements, ["operation-1"]);
+    return { type: "Ready", sources: [{ operationId: "operation-1", file, sha256: "b".repeat(64), byteLength: 3 }] };
+  });
+  assert.equal(unavailable.type, "Completed");
 });
 
 test("Product revision conflict and Product/Media outcomes remain explicit reducer states", () => {
@@ -306,6 +309,24 @@ test("Product Entry Presentation source contains no known hardcoded English lite
     const source = readFileSync(path, "utf8");
     forbidden.forEach((literal) => assert.equal(source.includes(literal), false, `${literal} remains in ${path}`));
   }
+});
+
+test("source replacement is bilingual, responsive, and never persists raw browser file data", () => {
+  assert.equal(PRODUCT_ENTRY_PRESENTATION_TEXT.en.chooseReplacementFile, "Choose replacement file");
+  assert.equal(PRODUCT_ENTRY_PRESENTATION_TEXT.ar.chooseReplacementFile, "اختيار ملف بديل");
+  const paths = [
+    "domains/catalog/product-entry/components/ProductEntryWizard.tsx",
+    "domains/catalog/product-entry/react/product-entry-media-adapter.tsx",
+    "domains/catalog/product-entry/infrastructure/browser/product-entry-media-file.registry.ts",
+    "domains/catalog/product-entry/infrastructure/browser/http-product-entry-clients.ts",
+  ].map((path) => join(process.cwd(), path));
+  const combined = paths.map((path) => readFileSync(path, "utf8")).join("\n");
+  assert.doesNotMatch(combined, /(?:localStorage|sessionStorage)\s*\.\s*setItem/);
+  assert.doesNotMatch(combined, /indexedDB\s*\.\s*open/);
+  assert.doesNotMatch(combined, /(?:btoa|base64)\s*\(/i);
+  assert.match(combined, /grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3/);
+  assert.match(combined, /min-h-11 w-full/);
+  assert.match(combined, /type="file"/);
 });
 
 test("Media service maps source and metadata operations deterministically with stable IDs", () => {
