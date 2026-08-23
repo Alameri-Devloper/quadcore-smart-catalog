@@ -15,7 +15,7 @@ import {
   type ExtraConfigColumn,
 } from "drizzle-orm/pg-core";
 import type { ProductEntrySaveReceipt } from "../../product-entry/repositories/product-entry-submission.repository";
-import { workspaces } from "../../../workspace/infrastructure/persistence/schema";
+import { workspaceBranchReferences, workspaces } from "../../../workspace/infrastructure/persistence/schema";
 
 const workspaceReferenceColumns = () => ({
   workspaceId: text("workspace_id").notNull(),
@@ -562,3 +562,60 @@ export const catalogProductEntryAuditRecords = pgTable(
     check("catalog_product_entry_audit_records_non_empty", sql`btrim(${table.auditId}) <> '' AND btrim(${table.actorId}) <> '' AND btrim(${table.resultCode}) <> ''`),
   ],
 );
+
+export const catalogBranchProductListings = pgTable("catalog_branch_product_listings", {
+  workspaceId: text("workspace_id").notNull(),
+  branchId: text("branch_id").notNull(),
+  productId: text("product_id").notNull(),
+  listingStatus: text("listing_status").notNull(),
+  revision: bigint("revision", { mode: "number" }).notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_branch_product_listings_pk", columns: [table.workspaceId, table.branchId, table.productId] }),
+  foreignKey({ name: "catalog_branch_product_listings_branch_fk", columns: [table.workspaceId, table.branchId], foreignColumns: [workspaceBranchReferences.workspaceId, workspaceBranchReferences.branchId] }).onDelete("restrict"),
+  foreignKey({ name: "catalog_branch_product_listings_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
+  index("catalog_branch_product_listings_product_idx").on(table.workspaceId, table.productId, table.listingStatus),
+  check("catalog_branch_product_listings_status", sql`${table.listingStatus} IN ('Listed','Unlisted')`),
+  check("catalog_branch_product_listings_revision", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_branch_product_listings_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+]);
+
+export const catalogProductReferenceCosts = pgTable("catalog_product_reference_costs", {
+  workspaceId: text("workspace_id").notNull(),
+  productId: text("product_id").notNull(),
+  amountMinor: bigint("amount_minor", { mode: "bigint" }).notNull(),
+  currency: text("currency").notNull(),
+  revision: bigint("revision", { mode: "number" }).notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_product_reference_costs_pk", columns: [table.workspaceId, table.productId] }),
+  foreignKey({ name: "catalog_product_reference_costs_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
+  check("catalog_product_reference_costs_amount", sql`${table.amountMinor} BETWEEN 0 AND 9007199254740991`),
+  check("catalog_product_reference_costs_currency", sql`${table.currency} ~ '^[A-Z]{3}$'`),
+  check("catalog_product_reference_costs_revision", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_product_reference_costs_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+]);
+
+export const catalogProductBranchPriceOverrides = pgTable("catalog_product_branch_price_overrides", {
+  workspaceId: text("workspace_id").notNull(),
+  branchId: text("branch_id").notNull(),
+  productId: text("product_id").notNull(),
+  priceType: text("price_type").notNull(),
+  amountMinor: bigint("amount_minor", { mode: "bigint" }).notNull(),
+  currency: text("currency").notNull(),
+  revision: bigint("revision", { mode: "number" }).notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_product_branch_price_overrides_pk", columns: [table.workspaceId, table.branchId, table.productId, table.priceType] }),
+  foreignKey({ name: "catalog_product_branch_price_overrides_branch_fk", columns: [table.workspaceId, table.branchId], foreignColumns: [workspaceBranchReferences.workspaceId, workspaceBranchReferences.branchId] }).onDelete("restrict"),
+  foreignKey({ name: "catalog_product_branch_price_overrides_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
+  index("catalog_product_branch_price_overrides_product_idx").on(table.workspaceId, table.productId, table.branchId),
+  check("catalog_product_branch_price_overrides_type", sql`${table.priceType} IN ('Retail','Wholesale','ReferenceCost')`),
+  check("catalog_product_branch_price_overrides_amount", sql`${table.amountMinor} BETWEEN 0 AND 9007199254740991`),
+  check("catalog_product_branch_price_overrides_currency", sql`${table.currency} ~ '^[A-Z]{3}$'`),
+  check("catalog_product_branch_price_overrides_revision", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_product_branch_price_overrides_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
+]);

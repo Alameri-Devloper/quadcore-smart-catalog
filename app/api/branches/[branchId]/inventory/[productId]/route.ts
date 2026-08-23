@@ -1,0 +1,2 @@
+import { createInventoryRouteHandlers } from "@/domains/inventory/infrastructure/http/inventory-route-handlers"; import { openInventoryServerApplication } from "@/domains/inventory/infrastructure/inventory-server-runtime";
+export const runtime = "nodejs"; type Context = { params: Promise<{ branchId: string; productId: string }> }; export const GET = async (request: Request, context: Context) => { const params = await context.params; return createInventoryRouteHandlers(openInventoryServerApplication).get(request, params.branchId, params.productId); };

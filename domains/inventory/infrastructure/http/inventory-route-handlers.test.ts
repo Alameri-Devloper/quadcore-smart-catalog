@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { AuthenticatedContextUnavailableError, RestrictedSessionContextError, type TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
+import { createInventoryRouteHandlers } from "./inventory-route-handlers";
+import type { InventoryServerApplication } from "../inventory-server-runtime";
+
+const actor: TrustedActorContext = { workspaceId: "workspace-a", actorId: "actor-a", role: "Owner", permissions: [], branchScope: { type: "AllBranches" }, authorizationVersion: 1 };
+const request = (body: unknown = { operationId: "operation-0001", productId: "product-a", quantity: "1" }) => new Request("https://catalog.test/api/branches/branch-a/inventory/receive", { method: "POST", headers: { "content-type": "application/json", origin: "https://catalog.test" }, body: JSON.stringify(body) });
+const open = (options: { readonly resolve?: () => Promise<TrustedActorContext>; readonly allows?: boolean; readonly result?: Readonly<Record<string, unknown>> } = {}) => () => ({
+  context: { resolve: options.resolve ?? (async () => actor) }, origin: { allows: () => options.allows ?? true },
+  receive: { execute: async () => options.result ?? { ok: true, value: { operationId: "operation-0001" } } }, issue: { execute: async () => ({ ok: false, error: "Forbidden" }) }, reserve: { execute: async () => ({ ok: false, error: "Forbidden" }) }, release: { execute: async () => ({ ok: false, error: "Forbidden" }) }, fulfill: { execute: async () => ({ ok: false, error: "Forbidden" }) }, damage: { execute: async () => ({ ok: false, error: "Forbidden" }) }, restore: { execute: async () => ({ ok: false, error: "Forbidden" }) }, correct: { execute: async () => ({ ok: false, error: "Forbidden" }) }, transfer: { execute: async () => ({ ok: false, error: "Forbidden" }) }, get: { execute: async () => ({ ok: false, error: "Forbidden" }) }, movements: { execute: async () => ({ ok: false, error: "Forbidden" }) }, close: async () => undefined,
+}) as unknown as InventoryServerApplication;
+
+describe("Inventory HTTP boundary", () => {
+  it("maps unauthenticated and restricted sessions safely", async () => { const unauthenticated = await createInventoryRouteHandlers(open({ resolve: async () => { throw new AuthenticatedContextUnavailableError(); } })).receive(request(), "branch-a"); assert.equal(unauthenticated.status, 401); const restricted = await createInventoryRouteHandlers(open({ resolve: async () => { throw new RestrictedSessionContextError(); } })).receive(request(), "branch-a"); assert.equal(restricted.status, 403); });
+  it("rejects cross-origin and malformed mutations before the use case", async () => { assert.equal((await createInventoryRouteHandlers(open({ allows: false })).receive(request(), "branch-a")).status, 403); assert.equal((await createInventoryRouteHandlers(open()).receive(request({ quantity: 1 }), "branch-a")).status, 400); });
+  it("maps scoped not-found, stock failure, conflict, and success", async () => { assert.equal((await createInventoryRouteHandlers(open({ result: { ok: false, error: "BranchNotFound" } })).receive(request(), "branch-a")).status, 404); assert.equal((await createInventoryRouteHandlers(open({ result: { ok: false, error: "InsufficientAvailableStock" } })).receive(request(), "branch-a")).status, 400); assert.equal((await createInventoryRouteHandlers(open({ result: { ok: false, error: "InventoryConflict" } })).receive(request(), "branch-a")).status, 409); const success = await createInventoryRouteHandlers(open()).receive(request(), "branch-a"); assert.equal(success.status, 200); assert.deepEqual(await success.json(), { type: "Success", value: { operationId: "operation-0001" } }); });
+});

@@ -35,6 +35,8 @@ export const PERMISSION_REGISTRY = [
   { code: "workspace.settings.view", module: "Workspace", displayKey: "permissions.workspace.settings.view", descriptionKey: "permissions.workspace.settings.view.description", assignableToStaff: true, sensitive: true },
   { code: "workspace.settings.manage", module: "Workspace", displayKey: "permissions.workspace.settings.manage", descriptionKey: "permissions.workspace.settings.manage.description", assignableToStaff: true, sensitive: true },
   { code: "workspace.audit.view", module: "Workspace", displayKey: "permissions.workspace.audit.view", descriptionKey: "permissions.workspace.audit.view.description", assignableToStaff: true, sensitive: true },
+  { code: "workspace.branches.view", module: "Workspace", displayKey: "permissions.workspace.branches.view", descriptionKey: "permissions.workspace.branches.view.description", assignableToStaff: true, sensitive: false },
+  { code: "workspace.branches.manage", module: "Workspace", displayKey: "permissions.workspace.branches.manage", descriptionKey: "permissions.workspace.branches.manage.description", assignableToStaff: false, sensitive: true },
   { code: "workspace.members.manage", module: "Workspace", displayKey: "permissions.workspace.members.manage", descriptionKey: "permissions.workspace.members.manage.description", assignableToStaff: false, sensitive: true },
 ] as const;
 

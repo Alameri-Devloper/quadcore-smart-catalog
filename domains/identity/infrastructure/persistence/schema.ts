@@ -171,7 +171,7 @@ export const identityMembershipPermissions = pgTable(
       'referenceCost.view','referenceCost.manage','referenceCost.branchOverride.manage',
       'inventory.availability.view','inventory.quantity.view','inventory.receive','inventory.issue',
       'inventory.reserve','inventory.transfer','inventory.damage','inventory.adjust',
-      'workspace.settings.view','workspace.settings.manage','workspace.audit.view'
+      'workspace.settings.view','workspace.settings.manage','workspace.audit.view','workspace.branches.view'
     )`),
   ],
 );

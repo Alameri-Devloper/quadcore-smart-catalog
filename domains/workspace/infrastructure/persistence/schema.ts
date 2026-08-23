@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, foreignKey, index, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, check, foreignKey, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const workspaces = pgTable(
   "workspaces",
@@ -43,7 +43,11 @@ export const workspaceBranchReferences = pgTable(
   {
     workspaceId: text("workspace_id").notNull(),
     branchId: text("branch_id").notNull(),
+    code: text("code").notNull().default(sql`'branch-' || substr(md5(random()::text), 1, 12)`),
+    displayName: text("display_name").notNull().default("Branch"),
     status: text("status").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    revision: bigint("revision", { mode: "number" }).notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
   },
@@ -54,9 +58,15 @@ export const workspaceBranchReferences = pgTable(
       columns: [table.workspaceId],
       foreignColumns: [workspaces.workspaceId],
     }).onDelete("restrict"),
+    uniqueIndex("workspace_branch_references_workspace_code_uq").on(table.workspaceId, table.code),
+    index("workspace_branch_references_workspace_status_sort_idx").on(table.workspaceId, table.status, table.sortOrder),
     index("workspace_branch_references_lookup_idx").on(table.branchId, table.workspaceId, table.status),
     check("workspace_branch_references_branch_id", sql`btrim(${table.branchId}) <> ''`),
+    check("workspace_branch_references_code", sql`${table.code} ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(${table.code}) <= 64`),
+    check("workspace_branch_references_display_name", sql`btrim(${table.displayName}) <> '' AND length(${table.displayName}) <= 160`),
     check("workspace_branch_references_status", sql`${table.status} IN ('Active','Inactive')`),
+    check("workspace_branch_references_sort_order", sql`${table.sortOrder} BETWEEN 0 AND 1000000`),
+    check("workspace_branch_references_revision", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
     check("workspace_branch_references_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
   ],
 );
