@@ -34,7 +34,7 @@ export interface ProductEntrySubmissionView {
   }[];
 }
 
-const productSnapshot = (product: Product) => ({
+const productSnapshot = (product: Product, visibility: { readonly retail: boolean; readonly wholesale: boolean }) => ({
   productId: product.identity.productId.value,
   catalogId: product.identity.catalogId.value,
   lifecycleState: product.lifecycleState.value,
@@ -53,13 +53,13 @@ const productSnapshot = (product: Product) => ({
     productModelId: product.commercialDetails.productModelId ?? null,
     brandId: product.commercialDetails.brandId ?? null,
     isHighlighted: product.commercialDetails.isHighlighted,
-    wholesalePrice: product.commercialDetails.pricing?.wholesalePrice
+    wholesalePrice: visibility.wholesale && product.commercialDetails.pricing?.wholesalePrice
       ? {
           amountMinor: product.commercialDetails.pricing.wholesalePrice.amountMinor,
           currency: product.commercialDetails.pricing.wholesalePrice.currency,
         }
       : null,
-    retailPrice: product.commercialDetails.pricing?.retailPrice
+    retailPrice: visibility.retail && product.commercialDetails.pricing?.retailPrice
       ? {
           amountMinor: product.commercialDetails.pricing.retailPrice.amountMinor,
           currency: product.commercialDetails.pricing.retailPrice.currency,
@@ -120,7 +120,10 @@ export class GetProductEntrySubmissionUseCase {
           createdAt: submission.createdAt,
           updatedAt: submission.updatedAt,
           product: product
-            ? productSnapshot(product)
+            ? productSnapshot(product, {
+                retail: context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.pricingView),
+                wholesale: context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.wholesaleView),
+              })
             : null,
           mediaOperations: mediaOperations.map((operation) => ({
             operationId: operation.operationId,

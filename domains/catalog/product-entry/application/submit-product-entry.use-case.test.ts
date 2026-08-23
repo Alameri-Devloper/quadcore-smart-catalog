@@ -466,6 +466,19 @@ describe("SubmitProductEntryUseCase", () => {
     assert.equal(unitOfWork.state.submissions.size, 0);
   });
 
+  it("preserves hidden Wholesale during an otherwise authorized Edit", async () => {
+    const { useCase, unitOfWork } = setup();
+    seedProduct(unitOfWork, { wholesale: 100, retail: 150 });
+    const result = await useCase.execute(
+      context([PRODUCT_ENTRY_PERMISSIONS.edit, PRODUCT_ENTRY_PERMISSIONS.pricingView]),
+      command({ mode: "Edit", productId: "existing-product", expectedProductRevision: 0, draft: { catalogId: null, commercialDetails: { productName: "Updated", pricing: { retailPrice: { amountMinor: 160, currency: "USD" } } }, specificationValues: [] } }),
+    );
+    assert.equal(result.type, "Accepted");
+    const saved = unitOfWork.state.products.get(scoped("workspace-a", "existing-product"));
+    assert.equal(saved?.commercialDetails?.pricing?.wholesalePrice?.amountMinor, 100);
+    assert.equal(saved?.commercialDetails?.pricing?.retailPrice?.amountMinor, 160);
+  });
+
   it("never depends on Media Workflow execution or file storage in Phase 1", async () => {
     const { useCase } = setup();
     const result = await useCase.execute(context(), command());
@@ -489,18 +502,20 @@ describe("GetProductEntrySubmissionUseCase", () => {
 
   it("preserves wholesale and retail selling prices without fabricating Reference Purchase Cost", async () => {
     const { useCase, unitOfWork } = setup();
-    await useCase.execute(context(), command({ draft: { catalogId: "catalog-a", commercialDetails: { productName: "Priced", pricing: { wholesalePrice: { amountMinor: 100, currency: "USD" }, retailPrice: { amountMinor: 150, currency: "USD" } } }, specificationValues: [] } }));
+    await useCase.execute(context([PRODUCT_ENTRY_PERMISSIONS.create, PRODUCT_ENTRY_PERMISSIONS.pricingView, PRODUCT_ENTRY_PERMISSIONS.wholesaleView]), command({ draft: { catalogId: "catalog-a", commercialDetails: { productName: "Priced", pricing: { wholesalePrice: { amountMinor: 100, currency: "USD" }, retailPrice: { amountMinor: 150, currency: "USD" } } }, specificationValues: [] } }));
     const get = new GetProductEntrySubmissionUseCase(unitOfWork);
-    const withoutReferenceCostPermission = await get.execute(context([PRODUCT_ENTRY_PERMISSIONS.read]), "submission-a");
-    const withReferenceCostPermission = await get.execute(context([PRODUCT_ENTRY_PERMISSIONS.read, PRODUCT_ENTRY_PERMISSIONS.readReferenceCost]), "submission-a");
-    assert.equal(withoutReferenceCostPermission.type, "Found");
-    assert.equal(withReferenceCostPermission.type, "Found");
-    if (withoutReferenceCostPermission.type === "Found" && withReferenceCostPermission.type === "Found") {
-      const pricing = withoutReferenceCostPermission.submission.product?.commercialDetails;
-      assert.deepEqual(pricing?.wholesalePrice, { amountMinor: 100, currency: "USD" });
-      assert.deepEqual(pricing?.retailPrice, { amountMinor: 150, currency: "USD" });
-      assert.equal(pricing ? "referenceCost" in pricing : true, false);
-      assert.deepEqual(withReferenceCostPermission.submission.product?.commercialDetails, pricing);
+    const withoutSensitivePricePermissions = await get.execute(context([PRODUCT_ENTRY_PERMISSIONS.read]), "submission-a");
+    const withPricePermissions = await get.execute(context([PRODUCT_ENTRY_PERMISSIONS.read, PRODUCT_ENTRY_PERMISSIONS.pricingView, PRODUCT_ENTRY_PERMISSIONS.wholesaleView]), "submission-a");
+    assert.equal(withoutSensitivePricePermissions.type, "Found");
+    assert.equal(withPricePermissions.type, "Found");
+    if (withoutSensitivePricePermissions.type === "Found" && withPricePermissions.type === "Found") {
+      const hidden = withoutSensitivePricePermissions.submission.product?.commercialDetails;
+      const visible = withPricePermissions.submission.product?.commercialDetails;
+      assert.equal(hidden?.wholesalePrice, null);
+      assert.equal(hidden?.retailPrice, null);
+      assert.deepEqual(visible?.wholesalePrice, { amountMinor: 100, currency: "USD" });
+      assert.deepEqual(visible?.retailPrice, { amountMinor: 150, currency: "USD" });
+      assert.equal(visible ? "referenceCost" in visible : true, false);
     }
   });
 

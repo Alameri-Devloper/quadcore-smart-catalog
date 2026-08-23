@@ -43,8 +43,12 @@ export class GetProductEntryProductUseCase {
             productModelId: product.commercialDetails.productModelId ?? null,
             brandId: product.commercialDetails.brandId ?? null,
             isHighlighted: product.commercialDetails.isHighlighted,
-            wholesalePrice: product.commercialDetails.pricing?.wholesalePrice ?? null,
-            retailPrice: product.commercialDetails.pricing?.retailPrice ?? null,
+            wholesalePrice: context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.wholesaleView)
+              ? product.commercialDetails.pricing?.wholesalePrice ?? null
+              : null,
+            retailPrice: context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.pricingView)
+              ? product.commercialDetails.pricing?.retailPrice ?? null
+              : null,
           } : null,
           specificationValues: product.specificationValues.map((value) => ({
             specificationFieldId: value.specificationFieldId,

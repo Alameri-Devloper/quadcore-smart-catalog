@@ -20,6 +20,8 @@ export const PRODUCT_ENTRY_PERMISSIONS = {
   mediaUpload: "catalog.product-entry-media.upload",
   mediaSourceReplace: "catalog.productMedia.source.replace",
   readReferenceCost: "catalog.product.reference-cost.read",
+  pricingView: "pricing.view",
+  wholesaleView: "pricing.wholesale.view",
 } as const;
 
 export type ProductEntryPermission =

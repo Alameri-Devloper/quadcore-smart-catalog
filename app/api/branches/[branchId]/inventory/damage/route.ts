@@ -1,0 +1,2 @@
+import { createInventoryRouteHandlers } from "@/domains/inventory/infrastructure/http/inventory-route-handlers"; import { openInventoryServerApplication } from "@/domains/inventory/infrastructure/inventory-server-runtime";
+export const runtime = "nodejs"; type Context = { params: Promise<{ branchId: string }> }; export const POST = async (request: Request, context: Context) => createInventoryRouteHandlers(openInventoryServerApplication).damage(request, (await context.params).branchId);

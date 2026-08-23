@@ -247,6 +247,23 @@ export class SubmitProductEntryUseCase {
         classification: command.draft.classification,
       });
       let commercialDetails = command.draft.commercialDetails;
+      const requestedPricing = commercialDetails.pricing;
+      const existingPricing = existing?.commercialDetails?.pricing;
+      const retailPrice = context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.pricingView)
+        ? requestedPricing?.retailPrice
+        : existingPricing?.retailPrice;
+      const wholesalePrice = context.permissions.has(PRODUCT_ENTRY_PERMISSIONS.wholesaleView)
+        ? requestedPricing?.wholesalePrice
+        : existingPricing?.wholesalePrice;
+      commercialDetails = {
+        ...commercialDetails,
+        pricing: retailPrice || wholesalePrice
+          ? {
+              ...(retailPrice ? { retailPrice: { amountMinor: retailPrice.amountMinor, currency: retailPrice.currency } } : {}),
+              ...(wholesalePrice ? { wholesalePrice: { amountMinor: wholesalePrice.amountMinor, currency: wholesalePrice.currency } } : {}),
+            }
+          : undefined,
+      };
       if (
         command.mode === PRODUCT_ENTRY_SUBMISSION_MODES.create &&
         commercialDetails.productCode === undefined &&

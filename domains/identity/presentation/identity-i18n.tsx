@@ -183,6 +183,8 @@ const permissionNames: Readonly<Record<string, Translation>> = {
   "workspace.settings.view": { ar: "عرض إعدادات مساحة العمل", en: "View workspace settings" },
   "workspace.settings.manage": { ar: "إدارة إعدادات مساحة العمل", en: "Manage workspace settings" },
   "workspace.audit.view": { ar: "عرض سجل التدقيق", en: "View audit log" },
+  "workspace.branches.view": { ar: "عرض الفروع", en: "View branches" },
+  "workspace.branches.manage": { ar: "إدارة الفروع", en: "Manage branches" },
   "workspace.members.manage": { ar: "إدارة أعضاء مساحة العمل", en: "Manage workspace members" },
 };
 

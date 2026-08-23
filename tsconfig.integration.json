@@ -18,6 +18,7 @@
     "domains/catalog/repositories/**/*.ts",
     "domains/catalog/types/**/*.ts",
     "domains/identity/**/*.ts",
+    "domains/inventory/**/*.ts",
     "domains/workspace/**/*.ts",
     "shared/audit/**/*.ts",
     "shared/domain/**/*.ts",
