@@ -10,6 +10,10 @@ Catalog owns product definitions, Products, their specification values, images m
 
 Workspace-scoped hierarchy, Brands, availability registries, and Specification Templates are defined by [Catalog Reference Data](Catalog-Reference-Data.md).
 
+Workspace/Branch-aware Product cards, details, filters, PostgreSQL search, and cursor pagination are defined by [Catalog Query and Search](Catalog-Query-and-Search.md).
+
+تُعرَّف بطاقات المنتجات وتفاصيلها ومرشحاتها والبحث في PostgreSQL والتصفح بالمؤشر مع سياق مساحة العمل والفرع في [استعلام الكتالوج والبحث](Catalog-Query-and-Search.md).
+
 تُوثق بنية الأقسام والتصنيفات وأنواع المنتجات والعلامات التجارية وسجلات الإتاحة وقوالب المواصفات المملوكة لمساحة العمل في [البيانات المرجعية للكتالوج](Catalog-Reference-Data.md).
 
 ## العربية

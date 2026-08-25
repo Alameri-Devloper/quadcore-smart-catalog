@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { describe,it } from "node:test";
+import { AuthenticatedContextUnavailableError, type TrustedActorContext } from "../../../../../shared/auth/trusted-actor-context";
+import type { CatalogQueryServerApplication } from "../catalog-query-server-runtime";
+import { createCatalogQueryRouteHandlers } from "./catalog-query-route-handlers";
+const context:TrustedActorContext={workspaceId:"w",actorId:"a",role:"Owner",permissions:[],branchScope:{type:"AllBranches"},authorizationVersion:1};
+const open=(result:unknown={ok:true,value:{items:[],nextCursor:null}},resolve=async()=>context)=>()=>({context:{resolve},search:{execute:async()=>result},details:{execute:async()=>result},filters:{execute:async()=>result},close:async()=>undefined}) as unknown as CatalogQueryServerApplication;
+describe("Catalog query HTTP",()=>{
+  it("maps authentication and typed errors",async()=>{const unauth=await createCatalogQueryRouteHandlers(open({},async()=>{throw new AuthenticatedContextUnavailableError()})).search(new Request("https://test/api/catalog/products"));assert.equal(unauth.status,401);const forbidden=await createCatalogQueryRouteHandlers(open({ok:false,error:"Forbidden"})).filters(new Request("https://test/api/catalog/filters"));assert.equal(forbidden.status,403);const invalidCursor=await createCatalogQueryRouteHandlers(open({ok:false,error:"InvalidCursor"})).search(new Request("https://test/api/catalog/products?cursor=canonical-tampered"));assert.equal(invalidCursor.status,400);assert.deepEqual(await invalidCursor.json(),{type:"InvalidCursor"});});
+  it("rejects unknown, duplicate, and invalid parameters",async()=>{for(const url of ["https://test/api/catalog/products?unknown=x","https://test/api/catalog/products?q=a&q=b","https://test/api/catalog/products?limit=no"]){assert.equal((await createCatalogQueryRouteHandlers(open()).search(new Request(url))).status,400);}});
+  it("maps not found and success without exposing failures",async()=>{assert.equal((await createCatalogQueryRouteHandlers(open({ok:false,error:"ProductNotFound"})).details(new Request("https://test/api/catalog/products/p"),"p")).status,404);assert.equal((await createCatalogQueryRouteHandlers(open()).details(new Request("https://test/api/catalog/products/p?extra=x"),"p")).status,400);const success=await createCatalogQueryRouteHandlers(open()).search(new Request("https://test/api/catalog/products?q=laptop"));assert.equal(success.status,200);assert.equal(success.headers.get("cache-control"),"private, no-store");});
+});

@@ -15,6 +15,7 @@
     "domains/catalog/media/**/*.ts",
     "domains/catalog/product-entry/**/*.ts",
     "domains/catalog/reference-data/**/*.ts",
+    "domains/catalog/query/**/*.ts",
     "domains/catalog/repositories/**/*.ts",
     "domains/catalog/types/**/*.ts",
     "domains/identity/**/*.ts",
