@@ -12,6 +12,7 @@ export const inventoryBalances = pgTable("inventory_balances", {
   foreignKey({ name: "inventory_balances_branch_fk", columns: [table.workspaceId, table.branchId], foreignColumns: [workspaceBranchReferences.workspaceId, workspaceBranchReferences.branchId] }).onDelete("restrict"),
   foreignKey({ name: "inventory_balances_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
   index("inventory_balances_product_idx").on(table.workspaceId, table.productId, table.branchId),
+  index("inventory_balances_available_query_idx").on(table.workspaceId, table.branchId, sql`(${table.onHandQuantity} - ${table.reservedQuantity} - ${table.damagedQuantity})`, table.productId),
   check("inventory_balances_non_negative", sql`${table.onHandQuantity} >= 0 AND ${table.reservedQuantity} >= 0 AND ${table.damagedQuantity} >= 0 AND ${table.onHandQuantity} - ${table.reservedQuantity} - ${table.damagedQuantity} >= 0`),
   check("inventory_balances_revision", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
 ]);
