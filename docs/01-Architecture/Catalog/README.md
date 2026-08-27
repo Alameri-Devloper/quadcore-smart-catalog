@@ -12,6 +12,8 @@ Workspace-scoped hierarchy, Brands, availability registries, and Specification T
 
 Workspace/Branch-aware Product cards, details, filters, PostgreSQL search, and cursor pagination are defined by [Catalog Query and Search](Catalog-Query-and-Search.md).
 
+Secure customer-facing direct sharing is defined in [Direct Device Sharing](Direct-Device-Sharing.md). It is a read-oriented sales-safe boundary and does not create public links or delivery infrastructure.
+
 تُعرَّف بطاقات المنتجات وتفاصيلها ومرشحاتها والبحث في PostgreSQL والتصفح بالمؤشر مع سياق مساحة العمل والفرع في [استعلام الكتالوج والبحث](Catalog-Query-and-Search.md).
 
 تُوثق بنية الأقسام والتصنيفات وأنواع المنتجات والعلامات التجارية وسجلات الإتاحة وقوالب المواصفات المملوكة لمساحة العمل في [البيانات المرجعية للكتالوج](Catalog-Reference-Data.md).

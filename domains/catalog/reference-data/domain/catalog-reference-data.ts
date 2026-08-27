@@ -81,11 +81,66 @@ export const ISO_CURRENCY_CODES = Object.freeze([
   "XPF", "XPT", "XSU", "XTS", "XUA", "XXX", "YER", "ZAR", "ZMW", "ZWG",
 ] as const);
 
+export type IsoCurrencyMinorUnitDigits = 0 | 2 | 3 | 4 | null;
+
+// SIX ISO 4217 List One, published 2026-01-01. Every current code not listed
+// below has an official Minor Unit of 2. `null` preserves the official N.A.
+// value without inventing a decimal scale.
+const ISO_CURRENCY_MINOR_UNIT_EXCEPTIONS = Object.freeze({
+  BHD: 3,
+  BIF: 0,
+  CLF: 4,
+  CLP: 0,
+  DJF: 0,
+  GNF: 0,
+  IQD: 3,
+  ISK: 0,
+  JOD: 3,
+  JPY: 0,
+  KMF: 0,
+  KRW: 0,
+  KWD: 3,
+  LYD: 3,
+  OMR: 3,
+  PYG: 0,
+  RWF: 0,
+  TND: 3,
+  UGX: 0,
+  UYI: 0,
+  UYW: 4,
+  VND: 0,
+  VUV: 0,
+  XAF: 0,
+  XAG: null,
+  XAU: null,
+  XBA: null,
+  XBB: null,
+  XBC: null,
+  XBD: null,
+  XDR: null,
+  XOF: 0,
+  XPD: null,
+  XPF: 0,
+  XPT: null,
+  XSU: null,
+  XTS: null,
+  XUA: null,
+  XXX: null,
+} as const satisfies Partial<Record<(typeof ISO_CURRENCY_CODES)[number], IsoCurrencyMinorUnitDigits>>);
+
 export const ISO_CURRENCY_REGISTRY = Object.freeze(
-  ISO_CURRENCY_CODES.map((code) => Object.freeze({ code })),
+  ISO_CURRENCY_CODES.map((code) => Object.freeze({
+    code,
+    minorUnitDigits: Object.prototype.hasOwnProperty.call(ISO_CURRENCY_MINOR_UNIT_EXCEPTIONS, code)
+      ? ISO_CURRENCY_MINOR_UNIT_EXCEPTIONS[code as keyof typeof ISO_CURRENCY_MINOR_UNIT_EXCEPTIONS]
+      : 2,
+  })),
 );
 
 const ISO_CURRENCY_CODE_SET: ReadonlySet<string> = new Set(ISO_CURRENCY_CODES);
+const ISO_CURRENCY_BY_CODE: ReadonlyMap<string, IsoCurrencyMinorUnitDigits> = new Map(
+  ISO_CURRENCY_REGISTRY.map(({ code, minorUnitDigits }) => [code, minorUnitDigits]),
+);
 
 const CODE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const UNIT_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ./%-]{0,31}$/;
@@ -128,6 +183,18 @@ export const normalizeOptionalUnit = (value: string | null | undefined): string 
 
 export const isConditionCode = (value: string): boolean => CONDITION_REGISTRY.some(({ code }) => code === value);
 export const isCurrencyCode = (value: string): boolean => ISO_CURRENCY_CODE_SET.has(value);
+
+export const currencyMinorUnitDigits = (currency: string): IsoCurrencyMinorUnitDigits | undefined => ISO_CURRENCY_BY_CODE.get(currency);
+
+export const formatIsoCurrencyAmountMinor = (amountMinor: bigint, currency: string): string | null => {
+  if (amountMinor < BigInt(0)) throw new Error("InvalidMoneyAmount");
+  const minorUnitDigits = currencyMinorUnitDigits(currency);
+  if (minorUnitDigits === undefined || minorUnitDigits === null) return null;
+  const digits = amountMinor.toString();
+  if (minorUnitDigits === 0) return digits;
+  const padded = digits.padStart(minorUnitDigits + 1, "0");
+  return `${padded.slice(0, -minorUnitDigits)}.${padded.slice(-minorUnitDigits)}`;
+};
 
 export const compareReferences = (left: Pick<CatalogReferenceRecord, "sortOrder" | "displayName" | "id">, right: Pick<CatalogReferenceRecord, "sortOrder" | "displayName" | "id">): number =>
   left.sortOrder - right.sortOrder || left.displayName.localeCompare(right.displayName) || left.id.localeCompare(right.id);
