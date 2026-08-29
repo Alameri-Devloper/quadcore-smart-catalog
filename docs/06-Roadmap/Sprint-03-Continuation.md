@@ -1,12 +1,14 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
-**Status:** Task 3.20 approved as next implementation; Tasks 3.21–3.22 planned only · **Date:** 2026-08-27 · **Baseline:** `083ebdd` / merged PR #20
+**Status:** Reconciled through merged Task 3.20; Task 3.21 Approved Next Implementation; Task 3.22 Planned — not implementation-approved · **Current-state baseline:** `e2719cda489aa52b8baf51f985cf0b360292874d` / PR #22 · **Updated:** 2026-08-29
+
+> **Task 3.21 planning-gate decision | قرار بوابة تخطيط المهمة 3.21:** The existing Task 3.16 contracts are sufficient for the scoped Catalog Reference Data Management Presentation. Task 3.21 is **Approved Next Implementation** under the implementation contract linked below. Task 3.22 remains **Planned — not implementation-approved**. | عقود المهمة 3.16 الحالية كافية لواجهة إدارة البيانات المرجعية للكتالوج ضمن النطاق المحدد. أصبحت المهمة 3.21 **التنفيذ التالي المعتمد** وفق عقد التنفيذ المرتبط أدناه، وتبقى المهمة 3.22 **مخططة وغير معتمدة للتنفيذ**.
 
 ## English
 
 ### Reconciliation outcome
 
-Tasks 3.14–3.19 are completed and merged foundations. The highest-value unresolved gap is Presentation: Task 3.18 intentionally stopped at browser-safe Catalog read contracts, while Task 3.19 produced a reusable direct-device sharing component but intentionally did not connect it without a canonical Catalog surface. The next task should close that user workflow before adding a new public or provider boundary.
+Tasks 3.14–3.20 are completed and merged foundations. Task 3.20 closed the private Catalog Presentation gap by connecting the Task 3.18 browser-safe read contracts and Task 3.19 direct-device sharing component in the canonical authenticated Catalog workflow. It merged through PR #22 into `feature/product-entry-engine`; the current-state baseline is `e2719cda489aa52b8baf51f985cf0b360292874d`. The analysis below is preserved as the historical rationale and contract for that completed slice. Task 3.21 is now the only Approved Next Implementation.
 
 Legacy Catalog mocks remain fixtures only. They are not Production truth and must not back the next Presentation.
 
@@ -20,7 +22,7 @@ Legacy Catalog mocks remain fixtures only. They are not Production truth and mus
 | Public Product Share Link | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary | ADR required | Deferred; excluded from Task 3.20 |
 | WhatsApp-oriented customer sharing | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20 |
 | Branch/Inventory/Pricing management Presentation | Makes 3.17 operations usable but is a larger, mutation-heavy workflow with broader permissions and QA | No ADR if it stays within existing contracts | Planned as Task 3.22, not approved |
-| Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR if it stays within existing contracts | Planned as Task 3.21, not approved |
+| Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; planning confirmed existing contracts are sufficient | Task 3.21 — Approved Next Implementation |
 
 Combining browsing, details, and existing direct sharing is one coherent vertical slice: find a Product, inspect the Product, then prepare/share its approved customer payload. Separating any one of these would leave either an incomplete navigation path or the completed sharing component unreachable. Adding public access, management mutations, or provider delivery would expand the architecture and is not part of that slice.
 
@@ -52,7 +54,9 @@ The existing Identity recovery WhatsApp delivery port does not authorize or defi
 
 ## Task 3.20 — Canonical Catalog Browsing, Product Details, and Direct Share Presentation
 
-**Status:** Approved next implementation task.
+**Status:** Completed / Merged
+
+Task 3.20 merged through PR #22 into `feature/product-entry-engine` and is present in baseline `e2719cda489aa52b8baf51f985cf0b360292874d`. The future-tense wording below is retained as the historical implementation contract; it is not current next-task authority.
 
 ### Objective
 
@@ -183,16 +187,16 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 - A future Public Product Share ADR can evaluate a real private workflow without conflating it with anonymous delivery.
 - A future WhatsApp decision can choose `wa.me`, provider/API, or backend sending from an explicit boundary rather than assuming native share equals delivery.
 
-### Proposed later sequence — not approved
+### Approved next and later sequence
 
-- **Task 3.21 — Catalog Reference Data Management Presentation:** enable authorized Workspace setup and maintenance through the existing Task 3.16 scoped management APIs.
-- **Task 3.22 — Branch, Inventory, and Pricing Management Presentation:** enable authorized Branch operations, stock movements, listings, and price management through the existing Task 3.17 contracts.
+- **Task 3.21 — Catalog Reference Data Management Presentation — Approved Next Implementation:** enable authorized Workspace setup and maintenance through the existing Task 3.16 scoped management APIs and the approved implementation contract.
+- **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned, not implementation-approved:** enable authorized Branch operations, stock movements, listings, and price management through the existing Task 3.17 contracts only after a separate planning/approval gate.
 
 ## العربية
 
 ### نتيجة المصالحة
 
-تمثل المهام 3.14–3.19 أسساً مكتملة ومدمجة. أكبر فجوة غير محسومة هي طبقة العرض: توقفت 3.18 عمداً عند عقود قراءة كتالوج آمنة للمتصفح، وأنشأت 3.19 مكوّن مشاركة عبر الجهاز قابلاً لإعادة الاستخدام دون ربطه لغياب سطح كتالوج معتمد. لذلك يجب أن تغلق المهمة التالية سير المستخدم هذا قبل إضافة حد عام أو مزود جديد.
+تمثل المهام 3.14–3.20 أسساً مكتملة ومدمجة. أغلقت المهمة 3.20 فجوة عرض الكتالوج الخاص بربط عقود القراءة الآمنة للمتصفح من 3.18 ومكوّن المشاركة المباشرة عبر الجهاز من 3.19 ضمن سير الكتالوج الموثق المعتمد. دُمجت عبر طلب السحب #22 في `feature/product-entry-engine`، وخط الأساس للحالة الحالية هو `e2719cda489aa52b8baf51f985cf0b360292874d`. يُحفظ التحليل أدناه بوصفه الأساس التاريخي وعقد النطاق المكتمل، وأصبحت المهمة 3.21 مهمة التنفيذ التالية الوحيدة المعتمدة.
 
 تبقى بيانات الكتالوج الوهمية القديمة fixtures فقط، وليست حقيقة الإنتاج ولا يجوز أن تشغّل واجهة العرض التالية.
 
@@ -206,7 +210,7 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 | رابط مشاركة منتج عام | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة | ADR مطلوب | مؤجل وخارج 3.20 |
 | مشاركة موجهة إلى WhatsApp | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي | مؤجل وخارج 3.20 |
 | واجهة إدارة الفروع والمخزون والتسعير | تجعل عمليات 3.17 قابلة للاستخدام لكنها أوسع وكثيفة التعديلات والصلاحيات والاختبارات | لا يحتاج ADR إذا التزم العقود الحالية | مخططة 3.22 وغير معتمدة |
-| واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR إذا التزم العقود الحالية | مخططة 3.21 وغير معتمدة |
+| واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ أثبت التخطيط كفاية العقود الحالية | المهمة 3.21 — التنفيذ التالي المعتمد |
 
 يجمع التصفح والتفاصيل والمشاركة الحالية شريحة رأسية واحدة: العثور على المنتج ثم فحصه ثم تجهيز ومشاركة حمولته الآمنة للعميل. فصل أحدها يترك مسار تنقل ناقصاً أو مكوّن المشاركة غير قابل للوصول. أما الوصول العام أو تعديلات الإدارة أو تسليم المزود فتوسع المعمارية وليست جزءاً من هذه الشريحة.
 
@@ -225,7 +229,9 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 
 ## المهمة 3.20 — واجهة تصفح الكتالوج وتفاصيل المنتج والمشاركة المباشرة
 
-**الحالة:** مهمة التنفيذ التالية المعتمدة.
+**الحالة:** مكتملة / مدمجة
+
+دُمجت المهمة 3.20 عبر طلب السحب #22 في `feature/product-entry-engine` وهي موجودة في خط الأساس `e2719cda489aa52b8baf51f985cf0b360292874d`. تُحفظ صياغة المستقبل أدناه بوصفها عقد التنفيذ التاريخي، وليست سلطة المهمة التالية الحالية.
 
 ### الهدف والقيمة
 
@@ -315,10 +321,10 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 
 يستطيع موظف المبيعات إكمال سير اكتشاف الكتالوج الخاص حتى المشاركة عبر الجهاز. ويمكن بعدها بناء واجهات إدارة البيانات المرجعية والعمليات فوق أسس مجربة، وتقييم رابط عام دون خلطه بالسير الخاص، واتخاذ قرار WhatsApp بين `wa.me` أو المزود/API أو الإرسال الخلفي ضمن حد صريح.
 
-### التسلسل اللاحق المقترح — غير معتمد
+### التنفيذ التالي المعتمد والتسلسل اللاحق
 
-- **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج:** تمكين إعداد مساحة العمل وصيانتها للمخولين عبر واجهات 3.16 المقيدة.
-- **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير:** تمكين عمليات الفرع وحركات المخزون والإدراج والأسعار للمخولين عبر عقود 3.17.
+- **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — التنفيذ التالي المعتمد:** تمكين إعداد مساحة العمل وصيانتها للمخولين عبر واجهات 3.16 المقيدة وعقد التنفيذ المعتمد.
+- **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة وغير معتمدة للتنفيذ:** تمكين عمليات الفرع وحركات المخزون والإدراج والأسعار للمخولين عبر عقود 3.17 فقط بعد بوابة تخطيط واعتماد مستقلة.
 
 ## Related Documents | الوثائق المرتبطة
 
@@ -328,4 +334,5 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 - [Catalog Query and Search](../01-Architecture/Catalog/Catalog-Query-and-Search.md)
 - [Direct Device Sharing](../01-Architecture/Catalog/Direct-Device-Sharing.md)
 - [Catalog Reference Data](../01-Architecture/Catalog/Catalog-Reference-Data.md)
+- [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md)
 - [Branch Inventory and Pricing](../01-Architecture/Inventory/Branch-Inventory-and-Pricing.md)
