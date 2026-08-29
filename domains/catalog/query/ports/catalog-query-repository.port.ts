@@ -1,4 +1,4 @@
-import type { CatalogCursorPosition, CatalogFilterOptionsProjection, CatalogProductDetailsProjection, CatalogProductSearchRow, CatalogQueryVisibility, CatalogSearchFilters, CatalogSort } from "../domain/catalog-query";
+import type { CatalogCursorPosition, CatalogFilterOptionsProjection, CatalogMediaStorageProjection, CatalogProductDetailsProjection, CatalogProductSearchRow, CatalogQueryVisibility, CatalogSearchFilters, CatalogSort } from "../domain/catalog-query";
 
 export interface CatalogSearchRepositoryQuery {
   readonly workspaceId: string;
@@ -31,5 +31,6 @@ export interface CatalogQueryRepository {
   hierarchyIsValid(workspaceId: string, filter: CatalogHierarchyFilter): Promise<boolean>;
   search(query: CatalogSearchRepositoryQuery): Promise<readonly CatalogProductSearchRow[]>;
   getDetails(query: CatalogDetailsRepositoryQuery): Promise<CatalogProductDetailsProjection | null>;
-  getFilterOptions(workspaceId: string): Promise<CatalogFilterOptionsProjection>;
+  getFilterOptions(workspaceId: string, allowedBranchIds: readonly string[] | null): Promise<CatalogFilterOptionsProjection>;
+  getMedia(workspaceId: string, productId: string, mediaId: string): Promise<CatalogMediaStorageProjection | null>;
 }

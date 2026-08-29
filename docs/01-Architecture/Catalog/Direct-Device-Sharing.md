@@ -24,6 +24,12 @@ The payload exposes only an authenticated same-origin route for the current appr
 
 The browser adapter resolves `navigator` lazily only from the explicit share interaction, so component construction and server/prerender rendering do not evaluate browser-only globals. It uses `navigator.share` when available and includes a prepared `File` only when `navigator.canShare({ files })` accepts it. Native `AbortError` is `Cancelled`, not a failure. Without Web Share it tries Clipboard; Clipboard failure exposes an accessible selectable text area. Preparation and native sharing are separate explicit buttons so the share call occurs directly from user activation. No target application, WhatsApp installation, recipient, public URL, or delivery is assumed.
 
+Task 3.20 embeds the existing `DirectProductShare` on canonical Product Details. The former single Wholesale boolean could not safely express Wholesale-only authority, so the Presentation contract now accepts an allow-list of `Retail` and/or `Wholesale` modes. That allow-list comes only from the trusted server-derived Details capability; raw permissions are never copied into browser state and authorized price-field presence is not treated as sharing authority. Reference Cost and exact Inventory never enter the share component. Preparation, explicit native share, cancellation, Clipboard, manual text, and text-only media degradation remain unchanged.
+
+### تكامل المهمة 3.20
+
+تدمج المهمة 3.20 المكوّن الحالي `DirectProductShare` داخل صفحة تفاصيل المنتج المعتمدة. لم يكن المتغير المنطقي السابق الخاص بالجملة قادراً على تمثيل صلاحية الجملة دون التجزئة بأمان، لذلك يقبل عقد العرض الآن قائمة مسموحة من `Retail` و/أو `Wholesale`. تأتي هذه القائمة حصراً من قدرة مشتقة على الخادم من السياق الموثوق وأهلية المنتج والفرع؛ ولا تُنسخ الصلاحيات الخام إلى حالة المتصفح ولا يُعامل مجرد ظهور السعر على أنه صلاحية مشاركة. لا تدخل التكلفة المرجعية أو كميات المخزون الدقيقة إلى مكوّن المشاركة. بقيت خطوتا التجهيز ثم المشاركة الصريحة، والإلغاء، والحافظة، والنص اليدوي، والتحول إلى نص فقط عند فشل الوسائط دون تغيير.
+
 ## العربية
 
 ### الحدود

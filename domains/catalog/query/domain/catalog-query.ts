@@ -75,6 +75,15 @@ export interface CatalogClassificationProjection {
   readonly supplyStatus: CatalogReferenceProjection | null;
 }
 export interface CatalogMediaProjection { readonly mediaId: string; readonly altText: string | null; readonly position: number; readonly isMain: boolean }
+export interface CatalogMediaStorageProjection {
+  readonly productId: string;
+  readonly mediaId: string;
+  readonly lifecycle: CatalogLifecycle;
+  readonly storageRootKey: string;
+  readonly storageKey: string;
+  readonly checksumSha256: string;
+  readonly mimeType: "image/webp";
+}
 export interface CatalogInventoryProjection { readonly available: bigint; readonly onHand: bigint; readonly reserved: bigint; readonly damaged: bigint }
 export interface CatalogProductProjection {
   readonly productId: string;
@@ -114,7 +123,9 @@ export interface CatalogFilterOptionsProjection {
   readonly productTypes: readonly CatalogFilterReferenceProjection[];
   readonly brands: readonly CatalogFilterReferenceProjection[];
   readonly supplyStatuses: readonly CatalogFilterReferenceProjection[];
+  readonly branches: readonly CatalogFilterReferenceProjection[];
   readonly enabledConditions: readonly string[];
+  readonly enabledCurrencies: readonly string[];
 }
 
 export const normalizeCatalogSearchText = (value: string | undefined): string => {

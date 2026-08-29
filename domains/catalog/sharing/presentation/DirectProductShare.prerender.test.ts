@@ -15,7 +15,7 @@ describe("DirectProductShare prerender safety", () => {
       const markup = renderToStaticMarkup(createElement(DirectProductShare, {
         productId: "product-a",
         locale: "en",
-        canShareWholesale: false,
+        availablePriceModes: ["Retail"],
       }));
       assert.match(markup, /<section/);
       assert.match(markup, /Prepare share/);

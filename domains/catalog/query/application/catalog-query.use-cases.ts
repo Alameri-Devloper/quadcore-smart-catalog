@@ -1,4 +1,5 @@
 import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
+import type { ProductMediaReaderPort } from "../../media/ports/product-media-reader.port";
 import {
   CATALOG_PAGE_SIZE_DEFAULT,
   CATALOG_PAGE_SIZE_MAX,
@@ -32,18 +33,26 @@ export interface CatalogSearchInput {
   readonly sort?: string; readonly cursor?: string; readonly limit?: number;
 }
 
+const CATALOG_MEDIA_MAX_BYTES = 8 * 1024 * 1024;
+type SharePriceMode = "Retail" | "Wholesale";
 interface MoneyView { readonly amountMinor: string; readonly currency: string; readonly source: "WorkspaceBase" | "BranchOverride" }
+interface MediaView { readonly mediaId: string; readonly altText: string | null; readonly position: number; readonly isMain: boolean; readonly downloadUrl: string }
 interface ProductView {
   readonly productId: string; readonly productCode: string | null; readonly productName: string | null; readonly lifecycle: string;
   readonly branchId?: string;
   readonly createdAt: string; readonly updatedAt: string; readonly classification: CatalogProductProjection["classification"];
-  readonly mainMedia: CatalogProductProjection["mainMedia"]; readonly listingStatus: CatalogProductProjection["listingStatus"];
+  readonly mainMedia: MediaView | null; readonly listingStatus: CatalogProductProjection["listingStatus"];
   readonly availability?: "InStock" | "OutOfStock";
   readonly inventory?: { readonly available: string; readonly onHand: string; readonly reserved: string; readonly damaged: string };
   readonly retail?: MoneyView | null; readonly wholesale?: MoneyView | null; readonly referenceCost?: MoneyView | null;
 }
 export interface CatalogSearchView { readonly items: readonly ProductView[]; readonly nextCursor: string | null }
-export interface CatalogDetailsView extends ProductView { readonly media: CatalogProductDetailsProjection["media"]; readonly specifications: CatalogProductDetailsProjection["specifications"] }
+export interface CatalogDetailsView extends ProductView {
+  readonly media: readonly MediaView[];
+  readonly specifications: CatalogProductDetailsProjection["specifications"];
+  readonly capabilities: { readonly directSharePriceModes: readonly SharePriceMode[] };
+}
+export interface CatalogMediaFile { readonly bytes: Uint8Array; readonly contentType: "image/webp" }
 
 const can = (context: TrustedActorContext, permission: string) => context.role === "Owner" || context.permissions.includes(permission);
 const inScope = (context: TrustedActorContext, branchId: string) => context.branchScope.type === "AllBranches" || context.branchScope.branchIds.includes(branchId);
@@ -53,11 +62,15 @@ const visibilityOf = (context: TrustedActorContext): CatalogQueryVisibility => O
   quantity: can(context, "inventory.quantity.view"), referenceCost: can(context, "referenceCost.view"),
 });
 const money = (value: CatalogMoneyProjection | null): MoneyView | null => value ? Object.freeze({ amountMinor: value.amountMinor.toString(), currency: value.currency, source: value.source }) : null;
+const media = (productId: string, value: CatalogProductProjection["mainMedia"]): MediaView | null => value ? Object.freeze({
+  ...value,
+  downloadUrl: `/api/catalog/products/${encodeURIComponent(productId)}/media/${encodeURIComponent(value.mediaId)}`,
+}) : null;
 const productView = (value: CatalogProductProjection, visibility: CatalogQueryVisibility, branchId: string | null, details = false): ProductView => Object.freeze({
   productId: value.productId, productCode: value.productCode, productName: value.productName, lifecycle: value.lifecycle,
   ...(branchId ? { branchId } : {}),
   createdAt: value.createdAt.toISOString(), updatedAt: value.updatedAt.toISOString(), classification: value.classification,
-  mainMedia: value.mainMedia, listingStatus: value.listingStatus,
+  mainMedia: media(value.productId, value.mainMedia), listingStatus: value.listingStatus,
   ...(visibility.availability ? { availability: value.inventory.available > BigInt(0) ? "InStock" as const : "OutOfStock" as const } : {}),
   ...(visibility.quantity ? { inventory: Object.freeze({ available: value.inventory.available.toString(), onHand: value.inventory.onHand.toString(), reserved: value.inventory.reserved.toString(), damaged: value.inventory.damaged.toString() }) } : {}),
   ...(visibility.retail ? { retail: money(value.retail) } : {}), ...(visibility.wholesale ? { wholesale: money(value.wholesale) } : {}),
@@ -99,6 +112,7 @@ export class SearchCatalogProductsUseCase {
     const fingerprint = catalogQueryFingerprint(shape); let cursor = null;
     if (command.input.cursor) { try { cursor = decodeCatalogCursor(command.input.cursor, normalized.sort, fingerprint); } catch { return catalogQueryFailure("InvalidCursor"); } }
     if (normalized.branchId && !inScope(command.context, normalized.branchId)) return catalogQueryFailure("BranchNotFound");
+    if (normalized.filters.lifecycle !== "Published" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("Forbidden");
     if (normalized.filters.listing && normalized.filters.listing !== "Listed" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("Forbidden");
     if (normalized.filters.stock && !visibility.availability) return catalogQueryFailure("Forbidden");
     if (normalized.branchId && !await this.repository.branchExists(command.context.workspaceId, normalized.branchId)) return catalogQueryFailure("BranchNotFound");
@@ -117,13 +131,51 @@ export class GetCatalogProductDetailsUseCase {
     if (!productId) return invalid(); if (branchId && (!inScope(command.context, branchId) || !await this.repository.branchExists(command.context.workspaceId, branchId))) return catalogQueryFailure("BranchNotFound");
     const actorVisibility = visibilityOf(command.context), visibility = Object.freeze({ ...actorVisibility, availability: actorVisibility.availability && branchId !== null, quantity: actorVisibility.quantity && branchId !== null });
     const product = await this.repository.getDetails({ workspaceId: command.context.workspaceId, productId, branchId, visibility });
-    return product ? catalogQuerySuccess(Object.freeze({ ...productView(product, visibility, branchId, true), media: product.media, specifications: product.specifications })) : catalogQueryFailure("ProductNotFound");
+    if (!product) return catalogQueryFailure("ProductNotFound");
+    if (product.lifecycle !== "Published" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("ProductNotFound");
+    if (branchId && product.listingStatus !== "Listed" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("ProductNotFound");
+    const shareEligible = can(command.context, "catalog.sharing.create") && product.lifecycle === "Published" && (!branchId || product.listingStatus === "Listed");
+    const directSharePriceModes: SharePriceMode[] = [];
+    if (shareEligible && can(command.context, "pricing.view")) directSharePriceModes.push("Retail");
+    if (shareEligible && can(command.context, "pricing.wholesale.view")) directSharePriceModes.push("Wholesale");
+    return catalogQuerySuccess(Object.freeze({
+      ...productView(product, visibility, branchId, true),
+      media: Object.freeze(product.media.map((item) => media(product.productId, item)!)),
+      specifications: product.specifications,
+      capabilities: Object.freeze({ directSharePriceModes: Object.freeze(directSharePriceModes) }),
+    }));
   }
 }
 
 export class GetCatalogFilterOptionsUseCase {
   constructor(private readonly repository: CatalogQueryRepository) {}
   async execute(command: { readonly context: TrustedActorContext }) {
-    return can(command.context, "catalog.products.view") ? catalogQuerySuccess(await this.repository.getFilterOptions(command.context.workspaceId)) : catalogQueryFailure("Forbidden");
+    if (!can(command.context, "catalog.products.view")) return catalogQueryFailure("Forbidden");
+    const allowedBranchIds = command.context.branchScope.type === "AllBranches" ? null : command.context.branchScope.branchIds;
+    const options = await this.repository.getFilterOptions(command.context.workspaceId, allowedBranchIds);
+    return catalogQuerySuccess(Object.freeze({
+      ...options,
+      capabilities: Object.freeze({
+        lifecycles: Object.freeze(can(command.context, "catalog.products.edit") ? ["Published", "Draft", "Archived"] as const : ["Published"] as const),
+        listingFilters: Object.freeze(can(command.context, "catalog.products.edit") ? ["Listed", "Unlisted", "NotConfigured", "Any"] as const : ["Listed"] as const),
+        stockFilters: Object.freeze((can(command.context, "inventory.availability.view") || can(command.context, "inventory.quantity.view")) ? ["InStock", "OutOfStock"] as const : [] as const),
+        retailPrice: can(command.context, "pricing.view"),
+      }),
+    }));
+  }
+}
+
+export class DownloadCatalogProductMediaUseCase {
+  constructor(private readonly repository: CatalogQueryRepository, private readonly reader: ProductMediaReaderPort) {}
+  async execute(command: { readonly context: TrustedActorContext; readonly productId: string; readonly mediaId: string }): Promise<CatalogQueryResult<CatalogMediaFile>> {
+    if (!can(command.context, "catalog.products.view")) return catalogQueryFailure("Forbidden");
+    let productId: string | undefined, mediaId: string | undefined;
+    try { productId = validateCatalogId(command.productId); mediaId = validateCatalogId(command.mediaId); } catch { return invalid(); }
+    if (!productId || !mediaId) return invalid();
+    const projection = await this.repository.getMedia(command.context.workspaceId, productId, mediaId);
+    if (!projection) return catalogQueryFailure("MediaUnavailable");
+    if (projection.lifecycle !== "Published" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("MediaUnavailable");
+    const file = await this.reader.read({ workspaceId: command.context.workspaceId, productId, storageRootKey: projection.storageRootKey, storageKey: projection.storageKey, expectedSha256: projection.checksumSha256, maximumBytes: CATALOG_MEDIA_MAX_BYTES });
+    return file.type === "Found" ? catalogQuerySuccess(Object.freeze({ bytes: file.bytes, contentType: "image/webp" as const })) : catalogQueryFailure("MediaUnavailable");
   }
 }
