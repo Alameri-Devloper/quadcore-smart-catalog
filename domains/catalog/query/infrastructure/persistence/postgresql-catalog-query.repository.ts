@@ -4,7 +4,7 @@ import type {
   CatalogDetailsRepositoryQuery, CatalogHierarchyFilter, CatalogQueryRepository, CatalogSearchRepositoryQuery,
 } from "../../ports/catalog-query-repository.port";
 import type {
-  CatalogClassificationProjection, CatalogFilterOptionsProjection, CatalogMoneyProjection, CatalogProductDetailsProjection,
+  CatalogClassificationProjection, CatalogFilterOptionsProjection, CatalogMediaStorageProjection, CatalogMoneyProjection, CatalogProductDetailsProjection,
   CatalogProductProjection, CatalogProductSearchRow, CatalogReferenceProjection, CatalogSpecificationProjection,
 } from "../../domain/catalog-query";
 
@@ -107,16 +107,31 @@ export class PostgreSqlCatalogQueryRepository implements CatalogQueryRepository 
     const specifications=specificationResult.rows.map((row):CatalogSpecificationProjection=>Object.freeze({specificationDefinitionId:String(row.specification_field_id),displayName:String(row.display_name),valueType:String(row.value_type) as CatalogSpecificationProjection["valueType"],unit:text(row,"unit"),value:String(row.value_type)==="Boolean"?row.boolean_value===true:String(row.value),sortOrder:Number(row.sort_order)}));
     return Object.freeze({...product(result.rows[0]),media:Object.freeze(mediaResult.rows.map((row)=>Object.freeze({mediaId:String(row.product_image_id),altText:text(row,"alt_text"),position:Number(row.position),isMain:row.is_main===true}))),specifications:Object.freeze(specifications)});
   }
-  async getFilterOptions(workspaceId:string):Promise<CatalogFilterOptionsProjection>{
-    const [departments,categories,productTypes,brands,supplyStatuses,conditions]=await Promise.all([
+  async getFilterOptions(workspaceId:string,allowedBranchIds:readonly string[]|null=null):Promise<CatalogFilterOptionsProjection>{
+    const branchScope=allowedBranchIds===null?sql`true`:allowedBranchIds.length===0?sql`false`:sql`branch_id IN (${sql.join(allowedBranchIds.map((branchId)=>sql`${branchId}`),sql`,`)})`;
+    const [departments,categories,productTypes,brands,supplyStatuses,branches,conditions,currencies]=await Promise.all([
       this.database.execute<Row>(sql`SELECT department_id AS id,display_name FROM catalog_departments WHERE workspace_id=${workspaceId} AND status='Active' ORDER BY sort_order,display_name,department_id`),
       this.database.execute<Row>(sql`SELECT c.category_id AS id,c.display_name,c.department_id AS parent_id FROM catalog_categories c JOIN catalog_departments d ON d.workspace_id=c.workspace_id AND d.department_id=c.department_id WHERE c.workspace_id=${workspaceId} AND c.status='Active' AND d.status='Active' ORDER BY c.sort_order,c.display_name,c.category_id`),
       this.database.execute<Row>(sql`SELECT pt.product_type_id AS id,pt.display_name,pt.category_id AS parent_id FROM catalog_product_types pt JOIN catalog_categories c ON c.workspace_id=pt.workspace_id AND c.category_id=pt.category_id JOIN catalog_departments d ON d.workspace_id=c.workspace_id AND d.department_id=c.department_id WHERE pt.workspace_id=${workspaceId} AND pt.status='Active' AND c.status='Active' AND d.status='Active' ORDER BY pt.sort_order,pt.display_name,pt.product_type_id`),
       this.database.execute<Row>(sql`SELECT brand_id AS id,display_name FROM catalog_brands WHERE workspace_id=${workspaceId} AND status='Active' ORDER BY sort_order,display_name,brand_id`),
       this.database.execute<Row>(sql`SELECT supply_status_id AS id,display_name FROM catalog_supply_statuses WHERE workspace_id=${workspaceId} AND status='Active' ORDER BY sort_order,display_name,supply_status_id`),
+      this.database.execute<Row>(sql`SELECT branch_id AS id,display_name FROM workspace_branch_references WHERE workspace_id=${workspaceId} AND status='Active' AND ${branchScope} ORDER BY sort_order,display_name,branch_id`),
       this.database.execute<Row>(sql`SELECT condition_code FROM workspace_condition_availability WHERE workspace_id=${workspaceId} AND enabled=true ORDER BY sort_order,condition_code`),
+      this.database.execute<Row>(sql`SELECT currency_code FROM workspace_currency_availability WHERE workspace_id=${workspaceId} AND enabled=true ORDER BY sort_order,currency_code`),
     ]);
     const map=(rows:readonly Row[])=>Object.freeze(rows.map((row)=>Object.freeze({id:String(row.id),displayName:String(row.display_name),...(row.parent_id?{parentId:String(row.parent_id)}:{})})));
-    return Object.freeze({departments:map(departments.rows),categories:map(categories.rows),productTypes:map(productTypes.rows),brands:map(brands.rows),supplyStatuses:map(supplyStatuses.rows),enabledConditions:Object.freeze(conditions.rows.map((row)=>String(row.condition_code)))});
+    return Object.freeze({departments:map(departments.rows),categories:map(categories.rows),productTypes:map(productTypes.rows),brands:map(brands.rows),supplyStatuses:map(supplyStatuses.rows),branches:map(branches.rows),enabledConditions:Object.freeze(conditions.rows.map((row)=>String(row.condition_code))),enabledCurrencies:Object.freeze(currencies.rows.map((row)=>String(row.currency_code)))});
+  }
+  async getMedia(workspaceId:string,productId:string,mediaId:string):Promise<CatalogMediaStorageProjection|null>{
+    const result=await this.database.execute<Row>(sql`
+      SELECT p.product_id,p.lifecycle_state,i.product_image_id AS media_id,i.storage_key,i.checksum_sha256,i.mime_type,mr.storage_root_key
+      FROM catalog_products p
+      JOIN catalog_product_images i ON i.workspace_id=p.workspace_id AND i.product_id=p.product_id AND i.product_image_id=${mediaId}
+      JOIN catalog_product_media_roots mr ON mr.workspace_id=p.workspace_id AND mr.product_id=p.product_id
+      WHERE p.workspace_id=${workspaceId} AND p.product_id=${productId} AND i.mime_type='image/webp' AND i.checksum_sha256 IS NOT NULL
+      LIMIT 1
+    `);
+    const row=result.rows[0];
+    return row?Object.freeze({productId:String(row.product_id),mediaId:String(row.media_id),lifecycle:String(row.lifecycle_state) as CatalogMediaStorageProjection["lifecycle"],storageRootKey:String(row.storage_root_key),storageKey:String(row.storage_key),checksumSha256:String(row.checksum_sha256),mimeType:"image/webp" as const}):null;
   }
 }

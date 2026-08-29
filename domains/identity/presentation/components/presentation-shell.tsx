@@ -42,11 +42,12 @@ export const PresentationShell = ({
       <a className="skip-link" href="#main-content">{i18n.locale === "ar" ? "انتقل إلى المحتوى" : "Skip to content"}</a>
       <header className="app-header">
         <div className="app-header__inner">
-          <Link href="/" className="brand-link" aria-label={i18n.t("brand")}>
+          <Link href="/catalog" className="brand-link" aria-label={i18n.t("brand")}>
             <span className="brand-mark" aria-hidden="true">Q</span>
             <span>{i18n.t("brand")}</span>
           </Link>
           <div className="app-header__actions">
+            {actor ? <Link className="header-link" href="/catalog">{i18n.t("catalog")}</Link> : null}
             {actor?.role === "Owner" ? <Link className="header-link" href="/members">{i18n.t("members")}</Link> : null}
             {actor ? <span className="actor-name">{actor.displayName}</span> : null}
             <button className="button button--quiet button--small" type="button" onClick={() => i18n.setLocale(i18n.locale === "ar" ? "en" : "ar")}>

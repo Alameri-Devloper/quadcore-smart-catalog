@@ -1,4 +1,5 @@
 import type { DirectProductShareProjection, DirectShareMediaProjection, DirectSharePriceMode } from "../domain/direct-product-share";
+import type { ProductMediaReaderPort, ProductMediaReadResult } from "../../media/ports/product-media-reader.port";
 
 export interface DirectProductShareRepository {
   branchExists(workspaceId: string, branchId: string): Promise<boolean>;
@@ -16,17 +17,5 @@ export interface DirectProductShareRepository {
   }>;
 }
 
-export type DirectShareMediaReadResult =
-  | { readonly type: "Found"; readonly bytes: Uint8Array }
-  | { readonly type: "Unavailable" };
-
-export interface DirectShareMediaReaderPort {
-  read(input: {
-    readonly workspaceId: string;
-    readonly productId: string;
-    readonly storageRootKey: string;
-    readonly storageKey: string;
-    readonly expectedSha256: string;
-    readonly maximumBytes: number;
-  }): Promise<DirectShareMediaReadResult>;
-}
+export type DirectShareMediaReadResult = ProductMediaReadResult;
+export type DirectShareMediaReaderPort = ProductMediaReaderPort;

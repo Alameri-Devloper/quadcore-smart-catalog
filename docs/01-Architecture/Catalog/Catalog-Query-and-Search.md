@@ -38,6 +38,22 @@ Performance verification used 5,004 sanitized Products, two Workspaces, one acti
 
 Task 3.18 does not add or connect a Catalog browsing UI, so responsive layout, touch/mouse/keyboard interaction, RTL/LTR chrome, and visual accessibility QA are not applicable to this implementation. The transport contracts are browser-safe and ready for a separately reviewed Presentation task.
 
+### Task 3.20 Presentation integration and focused contract corrections
+
+Task 3.20 adds the authenticated `/catalog` and `/catalog/[productId]` Presentation over the existing query HTTP boundary. URL parameters are the meaningful browse-state authority; server cursors remain opaque and are discarded whenever search, filter, sort, or Branch input changes. Details links carry a canonical `returnTo` path and requested `branchId`, while the browser never supplies Workspace, actor, role, permission, or Branch-scope authority. API failure produces an explicit typed state and never falls back to legacy mock Products. Cards cannot represent Reference Cost, and the browser-safe adapter reconstructs only allow-listed DTO fields.
+
+Implementation exposed four narrow contract gaps needed by the approved Presentation. The existing filter DTO now returns active, trusted-scope Branch choices, enabled currency codes, and server-derived filter capabilities; non-editors receive Published/Listed choices only. Details now return independent `directSharePriceModes`, derived from trusted sharing and Retail/Wholesale authority plus Product/Branch eligibility. Ordinary viewers receive non-disclosing not-found results for unpublished or Branch-unlisted details. Approved Catalog media is served through an authenticated, private, same-origin WebP route; storage roots, keys, checksums, and filesystem paths remain infrastructure-only, and unpublished media is unavailable to ordinary viewers. These are focused corrections to the existing read contract, not a second query service or convenience BFF.
+
+The Presentation renders decimal-string Money through the canonical bigint/ISO minor-unit formatter, independently omits Retail or Wholesale when absent, shows exact Inventory only when returned, preserves historical labels/specifications in server order, and labels Reference Cost as internal on Details only. The same mobile-first component system supports English/LTR and Arabic/RTL, semantic controls, visible focus, keyboard/touch operation, responsive grids, loading/empty/error announcements, and media fallbacks without external URLs.
+
+### تكامل العرض في المهمة 3.20 وتصحيحات العقد المحدودة
+
+تضيف المهمة 3.20 مساري `/catalog` و`/catalog/[productId]` الموثقين فوق حدود HTTP الحالية للاستعلام. تمثل معاملات URL حالة التصفح ذات المعنى، ويبقى مؤشر الخادم معتماً ويُحذف عند تغيير البحث أو المرشح أو الترتيب أو الفرع. يحمل رابط التفاصيل مسار عودة معتمداً و`branchId` مطلوباً فقط، ولا يرسل المتصفح هوية مساحة العمل أو الممثل أو الدور أو الصلاحيات أو نطاق الفروع. يؤدي فشل API إلى حالة خطأ صريحة ومصنفة ولا يؤدي أبداً إلى عرض منتجات وهمية قديمة.
+
+كشف التكامل أربع فجوات عقدية محدودة: يعيد عقد المرشحات الآن الفروع النشطة ضمن النطاق الموثوق والعملات المفعلة والقدرات المشتقة على الخادم؛ وتعيد التفاصيل أوضاع مشاركة التجزئة والجملة بصورة مستقلة ومشتقة من السياق الموثوق وأهلية المنتج والفرع. كما تُخفى تفاصيل المنتجات غير المنشورة أو غير المدرجة في الفرع عن قارئ الكتالوج العادي بنتيجة عامة، وتُعرض وسائط الكتالوج المعتمدة عبر مسار WebP موثق وخاص من الأصل نفسه دون كشف مفاتيح التخزين أو البصمات أو مسارات الملفات. هذه تصحيحات مركزة لعقد القراءة وليست خدمة استعلام ثانية.
+
+يعرض المكوّن المالي النص العشري عبر منسق `bigint` المعتمد، ولا يستنتج سعر التجزئة أو الجملة أو كميات المخزون عند غيابها. تظهر التكلفة المرجعية في التفاصيل الداخلية فقط عند إعادتها من الخادم، وتبقى المواصفات والتسميات التاريخية بترتيب الخادم. يدعم نظام المكونات نفسه الهاتف واللوحي وسطح المكتب، والإنجليزية من اليسار إلى اليمين والعربية من اليمين إلى اليسار، ولوحة المفاتيح واللمس، وحالات التحميل والفراغ والخطأ، وبدائل الوسائط الآمنة.
+
 ## العربية
 
 ### الحدود والملكية
