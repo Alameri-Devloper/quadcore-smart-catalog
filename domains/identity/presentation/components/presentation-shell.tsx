@@ -48,6 +48,7 @@ export const PresentationShell = ({
           </Link>
           <div className="app-header__actions">
             {actor ? <Link className="header-link" href="/catalog">{i18n.t("catalog")}</Link> : null}
+            {actor ? <Link className="header-link" href="/catalog/reference-data">{i18n.locale === "ar" ? "البيانات المرجعية" : "Reference data"}</Link> : null}
             {actor?.role === "Owner" ? <Link className="header-link" href="/members">{i18n.t("members")}</Link> : null}
             {actor ? <span className="actor-name">{actor.displayName}</span> : null}
             <button className="button button--quiet button--small" type="button" onClick={() => i18n.setLocale(i18n.locale === "ar" ? "en" : "ar")}>
