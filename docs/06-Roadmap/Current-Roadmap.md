@@ -1,6 +1,6 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-**Status:** Reconciled through merged Task 3.20 · **Last Updated:** 2026-08-29 · **Scope:** Authoritative delivery sequence
+**Status:** Reconciled through merged Task 3.21; Task 3.22 ReScopeRequired · **Last Updated:** 2026-09-01 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -26,20 +26,27 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.18 | Workspace- and Branch-safe Catalog query/search, filters, Product Cards, Product Details, cursor pagination, and permission-filtered read APIs | No canonical Catalog browsing or Product Details Presentation exists. Search is deterministic PostgreSQL search, not AI/NLP search. |
 | 3.19 | Customer-safe Direct Device Sharing payload, authenticated media handoff, Web Share/Clipboard/manual fallback, and reusable Presentation component | No public Product URL, recipient integration, WhatsApp delivery, delivery receipt, or analytics exists. |
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
+| 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration | No Branch, Inventory, or Pricing management Presentation was added. |
 
-The reconciled baseline is `e2719cda489aa52b8baf51f985cf0b360292874d` on `feature/product-entry-engine` (PR #22), which contains the reviewed Task 3.20 line after Tasks 3.14–3.19.
+The reconciled integration baseline is `4f1115d2ac98fc4411ac46f081652554f6d04ec9` on `feature/product-entry-engine` (PR #24), which contains merged Task 3.21 after Tasks 3.14–3.20.
 
-### Approved next implementation — Task 3.21
+### Task 3.22 planning-gate decision — ReScopeRequired
 
-**Task 3.21 — Catalog Reference Data Management Presentation** is the only approved next implementation task. The planning gate confirmed that the existing Task 3.16 scoped management contracts are sufficient for an authenticated, bilingual, Mobile-First management Presentation without a new business API, schema, migration, runtime dependency, or architecture redesign.
+**Task 3.22 — Branch, Inventory, and Pricing Management Presentation** remains **not implementation-approved**. The planning gate confirmed that the Task 3.17 mutation contracts, transaction ownership, atomic transfer, tenant isolation, Money model, and optimistic/idempotent concurrency foundations are sound, but the complete operational Presentation cannot be implemented safely from existing browser-facing reads alone.
 
-The approved implementation contract is [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md). Historical candidate analysis and the completed Task 3.20 contract remain in [Sprint 03 Continuation](Sprint-03-Continuation.md).
+The smallest source-proven contract gaps, corrected by Planning-R1, are:
 
-### Planned sequence after Task 3.21
+- management read and mutation permissions are independent: listing read requires `catalog.products.view` while listing mutation accepts `catalog.product.edit` or `catalog.products.edit`; Branch pricing read requires `pricing.view` while override mutation uses `pricing.branchOverride.manage`; Reference Cost visibility requires `pricing.view` and `referenceCost.view` while its base/override mutations use independent manage permissions;
+- listing Product discovery is compatible only for actors who also hold `catalog.products.view` and plural `catalog.products.edit`; a valid singular-only `catalog.product.edit` mutation actor cannot use Task 3.18 expanded lifecycle/listing discovery, and the standard Catalog Staff template currently has this singular-only edit composition;
+- no active reservation list/detail read exists from which Release and Fulfill can safely select the current reservation and remaining quantity;
+- no Branch-independent Workspace base-pricing read supplies authoritative current Retail, Wholesale, and Reference Cost values/revisions, and `pricing.manage`/`referenceCost.manage` do not imply the corresponding read permissions;
+- Task 3.18 Product search cannot discover every Task 3.17-valid Inventory, Pricing, or Reference Cost target because those operational permissions do not imply Catalog view/edit authority;
+- availability-only direct Inventory reads retain numeric `available`, while Inventory mutation responses contain detailed balances without a separate quantity-disclosure check;
+- no bounded server-derived management-authority/capability projection resolves these read/manage compositions without exposing raw permissions, role, Workspace/actor identity, or allowed Branch IDs.
 
-Task 3.22 remains **Planned — not implementation-approved**:
+Task 3.22 is therefore **Planned / ReScopeRequired**. No implementation contract is approved, no later task is approved, and there is currently no **Approved Next Implementation**. Planning-R1 corrects authority and matrix inaccuracies without selecting a corrective policy or approving implementation. See [Sprint 03 Continuation](Sprint-03-Continuation.md), the historical [Task 3.22 Planning Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-Final-Report.md), and the superseding [Task 3.22 Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-R1-Final-Report.md).
 
-1. **Task 3.22 — Branch, Inventory, and Pricing Management Presentation:** provide a permission- and Branch-scope-aware operational UI over the existing Task 3.17 contracts only after a separate planning and approval gate.
+Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. Its approved historical contract remains [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md).
 
 ### Deferred, vision-only, and ADR-gated
 
@@ -72,20 +79,27 @@ Task 3.22 remains **Planned — not implementation-approved**:
 | 3.18 | استعلام وبحث الكتالوج الآمنان لمساحة العمل والفرع، والمرشحات، وبطاقات وتفاصيل المنتج، والمؤشرات، وواجهات القراءة المرشحة بالصلاحيات | لا توجد واجهة تصفح معتمدة للكتالوج أو تفاصيل المنتج. البحث حتمي عبر PostgreSQL وليس بحث AI/NLP. |
 | 3.19 | حمولة مشاركة آمنة للعميل عبر الجهاز، وتسليم الوسائط الموثق، والمشاركة الأصلية/الحافظة/النص اليدوي، ومكوّن عرض قابل لإعادة الاستخدام | لا يوجد رابط منتج عام أو تكامل مستلم أو إرسال WhatsApp أو إيصال تسليم أو تحليلات. |
 | 3.20 | واجهة موثقة لتصفح الكتالوج وتفاصيل المنتج، وربط المشاركة المباشرة عبر الجهاز، وحالة URL والاستعلام المعتمدة، وعرض التجزئة والجملة والمخزون وفق صلاحيات الخادم، وتصحيح العرض الآمن للعملات ذات الوحدة الصغرى غير المنطبقة والمرشحات الدلالية في 3.20-R1، ونقل وسائط الكتالوج الموثق | لا توجد مشاركة منتجات عامة أو وصول مجهول أو تكامل WhatsApp أو إدارة للبيانات المرجعية أو الفروع أو المخزون أو التسعير. |
+| 3.21 | واجهة موثقة وثنائية اللغة لإدارة البيانات المرجعية للكتالوج، وتنسيق HTTP مكتوب بالأنواع، ومعالجة التعارضات، وتأكيد تعطيل أصلي متاح، واستعادة دقيقة للتركيز | لم تُضف واجهة لإدارة الفروع أو المخزون أو التسعير. |
 
-خط الأساس المتصالح هو `e2719cda489aa52b8baf51f985cf0b360292874d` على `feature/product-entry-engine` (طلب السحب #22)، ويحتوي خط المهمة 3.20 المراجع بعد المهام 3.14–3.19.
+خط أساس التكامل المتصالح هو `4f1115d2ac98fc4411ac46f081652554f6d04ec9` على `feature/product-entry-engine` (طلب السحب #24)، ويحتوي المهمة 3.21 المدمجة بعد المهام 3.14–3.20.
 
-### التنفيذ التالي المعتمد — المهمة 3.21
+### قرار بوابة تخطيط المهمة 3.22 — تتطلب إعادة تحديد النطاق
 
-**المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج** هي مهمة التنفيذ التالية الوحيدة المعتمدة. أثبتت بوابة التخطيط كفاية عقود الإدارة المقيدة الحالية من المهمة 3.16 لتنفيذ واجهة إدارة موثقة وثنائية اللغة ومصممة للجوال أولاً من دون API أعمال جديد أو مخطط أو ترحيل أو اعتماد تشغيل أو إعادة تصميم معمارية.
+تبقى **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير** **غير معتمدة للتنفيذ**. أثبتت بوابة التخطيط سلامة عقود التعديل وحدود المعاملات والتحويل الذري وعزل المستأجر ونموذج الأموال وآليات التزامن التفاؤلي/التكرار الآمن في المهمة 3.17، لكن لا يمكن تنفيذ الواجهة التشغيلية الكاملة بأمان من قراءات المتصفح الحالية وحدها.
 
-يوجد عقد التنفيذ المعتمد في [عقد تنفيذ المهمة 3.21](Task-3.21-Implementation-Contract.md). ويبقى تحليل البدائل التاريخي وعقد المهمة 3.20 المكتملة في [استمرار Sprint 03](Sprint-03-Continuation.md).
+أصغر فجوات العقود المثبتة من المصدر، والمصححة في تخطيط-R1، هي:
 
-### التسلسل المخطط بعد المهمة 3.21
+- صلاحيات القراءة والتعديل الإداري مستقلة: تتطلب قراءة الإدراج `catalog.products.view` بينما يقبل تعديله `catalog.product.edit` أو `catalog.products.edit`؛ وتتطلب قراءة تسعير الفرع `pricing.view` بينما يستخدم تعديل التجاوز `pricing.branchOverride.manage`؛ كما تتطلب رؤية التكلفة المرجعية `pricing.view` و`referenceCost.view` بينما تستخدم تعديلات الأساس/التجاوز صلاحيات إدارة مستقلة؛
+- يتوافق اكتشاف منتجات الإدراج فقط مع الممثل الذي يملك أيضاً `catalog.products.view` و`catalog.products.edit` بصيغتها الجمعية؛ ولا يستطيع ممثل التعديل الصالح الذي يملك فقط `catalog.product.edit` استخدام اكتشاف دورة الحياة/الإدراج الموسع في المهمة 3.18، ويحتوي قالب موظف الكتالوج القياسي حالياً هذه التركيبة ذات صيغة التعديل المفردة؛
+- لا توجد قراءة لقائمة الحجوزات النشطة أو تفاصيلها لاختيار الحجز الحالي والكمية المتبقية بأمان للتحرير أو التنفيذ؛
+- لا توجد قراءة مستقلة عن الفرع لأسعار التجزئة والجملة والتكلفة المرجعية الأساسية وقيمها ومراجعاتها الموثوقة، كما لا تستلزم `pricing.manage` و`referenceCost.manage` صلاحيات القراءة المقابلة؛
+- لا يستطيع بحث المهمة 3.18 اكتشاف كل هدف مخزون أو تسعير أو تكلفة مرجعية صالح وفق المهمة 3.17 لأن صلاحيات التشغيل هذه لا تستلزم عرض/تعديل الكتالوج؛
+- تحتفظ قراءة المخزون المباشرة لممثل الإتاحة فقط بالقيمة الرقمية `available`، وتعيد طفرات المخزون أرصدة تفصيلية دون فحص مستقل لصلاحية كشف الكمية؛
+- لا يوجد إسقاط محدود لسلطة/قدرات الإدارة مشتق من الخادم يحل تركيبات القراءة والإدارة هذه دون كشف الصلاحيات الخام أو الدور أو معرف مساحة العمل/الممثل أو معرفات الفروع المسموحة.
 
-تبقى المهمة 3.22 **مخططة وغير معتمدة للتنفيذ**:
+لذلك تبقى المهمة 3.22 **مخططة / تتطلب إعادة تحديد النطاق**. لا يوجد عقد تنفيذ معتمد، ولم تُعتمد أي مهمة لاحقة، ولا توجد حالياً مهمة تحمل حالة **التنفيذ التالي المعتمد**. يصحح تخطيط-R1 أخطاء السلطة والمصفوفة دون اختيار سياسة تصحيحية أو اعتماد التنفيذ. راجع [استمرار Sprint 03](Sprint-03-Continuation.md)، و[تقرير تخطيط المهمة 3.22 النهائي التاريخي](../05-Development/Reports/QSC-Task-3.22-Planning-Final-Report.md)، و[تقرير تخطيط-R1 النهائي المتفوق عليه](../05-Development/Reports/QSC-Task-3.22-Planning-R1-Final-Report.md).
 
-1. **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير:** واجهة تشغيلية تراعي الصلاحيات ونطاق الفرع فوق عقود 3.17 الموجودة، ولا تبدأ إلا بعد بوابة تخطيط واعتماد مستقلة.
+المهمة 3.21 **مكتملة ومدمجة** عبر طلب السحب #24 عند خط الأساس `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. ويبقى عقدها التاريخي المعتمد في [عقد تنفيذ المهمة 3.21](Task-3.21-Implementation-Contract.md).
 
 ### المؤجل والرؤية فقط والمشروط بقرار ADR
 
@@ -98,6 +112,8 @@ Task 3.22 remains **Planned — not implementation-approved**:
 
 - [Sprint 03 Continuation](Sprint-03-Continuation.md)
 - [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md)
+- [Task 3.22 Planning Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-Final-Report.md)
+- [Task 3.22 Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-R1-Final-Report.md)
 - [Future Capabilities](Future-Capabilities.md)
 - [Deferred Decisions](Deferred-Decisions.md)
 - [Original roadmap](../00-Project/Roadmap.md)
