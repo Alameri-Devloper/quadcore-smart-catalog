@@ -1,14 +1,14 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
-**Status:** Reconciled through merged Task 3.20; Task 3.21 Approved Next Implementation; Task 3.22 Planned — not implementation-approved · **Current-state baseline:** `e2719cda489aa52b8baf51f985cf0b360292874d` / PR #22 · **Updated:** 2026-08-29
+**Status:** Reconciled through merged Task 3.21; Task 3.22 ReScopeRequired — not implementation-approved · **Current-state baseline:** `4f1115d2ac98fc4411ac46f081652554f6d04ec9` / PR #24 · **Updated:** 2026-09-01
 
-> **Task 3.21 planning-gate decision | قرار بوابة تخطيط المهمة 3.21:** The existing Task 3.16 contracts are sufficient for the scoped Catalog Reference Data Management Presentation. Task 3.21 is **Approved Next Implementation** under the implementation contract linked below. Task 3.22 remains **Planned — not implementation-approved**. | عقود المهمة 3.16 الحالية كافية لواجهة إدارة البيانات المرجعية للكتالوج ضمن النطاق المحدد. أصبحت المهمة 3.21 **التنفيذ التالي المعتمد** وفق عقد التنفيذ المرتبط أدناه، وتبقى المهمة 3.22 **مخططة وغير معتمدة للتنفيذ**.
+> **Task 3.22 Planning-R1 decision | قرار تخطيط-R1 للمهمة 3.22:** Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. Task 3.22 remains **ReScopeRequired — not implementation-approved** because management read/mutation permission composition, listing read/discovery, reservation discovery, Branch-independent base-pricing read, operational Product discovery, Inventory numeric disclosure, and bounded server-derived management authority remain unresolved. No later task is approved. | المهمة 3.21 **مكتملة ومدمجة** عبر طلب السحب #24 عند خط الأساس `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. وتبقى المهمة 3.22 **بحاجة إلى إعادة تحديد النطاق وغير معتمدة للتنفيذ** لأن تركيب صلاحيات القراءة/التعديل الإداري، وقراءة/اكتشاف الإدراج، واكتشاف الحجوزات، وقراءة التسعير الأساسي المستقلة عن الفرع، واكتشاف المنتجات التشغيلية، وكشف أرقام المخزون، وسلطة الإدارة المحدودة المشتقة من الخادم ما زالت غير محسومة. لم تُعتمد أي مهمة لاحقة.
 
 ## English
 
 ### Reconciliation outcome
 
-Tasks 3.14–3.20 are completed and merged foundations. Task 3.20 closed the private Catalog Presentation gap by connecting the Task 3.18 browser-safe read contracts and Task 3.19 direct-device sharing component in the canonical authenticated Catalog workflow. It merged through PR #22 into `feature/product-entry-engine`; the current-state baseline is `e2719cda489aa52b8baf51f985cf0b360292874d`. The analysis below is preserved as the historical rationale and contract for that completed slice. Task 3.21 is now the only Approved Next Implementation.
+Tasks 3.14–3.21 are completed and merged foundations. Task 3.21 delivered the authenticated Catalog Reference Data management Presentation and merged through PR #24 into `feature/product-entry-engine`; the current-state baseline is `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. The Task 3.20 analysis below remains historical rationale. The Task 3.22 planning gate found material read/capability gaps, so there is currently no Approved Next Implementation.
 
 Legacy Catalog mocks remain fixtures only. They are not Production truth and must not back the next Presentation.
 
@@ -21,8 +21,8 @@ Legacy Catalog mocks remain fixtures only. They are not Production truth and mus
 | Direct Device Sharing UI integration | Converts the completed 3.19 boundary into a reachable customer workflow without a new channel | No ADR | Included in Task 3.20 |
 | Public Product Share Link | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary | ADR required | Deferred; excluded from Task 3.20 |
 | WhatsApp-oriented customer sharing | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20 |
-| Branch/Inventory/Pricing management Presentation | Makes 3.17 operations usable but is a larger, mutation-heavy workflow with broader permissions and QA | No ADR if it stays within existing contracts | Planned as Task 3.22, not approved |
-| Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; planning confirmed existing contracts are sufficient | Task 3.21 — Approved Next Implementation |
+| Branch/Inventory/Pricing management Presentation | Makes 3.17 operations usable but needs explicit management read/mutation composition, listing state/discovery authority, reservation reads, a Branch-independent base-price read, complete operational Product discovery, safe Inventory disclosure, and bounded server-derived management authority | No ADR for the existing architecture; a global manage-implies-view policy or another authorization-semantic change requires an explicit architecture/contract decision | Task 3.22 — ReScopeRequired, not approved |
+| Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; implemented within the approved contract | Task 3.21 — Completed / merged through PR #24 |
 
 Combining browsing, details, and existing direct sharing is one coherent vertical slice: find a Product, inspect the Product, then prepare/share its approved customer payload. Separating any one of these would leave either an incomplete navigation path or the completed sharing component unreachable. Adding public access, management mutations, or provider delivery would expand the architecture and is not part of that slice.
 
@@ -187,16 +187,19 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 - A future Public Product Share ADR can evaluate a real private workflow without conflating it with anonymous delivery.
 - A future WhatsApp decision can choose `wa.me`, provider/API, or backend sending from an explicit boundary rather than assuming native share equals delivery.
 
-### Approved next and later sequence
+### Current planning decision
 
-- **Task 3.21 — Catalog Reference Data Management Presentation — Approved Next Implementation:** enable authorized Workspace setup and maintenance through the existing Task 3.16 scoped management APIs and the approved implementation contract.
-- **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned, not implementation-approved:** enable authorized Branch operations, stock movements, listings, and price management through the existing Task 3.17 contracts only after a separate planning/approval gate.
+- **Task 3.21 — Catalog Reference Data Management Presentation — Completed / merged:** merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
+- **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned / ReScopeRequired, not implementation-approved:** Planning-R1 corrects the earlier matrix classifications. Existing mutation routes do not by themselves make complete UI workflows sufficient; implementation must wait for separately reviewed read/discovery/disclosure and server-derived management-authority contracts.
+- No task after 3.22 is approved, and no task currently holds Approved Next Implementation status.
+
+Planning-R1 does not select a global manage-implies-view rule. A future re-scope must explicitly decide bounded Application-level permission implication, minimum management-state reads authorized by mutation permissions, or another server-derived management projection. It must not expose raw permissions, role, `workspaceId`, `actorId`, or `allowedBranchIds` for browser authorization.
 
 ## العربية
 
 ### نتيجة المصالحة
 
-تمثل المهام 3.14–3.20 أسساً مكتملة ومدمجة. أغلقت المهمة 3.20 فجوة عرض الكتالوج الخاص بربط عقود القراءة الآمنة للمتصفح من 3.18 ومكوّن المشاركة المباشرة عبر الجهاز من 3.19 ضمن سير الكتالوج الموثق المعتمد. دُمجت عبر طلب السحب #22 في `feature/product-entry-engine`، وخط الأساس للحالة الحالية هو `e2719cda489aa52b8baf51f985cf0b360292874d`. يُحفظ التحليل أدناه بوصفه الأساس التاريخي وعقد النطاق المكتمل، وأصبحت المهمة 3.21 مهمة التنفيذ التالية الوحيدة المعتمدة.
+تمثل المهام 3.14–3.21 أسساً مكتملة ومدمجة. قدمت المهمة 3.21 واجهة إدارة البيانات المرجعية للكتالوج الموثقة، ودُمجت عبر طلب السحب #24 في `feature/product-entry-engine`؛ وخط الأساس للحالة الحالية هو `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. يبقى تحليل المهمة 3.20 أدناه مبرراً تاريخياً. كشفت بوابة تخطيط المهمة 3.22 فجوات جوهرية في القراءة والقدرات، لذلك لا توجد حالياً مهمة تنفيذ تالٍ معتمدة.
 
 تبقى بيانات الكتالوج الوهمية القديمة fixtures فقط، وليست حقيقة الإنتاج ولا يجوز أن تشغّل واجهة العرض التالية.
 
@@ -209,8 +212,8 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 | ربط واجهة المشاركة المباشرة عبر الجهاز | يجعل حدود 3.19 المكتملة قابلة للوصول دون قناة جديدة | لا يحتاج ADR | ضمن 3.20 |
 | رابط مشاركة منتج عام | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة | ADR مطلوب | مؤجل وخارج 3.20 |
 | مشاركة موجهة إلى WhatsApp | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي | مؤجل وخارج 3.20 |
-| واجهة إدارة الفروع والمخزون والتسعير | تجعل عمليات 3.17 قابلة للاستخدام لكنها أوسع وكثيفة التعديلات والصلاحيات والاختبارات | لا يحتاج ADR إذا التزم العقود الحالية | مخططة 3.22 وغير معتمدة |
-| واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ أثبت التخطيط كفاية العقود الحالية | المهمة 3.21 — التنفيذ التالي المعتمد |
+| واجهة إدارة الفروع والمخزون والتسعير | تجعل عمليات 3.17 قابلة للاستخدام لكنها تحتاج تركيباً صريحاً لسلطات القراءة/التعديل الإداري، وسلطة قراءة/اكتشاف الإدراج، وقراءات للحجوزات، وقراءة للسعر الأساسي مستقلة عن الفرع، واكتشافاً كاملاً للمنتجات التشغيلية، وكشفاً آمناً للمخزون، وسلطة إدارة محدودة مشتقة من الخادم | لا يحتاج الهيكل الحالي ADR؛ أما قاعدة عامة بأن الإدارة تستلزم العرض أو أي تغيير لدلالات التفويض فيحتاج قراراً معمارياً/تعاقدياً صريحاً | المهمة 3.22 — تتطلب إعادة تحديد النطاق وغير معتمدة |
+| واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ نُفذت ضمن العقد المعتمد | المهمة 3.21 — مكتملة ومدمجة عبر طلب السحب #24 |
 
 يجمع التصفح والتفاصيل والمشاركة الحالية شريحة رأسية واحدة: العثور على المنتج ثم فحصه ثم تجهيز ومشاركة حمولته الآمنة للعميل. فصل أحدها يترك مسار تنقل ناقصاً أو مكوّن المشاركة غير قابل للوصول. أما الوصول العام أو تعديلات الإدارة أو تسليم المزود فتوسع المعمارية وليست جزءاً من هذه الشريحة.
 
@@ -321,10 +324,13 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 
 يستطيع موظف المبيعات إكمال سير اكتشاف الكتالوج الخاص حتى المشاركة عبر الجهاز. ويمكن بعدها بناء واجهات إدارة البيانات المرجعية والعمليات فوق أسس مجربة، وتقييم رابط عام دون خلطه بالسير الخاص، واتخاذ قرار WhatsApp بين `wa.me` أو المزود/API أو الإرسال الخلفي ضمن حد صريح.
 
-### التنفيذ التالي المعتمد والتسلسل اللاحق
+### قرار التخطيط الحالي
 
-- **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — التنفيذ التالي المعتمد:** تمكين إعداد مساحة العمل وصيانتها للمخولين عبر واجهات 3.16 المقيدة وعقد التنفيذ المعتمد.
-- **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة وغير معتمدة للتنفيذ:** تمكين عمليات الفرع وحركات المخزون والإدراج والأسعار للمخولين عبر عقود 3.17 فقط بعد بوابة تخطيط واعتماد مستقلة.
+- **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — مكتملة ومدمجة:** دُمجت عبر طلب السحب #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
+- **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة / تتطلب إعادة تحديد النطاق وغير معتمدة للتنفيذ:** يصحح تخطيط-R1 تصنيفات المصفوفة السابقة. لا تجعل مسارات التعديل الموجودة وحدها سير الواجهة الكامل كافياً؛ وينتظر التنفيذ عقود قراءة/اكتشاف/كشف وسلطة إدارة مشتقة من الخادم ومراجعة بصورة مستقلة.
+- لم تُعتمد أي مهمة بعد 3.22، ولا توجد حالياً مهمة تحمل حالة التنفيذ التالي المعتمد.
+
+لا يختار تخطيط-R1 قاعدة عامة بأن الإدارة تستلزم العرض. يجب أن تقرر إعادة تحديد النطاق اللاحقة صراحةً إما استلزاماً محدوداً للصلاحيات في طبقة التطبيق، أو قراءات للحد الأدنى من حالة الإدارة مخولة بصلاحيات التعديل، أو إسقاط إدارة آخر مشتقاً من الخادم. ولا يجوز كشف الصلاحيات الخام أو الدور أو `workspaceId` أو `actorId` أو `allowedBranchIds` لاتخاذ قرار التفويض في المتصفح.
 
 ## Related Documents | الوثائق المرتبطة
 
@@ -335,4 +341,6 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 - [Direct Device Sharing](../01-Architecture/Catalog/Direct-Device-Sharing.md)
 - [Catalog Reference Data](../01-Architecture/Catalog/Catalog-Reference-Data.md)
 - [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md)
+- [Task 3.22 Planning Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-Final-Report.md)
+- [Task 3.22 Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-R1-Final-Report.md)
 - [Branch Inventory and Pricing](../01-Architecture/Inventory/Branch-Inventory-and-Pricing.md)
