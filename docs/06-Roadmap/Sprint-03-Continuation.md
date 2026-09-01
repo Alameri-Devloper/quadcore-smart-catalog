@@ -1,14 +1,14 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
-**Status:** Reconciled through merged Task 3.21; Task 3.22 ReScopeRequired — not implementation-approved · **Current-state baseline:** `4f1115d2ac98fc4411ac46f081652554f6d04ec9` / PR #24 · **Updated:** 2026-09-01
+**Status:** Task 3.22-A Planning-R2 is ReScopeRequired for Reservation query-performance evidence; no Approved Next Implementation · **Current-state baseline:** `260b4116749d3460b8262b3ccf034b8ba26d00a5` / PR #25 · **Updated:** 2026-09-01
 
-> **Task 3.22 Planning-R1 decision | قرار تخطيط-R1 للمهمة 3.22:** Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. Task 3.22 remains **ReScopeRequired — not implementation-approved** because management read/mutation permission composition, listing read/discovery, reservation discovery, Branch-independent base-pricing read, operational Product discovery, Inventory numeric disclosure, and bounded server-derived management authority remain unresolved. No later task is approved. | المهمة 3.21 **مكتملة ومدمجة** عبر طلب السحب #24 عند خط الأساس `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. وتبقى المهمة 3.22 **بحاجة إلى إعادة تحديد النطاق وغير معتمدة للتنفيذ** لأن تركيب صلاحيات القراءة/التعديل الإداري، وقراءة/اكتشاف الإدراج، واكتشاف الحجوزات، وقراءة التسعير الأساسي المستقلة عن الفرع، واكتشاف المنتجات التشغيلية، وكشف أرقام المخزون، وسلطة الإدارة المحدودة المشتقة من الخادم ما زالت غير محسومة. لم تُعتمد أي مهمة لاحقة.
+> **Task 3.22-A Planning-R2 decision | قرار تخطيط-R2 للمهمة 3.22-A:** Baseline `260b4116749d3460b8262b3ccf034b8ba26d00a5` contains Task 3.22 Planning/Planning-R1 through PR #25. R2 preserves Option D and every non-persistence R1 contract. The current Reservation index lacks order columns, but that does not prove a migration is required: PostgreSQL may acceptably filter and sort. A separate representative query-performance gate must decide `EXISTING INDEX SUFFICIENT`, `INDEX REQUIRED`, or `DECISION REQUIRED`; the partial ordered index is Candidate Optimization only. Task 3.22-A is not implementation-approved, there is no Approved Next Implementation, Task 3.22 Presentation remains Planned / blocked, and no later task is approved. | يحفظ R2 الخيار D وكل قرارات R1 الأخرى. لا يثبت غياب عمودي الترتيب وحده ضرورة الترحيل؛ وتقرر بوابة أداء تمثيلية كفاية الفهرس الحالي أو الحاجة إلى فهرس أو تعذر القرار. يبقى الفهرس الجزئي تحسيناً مرشحاً فقط، ولا يعتمد أي تنفيذ.
 
 ## English
 
 ### Reconciliation outcome
 
-Tasks 3.14–3.21 are completed and merged foundations. Task 3.21 delivered the authenticated Catalog Reference Data management Presentation and merged through PR #24 into `feature/product-entry-engine`; the current-state baseline is `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. The Task 3.20 analysis below remains historical rationale. The Task 3.22 planning gate found material read/capability gaps, so there is currently no Approved Next Implementation.
+Tasks 3.14–3.21 are completed and merged foundations. Task 3.21 delivered the authenticated Catalog Reference Data management Presentation and merged through PR #24 into `feature/product-entry-engine`; the current integration baseline is `260b4116749d3460b8262b3ccf034b8ba26d00a5`. The Task 3.20 analysis below remains historical rationale. Task 3.22-A Planning-R2 leaves Reservation persistence undecided pending representative plan evidence; therefore there is currently no Approved Next Implementation.
 
 Legacy Catalog mocks remain fixtures only. They are not Production truth and must not back the next Presentation.
 
@@ -21,7 +21,8 @@ Legacy Catalog mocks remain fixtures only. They are not Production truth and mus
 | Direct Device Sharing UI integration | Converts the completed 3.19 boundary into a reachable customer workflow without a new channel | No ADR | Included in Task 3.20 |
 | Public Product Share Link | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary | ADR required | Deferred; excluded from Task 3.20 |
 | WhatsApp-oriented customer sharing | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20 |
-| Branch/Inventory/Pricing management Presentation | Makes 3.17 operations usable but needs explicit management read/mutation composition, listing state/discovery authority, reservation reads, a Branch-independent base-price read, complete operational Product discovery, safe Inventory disclosure, and bounded server-derived management authority | No ADR for the existing architecture; a global manage-implies-view policy or another authorization-semantic change requires an explicit architecture/contract decision | Task 3.22 — ReScopeRequired, not approved |
+| Operational management contract remediation | Resolves read/manage composition, one canonical mixed-lifecycle Product query, exact Reservation pagination, shared Product pricing concurrency, Inventory disclosure, and effective semantic capabilities before Presentation work | Option D needs no ADR/new permission; A3 awaits evidence on current filter-index-plus-sort versus Candidate Optimization | Task 3.22-A — ReScopeRequired for query-performance evidence, not approved |
+| Branch/Inventory/Pricing management Presentation | Consumes the corrected contracts only after 3.22-A is implemented, reviewed, and merged | Existing architecture remains sufficient | Task 3.22 — Planned / blocked, not approved |
 | Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; implemented within the approved contract | Task 3.21 — Completed / merged through PR #24 |
 
 Combining browsing, details, and existing direct sharing is one coherent vertical slice: find a Product, inspect the Product, then prepare/share its approved customer payload. Separating any one of these would leave either an incomplete navigation path or the completed sharing component unreachable. Adding public access, management mutations, or provider delivery would expand the architecture and is not part of that slice.
@@ -108,7 +109,7 @@ Task 3.20 will:
 
 - The workflow is authenticated and private. It adds no anonymous/public route and retains `private, no-store` server responses.
 - Workspace, actor, permissions, and Branch authority come only from `TrustedActorContext`; browser IDs are untrusted input and server validation remains decisive.
-- Catalog access requires `catalog.products.view`. Retail, Wholesale, availability, exact quantities, and internal Reference Cost remain field-omission decisions of the existing server boundary using `pricing.view`, `pricing.wholesale.view`, `inventory.availability.view`, `inventory.quantity.view`, and `referenceCost.view`.
+- Catalog access requires `catalog.products.view`. Retail, Wholesale, availability, and exact quantities remain field-omission decisions of the existing server boundary. Ordinary internal Reference Cost visibility requires the complete existing composition `pricing.view` and `referenceCost.view`, never `referenceCost.view` alone.
 - Presentation renders only returned authorized fields and must not infer, synthesize, cache, or reveal omitted values. Reference Cost, if returned in internal details, must be clearly internal and must never enter customer sharing.
 - Direct payload preparation remains guarded by `catalog.sharing.create`, `catalog.products.view`, the selected price permission, trusted Branch scope, Published lifecycle, and explicit Branch listing.
 - Foreign, out-of-scope, unauthorized, unlisted, unpublished, and missing resources remain non-disclosing. UI wording must not reveal which condition occurred.
@@ -190,10 +191,11 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 ### Current planning decision
 
 - **Task 3.21 — Catalog Reference Data Management Presentation — Completed / merged:** merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned / ReScopeRequired, not implementation-approved:** Planning-R1 corrects the earlier matrix classifications. Existing mutation routes do not by themselves make complete UI workflows sufficient; implementation must wait for separately reviewed read/discovery/disclosure and server-derived management-authority contracts.
-- No task after 3.22 is approved, and no task currently holds Approved Next Implementation status.
+- **Task 3.22-A — Operational Management Contract Remediation — Planning-R2 ReScopeRequired / not implementation-approved:** use the corrected [operational contract](Task-3.22-A-Operational-Management-Contract.md) and [Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md) as inputs to the separate Reservation Persistence / Query Performance Planning Gate. Do not implement A1–A5 yet.
+- **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned / blocked, not implementation-approved:** it remains blocked until all 3.22-A slices are independently reviewed and merged.
+- No later task is approved.
 
-Planning-R1 does not select a global manage-implies-view rule. A future re-scope must explicitly decide bounded Application-level permission implication, minimum management-state reads authorized by mutation permissions, or another server-derived management projection. It must not expose raw permissions, role, `workspaceId`, `actorId`, or `allowedBranchIds` for browser authorization.
+Task 3.22-A preserves operation-specific management reads plus effective semantic server-derived capabilities owned by Identity Application. It rejects global manage-implies-view and raw browser authority. A2 uses one mixed Draft+Published query; A3 defines the exact live keyset while its current-index performance remains evidence-gated; A4 uses shared Product revision for Retail/Wholesale and an independent Reference Cost revision. The Candidate Optimization is not approved. No implementation starts while persistence remains undecided.
 
 ## العربية
 
@@ -212,7 +214,8 @@ Planning-R1 does not select a global manage-implies-view rule. A future re-scope
 | ربط واجهة المشاركة المباشرة عبر الجهاز | يجعل حدود 3.19 المكتملة قابلة للوصول دون قناة جديدة | لا يحتاج ADR | ضمن 3.20 |
 | رابط مشاركة منتج عام | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة | ADR مطلوب | مؤجل وخارج 3.20 |
 | مشاركة موجهة إلى WhatsApp | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي | مؤجل وخارج 3.20 |
-| واجهة إدارة الفروع والمخزون والتسعير | تجعل عمليات 3.17 قابلة للاستخدام لكنها تحتاج تركيباً صريحاً لسلطات القراءة/التعديل الإداري، وسلطة قراءة/اكتشاف الإدراج، وقراءات للحجوزات، وقراءة للسعر الأساسي مستقلة عن الفرع، واكتشافاً كاملاً للمنتجات التشغيلية، وكشفاً آمناً للمخزون، وسلطة إدارة محدودة مشتقة من الخادم | لا يحتاج الهيكل الحالي ADR؛ أما قاعدة عامة بأن الإدارة تستلزم العرض أو أي تغيير لدلالات التفويض فيحتاج قراراً معمارياً/تعاقدياً صريحاً | المهمة 3.22 — تتطلب إعادة تحديد النطاق وغير معتمدة |
+| تصحيح عقود إدارة العمليات | يحل تركيب القراءة/الإدارة والاستعلام التشغيلي ومؤشر الحجوزات وتزامن التسعير وكشف المخزون والقدرات | لا يحتاج الحل الهجين ADR أو صلاحية جديدة؛ وتنتظر A3 أدلة على خطة الفهرس الحالي والفرز مقابل التحسين المرشح | المهمة 3.22-A — تتطلب أدلة أداء وغير معتمدة |
+| واجهة إدارة الفروع والمخزون والتسعير | تستهلك العقود المصححة فقط بعد تنفيذ 3.22-A ومراجعتها ودمجها | تكفي المعمارية الحالية | المهمة 3.22 — مخططة ومحجوبة وغير معتمدة |
 | واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ نُفذت ضمن العقد المعتمد | المهمة 3.21 — مكتملة ومدمجة عبر طلب السحب #24 |
 
 يجمع التصفح والتفاصيل والمشاركة الحالية شريحة رأسية واحدة: العثور على المنتج ثم فحصه ثم تجهيز ومشاركة حمولته الآمنة للعميل. فصل أحدها يترك مسار تنقل ناقصاً أو مكوّن المشاركة غير قابل للوصول. أما الوصول العام أو تعديلات الإدارة أو تسليم المزود فتوسع المعمارية وليست جزءاً من هذه الشريحة.
@@ -265,7 +268,7 @@ Planning-R1 does not select a global manage-implies-view rule. A future re-scope
 
 - يبقى السير خاصاً وموثقاً ولا يضيف مساراً عاماً أو مجهولاً، وتبقى استجابات الخادم `private, no-store`.
 - تأتي مساحة العمل والممثل والصلاحيات ونطاق الفرع من `TrustedActorContext` فقط، ويعيد الخادم التحقق من كل معرف يرسله المتصفح.
-- يتطلب الدخول `catalog.products.view`. يبقى إظهار التجزئة والجملة والإتاحة والكميات الدقيقة والتكلفة المرجعية قرار حذف حقول في الخادم وفق `pricing.view` و`pricing.wholesale.view` و`inventory.availability.view` و`inventory.quantity.view` و`referenceCost.view`.
+- يتطلب الدخول `catalog.products.view`. يبقى إظهار التجزئة والجملة والإتاحة والكميات الدقيقة قرار حذف حقول في الخادم. ويتطلب عرض التكلفة المرجعية الداخلي العادي التركيب الكامل من `pricing.view` و`referenceCost.view`، ولا تكفي الثانية وحدها.
 - تعرض الواجهة الحقول المعادة فقط ولا تستنتج القيم المحذوفة. وإن عادت التكلفة المرجعية في تفاصيل داخلية فتوسم كداخلية ولا تدخل المشاركة أبداً.
 - تبقى المشاركة محمية بـ`catalog.sharing.create` وعرض المنتج وصلاحية السعر ونطاق الفرع ودورة Published والإدراج الصريح.
 - تبقى الموارد الأجنبية أو الخارجة عن النطاق أو غير المخولة أو غير المدرجة أو غير المنشورة غير كاشفة، ولا تشرح الواجهة سبب الغياب الداخلي.
@@ -327,10 +330,11 @@ Planning-R1 does not select a global manage-implies-view rule. A future re-scope
 ### قرار التخطيط الحالي
 
 - **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — مكتملة ومدمجة:** دُمجت عبر طلب السحب #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة / تتطلب إعادة تحديد النطاق وغير معتمدة للتنفيذ:** يصحح تخطيط-R1 تصنيفات المصفوفة السابقة. لا تجعل مسارات التعديل الموجودة وحدها سير الواجهة الكامل كافياً؛ وينتظر التنفيذ عقود قراءة/اكتشاف/كشف وسلطة إدارة مشتقة من الخادم ومراجعة بصورة مستقلة.
-- لم تُعتمد أي مهمة بعد 3.22، ولا توجد حالياً مهمة تحمل حالة التنفيذ التالي المعتمد.
+- **المهمة 3.22-A — تصحيح عقود إدارة العمليات — تخطيط-R2 يتطلب أدلة أداء / غير معتمدة للتنفيذ:** يستخدم [العقد المصحح](Task-3.22-A-Operational-Management-Contract.md) و[تقرير تخطيط-R2](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md) في بوابة استمرارية/أداء مستقلة، ولا تنفذ A1–A5 الآن.
+- **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة / محجوبة وغير معتمدة للتنفيذ:** تبقى محجوبة حتى مراجعة كل شرائح 3.22-A ودمجها.
+- لم تعتمد أي مهمة لاحقة.
 
-لا يختار تخطيط-R1 قاعدة عامة بأن الإدارة تستلزم العرض. يجب أن تقرر إعادة تحديد النطاق اللاحقة صراحةً إما استلزاماً محدوداً للصلاحيات في طبقة التطبيق، أو قراءات للحد الأدنى من حالة الإدارة مخولة بصلاحيات التعديل، أو إسقاط إدارة آخر مشتقاً من الخادم. ولا يجوز كشف الصلاحيات الخام أو الدور أو `workspaceId` أو `actorId` أو `allowedBranchIds` لاتخاذ قرار التفويض في المتصفح.
+تحفظ 3.22-A قراءات الإدارة المحدودة وقدرات Identity Application الفعلية، واستعلام Draft+Published واحداً، ومؤشر حجوزات حياً دقيقاً، ومراجعة منتج مشتركة للتجزئة والجملة مع استقلال مراجعة التكلفة المرجعية. تنتظر A3 بوابة تقيس خطة الفهرس الحالي أولاً؛ ويبقى الفهرس الجزئي تحسيناً مرشحاً غير معتمد. ولا يبدأ التنفيذ أو تكشف السلطة الخام.
 
 ## Related Documents | الوثائق المرتبطة
 
@@ -343,4 +347,8 @@ Planning-R1 does not select a global manage-implies-view rule. A future re-scope
 - [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md)
 - [Task 3.22 Planning Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-Final-Report.md)
 - [Task 3.22 Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-Planning-R1-Final-Report.md)
+- [Task 3.22-A Planning Final Report — historical](../05-Development/Reports/QSC-Task-3.22-A-Planning-Final-Report.md)
+- [Task 3.22-A Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md)
+- [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)
+- [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md)
 - [Branch Inventory and Pricing](../01-Architecture/Inventory/Branch-Inventory-and-Pricing.md)
