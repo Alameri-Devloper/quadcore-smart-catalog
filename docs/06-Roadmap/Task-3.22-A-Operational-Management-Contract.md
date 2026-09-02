@@ -1,8 +1,8 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** Reservation Persistence Gate — **EXISTING INDEX SUFFICIENT**; Task 3.22-A is the sole Approved Next Implementation pending independent review · **Evidence baseline:** `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` · **Date:** 2026-09-02
+**Status:** Task 3.22-A1 implementation complete / **ReadyForReview**; A2 is not implementation-approved before independent A1 review and merge · **Implementation baseline:** `3fa5605bb5f17726eae4805ca768cc90b5b0a213` · **Date:** 2026-09-02
 
-The Reservation persistence gate resolves the final Planning-R2 evidence question without changing the Application/API contract. It authorizes no code by itself and does not approve Task 3.22 Presentation; after independent review, Task 3.22-A becomes the sole Approved Next Implementation beginning with A1.
+A1 implements the approved repository-free authorization and semantic capability boundary only. It does not approve A2, A3, A4, A5, or Task 3.22 Presentation; independent A1 review and merge are required before any next slice is considered.
 
 يعتمد هذا العقد شرائح تنفيذ عقود الخادم التصحيحية المحددة أدناه فقط، ولا يعتمد واجهة المهمة 3.22.
 
@@ -432,13 +432,13 @@ No new permission code is required.
 - **Dependency:** none. Existing TypeScript, Application ports, Drizzle/PostgreSQL, HTTP, and cursor utilities are sufficient.
 - **Architecture:** no redesign and no ADR. The selected hybrid is a documented operation-specific authorization composition, not a global permission-semantic change. Catalog Query remains canonical Product search; Branch Product owns Listing/Pricing; Inventory owns Reservations/balances/mutations; transfer remains atomic.
 
-Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence are resolved. After independent review of the evidence gate, implement A1 first and then A2–A5 under their existing dependency sequence. Do not add migration `0016` or the Candidate Optimization.
+Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence remain resolved. A1 is implemented and ReadyForReview. Do not begin A2–A5 before independent A1 review and merge, and do not add migration `0016` or the Candidate Optimization.
 
 ### Implementation slices and dependencies
 
-#### 3.22-A1 — Authorization policies and semantic capabilities
+#### 3.22-A1 — Authorization policies and semantic capabilities — Implemented / ReadyForReview
 
-Implement the repository-free `GetOperationalManagementCapabilitiesUseCase` in Identity Application, its thin Identity HTTP adapter/runtime wiring, and Domain-local resource-action projection rules in their owning Applications.
+Implemented the repository-free `GetOperationalManagementCapabilitiesUseCase` in Identity Application, its thin Identity HTTP adapter/runtime wiring, and reusable permission-only action vocabulary without persistence or resource-state assumptions.
 
 Acceptance: exact effective/composite boolean mapping (including ordinary Reference Cost); type-checked fixed `PermissionCode` literals; no raw authority fields; Owner/Staff/restricted-session coverage; no business rules in the route handler; writes still reauthorize; no repository/schema/dependency or generic BFF.
 
@@ -476,7 +476,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### Roadmap decision
 
-**EXISTING INDEX SUFFICIENT.** Task 3.22-A corrective implementation becomes the sole **Approved Next Implementation**, subject to independent review of this performance gate; A1 remains the first slice. Task 3.22 Presentation remains Planned / blocked and is not approved. No later task is approved.
+**A1 is implemented / ReadyForReview.** The Task 3.22-A corrective sequence remains approved, but A2 is not automatically implementation-approved before independent A1 review and merge. A3–A5 are not started. Task 3.22 Presentation remains Planned / blocked and is not approved.
 
 ## العقد العربي
 
@@ -509,22 +509,22 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### شرائح التنفيذ
 
-1. **3.22-A1:** إسقاط القدرات الفعلية في Identity Application وأفعال الموارد في مجالاتها.
+1. **3.22-A1 — منفذة / جاهزة للمراجعة:** إسقاط القدرات الفعلية في Identity Application ومفردات أفعال الموارد النقية دون وصول للاستمرارية.
 2. **3.22-A2:** استعلام Draft+Published تشغيلي واحد وقراءة حالة الإدراج.
 3. **3.22-A3:** قراءات الحجوزات بعقد المؤشر الدقيق وبوابة خطة الاستعلام.
 4. **3.22-A4:** قراءات إدارة التسعير مع مراجعة المنتج المشتركة للتجزئة والجملة ومراجعة مستقلة للتكلفة المرجعية.
 5. **3.22-A5:** تشديد كشف المخزون ونتائج الطفرات وإعادة idempotent.
 
-تعتمد الشرائح A2–A5 على مفردات السياسة في A1. ويمكن تنفيذ A2–A5 بالتوازي بعد دمج A1، مع بقاء اعتماد واجهة المهمة 3.22 محظوراً حتى اكتمالها كلها ومراجعتها ودمجها.
+تعتمد الشرائح A2–A5 على مفردات السياسة في A1. لا تعتمد أي منها تلقائياً قبل مراجعة A1 مستقلاً ودمجها، مع بقاء واجهة المهمة 3.22 محظورة حتى اكتمال الشرائح كلها ومراجعتها ودمجها.
 
 ### قرار الخارطة
 
-**الفهرس الحالي كافٍ.** تصبح 3.22-A وحدها **التنفيذ التالي المعتمد** بعد المراجعة المستقلة لأدلة الأداء، وتبقى A1 الشريحة الأولى. تبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة، ولا تعتمد أي مهمة لاحقة.
+**A1 منفذة / جاهزة للمراجعة.** يبقى تسلسل 3.22-A معتمداً، لكن A2 غير معتمدة تلقائياً قبل مراجعة A1 ودمجها. لم تبدأ A3–A5، وتبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة.
 
 ## WILL IMPLEMENT | سينفذ
 
-- After independent review, implement A1–A5 in the documented sequence on the current schema; A1 remains first.
-- بعد المراجعة المستقلة تنفذ A1–A5 بالتسلسل الموثق على المخطط الحالي، وتبقى A1 أولاً.
+- After independent A1 review and merge, consider the next bounded slice under the documented sequence; do not infer A2 approval from this status update.
+- بعد مراجعة A1 مستقلاً ودمجها، ينظر في الشريحة المحدودة التالية وفق التسلسل الموثق؛ ولا يستنتج اعتماد A2 من تحديث الحالة هذا.
 
 ## WILL NOT IMPLEMENT | لن ينفذ
 

@@ -1,14 +1,14 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
-**Status:** Reservation performance gate outcome is `EXISTING INDEX SUFFICIENT`; Task 3.22-A is the sole Approved Next Implementation pending independent review, beginning with A1 · **Current-state baseline:** `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` / PR #26 · **Updated:** 2026-09-02
+**Status:** Task 3.22-A1 implementation is complete / ReadyForReview; A2 is not implementation-approved before independent A1 review and merge · **Current-state baseline:** `3fa5605bb5f17726eae4805ca768cc90b5b0a213` / PR #27 · **Updated:** 2026-09-02
 
-> **Task 3.22-A Reservation performance decision | قرار أداء الحجوزات للمهمة 3.22-A:** At baseline `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` / PR #26, isolated PostgreSQL plans selected the current Reservation index for first and deep keyset pages through 10,000 actionable rows plus equal terminal rows. The exact outcome is `EXISTING INDEX SUFFICIENT`; no Candidate Optimization or migration `0016` is required. Task 3.22-A is the sole Approved Next Implementation pending independent review, A1 is first, and Task 3.22 Presentation remains Planned / blocked. Historical baselines remain PR #25 at `260b4116749d3460b8262b3ccf034b8ba26d00a5` and PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. | اختارت خطط PostgreSQL المعزولة فهرس الحجوزات الحالي لكل من الصفحة الأولى والمؤشر العميق حتى 10,000 صف قابل للتنفيذ مع عدد مساوٍ من الصفوف النهائية. النتيجة الدقيقة هي `EXISTING INDEX SUFFICIENT`، ولا يلزم فهرس مرشح أو ترحيل `0016`. تصبح 3.22-A التنفيذ التالي المعتمد الوحيد بانتظار المراجعة المستقلة وتبدأ بـ A1، بينما تبقى واجهة 3.22 محجوبة.
+> **Task 3.22-A1 implementation decision | قرار تنفيذ المهمة 3.22-A1:** Baseline `3fa5605bb5f17726eae4805ca768cc90b5b0a213` contains the approved Reservation gate through PR #27. A1 is implemented and ReadyForReview with a repository-free Identity capability projection and no schema, migration, dependency, or permission-registry change. A2 is not automatically approved before independent A1 review and merge; A3–A5 are not started, and Task 3.22 Presentation remains blocked. | يحتوي خط الأساس بوابة الحجوزات المعتمدة عبر طلب السحب #27. نُفذت A1 وهي جاهزة للمراجعة دون مخطط أو ترحيل أو اعتماد أو تغيير سجل الصلاحيات. لا تعتمد A2 تلقائياً قبل مراجعة A1 ودمجها، ولم تبدأ A3–A5، وتبقى واجهة 3.22 محجوبة.
 
 ## English
 
 ### Reconciliation outcome
 
-Tasks 3.14–3.21 are completed and merged foundations. Task 3.21 delivered the authenticated Catalog Reference Data management Presentation and merged through PR #24 into `feature/product-entry-engine`; the current integration baseline is `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` through PR #26. The Task 3.20 analysis below remains historical rationale. The Reservation performance gate resolved the remaining A3 persistence question as `EXISTING INDEX SUFFICIENT`; Task 3.22-A is the sole Approved Next Implementation pending independent review and A1 is first.
+Tasks 3.14–3.21 are completed and merged foundations. The current integration baseline is `3fa5605bb5f17726eae4805ca768cc90b5b0a213` through PR #27; PR #26 at `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` remains the historical Planning-R2 baseline. A1 is implemented and ReadyForReview. A2 is not implementation-approved before independent A1 review and merge.
 
 Legacy Catalog mocks remain fixtures only. They are not Production truth and must not back the next Presentation.
 
@@ -21,7 +21,7 @@ Legacy Catalog mocks remain fixtures only. They are not Production truth and mus
 | Direct Device Sharing UI integration | Converts the completed 3.19 boundary into a reachable customer workflow without a new channel | No ADR | Included in Task 3.20 |
 | Public Product Share Link | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary | ADR required | Deferred; excluded from Task 3.20 |
 | WhatsApp-oriented customer sharing | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20 |
-| Operational management contract remediation | Resolves read/manage composition, one canonical mixed-lifecycle Product query, exact Reservation pagination, shared Product pricing concurrency, Inventory disclosure, and effective semantic capabilities before Presentation work | Option D needs no ADR/new permission; current Reservation index is sufficient for the measured approved query and no Candidate Optimization is required | Task 3.22-A — sole Approved Next Implementation pending independent review; A1 first |
+| Operational management contract remediation | Resolves read/manage composition, one canonical mixed-lifecycle Product query, exact Reservation pagination, shared Product pricing concurrency, Inventory disclosure, and effective semantic capabilities before Presentation work | A1 preserves Option D with no ADR/new permission; current Reservation index remains sufficient | Task 3.22-A1 — implemented / ReadyForReview; A2 not yet approved |
 | Branch/Inventory/Pricing management Presentation | Consumes the corrected contracts only after 3.22-A is implemented, reviewed, and merged | Existing architecture remains sufficient | Task 3.22 — Planned / blocked, not approved |
 | Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; implemented within the approved contract | Task 3.21 — Completed / merged through PR #24 |
 
@@ -191,7 +191,7 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 ### Current planning decision
 
 - **Task 3.21 — Catalog Reference Data Management Presentation — Completed / merged:** merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **Task 3.22-A — Operational Management Contract Remediation — sole Approved Next Implementation pending independent review:** use the corrected [operational contract](Task-3.22-A-Operational-Management-Contract.md) and [Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md). Begin with A1 after approval and retain the defined A1–A5 sequence.
+- **Task 3.22-A1 — Authorization Policies and Semantic Capabilities — implemented / ReadyForReview:** use the [A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md). A2 is not automatically approved before independent A1 review and merge; A3–A5 are not started.
 - **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned / blocked, not implementation-approved:** it remains blocked until all 3.22-A slices are independently reviewed and merged.
 - No later task is approved.
 
@@ -201,7 +201,7 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 
 ### نتيجة المصالحة
 
-تمثل المهام 3.14–3.21 أسساً مكتملة ومدمجة. قدمت المهمة 3.21 واجهة إدارة البيانات المرجعية للكتالوج الموثقة، ودُمجت عبر طلب السحب #24 في `feature/product-entry-engine`؛ وخط الأساس للحالة الحالية هو `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` عبر طلب السحب #26. يبقى تحليل المهمة 3.20 أدناه مبرراً تاريخياً. حسمت بوابة أداء الحجوزات سؤال استمرارية A3 بنتيجة `EXISTING INDEX SUFFICIENT`، وأصبحت 3.22-A التنفيذ التالي المعتمد الوحيد بانتظار المراجعة المستقلة وتبدأ بـ A1.
+تمثل المهام 3.14–3.21 أسساً مكتملة ومدمجة. خط الأساس الحالي هو `3fa5605bb5f17726eae4805ca768cc90b5b0a213` عبر طلب السحب #27، ويبقى `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` عبر طلب السحب #26 خط تخطيط-R2 التاريخي. نُفذت A1 وهي جاهزة للمراجعة، ولا تعتمد A2 للتنفيذ قبل مراجعة A1 ودمجها.
 
 تبقى بيانات الكتالوج الوهمية القديمة fixtures فقط، وليست حقيقة الإنتاج ولا يجوز أن تشغّل واجهة العرض التالية.
 
@@ -214,7 +214,7 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 | ربط واجهة المشاركة المباشرة عبر الجهاز | يجعل حدود 3.19 المكتملة قابلة للوصول دون قناة جديدة | لا يحتاج ADR | ضمن 3.20 |
 | رابط مشاركة منتج عام | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة | ADR مطلوب | مؤجل وخارج 3.20 |
 | مشاركة موجهة إلى WhatsApp | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي | مؤجل وخارج 3.20 |
-| تصحيح عقود إدارة العمليات | يحل تركيب القراءة/الإدارة والاستعلام التشغيلي ومؤشر الحجوزات وتزامن التسعير وكشف المخزون والقدرات | لا يحتاج الحل الهجين ADR أو صلاحية جديدة؛ والفهرس الحالي كافٍ للاستعلام المقاس ولا يلزم التحسين المرشح | المهمة 3.22-A — التنفيذ التالي المعتمد الوحيد بانتظار المراجعة المستقلة؛ A1 أولاً |
+| تصحيح عقود إدارة العمليات | يحل تركيب القراءة/الإدارة والاستعلام التشغيلي ومؤشر الحجوزات وتزامن التسعير وكشف المخزون والقدرات | تحفظ A1 الحل الهجين دون ADR أو صلاحية جديدة، ويبقى الفهرس الحالي كافياً | المهمة 3.22-A1 — منفذة / جاهزة للمراجعة؛ A2 غير معتمدة بعد |
 | واجهة إدارة الفروع والمخزون والتسعير | تستهلك العقود المصححة فقط بعد تنفيذ 3.22-A ومراجعتها ودمجها | تكفي المعمارية الحالية | المهمة 3.22 — مخططة ومحجوبة وغير معتمدة |
 | واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ نُفذت ضمن العقد المعتمد | المهمة 3.21 — مكتملة ومدمجة عبر طلب السحب #24 |
 
@@ -330,7 +330,7 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 ### قرار التخطيط الحالي
 
 - **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — مكتملة ومدمجة:** دُمجت عبر طلب السحب #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **المهمة 3.22-A — تصحيح عقود إدارة العمليات — التنفيذ التالي المعتمد الوحيد بانتظار المراجعة المستقلة:** يُستخدم [العقد المصحح](Task-3.22-A-Operational-Management-Contract.md) و[تقرير تخطيط أداء الحجوزات](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)، ويبدأ التنفيذ بـ A1 بعد الاعتماد مع الحفاظ على ترتيب A1–A5.
+- **المهمة 3.22-A1 — سياسات التفويض والقدرات الدلالية — منفذة / جاهزة للمراجعة:** يُستخدم [تقرير A1 النهائي](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md). لا تعتمد A2 تلقائياً قبل مراجعة A1 ودمجها، ولم تبدأ A3–A5.
 - **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة / محجوبة وغير معتمدة للتنفيذ:** تبقى محجوبة حتى مراجعة كل شرائح 3.22-A ودمجها.
 - لم تعتمد أي مهمة لاحقة.
 
@@ -351,5 +351,6 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 - [Task 3.22-A Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md)
 - [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)
 - [Task 3.22-A Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)
+- [Task 3.22-A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md)
 - [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md)
 - [Branch Inventory and Pricing](../01-Architecture/Inventory/Branch-Inventory-and-Pricing.md)
