@@ -1,8 +1,8 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** Planning-R2 ReScopeRequired — Reservation query performance evidence required; no implementation approved · **Baseline:** `260b4116749d3460b8262b3ccf034b8ba26d00a5` · **Date:** 2026-09-01
+**Status:** Reservation Persistence Gate — **EXISTING INDEX SUFFICIENT**; Task 3.22-A is the sole Approved Next Implementation pending independent review · **Evidence baseline:** `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` · **Date:** 2026-09-02
 
-This R2 contract makes the Application/API contracts precise but authorizes no implementation while the Reservation query-performance evidence gate remains unresolved. It does not approve Task 3.22 Presentation.
+The Reservation persistence gate resolves the final Planning-R2 evidence question without changing the Application/API contract. It authorizes no code by itself and does not approve Task 3.22 Presentation; after independent review, Task 3.22-A becomes the sole Approved Next Implementation beginning with A1.
 
 يعتمد هذا العقد شرائح تنفيذ عقود الخادم التصحيحية المحددة أدناه فقط، ولا يعتمد واجهة المهمة 3.22.
 
@@ -20,7 +20,7 @@ Task 3.22-A resolves the seven independently approved blockers without changing 
 6. server-side Inventory numeric-disclosure hardening; and
 7. browser-safe semantic management capabilities.
 
-Task 3.22 remains Planned and blocked. Task 3.22-A also remains not implementation-approved until the separate Task 3.22-A Reservation Persistence / Query Performance Planning Gate decides whether current persistence is sufficient, an index is evidence-required, or reliable evidence cannot be produced.
+Task 3.22 remains Planned and blocked until every Task 3.22-A slice is implemented, independently reviewed, and merged. The bounded Reservation persistence gate selected `EXISTING INDEX SUFFICIENT`; no migration or preliminary persistence task is required.
 
 ### Read/manage authority options
 
@@ -219,7 +219,7 @@ interface ReservationPageView {
 
 The current `inventory_reservations_product_idx (workspace_id, branch_id, product_id, status)` supports exact tenant/Branch/Product/status filtering, but it **does not** contain `updated_at` or `reservation_id` and therefore cannot itself provide the required global order across both actionable statuses. PostgreSQL may legally filter candidates through the existing index, sort them, and return `limit + 1`. The source contains no representative `EXPLAIN` evidence proving whether that plan is acceptable or pathological. Missing order columns establish a performance question; they do **not** by themselves prove that a migration is required.
 
-The persistence conclusion is therefore **RESCOPE REQUIRED FOR RESERVATION QUERY PERFORMANCE EVIDENCE**. The following partial ordered index is documented only as a **Candidate Optimization**, not an approved migration, required migration, or proven requirement:
+Planning-R2 therefore required query-performance evidence. The following partial ordered index was documented only as a **Candidate Optimization**, not an approved migration, required migration, or proven requirement:
 
 ```sql
 (workspace_id, branch_id, product_id, updated_at DESC, reservation_id DESC)
@@ -230,7 +230,7 @@ No index or migration is approved by this contract, and migration `0016` remains
 
 #### Task 3.22-A-Persistence Planning Gate
 
-Create a separate bounded **Task 3.22-A Reservation Persistence / Query Performance Planning Gate**. It must run the exact approved query against an isolated PostgreSQL test database populated only with generated, non-sensitive, representative data. Production is prohibited. It first evaluates the current schema/index using `EXPLAIN (FORMAT JSON)` and, only when project verification policy permits execution, preferably `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)`. It compares the Candidate Optimization only if the current plan shows a material concern.
+The separate bounded **Task 3.22-A Reservation Persistence / Query Performance Planning Gate** was required to run the exact approved query against an isolated PostgreSQL test database populated only with generated, non-sensitive, representative data. Production was prohibited. It first evaluated the current schema/index using `EXPLAIN (FORMAT JSON)` and `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)`, with Candidate Optimization comparison allowed only if the current plan showed a material concern.
 
 The gate must evaluate:
 
@@ -250,7 +250,15 @@ The gate must return exactly one decision:
 2. **INDEX REQUIRED:** evidence demonstrates a material reason; a later separately approved migration may add the smallest justified index, after comparing the Candidate Optimization and documenting rollback/verification.
 3. **DECISION REQUIRED:** representative evidence cannot be produced reliably; A3 remains blocked and no persistence choice is guessed.
 
-Planning-R2 chooses none of these three evidence outcomes. A3 and the complete Task 3.22-A implementation remain blocked until the gate is independently reviewed.
+#### Evidence result — EXISTING INDEX SUFFICIENT
+
+The gate ran on the repository-guarded loopback test database `quadcore_smart_catalog_test`, distinct from the application database, using PostgreSQL 17.10 and generated non-sensitive data only. It asserted the exact current index definition, then collected `EXPLAIN (FORMAT JSON)` and `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` for first and 75%-deep keyset pages at 10, 100, 1,000, and 10,000 actionable Reservations, with equal Fulfilled/Released rows in the same Product scope.
+
+The current index was selected at every cardinality. Low/typical plans used Index Scan; high/stress plans used Bitmap Index Scan plus Bitmap Heap Scan. A Sort node remained, as expected, but it stayed entirely in memory: quicksort at low/deep-typical and top-N heapsort elsewhere, with 25–28 KB sort space, zero temporary reads/writes, and no index recheck removals. At 10,000 actionable plus 10,000 terminal rows, the first page scanned exactly 10,000 actionable candidates, touched 217 shared-hit blocks, and executed in 3.775 ms; the deep cursor scanned the same indexed candidates, removed 7,500 by the keyset filter, sorted 2,500 surviving rows with 28 KB memory, touched 217 shared-hit blocks, and executed in 2.006 ms. Timing is supporting evidence only, not a new performance budget.
+
+The plan scaled predictably across the approved evidence matrix, used the selective Workspace/Branch/Product/status index, avoided sequential scans, disk sorts, and temporary I/O, and bounded result/sort memory through `LIMIT 25` top-N behavior. The 10,000-actionable stress case showed no material current concern warranting candidate-index comparison. Per the gate rule, the Candidate Optimization was not created or tested.
+
+The final persistence decision is **EXISTING INDEX SUFFICIENT** for the current approved Product-scoped actionable query. A3 may add only the planned collection repository method and Application/HTTP contract on current schema. No schema change, migration `0016`, or candidate index is approved. Synthetic rows were removed; zero gate Reservations remained, and no temporary index existed.
 
 ### Workspace base-pricing read contract
 
@@ -386,7 +394,7 @@ Classification: `A` read-only Application/HTTP addition using existing persisten
 | Global semantic capabilities | Identity Application: `GetOperationalManagementCapabilitiesUseCase` | `GET /api/operations/capabilities` | none | effective semantic nested booleans | trusted context only; no resource scope | no raw authority; `401/403/503` | none | no repository/schema | exact composite mapping, Owner/Staff, restricted session, field exclusion, thin handler | A/C |
 | Operational Product discovery | Catalog Query | `GET /api/catalog/operational-products` | `purpose,q?,branchId?,cursor?,limit?` | one mixed Draft/Published identity/lifecycle/listing page | purpose-to-existing-permission mapping; Branch scope when Branch-scoped | wrong/out-of-scope Branch `404`; unauthorized purpose `403`; invalid/cursor `400`; `503` | operational fingerprint and one combined keyset cursor | extend current repository query with `CatalogLifecycleScope`; one SQL query; no schema | every purpose/permission, singular edit, mixed-lifecycle order/cursor, equal-sort ties, scope, ordinary-query cursor non-regression | A/C |
 | Listing state/revision | Catalog Branch Product | `GET /api/branches/{branchId}/products/{productId}/listing` | path | Listing management state/actions | singular **or** plural edit; Branch scope | foreign/out-of-scope `404`; `401/403/503` | authoritative revision; absence only is `0` | existing listing/scope ports; no schema | both edit codes, absence, inactive/archive actions, conflict refresh | A/C |
-| Actionable Reservation page | Inventory | `GET /api/branches/{branchId}/inventory/reservations` | `productId,cursor?,limit?` | actionable page | `inventory.reserve`; Branch scope | no actor/audit data; safe `404`; invalid/cursor `400` | `(updatedAt DESC,reservationId DESC)` keyset; mutation rechecks | add list port method after performance gate; existing schema remains a possible outcome; partial ordered index is Candidate Optimization only | tenant/scope/filter/mixed-status/order/ties/cursor binding/live-stale/empty/limits/representative plan | A if current index sufficient; D only after separately approved evidence-based migration |
+| Actionable Reservation page | Inventory | `GET /api/branches/{branchId}/inventory/reservations` | `productId,cursor?,limit?` | actionable page | `inventory.reserve`; Branch scope | no actor/audit data; safe `404`; invalid/cursor `400` | `(updatedAt DESC,reservationId DESC)` keyset; mutation rechecks | add list port method over existing `inventory_reservations_product_idx`; no schema; Candidate Optimization not approved | tenant/scope/filter/mixed-status/order/ties/cursor binding/live-stale/empty/limits/representative plan regression | A |
 | Reservation detail | Inventory | `GET /api/branches/{branchId}/inventory/reservations/{reservationId}` | path | current reservation/actions | `inventory.reserve`; Branch scope | foreign/wrong Branch/missing `404` | current state; mutation rechecks | existing find-by-ID port; no schema | every status, stale state, non-disclosure | A |
 | Workspace base management state | Catalog Branch Product | `GET /api/products/{productId}/pricing` | path | field-filtered base slots/actions plus shared `productRevision` | independent read or base-manage rule per type; ordinary Reference Cost requires both view permissions | omit unauthorized types; none authorized `403`; Product `404`; `503` | one shared Product revision for Retail/Wholesale; independent Reference Cost revision | existing scope/pricing ports; no schema | permission cross-product, zero/missing, Retail↔Wholesale invalidation/refresh/conflict, ref-cost independence/isolation | A/C |
 | Branch override management state | Catalog Branch Product | `GET /api/branches/{branchId}/products/{productId}/pricing/management` | path | base/override/effective/source/actions | override-manage per type; Branch scope | omit unauthorized types; safe `404`; `403/503` | exact base/override revisions; absent override `0` | existing pricing/scope ports; no schema | permission cross-product, inherit/override/absent, scope, inactive/archive | A/C |
@@ -419,12 +427,12 @@ No new permission code is required.
 
 ### Database, migration, dependency, and architecture decisions
 
-- **Database:** current persistence is sufficient for Catalog operational discovery, exact Reservation detail, Pricing concurrency, capabilities, and Inventory disclosure. Reservation collection performance is not yet proven either sufficient or insufficient: PostgreSQL can use the existing filter index and sort, but representative query-plan evidence is required to judge that plan.
-- **Migration:** none approved. The migration chain remains `0000–0015`; `0016` must not be created. The partial ordered actionable-Reservation index is Candidate Optimization only and may be proposed later solely if the persistence gate returns `INDEX REQUIRED` from material evidence.
+- **Database:** current persistence is sufficient, including the Product-scoped actionable Reservation collection. Representative first/deep-page PostgreSQL 17.10 evidence through 10,000 actionable rows selected `inventory_reservations_product_idx`, used bounded in-memory sorting, and showed no material concern.
+- **Migration:** none. The migration chain remains `0000–0015`; `0016` must not be created. The partial ordered actionable-Reservation index remains an unapproved future candidate and is unnecessary for the current approved scale.
 - **Dependency:** none. Existing TypeScript, Application ports, Drizzle/PostgreSQL, HTTP, and cursor utilities are sufficient.
 - **Architecture:** no redesign and no ADR. The selected hybrid is a documented operation-specific authorization composition, not a global permission-semantic change. Catalog Query remains canonical Product search; Branch Product owns Listing/Pricing; Inventory owns Reservations/balances/mutations; transfer remains atomic.
 
-Capability ownership, operational query shape, cursor semantics, and Pricing concurrency are resolved. Reservation query performance is not. Do not implement A1–A5 piecemeal, do not add migration `0016`, and do not treat either current-index sufficiency or the Candidate Optimization as already proven. The Task 3.22-A-Persistence Planning Gate must return `EXISTING INDEX SUFFICIENT`, `INDEX REQUIRED`, or `DECISION REQUIRED` before Task 3.22-A can be reconsidered as Approved Next Implementation.
+Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence are resolved. After independent review of the evidence gate, implement A1 first and then A2–A5 under their existing dependency sequence. Do not add migration `0016` or the Candidate Optimization.
 
 ### Implementation slices and dependencies
 
@@ -446,7 +454,7 @@ Depends on A1 policy vocabulary.
 
 Add the Product-scoped actionable Reservation page and exact detail with the specified `(updatedAt,reservationId)` keyset, query fingerprint, live-cursor behavior, existing table/filter index, and minimal DTO.
 
-Acceptance after the persistence evidence gate: `inventory.reserve` authorization; tenant/Branch/Product scoping; Active/PartiallyFulfilled only; default 24/max 60/limit+1; exact order/ties/cursor validation/fingerprint/empty/live-stale behavior; no actor/audit fields; stale/non-actionable detail; Release/Fulfill mutation revalidation; and implementation consistent with the independently reviewed `EXISTING INDEX SUFFICIENT` or `INDEX REQUIRED` decision. `DECISION REQUIRED` keeps A3 blocked.
+Acceptance: `inventory.reserve` authorization; tenant/Branch/Product scoping; Active/PartiallyFulfilled only; default 24/max 60/limit+1; exact order/ties/cursor validation/fingerprint/empty/live-stale behavior; no actor/audit fields; stale/non-actionable detail; Release/Fulfill mutation revalidation; current index used without schema change; focused PostgreSQL integration plan regression at representative cardinality.
 
 Depends on A1 resource-action rules; consumes A2 Product selection in the future Presentation but can be implemented/tested independently.
 
@@ -468,7 +476,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### Roadmap decision
 
-**ReScopeRequired for Reservation Query Performance Evidence.** Task 3.22-A is not implementation-approved because A3 requires representative PostgreSQL plan/performance evidence; neither current-index sufficiency nor a new index is predetermined. Task 3.22 Presentation remains Planned / blocked and is not approved. There is currently no Approved Next Implementation, and no later task is approved.
+**EXISTING INDEX SUFFICIENT.** Task 3.22-A corrective implementation becomes the sole **Approved Next Implementation**, subject to independent review of this performance gate; A1 remains the first slice. Task 3.22 Presentation remains Planned / blocked and is not approved. No later task is approved.
 
 ## العقد العربي
 
@@ -491,13 +499,13 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### قاعدة البيانات والمعمارية
 
-يغطي فهرس الحجوزات الحالي ترشيح مساحة العمل/الفرع/المنتج/الحالة لكنه لا يغطي `updated_at` و`reservation_id` ولا يوفر بنفسه الترتيب العالمي للحالتين القابلتين للفعل. مع ذلك يستطيع PostgreSQL قانونياً استخدام الفهرس الحالي ثم فرز المرشحين وإعادة `limit + 1`. لا يثبت غياب عمودي الترتيب وحده الحاجة إلى ترحيل، ولا توجد حالياً أدلة `EXPLAIN` تمثيلية تثبت كفاية الخطة أو عدمها.
+يغطي فهرس الحجوزات الحالي ترشيح مساحة العمل/الفرع/المنتج/الحالة لكنه لا يغطي `updated_at` و`reservation_id` ولا يوفر بنفسه الترتيب العالمي للحالتين القابلتين للفعل. لذلك قاست البوابة فعلياً استخدام PostgreSQL للفهرس الحالي ثم فرز المرشحين وإعادة `limit + 1`، ولم تفترض الحاجة إلى ترحيل من غياب عمودي الترتيب وحده.
 
-لذلك تكون النتيجة **إعادة تحديد النطاق لأدلة أداء استعلام الحجوزات**. يوثق الفهرس الجزئي المرتب على `(workspace_id, branch_id, product_id, updated_at DESC, reservation_id DESC)` للحالتين القابلتين للفعل بوصفه **تحسيناً مرشحاً فقط**، لا ترحيلاً معتمداً أو مطلوباً أو حاجة مثبتة. لا يعتمد `0016`.
+استخدمت الأدلة قاعدة الاختبار المحروسة على loopback مع PostgreSQL 17.10 وبيانات مولدة غير حساسة عند 10 و100 و1,000 و10,000 حجز قابل للفعل مع عدد مساوٍ من الحالات النهائية. اختير الفهرس الحالي في كل خطة. بقي الفرز في الذاكرة بين 25 و28 كيلوبايت دون ملفات مؤقتة؛ وعند 10,000 حجز قابل للفعل نفذت الصفحة الأولى في 3.775 مللي ثانية والمؤشر العميق عند 75% في 2.006 مللي ثانية مع 217 كتلة مشتركة مصابة في الذاكرة. تمثل الأزمنة دليلاً مساعداً وليست ميزانية جديدة.
 
-تنشأ بوابة مستقلة باسم **Task 3.22-A Reservation Persistence / Query Performance Planning Gate**. تختبر الاستعلام الحقيقي على قاعدة PostgreSQL اختبارية مع بيانات مولدة غير حساسة وتمثيلية، ولا تستخدم Production. تبدأ بـ`EXPLAIN (FORMAT JSON)` للخطة الحالية، وتستخدم `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` عند سماح سياسة التحقق، ولا تقارن التحسين المرشح إلا عند ظهور سبب مادي. تفحص انتقائية مساحة العمل/الفرع/المنتج/الحالات، وعدد المرشحين قبل الحد، والعقدة Sort والتكلفة والصفوف المفحوصة، والتقدير مقابل الواقع، والمؤشر العميق، وتأثير الحد، وكلفة الكتابة والتخزين والصيانة لفهرس إضافي.
+النتيجة النهائية هي **EXISTING INDEX SUFFICIENT** للاستعلام الحالي المحدود بالمنتج والحالات القابلة للفعل. لم يظهر سبب مادي لمقارنة التحسين المرشح، لذلك لم ينشأ أو يختبر. لا يعتمد فهرس أو ترحيل `0016`، وتضيف A3 مستقبلاً طريقة المجموعة في المستودع والعقد المخطط فقط فوق المخطط الحالي.
 
-تعيد البوابة قراراً واحداً فقط: `EXISTING INDEX SUFFICIENT` بلا مخطط أو ترحيل؛ أو `INDEX REQUIRED` بدليل مادي يسمح بخطة ترحيل مستقلة لاحقة؛ أو `DECISION REQUIRED` إذا تعذر إنتاج دليل تمثيلي موثوق. لا يختار R2 أياً منها، ولا يضاف فهرس لمجرد احتمال فائدته مستقبلاً، ولا تقبل خطة مرضية غير محدودة لمجرد تجنب الترحيل.
+حذفت كل الصفوف الاصطناعية وبقي صفر صف للبادئة الاختبارية، ولم يوجد فهرس مؤقت. إذا تجاوزت الكثافة التشغيلية مستقبلاً نطاق 10,000 حجز قابل للفعل لمنتج واحد أو تغير شكل الخطة، تعاد القياسات قبل اعتماد أي فهرس.
 
 ### شرائح التنفيذ
 
@@ -511,17 +519,17 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### قرار الخارطة
 
-**تتطلب إعادة تحديد النطاق لأدلة أداء استعلام الحجوزات.** لا تعتمد 3.22-A للتنفيذ لأن A3 تحتاج أدلة خطة/أداء تمثيلية، ولا يفترض R2 كفاية الفهرس الحالي أو ضرورة فهرس جديد. تبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة، ولا يوجد حالياً تنفيذ تالٍ معتمد ولا تعتمد أي مهمة لاحقة.
+**الفهرس الحالي كافٍ.** تصبح 3.22-A وحدها **التنفيذ التالي المعتمد** بعد المراجعة المستقلة لأدلة الأداء، وتبقى A1 الشريحة الأولى. تبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة، ولا تعتمد أي مهمة لاحقة.
 
 ## WILL IMPLEMENT | سينفذ
 
-- No implementation is authorized by this R1 artifact; the five corrected slice contracts are inputs to the Reservation-index re-scope.
-- لا يعتمد هذا المستند أي تنفيذ؛ وتصبح عقود الشرائح الخمس المصححة مدخلات لبوابة أدلة أداء استعلام الحجوزات.
+- After independent review, implement A1–A5 in the documented sequence on the current schema; A1 remains first.
+- بعد المراجعة المستقلة تنفذ A1–A5 بالتسلسل الموثق على المخطط الحالي، وتبقى A1 أولاً.
 
 ## WILL NOT IMPLEMENT | لن ينفذ
 
-- A1–A5 code, Task 3.22 UI, React, operational pages, public/WhatsApp sharing, new permissions, global permission redesign, schema/migration, dependency, Multi-Warehouse, ERP, purchasing, orders, accounting, tax, FX, promotions, analytics, AI, or Production deployment.
-- شيفرة A1–A5 أو واجهة المهمة 3.22 أو React أو الصفحات التشغيلية أو المشاركة العامة/WhatsApp أو صلاحيات جديدة أو إعادة تصميم عامة للصلاحيات أو مخطط/ترحيل أو اعتماد أو المستودعات المتعددة أو ERP أو المشتريات أو الطلبات أو المحاسبة أو الضرائب أو FX أو العروض أو التحليلات أو AI أو النشر الإنتاجي.
+- Task 3.22 UI, the Candidate Optimization, migration `0016`, public/WhatsApp sharing, new permissions, global permission redesign, dependency, Multi-Warehouse, ERP, purchasing, orders, accounting, tax, FX, promotions, analytics, AI, or Production deployment.
+- واجهة المهمة 3.22 أو التحسين المرشح أو الترحيل `0016` أو المشاركة العامة/WhatsApp أو صلاحيات جديدة أو إعادة تصميم عامة للصلاحيات أو اعتماد أو المستودعات المتعددة أو ERP أو المشتريات أو الطلبات أو المحاسبة أو الضرائب أو FX أو العروض أو التحليلات أو AI أو النشر الإنتاجي.
 
 ## Acceptance Criteria | معايير القبول
 
@@ -531,7 +539,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 4. Reservation page/detail implement the exact tuple, fingerprint, limits, live-cursor behavior, tenant/Branch/Product safety, and index-plan gate while excluding actor/audit data. | تنفذ قراءات الحجوزات الترتيب والبصمة والحدود وسلوك المؤشر الحي وبوابة خطة الفهرس بدقة ولا تكشف بيانات الممثل/التدقيق.
 5. Pricing reads expose one shared Product revision for Retail/Wholesale, reload after success/conflict, and keep Reference Cost visibility and revision independent. | تكشف قراءات التسعير مراجعة منتج مشتركة للتجزئة والجملة وتعيد التحميل بعد النجاح/التعارض وتحفظ رؤية ومراجعة التكلفة المرجعية مستقلتين.
 6. No numeric Inventory balance reaches an actor without `inventory.quantity.view`, including mutation replay. | لا يصل رصيد مخزون رقمي دون صلاحية الكمية، بما في ذلك إعادة الطفرة.
-7. No schema, migration `0016`, dependency, code, duplicate repository, or client authority is introduced by planning; A3 remains re-scope-gated. | لا يضيف التخطيط مخططاً أو ترحيلًا أو اعتماداً أو شيفرة أو مستودعاً مكرراً أو سلطة عميل؛ وتبقى A3 مشروطة بإعادة تحديد النطاق.
+7. A3 uses the current schema/index; no migration `0016`, Candidate Optimization, dependency, duplicate repository, or client authority is introduced. | تستخدم A3 المخطط والفهرس الحاليين ولا تضيف `0016` أو التحسين المرشح أو اعتماداً أو مستودعاً مكرراً أو سلطة عميل.
 8. Focused Application/HTTP/persistence tests pass for permission combinations, scope, non-disclosure, errors, cursor/revision, conflict, and idempotency. | تنجح الاختبارات المركزة لتركيبات الصلاحيات والنطاق وعدم الكشف والأخطاء والمؤشر/المراجعة والتعارض والتكرار الآمن.
 
 ## Risks and controls | المخاطر والضوابط
@@ -548,10 +556,12 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 ## Known Limitations | القيود المعروفة
 
 - Reservation collection is intentionally Product-scoped and actionable-only; general reservation history/reporting is outside 3.22-A.
+- Performance evidence covers up to 10,000 actionable Reservations for one Product/Branch on PostgreSQL 17.10 with a warm-cache synthetic dataset; remeasure before approving materially higher current scale or after meaningful distribution/plan changes.
 - The capability projection does not enumerate Branches or guarantee a resource remains mutable; resource reads and writes remain authoritative.
 - Operational discovery is selection-only and does not replace ordinary Catalog cards/details.
 - This contract does not approve Task 3.22 Presentation or any later task.
 - قائمة الحجوزات مقيدة بالمنتج والحالات القابلة للفعل، ولا تشمل التقارير أو التاريخ العام.
+- تغطي أدلة الأداء حتى 10,000 حجز قابل للفعل لمنتج/فرع واحد على PostgreSQL 17.10 ببيانات اصطناعية دافئة الذاكرة؛ تعاد القياسات قبل اعتماد كثافة أعلى مادياً أو بعد تغير توزيع/خطة مهم.
 - لا يسرد إسقاط القدرات الفروع ولا يضمن بقاء المورد قابلاً للتعديل؛ تبقى قراءات المورد وطفراته مرجع الحقيقة.
 - الاكتشاف التشغيلي للاختيار فقط ولا يستبدل بطاقات/تفاصيل الكتالوج العادية.
 - لا يعتمد هذا العقد واجهة المهمة 3.22 أو أي مهمة لاحقة.
