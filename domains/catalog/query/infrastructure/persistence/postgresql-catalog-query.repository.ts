@@ -1,7 +1,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import type { PlatformDatabase } from "../../../../../shared/infrastructure/persistence/database";
 import type {
-  CatalogDetailsRepositoryQuery, CatalogHierarchyFilter, CatalogQueryRepository, CatalogSearchRepositoryQuery,
+  CatalogDetailsRepositoryQuery, CatalogHierarchyFilter, CatalogLifecycleScope, CatalogQueryRepository, CatalogSearchRepositoryQuery,
 } from "../../ports/catalog-query-repository.port";
 import type {
   CatalogClassificationProjection, CatalogFilterOptionsProjection, CatalogMediaStorageProjection, CatalogMoneyProjection, CatalogProductDetailsProjection,
@@ -72,6 +72,11 @@ const projected = (workspaceId: string, branchId: string | null, searchText: str
   WHERE p.workspace_id=${workspaceId}`;
 
 const and = (parts: SQL[]) => parts.length ? sql` AND ${sql.join(parts, sql` AND `)}` : sql``;
+const lifecyclePredicate = (scope: CatalogLifecycleScope): SQL => scope.type === "Exact"
+  ? sql`lifecycle_state=${scope.lifecycle}`
+  : scope.lifecycles.length === 0
+    ? sql`false`
+    : sql`(lifecycle_state IN (${sql.join(scope.lifecycles.map((lifecycle) => sql`${lifecycle}`), sql`, `)}))`;
 const searchMatch = (q: string) => q ? sql`(lower(COALESCE(product_code,''))=${q.toLowerCase()} OR left(lower(COALESCE(product_code,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(product_name,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(brand_name,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(category_name,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(product_type_name,'')),length(${q}))=${q.toLowerCase()} OR to_tsvector('simple',COALESCE(product_name,'') || ' ' || COALESCE(product_code,'')) @@ plainto_tsquery('simple',${q}) OR to_tsvector('simple',concat_ws(' ',brand_name,category_name,product_type_name)) @@ plainto_tsquery('simple',${q}) OR similarity(lower(COALESCE(product_name,'')),${q.toLowerCase()}) >= 0.2 OR similarity(lower(COALESCE(product_code,'')),${q.toLowerCase()}) >= 0.2)` : sql`true`;
 
 export class PostgreSqlCatalogQueryRepository implements CatalogQueryRepository {
@@ -89,7 +94,7 @@ export class PostgreSqlCatalogQueryRepository implements CatalogQueryRepository 
       (${filter.supplyStatusId ?? null}::text IS NULL OR EXISTS(SELECT 1 FROM catalog_supply_statuses s WHERE s.workspace_id=${workspaceId} AND s.supply_status_id=${filter.supplyStatusId ?? null} AND s.status='Active')) AS valid`); return rows.rows[0]?.valid === true;
   }
   async search(query: CatalogSearchRepositoryQuery): Promise<readonly CatalogProductSearchRow[]> {
-    const f=query.filters, predicates: SQL[]=[sql`lifecycle_state=${f.lifecycle}`, searchMatch(query.searchText)];
+    const f=query.filters, predicates: SQL[]=[lifecyclePredicate(query.lifecycleScope), searchMatch(query.searchText)];
     if(f.departmentId)predicates.push(sql`department_id=${f.departmentId}`); if(f.categoryId)predicates.push(sql`category_id=${f.categoryId}`); if(f.productTypeId)predicates.push(sql`product_type_id=${f.productTypeId}`); if(f.brandId)predicates.push(sql`brand_id=${f.brandId}`);
     if(f.deviceClass)predicates.push(sql`device_class_id=${f.deviceClass}`); if(f.condition)predicates.push(sql`condition_id=${f.condition}`); if(f.supplyStatusId)predicates.push(sql`supply_status_id=${f.supplyStatusId}`);
     if(f.listing && f.listing!=="Any")predicates.push(sql`listing_status=${f.listing}`); if(f.stock)predicates.push(f.stock==="InStock"?sql`available_quantity::bigint>0`:sql`available_quantity::bigint=0`);

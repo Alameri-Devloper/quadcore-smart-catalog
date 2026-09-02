@@ -2,6 +2,7 @@ import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-
 import { isCurrencyCode } from "../../reference-data/domain/catalog-reference-data";
 import { parsePriceAmount, validatePriceType, type BranchProductListingStatus, type PriceType, type PriceValue } from "../domain/branch-product";
 import type { BranchProductClock, BranchProductUnitOfWork } from "../ports/branch-product-unit-of-work.port";
+import { permittedListingManagementActions, type ListingManagementAction } from "./operational-management-authorization-policy";
 import { branchProductFailure, branchProductSuccess, type BranchProductResult } from "./branch-product-results";
 
 const can = (context: TrustedActorContext, permission: string) => context.role === "Owner" || context.permissions.includes(permission);
@@ -9,11 +10,36 @@ const inScope = (context: TrustedActorContext, branchId: string) => context.bran
 const price = (value: PriceValue | null) => value ? Object.freeze({ amountMinor: value.amountMinor.toString(), currency: value.currency, revision: value.revision }) : null;
 const requirePricePermission = (context: TrustedActorContext, priceType: PriceType, mutation: "Base" | "Override") => priceType === "ReferenceCost" ? can(context, mutation === "Base" ? "referenceCost.manage" : "referenceCost.branchOverride.manage") : can(context, mutation === "Base" ? "pricing.manage" : "pricing.branchOverride.manage");
 
+export interface ListingManagementStateView {
+  readonly branchId: string;
+  readonly productId: string;
+  readonly listingStatus: "NotConfigured" | BranchProductListingStatus;
+  readonly revision: number;
+  readonly updatedAt: string | null;
+  readonly allowedActions: readonly ListingManagementAction[];
+}
+
 export class GetBranchProductListingUseCase {
   constructor(private readonly unitOfWork: BranchProductUnitOfWork) {}
-  async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string }): Promise<BranchProductResult<Readonly<Record<string, unknown>>>> {
-    if (!can(command.context, "catalog.products.view") || !inScope(command.context, command.branchId)) return branchProductFailure("BranchNotFound");
-    return this.unitOfWork.execute(async ({ scope, listings }) => { if (!await scope.findBranch(command.context.workspaceId, command.branchId)) return branchProductFailure("BranchNotFound"); if (!await scope.findProduct(command.context.workspaceId, command.productId)) return branchProductFailure("ProductNotFound"); const listing = await listings.get(command.context.workspaceId, command.branchId, command.productId); return branchProductSuccess(Object.freeze({ branchId: command.branchId, productId: command.productId, listingStatus: listing?.status ?? "NotConfigured", revision: listing?.revision ?? 0, updatedAt: listing?.updatedAt.toISOString() ?? null })); });
+  async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string }): Promise<BranchProductResult<ListingManagementStateView>> {
+    const permissionActions = permittedListingManagementActions(command.context);
+    if (permissionActions.length === 0) return branchProductFailure("Forbidden");
+    if (!inScope(command.context, command.branchId)) return branchProductFailure("BranchNotFound");
+    return this.unitOfWork.execute(async ({ scope, listings }) => {
+      const branch = await scope.findBranch(command.context.workspaceId, command.branchId);
+      if (!branch) return branchProductFailure("BranchNotFound");
+      const product = await scope.findProduct(command.context.workspaceId, command.productId);
+      if (!product) return branchProductFailure("ProductNotFound");
+      const listing = await listings.get(command.context.workspaceId, command.branchId, command.productId);
+      return branchProductSuccess(Object.freeze({
+        branchId: command.branchId,
+        productId: command.productId,
+        listingStatus: listing?.status ?? "NotConfigured",
+        revision: listing?.revision ?? 0,
+        updatedAt: listing?.updatedAt.toISOString() ?? null,
+        allowedActions: branch.status === "Inactive" || product.lifecycleState === "Archived" ? Object.freeze([]) : permissionActions,
+      }));
+    });
   }
 }
 

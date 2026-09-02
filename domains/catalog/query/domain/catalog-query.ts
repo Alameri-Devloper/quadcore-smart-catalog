@@ -11,6 +11,7 @@ export const CATALOG_LISTING_FILTERS = ["Listed", "Unlisted", "NotConfigured", "
 export const CATALOG_STOCK_FILTERS = ["InStock", "OutOfStock"] as const;
 export const CATALOG_DEVICE_CLASSES = ["personal", "business", "gaming", "workstation"] as const;
 export const CATALOG_CONDITIONS = ["new", "used", "refurbished"] as const;
+export const OPERATIONAL_PRODUCT_SEARCH_PURPOSES = ["Listing", "Inventory", "WorkspacePricing", "BranchPricing", "WorkspaceReferenceCost", "BranchReferenceCost"] as const;
 
 export type CatalogSort = (typeof CATALOG_SORTS)[number];
 export type CatalogLifecycle = (typeof CATALOG_LIFECYCLES)[number];
@@ -53,6 +54,15 @@ export interface CatalogSearchShape {
   readonly filters: CatalogSearchFilters;
   readonly sort: CatalogSort;
   readonly visibility: CatalogQueryVisibility;
+}
+
+export type OperationalProductSearchPurpose = (typeof OPERATIONAL_PRODUCT_SEARCH_PURPOSES)[number];
+
+export interface OperationalCatalogSearchShape {
+  readonly purpose: OperationalProductSearchPurpose;
+  readonly searchText: string;
+  readonly branchId: string | null;
+  readonly sort: CatalogSort;
 }
 
 export interface CatalogQueryVisibility {
@@ -156,6 +166,16 @@ export const catalogQueryFingerprint = (shape: CatalogSearchShape): string => cr
   visibility: shape.visibility,
 })).digest("hex");
 
+export const operationalCatalogQueryFingerprint = (shape: OperationalCatalogSearchShape): string => createHash("sha256").update(JSON.stringify({
+  version: 1,
+  type: "OperationalProductSearch",
+  purpose: shape.purpose,
+  q: shape.searchText,
+  branchId: shape.branchId,
+  lifecycles: ["Draft", "Published"],
+  sort: shape.sort,
+})).digest("hex");
+
 const validateCatalogCursorPosition = (position: Partial<CatalogCursorPosition>, sort: CatalogSort): CatalogCursorPosition => {
   if (typeof position.productId !== "string" || validateCatalogId(position.productId) !== position.productId) throw new Error("InvalidCursor");
   if (typeof position.value !== "string" || position.value.length > CATALOG_CURSOR_VALUE_MAX_LENGTH) throw new Error("InvalidCursor");
@@ -206,3 +226,4 @@ export const isCatalogListingFilter = (value: string): value is CatalogListingFi
 export const isCatalogStockFilter = (value: string): value is CatalogStockFilter => (CATALOG_STOCK_FILTERS as readonly string[]).includes(value);
 export const isCatalogDeviceClass = (value: string): value is CatalogDeviceClass => (CATALOG_DEVICE_CLASSES as readonly string[]).includes(value);
 export const isCatalogCondition = (value: string): value is CatalogCondition => (CATALOG_CONDITIONS as readonly string[]).includes(value);
+export const isOperationalProductSearchPurpose = (value: string): value is OperationalProductSearchPurpose => (OPERATIONAL_PRODUCT_SEARCH_PURPOSES as readonly string[]).includes(value);
