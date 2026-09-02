@@ -1,14 +1,14 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
-**Status:** Task 3.22-A1 implementation is complete / ReadyForReview; A2 is not implementation-approved before independent A1 review and merge · **Current-state baseline:** `3fa5605bb5f17726eae4805ca768cc90b5b0a213` / PR #27 · **Updated:** 2026-09-02
+**Status:** Task 3.22-A2 implementation is complete / ReadyForReview; A3 is not started or automatically approved · **Current-state baseline:** `32012c87a521c6fa510ad7ccf03216a180a88725` / PR #28 · **Updated:** 2026-09-02
 
-> **Task 3.22-A1 implementation decision | قرار تنفيذ المهمة 3.22-A1:** Baseline `3fa5605bb5f17726eae4805ca768cc90b5b0a213` contains the approved Reservation gate through PR #27. A1 is implemented and ReadyForReview with a repository-free Identity capability projection and no schema, migration, dependency, or permission-registry change. A2 is not automatically approved before independent A1 review and merge; A3–A5 are not started, and Task 3.22 Presentation remains blocked. | يحتوي خط الأساس بوابة الحجوزات المعتمدة عبر طلب السحب #27. نُفذت A1 وهي جاهزة للمراجعة دون مخطط أو ترحيل أو اعتماد أو تغيير سجل الصلاحيات. لا تعتمد A2 تلقائياً قبل مراجعة A1 ودمجها، ولم تبدأ A3–A5، وتبقى واجهة 3.22 محجوبة.
+> **Task 3.22-A2 implementation decision | قرار تنفيذ المهمة 3.22-A2:** Baseline `32012c87a521c6fa510ad7ccf03216a180a88725` contains A1 merged through PR #28. A2 is implemented and ReadyForReview with canonical operational Product discovery and authoritative Listing management state, and with no schema, migration, dependency, or permission-registry change. A3 is not automatically approved or started; A4–A5 are not started, and Task 3.22 Presentation remains blocked. | يحتوي خط الأساس A1 مدمجة عبر طلب السحب #28. نُفذت A2 وهي جاهزة للمراجعة باكتشاف تشغيلي معتمد للمنتجات وحالة إدارة إدراج موثوقة، دون مخطط أو ترحيل أو اعتماد أو تغيير سجل الصلاحيات. لا تعتمد A3 تلقائياً ولم تبدأ، كما لم تبدأ A4–A5، وتبقى واجهة 3.22 محجوبة.
 
 ## English
 
 ### Reconciliation outcome
 
-Tasks 3.14–3.21 are completed and merged foundations. The current integration baseline is `3fa5605bb5f17726eae4805ca768cc90b5b0a213` through PR #27; PR #26 at `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` remains the historical Planning-R2 baseline. A1 is implemented and ReadyForReview. A2 is not implementation-approved before independent A1 review and merge.
+Tasks 3.14–3.21 are completed and merged foundations. The current integration baseline is `32012c87a521c6fa510ad7ccf03216a180a88725` through PR #28. PR #27 at `3fa5605bb5f17726eae4805ca768cc90b5b0a213`, PR #26 at `69f0bd48628a5ae4018504dae8bce1d11b0d8d43`, PR #25 at `260b4116749d3460b8262b3ccf034b8ba26d00a5`, and PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9` remain historical baselines. A1 is merged; A2 is implemented and ReadyForReview; A3–A5 are not started.
 
 Legacy Catalog mocks remain fixtures only. They are not Production truth and must not back the next Presentation.
 
@@ -21,7 +21,7 @@ Legacy Catalog mocks remain fixtures only. They are not Production truth and mus
 | Direct Device Sharing UI integration | Converts the completed 3.19 boundary into a reachable customer workflow without a new channel | No ADR | Included in Task 3.20 |
 | Public Product Share Link | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary | ADR required | Deferred; excluded from Task 3.20 |
 | WhatsApp-oriented customer sharing | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20 |
-| Operational management contract remediation | Resolves read/manage composition, one canonical mixed-lifecycle Product query, exact Reservation pagination, shared Product pricing concurrency, Inventory disclosure, and effective semantic capabilities before Presentation work | A1 preserves Option D with no ADR/new permission; current Reservation index remains sufficient | Task 3.22-A1 — implemented / ReadyForReview; A2 not yet approved |
+| Operational management contract remediation | Resolves read/manage composition, one canonical mixed-lifecycle Product query, exact Reservation pagination, shared Product pricing concurrency, Inventory disclosure, and effective semantic capabilities before Presentation work | A1 preserves Option D with no ADR/new permission; current Reservation index remains sufficient | Task 3.22-A2 — implemented / ReadyForReview; A3 not started or approved |
 | Branch/Inventory/Pricing management Presentation | Consumes the corrected contracts only after 3.22-A is implemented, reviewed, and merged | Existing architecture remains sufficient | Task 3.22 — Planned / blocked, not approved |
 | Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; implemented within the approved contract | Task 3.21 — Completed / merged through PR #24 |
 
@@ -191,7 +191,7 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 ### Current planning decision
 
 - **Task 3.21 — Catalog Reference Data Management Presentation — Completed / merged:** merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **Task 3.22-A1 — Authorization Policies and Semantic Capabilities — implemented / ReadyForReview:** use the [A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md). A2 is not automatically approved before independent A1 review and merge; A3–A5 are not started.
+- **Task 3.22-A2 — Canonical Operational Product Discovery and Listing Management State — implemented / ReadyForReview:** use the [A2 Final Report](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md). A1 is merged through PR #28; A3 is not automatically approved or started; A4–A5 are not started.
 - **Task 3.22 — Branch, Inventory, and Pricing Management Presentation — Planned / blocked, not implementation-approved:** it remains blocked until all 3.22-A slices are independently reviewed and merged.
 - No later task is approved.
 
@@ -201,7 +201,7 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 
 ### نتيجة المصالحة
 
-تمثل المهام 3.14–3.21 أسساً مكتملة ومدمجة. خط الأساس الحالي هو `3fa5605bb5f17726eae4805ca768cc90b5b0a213` عبر طلب السحب #27، ويبقى `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` عبر طلب السحب #26 خط تخطيط-R2 التاريخي. نُفذت A1 وهي جاهزة للمراجعة، ولا تعتمد A2 للتنفيذ قبل مراجعة A1 ودمجها.
+تمثل المهام 3.14–3.21 أسساً مكتملة ومدمجة. خط الأساس الحالي هو `32012c87a521c6fa510ad7ccf03216a180a88725` عبر طلب السحب #28. وتبقى خطوط طلبات السحب #27 عند `3fa5605bb5f17726eae4805ca768cc90b5b0a213` و#26 عند `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` و#25 عند `260b4116749d3460b8262b3ccf034b8ba26d00a5` و#24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9` مراجع تاريخية. دُمجت A1، ونُفذت A2 وهي جاهزة للمراجعة، ولم تبدأ A3–A5.
 
 تبقى بيانات الكتالوج الوهمية القديمة fixtures فقط، وليست حقيقة الإنتاج ولا يجوز أن تشغّل واجهة العرض التالية.
 
@@ -214,7 +214,7 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 | ربط واجهة المشاركة المباشرة عبر الجهاز | يجعل حدود 3.19 المكتملة قابلة للوصول دون قناة جديدة | لا يحتاج ADR | ضمن 3.20 |
 | رابط مشاركة منتج عام | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة | ADR مطلوب | مؤجل وخارج 3.20 |
 | مشاركة موجهة إلى WhatsApp | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي | مؤجل وخارج 3.20 |
-| تصحيح عقود إدارة العمليات | يحل تركيب القراءة/الإدارة والاستعلام التشغيلي ومؤشر الحجوزات وتزامن التسعير وكشف المخزون والقدرات | تحفظ A1 الحل الهجين دون ADR أو صلاحية جديدة، ويبقى الفهرس الحالي كافياً | المهمة 3.22-A1 — منفذة / جاهزة للمراجعة؛ A2 غير معتمدة بعد |
+| تصحيح عقود إدارة العمليات | يحل تركيب القراءة/الإدارة والاستعلام التشغيلي ومؤشر الحجوزات وتزامن التسعير وكشف المخزون والقدرات | تحفظ A1 الحل الهجين دون ADR أو صلاحية جديدة، ويبقى الفهرس الحالي كافياً | المهمة 3.22-A2 — منفذة / جاهزة للمراجعة؛ A3 لم تبدأ ولم تعتمد |
 | واجهة إدارة الفروع والمخزون والتسعير | تستهلك العقود المصححة فقط بعد تنفيذ 3.22-A ومراجعتها ودمجها | تكفي المعمارية الحالية | المهمة 3.22 — مخططة ومحجوبة وغير معتمدة |
 | واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ نُفذت ضمن العقد المعتمد | المهمة 3.21 — مكتملة ومدمجة عبر طلب السحب #24 |
 
@@ -330,7 +330,7 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 ### قرار التخطيط الحالي
 
 - **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — مكتملة ومدمجة:** دُمجت عبر طلب السحب #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **المهمة 3.22-A1 — سياسات التفويض والقدرات الدلالية — منفذة / جاهزة للمراجعة:** يُستخدم [تقرير A1 النهائي](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md). لا تعتمد A2 تلقائياً قبل مراجعة A1 ودمجها، ولم تبدأ A3–A5.
+- **المهمة 3.22-A2 — الاكتشاف التشغيلي المعتمد للمنتجات وحالة إدارة الإدراج — منفذة / جاهزة للمراجعة:** يُستخدم [تقرير A2 النهائي](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md). دُمجت A1 عبر طلب السحب #28، ولا تعتمد A3 تلقائياً ولم تبدأ، كما لم تبدأ A4–A5.
 - **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير — مخططة / محجوبة وغير معتمدة للتنفيذ:** تبقى محجوبة حتى مراجعة كل شرائح 3.22-A ودمجها.
 - لم تعتمد أي مهمة لاحقة.
 
@@ -352,5 +352,6 @@ Task 3.22-A preserves operation-specific management reads plus effective semanti
 - [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)
 - [Task 3.22-A Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)
 - [Task 3.22-A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md)
+- [Task 3.22-A2 Final Report](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md)
 - [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md)
 - [Branch Inventory and Pricing](../01-Architecture/Inventory/Branch-Inventory-and-Pricing.md)

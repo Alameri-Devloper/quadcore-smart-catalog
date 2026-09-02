@@ -1,5 +1,6 @@
 import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
 import type { ProductMediaReaderPort } from "../../media/ports/product-media-reader.port";
+import type { PermissionCode } from "../../../identity/domain/permission";
 import {
   CATALOG_PAGE_SIZE_DEFAULT,
   CATALOG_PAGE_SIZE_MAX,
@@ -12,7 +13,9 @@ import {
   isCatalogListingFilter,
   isCatalogSort,
   isCatalogStockFilter,
+  isOperationalProductSearchPurpose,
   normalizeCatalogSearchText,
+  operationalCatalogQueryFingerprint,
   parseCatalogMoney,
   validateCatalogId,
   type CatalogMoneyProjection,
@@ -21,6 +24,7 @@ import {
   type CatalogQueryVisibility,
   type CatalogSearchFilters,
   type CatalogSort,
+  type OperationalProductSearchPurpose,
 } from "../domain/catalog-query";
 import type { CatalogQueryRepository } from "../ports/catalog-query-repository.port";
 import { catalogQueryFailure, catalogQuerySuccess, type CatalogQueryResult } from "./catalog-query-results";
@@ -31,6 +35,26 @@ export interface CatalogSearchInput {
   readonly supplyStatusId?: string; readonly lifecycle?: string; readonly listing?: string; readonly stock?: string;
   readonly minRetailPrice?: string; readonly maxRetailPrice?: string; readonly retailCurrency?: string;
   readonly sort?: string; readonly cursor?: string; readonly limit?: number;
+}
+
+export interface OperationalProductSearchInput {
+  readonly purpose: string;
+  readonly q?: string;
+  readonly branchId?: string;
+  readonly cursor?: string;
+  readonly limit?: number;
+}
+
+export interface OperationalProductSearchView {
+  readonly items: readonly {
+    readonly productId: string;
+    readonly productCode: string | null;
+    readonly productName: string | null;
+    readonly lifecycle: "Draft" | "Published";
+    readonly branchId?: string;
+    readonly listingStatus?: "Listed" | "Unlisted" | "NotConfigured";
+  }[];
+  readonly nextCursor: string | null;
 }
 
 const CATALOG_MEDIA_MAX_BYTES = 8 * 1024 * 1024;
@@ -78,6 +102,15 @@ const productView = (value: CatalogProductProjection, visibility: CatalogQueryVi
 });
 
 const invalid = () => catalogQueryFailure("InvalidQuery");
+const operationalBranchPurposes = new Set<OperationalProductSearchPurpose>(["Listing", "Inventory", "BranchPricing", "BranchReferenceCost"]);
+const operationalPurposePermissions: Readonly<Record<OperationalProductSearchPurpose, readonly PermissionCode[]>> = Object.freeze({
+  Listing: Object.freeze(["catalog.product.edit", "catalog.products.edit"] as const),
+  Inventory: Object.freeze(["inventory.availability.view", "inventory.quantity.view", "inventory.receive", "inventory.issue", "inventory.reserve", "inventory.transfer", "inventory.damage", "inventory.adjust"] as const),
+  WorkspacePricing: Object.freeze(["pricing.manage"] as const),
+  BranchPricing: Object.freeze(["pricing.branchOverride.manage"] as const),
+  WorkspaceReferenceCost: Object.freeze(["referenceCost.manage"] as const),
+  BranchReferenceCost: Object.freeze(["referenceCost.branchOverride.manage"] as const),
+});
 const normalize = (input: CatalogSearchInput, visibility: CatalogQueryVisibility): { searchText: string; branchId: string | null; filters: CatalogSearchFilters; sort: CatalogSort; limit: number } | null => {
   try {
     const searchText = normalizeCatalogSearchText(input.q);
@@ -117,9 +150,55 @@ export class SearchCatalogProductsUseCase {
     if (normalized.filters.stock && !visibility.availability) return catalogQueryFailure("Forbidden");
     if (normalized.branchId && !await this.repository.branchExists(command.context.workspaceId, normalized.branchId)) return catalogQueryFailure("BranchNotFound");
     if (!await this.repository.hierarchyIsValid(command.context.workspaceId, normalized.filters)) return invalid();
-    const rows = await this.repository.search({ workspaceId: command.context.workspaceId, ...shape, cursor, limit: normalized.limit + 1 });
+    const { lifecycle, ...repositoryFilters } = normalized.filters;
+    const rows = await this.repository.search({ workspaceId: command.context.workspaceId, searchText: shape.searchText, branchId: shape.branchId, filters: repositoryFilters, lifecycleScope: Object.freeze({ type: "Exact", lifecycle }), sort: shape.sort, visibility: shape.visibility, cursor, limit: normalized.limit + 1 });
     const page = rows.slice(0, normalized.limit), last = page.at(-1);
     return catalogQuerySuccess(Object.freeze({ items: Object.freeze(page.map((row) => productView(row.product, visibility, normalized.branchId))), nextCursor: rows.length > normalized.limit && last ? encodeCatalogCursor(normalized.sort, fingerprint, last.cursor) : null }));
+  }
+}
+
+export class SearchOperationalProductsUseCase {
+  constructor(private readonly repository: CatalogQueryRepository) {}
+  async execute(command: { readonly context: TrustedActorContext; readonly input: OperationalProductSearchInput }): Promise<CatalogQueryResult<OperationalProductSearchView>> {
+    const purpose = command.input.purpose;
+    if (!isOperationalProductSearchPurpose(purpose)) return invalid();
+    if (!operationalPurposePermissions[purpose].some((permission) => can(command.context, permission))) return catalogQueryFailure("Forbidden");
+
+    let searchText: string, branchId: string | null;
+    try { searchText = normalizeCatalogSearchText(command.input.q); branchId = validateCatalogId(command.input.branchId) ?? null; } catch { return invalid(); }
+    const branchScoped = operationalBranchPurposes.has(purpose);
+    if ((branchScoped && !branchId) || (!branchScoped && branchId)) return invalid();
+    const limit = command.input.limit ?? CATALOG_PAGE_SIZE_DEFAULT;
+    if (!Number.isInteger(limit) || limit < 1 || limit > CATALOG_PAGE_SIZE_MAX) return invalid();
+    if (branchId && (!inScope(command.context, branchId) || !await this.repository.branchExists(command.context.workspaceId, branchId))) return catalogQueryFailure("BranchNotFound");
+
+    const sort: CatalogSort = searchText ? "relevance" : "newest";
+    const fingerprint = operationalCatalogQueryFingerprint({ purpose, searchText, branchId, sort });
+    let cursor = null;
+    if (command.input.cursor) { try { cursor = decodeCatalogCursor(command.input.cursor, sort, fingerprint); } catch { return catalogQueryFailure("InvalidCursor"); } }
+    const visibility: CatalogQueryVisibility = Object.freeze({ retail: false, wholesale: false, availability: false, quantity: false, referenceCost: false });
+    const rows = await this.repository.search({
+      workspaceId: command.context.workspaceId,
+      branchId,
+      searchText,
+      filters: Object.freeze({}),
+      lifecycleScope: Object.freeze({ type: "Allowed", lifecycles: Object.freeze(["Draft", "Published"] as const) }),
+      sort,
+      cursor,
+      limit: limit + 1,
+      visibility,
+    });
+    const page = rows.slice(0, limit), last = page.at(-1);
+    return catalogQuerySuccess(Object.freeze({
+      items: Object.freeze(page.map(({ product }) => Object.freeze({
+        productId: product.productId,
+        productCode: product.productCode,
+        productName: product.productName,
+        lifecycle: product.lifecycle as "Draft" | "Published",
+        ...(branchId ? { branchId, listingStatus: product.listingStatus } : {}),
+      }))),
+      nextCursor: rows.length > limit && last ? encodeCatalogCursor(sort, fingerprint, last.cursor) : null,
+    }));
   }
 }
 

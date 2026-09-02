@@ -1,8 +1,8 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** Task 3.22-A1 implementation complete / **ReadyForReview**; A2 is not implementation-approved before independent A1 review and merge · **Implementation baseline:** `3fa5605bb5f17726eae4805ca768cc90b5b0a213` · **Date:** 2026-09-02
+**Status:** Task 3.22-A2 implementation complete / **ReadyForReview**; A3 is not started or automatically approved · **Implementation baseline:** `32012c87a521c6fa510ad7ccf03216a180a88725` · **Date:** 2026-09-02
 
-A1 implements the approved repository-free authorization and semantic capability boundary only. It does not approve A2, A3, A4, A5, or Task 3.22 Presentation; independent A1 review and merge are required before any next slice is considered.
+A1 is merged through PR #28. A2 implements only the approved canonical operational Product discovery and authoritative Listing management-state boundary. It does not approve A3, A4, A5, or Task 3.22 Presentation; independent A2 review and merge are required before any next slice is considered.
 
 يعتمد هذا العقد شرائح تنفيذ عقود الخادم التصحيحية المحددة أدناه فقط، ولا يعتمد واجهة المهمة 3.22.
 
@@ -432,7 +432,7 @@ No new permission code is required.
 - **Dependency:** none. Existing TypeScript, Application ports, Drizzle/PostgreSQL, HTTP, and cursor utilities are sufficient.
 - **Architecture:** no redesign and no ADR. The selected hybrid is a documented operation-specific authorization composition, not a global permission-semantic change. Catalog Query remains canonical Product search; Branch Product owns Listing/Pricing; Inventory owns Reservations/balances/mutations; transfer remains atomic.
 
-Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence remain resolved. A1 is implemented and ReadyForReview. Do not begin A2–A5 before independent A1 review and merge, and do not add migration `0016` or the Candidate Optimization.
+Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence remain resolved. A1 is merged and A2 is implemented / ReadyForReview. Do not begin A3–A5 before independent A2 review and merge, and do not add migration `0016` or the Candidate Optimization.
 
 ### Implementation slices and dependencies
 
@@ -442,9 +442,11 @@ Implemented the repository-free `GetOperationalManagementCapabilitiesUseCase` in
 
 Acceptance: exact effective/composite boolean mapping (including ordinary Reference Cost); type-checked fixed `PermissionCode` literals; no raw authority fields; Owner/Staff/restricted-session coverage; no business rules in the route handler; writes still reauthorize; no repository/schema/dependency or generic BFF.
 
-#### 3.22-A2 — Canonical operational discovery and Listing state
+#### 3.22-A2 — Canonical operational discovery and Listing state — Implemented / ReadyForReview
 
 Extend the Catalog Query repository query with `CatalogLifecycleScope`, issue one canonical Draft+Published operational SQL query, and implement the dedicated Listing management state read.
+
+Implemented on baseline `32012c87a521c6fa510ad7ccf03216a180a88725`: the existing Catalog Query repository executes the combined lifecycle predicate and retains ordinary fingerprint/cursor compatibility; the dedicated purpose-authorized endpoint returns only selection identity and optional Branch/listing state; Catalog Branch Product Application returns authoritative absence/configured revision and intersects the A1 action policy with current Branch/Product state.
 
 Acceptance: singular/plural edit parity without aliasing; purpose-specific permissions; one mixed Draft+Published page; deterministic sort/tie-break and operational cursor fingerprint; non-Archived/any-listing discovery; Branch scope/projection; search normalization reuse; authoritative Listing revision; ordinary Catalog filter/fingerprint/cursor byte-compatibility.
 
@@ -476,7 +478,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### Roadmap decision
 
-**A1 is implemented / ReadyForReview.** The Task 3.22-A corrective sequence remains approved, but A2 is not automatically implementation-approved before independent A1 review and merge. A3–A5 are not started. Task 3.22 Presentation remains Planned / blocked and is not approved.
+**A1 is merged and A2 is implemented / ReadyForReview.** A3 is not automatically approved by A2 completion and is not started. A4–A5 are not started. Task 3.22 Presentation remains Planned / blocked and is not approved.
 
 ## العقد العربي
 
@@ -510,21 +512,21 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 ### شرائح التنفيذ
 
 1. **3.22-A1 — منفذة / جاهزة للمراجعة:** إسقاط القدرات الفعلية في Identity Application ومفردات أفعال الموارد النقية دون وصول للاستمرارية.
-2. **3.22-A2:** استعلام Draft+Published تشغيلي واحد وقراءة حالة الإدراج.
+2. **3.22-A2 — منفذة / جاهزة للمراجعة:** استعلام Draft+Published تشغيلي واحد وقراءة حالة الإدراج الموثوقة، مع بقاء بصمة/مؤشر الكتالوج العادي متوافقين.
 3. **3.22-A3:** قراءات الحجوزات بعقد المؤشر الدقيق وبوابة خطة الاستعلام.
 4. **3.22-A4:** قراءات إدارة التسعير مع مراجعة المنتج المشتركة للتجزئة والجملة ومراجعة مستقلة للتكلفة المرجعية.
 5. **3.22-A5:** تشديد كشف المخزون ونتائج الطفرات وإعادة idempotent.
 
-تعتمد الشرائح A2–A5 على مفردات السياسة في A1. لا تعتمد أي منها تلقائياً قبل مراجعة A1 مستقلاً ودمجها، مع بقاء واجهة المهمة 3.22 محظورة حتى اكتمال الشرائح كلها ومراجعتها ودمجها.
+دُمجت A1 ونُفذت A2 فوق خط الأساس `32012c87a521c6fa510ad7ccf03216a180a88725`. لا تعتمد A3 تلقائياً قبل مراجعة A2 مستقلاً ودمجها، ولم تبدأ A3–A5، مع بقاء واجهة المهمة 3.22 محظورة حتى اكتمال الشرائح كلها ومراجعتها ودمجها.
 
 ### قرار الخارطة
 
-**A1 منفذة / جاهزة للمراجعة.** يبقى تسلسل 3.22-A معتمداً، لكن A2 غير معتمدة تلقائياً قبل مراجعة A1 ودمجها. لم تبدأ A3–A5، وتبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة.
+**دُمجت A1، ونُفذت A2 وهي جاهزة للمراجعة.** لا تعتمد A3 تلقائياً بإكمال A2 ولم تبدأ. كما لم تبدأ A4–A5، وتبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة.
 
 ## WILL IMPLEMENT | سينفذ
 
-- After independent A1 review and merge, consider the next bounded slice under the documented sequence; do not infer A2 approval from this status update.
-- بعد مراجعة A1 مستقلاً ودمجها، ينظر في الشريحة المحدودة التالية وفق التسلسل الموثق؛ ولا يستنتج اعتماد A2 من تحديث الحالة هذا.
+- After independent A2 review and merge, consider the next bounded slice under the documented sequence; do not infer A3 approval from this status update.
+- بعد مراجعة A2 مستقلاً ودمجها، ينظر في الشريحة المحدودة التالية وفق التسلسل الموثق؛ ولا يستنتج اعتماد A3 من تحديث الحالة هذا.
 
 ## WILL NOT IMPLEMENT | لن ينفذ
 

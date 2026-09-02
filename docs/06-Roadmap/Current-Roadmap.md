@@ -1,6 +1,6 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-**Status:** Task 3.22-A1 implementation is complete / ReadyForReview; A2 is not implementation-approved before independent A1 review and merge · **Last Updated:** 2026-09-02 · **Scope:** Authoritative delivery sequence
+**Status:** Task 3.22-A2 implementation is complete / ReadyForReview; A3 is not started or automatically approved · **Last Updated:** 2026-09-02 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -28,7 +28,7 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration | No Branch, Inventory, or Pricing management Presentation was added. |
 
-The current integration baseline is `3fa5605bb5f17726eae4805ca768cc90b5b0a213` on `feature/product-entry-engine`. It contains the approved Task 3.22-A Reservation performance gate merged through PR #27. The preceding Planning-R2 baseline remains `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` through PR #26, the Task 3.22 Planning/Planning-R1 baseline remains `260b4116749d3460b8262b3ccf034b8ba26d00a5` through PR #25, and Task 3.21 remains merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
+The current integration baseline is `32012c87a521c6fa510ad7ccf03216a180a88725` on `feature/product-entry-engine`. It contains Task 3.22-A1 merged through PR #28. The Reservation performance-gate baseline remains historical at `3fa5605bb5f17726eae4805ca768cc90b5b0a213` through PR #27; Planning-R2 remains historical at `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` through PR #26; Task 3.22 Planning/Planning-R1 remains historical at `260b4116749d3460b8262b3ccf034b8ba26d00a5` through PR #25; and Task 3.21 remains merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
 
 ### Task 3.22 planning-gate decision — ReScopeRequired
 
@@ -44,13 +44,13 @@ The smallest source-proven contract gaps, corrected by Planning-R1, are:
 - availability-only direct Inventory reads retain numeric `available`, while Inventory mutation responses contain detailed balances without a separate quantity-disclosure check;
 - no bounded server-derived management-authority/capability projection resolves these read/manage compositions without exposing raw permissions, role, Workspace/actor identity, or allowed Branch IDs.
 
-Task 3.22 remains **Planned / blocked** and is not implementation-approved until every Task 3.22-A slice is independently reviewed and merged. A1 is implemented and ReadyForReview; A2 is not automatically approved before independent A1 review and merge. See [Sprint 03 Continuation](Sprint-03-Continuation.md), the historical [Task 3.22-A Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-Final-Report.md), the historical [Task 3.22-A Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md), the corrective [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md), the [Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md), the [Task 3.22-A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md), and the [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md).
+Task 3.22 remains **Planned / blocked** and is not implementation-approved until every Task 3.22-A slice is independently reviewed and merged. A1 is merged; A2 is implemented and ReadyForReview; A3–A5 are not started. See [Sprint 03 Continuation](Sprint-03-Continuation.md), the historical [Task 3.22-A Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-Final-Report.md), the historical [Task 3.22-A Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md), the corrective [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md), the [Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md), the [Task 3.22-A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md), the [Task 3.22-A2 Final Report](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md), and the [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md).
 
-### Task 3.22-A1 — Implemented / ReadyForReview
+### Task 3.22-A2 — Implemented / ReadyForReview
 
-**Task 3.22-A1 — Authorization Policies and Semantic Capabilities** is implemented and **ReadyForReview**. It adds the repository-free Identity Application capability projection, fixed semantic booleans, typed effective-permission policies/action vocabulary, authenticated private HTTP adapter, and thin Next.js route. It adds no repository, resource read, schema, migration, permission code, dependency, or global manage-implies-view rule.
+**Task 3.22-A2 — Canonical Operational Product Discovery and Listing Management State** is implemented and **ReadyForReview** on the merged A1 baseline. Catalog Query remains the single search authority and now supports one Draft+Published operational query with purpose authorization, Branch validation, minimal projection, and an isolated cursor fingerprint. Catalog Branch Product Application now exposes authoritative Listing state/revision and intersects the A1 Listing actions with Branch/Product state. No duplicate repository, schema, migration, dependency, permission implication, or Presentation was added.
 
-The Task 3.22-A sequence remains approved, but **A2 is not implementation-approved by A1 completion**. A3, A4, and A5 are not started. The Reservation gate outcome remains `EXISTING INDEX SUFFICIENT`; no Candidate Optimization or migration `0016` is required. Task 3.22 Presentation remains blocked.
+**A3 is not automatically approved by A2 completion and is not started.** A4 and A5 are also not started. The Reservation gate outcome remains `EXISTING INDEX SUFFICIENT`; no Candidate Optimization or migration `0016` is required. Task 3.22 Presentation remains blocked.
 
 Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. Its approved historical contract remains [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md).
 
@@ -87,7 +87,7 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 | 3.20 | واجهة موثقة لتصفح الكتالوج وتفاصيل المنتج، وربط المشاركة المباشرة عبر الجهاز، وحالة URL والاستعلام المعتمدة، وعرض التجزئة والجملة والمخزون وفق صلاحيات الخادم، وتصحيح العرض الآمن للعملات ذات الوحدة الصغرى غير المنطبقة والمرشحات الدلالية في 3.20-R1، ونقل وسائط الكتالوج الموثق | لا توجد مشاركة منتجات عامة أو وصول مجهول أو تكامل WhatsApp أو إدارة للبيانات المرجعية أو الفروع أو المخزون أو التسعير. |
 | 3.21 | واجهة موثقة وثنائية اللغة لإدارة البيانات المرجعية للكتالوج، وتنسيق HTTP مكتوب بالأنواع، ومعالجة التعارضات، وتأكيد تعطيل أصلي متاح، واستعادة دقيقة للتركيز | لم تُضف واجهة لإدارة الفروع أو المخزون أو التسعير. |
 
-خط أساس التكامل الحالي هو `3fa5605bb5f17726eae4805ca768cc90b5b0a213` على `feature/product-entry-engine`، ويحتوي بوابة أداء حجوزات 3.22-A المعتمدة والمدمجة عبر طلب السحب #27. ويبقى خط تخطيط-R2 السابق `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` عبر طلب السحب #26، وخط تخطيط/تخطيط-R1 هو `260b4116749d3460b8262b3ccf034b8ba26d00a5` عبر طلب السحب #25، كما تبقى المهمة 3.21 مدمجة عبر طلب السحب #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
+خط أساس التكامل الحالي هو `32012c87a521c6fa510ad7ccf03216a180a88725` على `feature/product-entry-engine`، ويحتوي A1 مدمجة عبر طلب السحب #28. ويبقى خط بوابة أداء الحجوزات تاريخياً عند `3fa5605bb5f17726eae4805ca768cc90b5b0a213` عبر #27، وخط تخطيط-R2 تاريخياً عند `69f0bd48628a5ae4018504dae8bce1d11b0d8d43` عبر #26، وخط تخطيط/تخطيط-R1 تاريخياً عند `260b4116749d3460b8262b3ccf034b8ba26d00a5` عبر #25، كما تبقى المهمة 3.21 مدمجة عبر #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
 
 ### قرار بوابة تخطيط المهمة 3.22 — تتطلب إعادة تحديد النطاق
 
@@ -103,13 +103,13 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 - تحتفظ قراءة المخزون المباشرة لممثل الإتاحة فقط بالقيمة الرقمية `available`، وتعيد طفرات المخزون أرصدة تفصيلية دون فحص مستقل لصلاحية كشف الكمية؛
 - لا يوجد إسقاط محدود لسلطة/قدرات الإدارة مشتق من الخادم يحل تركيبات القراءة والإدارة هذه دون كشف الصلاحيات الخام أو الدور أو معرف مساحة العمل/الممثل أو معرفات الفروع المسموحة.
 
-تبقى المهمة 3.22 **مخططة / محجوبة** وغير معتمدة للتنفيذ حتى تُراجع جميع شرائح 3.22-A مستقلاً وتُدمج. نُفذت A1 وهي جاهزة للمراجعة، ولا تعتمد A2 تلقائياً قبل مراجعة A1 ودمجها. راجع [استمرار Sprint 03](Sprint-03-Continuation.md)، و[تقرير تخطيط 3.22-A التاريخي](../05-Development/Reports/QSC-Task-3.22-A-Planning-Final-Report.md)، و[تقرير تخطيط-R1 التاريخي](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md)، و[تقرير تخطيط-R2 المصحح](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)، و[تقرير تخطيط أداء الحجوزات](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)، و[تقرير 3.22-A1 النهائي](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md)، و[عقد إدارة العمليات للمهمة 3.22-A](Task-3.22-A-Operational-Management-Contract.md).
+تبقى المهمة 3.22 **مخططة / محجوبة** وغير معتمدة للتنفيذ حتى تُراجع جميع شرائح 3.22-A مستقلاً وتُدمج. دُمجت A1، ونُفذت A2 وهي جاهزة للمراجعة، ولم تبدأ A3–A5. راجع [استمرار Sprint 03](Sprint-03-Continuation.md)، و[تقرير تخطيط 3.22-A التاريخي](../05-Development/Reports/QSC-Task-3.22-A-Planning-Final-Report.md)، و[تقرير تخطيط-R1 التاريخي](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md)، و[تقرير تخطيط-R2 المصحح](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)، و[تقرير تخطيط أداء الحجوزات](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)، و[تقرير 3.22-A1 النهائي](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md)، و[تقرير 3.22-A2 النهائي](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md)، و[عقد إدارة العمليات للمهمة 3.22-A](Task-3.22-A-Operational-Management-Contract.md).
 
-### المهمة 3.22-A1 — منفذة / جاهزة للمراجعة
+### المهمة 3.22-A2 — منفذة / جاهزة للمراجعة
 
-نُفذت **المهمة 3.22-A1 — سياسات التفويض والقدرات الدلالية** وهي **جاهزة للمراجعة**. تضيف إسقاط القدرات بلا مستودع في Identity Application، والقيم المنطقية الدلالية الثابتة، وسياسات الصلاحيات الفعلية المكتوبة بالأنواع، ومحول HTTP خاصاً وموثقاً، ومسار Next.js رقيقاً. لم تُضف قراءة موارد أو مستودعاً أو مخططاً أو ترحيلاً أو صلاحية أو اعتماداً أو قاعدة عامة تجعل الإدارة مستلزمة للعرض.
+نُفذت **المهمة 3.22-A2 — الاكتشاف التشغيلي المعتمد للمنتجات وحالة إدارة الإدراج** وهي **جاهزة للمراجعة** فوق خط A1 المدمج. يبقى Catalog Query مرجع البحث الوحيد ويدعم استعلاماً تشغيلياً واحداً لـDraft+Published مع تفويض الغرض والتحقق من الفرع وإسقاط محدود وبصمة مؤشر مستقلة. وتعرض Catalog Branch Product Application حالة الإدراج ومراجعتها الموثوقة وتربط أفعال A1 بحالة الفرع والمنتج. لم يضف مستودع مكرر أو مخطط أو ترحيل أو اعتماد أو استلزام صلاحيات أو واجهة عرض.
 
-يبقى تسلسل 3.22-A معتمداً، لكن اكتمال A1 **لا يعتمد A2 للتنفيذ**. لم تبدأ A3 أو A4 أو A5. وتبقى نتيجة بوابة الحجوزات `EXISTING INDEX SUFFICIENT`، ولا يلزم الفهرس المرشح أو الترحيل `0016`. وتبقى واجهة المهمة 3.22 محجوبة.
+**لا يعتمد اكتمال A2 المهمة A3 تلقائياً، ولم تبدأ A3.** كما لم تبدأ A4 أو A5. وتبقى نتيجة بوابة الحجوزات `EXISTING INDEX SUFFICIENT`، ولا يلزم الفهرس المرشح أو الترحيل `0016`. وتبقى واجهة المهمة 3.22 محجوبة.
 
 المهمة 3.21 **مكتملة ومدمجة** عبر طلب السحب #24 عند خط الأساس `4f1115d2ac98fc4411ac46f081652554f6d04ec9`. ويبقى عقدها التاريخي المعتمد في [عقد تنفيذ المهمة 3.21](Task-3.21-Implementation-Contract.md).
 
@@ -131,6 +131,7 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 - [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)
 - [Task 3.22-A Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)
 - [Task 3.22-A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md)
+- [Task 3.22-A2 Final Report](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md)
 - [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md)
 - [Future Capabilities](Future-Capabilities.md)
 - [Deferred Decisions](Deferred-Decisions.md)

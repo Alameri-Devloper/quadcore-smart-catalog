@@ -1,10 +1,15 @@
-import type { CatalogCursorPosition, CatalogFilterOptionsProjection, CatalogMediaStorageProjection, CatalogProductDetailsProjection, CatalogProductSearchRow, CatalogQueryVisibility, CatalogSearchFilters, CatalogSort } from "../domain/catalog-query";
+import type { CatalogCursorPosition, CatalogFilterOptionsProjection, CatalogLifecycle, CatalogMediaStorageProjection, CatalogProductDetailsProjection, CatalogProductSearchRow, CatalogQueryVisibility, CatalogSearchFilters, CatalogSort } from "../domain/catalog-query";
+
+export type CatalogLifecycleScope =
+  | { readonly type: "Exact"; readonly lifecycle: CatalogLifecycle }
+  | { readonly type: "Allowed"; readonly lifecycles: readonly CatalogLifecycle[] };
 
 export interface CatalogSearchRepositoryQuery {
   readonly workspaceId: string;
   readonly branchId: string | null;
   readonly searchText: string;
-  readonly filters: CatalogSearchFilters;
+  readonly filters: Omit<CatalogSearchFilters, "lifecycle">;
+  readonly lifecycleScope: CatalogLifecycleScope;
   readonly sort: CatalogSort;
   readonly cursor: CatalogCursorPosition | null;
   readonly limit: number;
