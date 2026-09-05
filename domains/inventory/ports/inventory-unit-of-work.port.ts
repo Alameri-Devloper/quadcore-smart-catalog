@@ -1,4 +1,14 @@
-import type { InventoryBalance, InventoryMovement, InventoryReservation } from "../domain/inventory";
+import type { InventoryBalance, InventoryMovement, InventoryReservation, InventoryReservationStatus } from "../domain/inventory";
+import type { ReservationCursorPosition } from "../domain/reservation-management-query";
+
+export interface ReservationListQuery {
+  readonly workspaceId: string;
+  readonly branchId: string;
+  readonly productId: string;
+  readonly statuses: readonly InventoryReservationStatus[];
+  readonly cursor: ReservationCursorPosition | null;
+  readonly limit: number;
+}
 
 export interface InventoryScopeRepository { findBranch(workspaceId: string, branchId: string): Promise<{ readonly status: "Active" | "Inactive" } | null>; findProduct(workspaceId: string, productId: string): Promise<{ readonly lifecycleState: string } | null> }
 export interface InventoryRepository {
@@ -10,6 +20,7 @@ export interface InventoryRepository {
   claimOperation(input: { readonly workspaceId: string; readonly operationId: string; readonly operationType: string; readonly fingerprint: string; readonly createdAt: Date }): Promise<{ readonly type: "Claimed" } | { readonly type: "Existing"; readonly fingerprint: string; readonly result: Readonly<Record<string, unknown>> | null }>;
   completeOperation(workspaceId: string, operationId: string, result: Readonly<Record<string, unknown>>): Promise<void>;
   createReservation(reservation: InventoryReservation): Promise<void>;
+  listReservations(query: ReservationListQuery): Promise<readonly InventoryReservation[]>;
   findReservation(workspaceId: string, reservationId: string, forUpdate: boolean): Promise<InventoryReservation | null>;
   updateReservation(reservation: InventoryReservation): Promise<void>;
 }
