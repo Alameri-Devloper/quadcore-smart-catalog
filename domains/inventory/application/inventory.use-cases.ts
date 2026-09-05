@@ -1,15 +1,20 @@
 import type { TrustedActorContext } from "../../../shared/auth/trusted-actor-context";
 import { availableQuantity, changeBalance, normalizeOperationId, normalizeReasonCode, normalizeSafeNote, parsePositiveQuantity, type InventoryBalance, type InventoryMovement, type InventoryMovementType, type InventoryReservation } from "../domain/inventory";
+import { ACTIONABLE_RESERVATION_STATUSES, decodeReservationCursor, encodeReservationCursor, RESERVATION_PAGE_SIZE_DEFAULT, RESERVATION_PAGE_SIZE_MAX, reservationQueryFingerprint, validateInventoryIdentifier } from "../domain/reservation-management-query";
 import type { InventoryClock, InventoryFingerprint, InventoryIdentifierGenerator, InventoryTransactionContext, InventoryUnitOfWork } from "../ports/inventory-unit-of-work.port";
 import { inventoryFailure, inventorySuccess, type InventoryError, type InventoryResult } from "./inventory-results";
+import { permittedReservationManagementActions, type ReservationManagementAction } from "./operational-management-authorization-policy";
 
 export interface InventoryBalanceView { readonly branchId: string; readonly productId: string; readonly unit: "Piece"; readonly onHand: string; readonly reserved: string; readonly damaged: string; readonly available: string; readonly revision: number; readonly updatedAt: string }
 export interface InventoryMutationView { readonly operationId: string; readonly balance?: InventoryBalanceView; readonly sourceBalance?: InventoryBalanceView; readonly destinationBalance?: InventoryBalanceView; readonly reservationId?: string; readonly reservationStatus?: string; readonly remainingQuantity?: string; readonly transferId?: string }
 export interface InventoryMovementView { readonly movementId: string; readonly movementType: InventoryMovementType; readonly quantity: string; readonly occurredAt: string; readonly createdByActorId: string; readonly operationId: string; readonly reservationId?: string; readonly correlationId?: string; readonly reasonCode?: string; readonly note?: string }
+export interface ReservationManagementView { readonly reservationId: string; readonly branchId: string; readonly productId: string; readonly status: InventoryReservation["status"]; readonly quantity: string; readonly remainingQuantity: string; readonly createdAt: string; readonly updatedAt: string; readonly allowedActions: readonly ReservationManagementAction[] }
+export interface ReservationPageView { readonly items: readonly ReservationManagementView[]; readonly nextCursor: string | null }
 
 const can = (context: TrustedActorContext, permission: string) => context.role === "Owner" || context.permissions.includes(permission);
 const inScope = (context: TrustedActorContext, branchId: string) => context.branchScope.type === "AllBranches" || context.branchScope.branchIds.includes(branchId);
 const balanceView = (balance: InventoryBalance): InventoryBalanceView => Object.freeze({ branchId: balance.branchId, productId: balance.productId, unit: "Piece", onHand: balance.onHand.toString(), reserved: balance.reserved.toString(), damaged: balance.damaged.toString(), available: availableQuantity(balance).toString(), revision: balance.revision, updatedAt: balance.updatedAt.toISOString() });
+const reservationView = (reservation: InventoryReservation, context: TrustedActorContext): ReservationManagementView => Object.freeze({ reservationId: reservation.reservationId, branchId: reservation.branchId, productId: reservation.productId, status: reservation.status, quantity: reservation.quantity.toString(), remainingQuantity: reservation.remainingQuantity.toString(), createdAt: reservation.createdAt.toISOString(), updatedAt: reservation.updatedAt.toISOString(), allowedActions: ACTIONABLE_RESERVATION_STATUSES.includes(reservation.status as typeof ACTIONABLE_RESERVATION_STATUSES[number]) ? permittedReservationManagementActions(context) : Object.freeze([]) });
 const encodeResult = (result: InventoryResult<InventoryMutationView>): Readonly<Record<string, unknown>> => result.ok ? { type: "Success", value: result.value } : { type: "Failure", error: result.error };
 const decodeResult = (value: Readonly<Record<string, unknown>> | null): InventoryResult<InventoryMutationView> | null => {
   if (!value) return null; if (value.type === "Success" && value.value && typeof value.value === "object") return inventorySuccess(value.value as InventoryMutationView);
@@ -141,5 +146,43 @@ export class ListInventoryMovementsUseCase {
   async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string; readonly limit?: number }): Promise<InventoryResult<readonly InventoryMovementView[]>> {
     if (!can(command.context, "inventory.quantity.view")) return inventoryFailure("Forbidden"); if (!inScope(command.context, command.branchId)) return inventoryFailure("BranchNotFound"); const limit = command.limit ?? 100; if (!Number.isInteger(limit) || limit < 1 || limit > 200) return inventoryFailure("InvalidInput");
     return this.unitOfWork.execute(async (transaction) => { if (!await transaction.scope.findBranch(command.context.workspaceId, command.branchId)) return inventoryFailure("BranchNotFound"); if (!await transaction.scope.findProduct(command.context.workspaceId, command.productId)) return inventoryFailure("ProductNotFound"); const values = await transaction.inventory.listMovements(command.context.workspaceId, command.branchId, command.productId, limit); return inventorySuccess(Object.freeze(values.map((item) => Object.freeze({ movementId: item.movementId, movementType: item.movementType, quantity: item.quantity.toString(), occurredAt: item.occurredAt.toISOString(), createdByActorId: item.createdByActorId, operationId: item.operationId, ...(item.reservationId ? { reservationId: item.reservationId } : {}), ...(item.correlationId ? { correlationId: item.correlationId } : {}), ...(item.reasonCode ? { reasonCode: item.reasonCode } : {}), ...(item.note ? { note: item.note } : {}) })))); });
+  }
+}
+
+export class ListInventoryReservationsUseCase {
+  constructor(private readonly unitOfWork: InventoryUnitOfWork) {}
+  async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string; readonly cursor?: string; readonly limit?: number }): Promise<InventoryResult<ReservationPageView>> {
+    if (!can(command.context, "inventory.reserve")) return inventoryFailure("Forbidden");
+    let branchId: string, productId: string;
+    try { branchId = validateInventoryIdentifier(command.branchId); productId = validateInventoryIdentifier(command.productId); } catch { return inventoryFailure("InvalidInput"); }
+    if (!inScope(command.context, branchId)) return inventoryFailure("BranchNotFound");
+    const limit = command.limit ?? RESERVATION_PAGE_SIZE_DEFAULT;
+    if (!Number.isInteger(limit) || limit < 1 || limit > RESERVATION_PAGE_SIZE_MAX) return inventoryFailure("InvalidInput");
+    const fingerprint = reservationQueryFingerprint(branchId, productId);
+    let cursor = null;
+    if (command.cursor !== undefined) { try { cursor = decodeReservationCursor(command.cursor, fingerprint); } catch { return inventoryFailure("InvalidCursor"); } }
+    return this.unitOfWork.execute(async (transaction) => {
+      if (!await transaction.scope.findBranch(command.context.workspaceId, branchId)) return inventoryFailure("BranchNotFound");
+      if (!await transaction.scope.findProduct(command.context.workspaceId, productId)) return inventoryFailure("ProductNotFound");
+      const rows = await transaction.inventory.listReservations({ workspaceId: command.context.workspaceId, branchId, productId, statuses: ACTIONABLE_RESERVATION_STATUSES, cursor, limit: limit + 1 });
+      const page = rows.slice(0, limit), last = page.at(-1);
+      return inventorySuccess(Object.freeze({ items: Object.freeze(page.map((item) => reservationView(item, command.context))), nextCursor: rows.length > limit && last ? encodeReservationCursor(fingerprint, { updatedAt: last.updatedAt, reservationId: last.reservationId }) : null }));
+    });
+  }
+}
+
+export class GetInventoryReservationUseCase {
+  constructor(private readonly unitOfWork: InventoryUnitOfWork) {}
+  async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly reservationId: string }): Promise<InventoryResult<ReservationManagementView>> {
+    if (!can(command.context, "inventory.reserve")) return inventoryFailure("Forbidden");
+    let branchId: string, reservationId: string;
+    try { branchId = validateInventoryIdentifier(command.branchId); reservationId = validateInventoryIdentifier(command.reservationId); } catch { return inventoryFailure("InvalidInput"); }
+    if (!inScope(command.context, branchId)) return inventoryFailure("ReservationNotFound");
+    return this.unitOfWork.execute(async (transaction) => {
+      if (!await transaction.scope.findBranch(command.context.workspaceId, branchId)) return inventoryFailure("ReservationNotFound");
+      const reservation = await transaction.inventory.findReservation(command.context.workspaceId, reservationId, false);
+      if (!reservation || reservation.branchId !== branchId) return inventoryFailure("ReservationNotFound");
+      return inventorySuccess(reservationView(reservation, command.context));
+    });
   }
 }
