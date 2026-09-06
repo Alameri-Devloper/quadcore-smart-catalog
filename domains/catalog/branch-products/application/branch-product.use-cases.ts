@@ -2,13 +2,86 @@ import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-
 import { isCurrencyCode } from "../../reference-data/domain/catalog-reference-data";
 import { parsePriceAmount, validatePriceType, type BranchProductListingStatus, type PriceType, type PriceValue } from "../domain/branch-product";
 import type { BranchProductClock, BranchProductUnitOfWork } from "../ports/branch-product-unit-of-work.port";
-import { permittedListingManagementActions, type ListingManagementAction } from "./operational-management-authorization-policy";
+import {
+  permittedBranchPricingActions,
+  permittedBranchReferenceCostActions,
+  permittedListingManagementActions,
+  permittedWorkspacePricingActions,
+  permittedWorkspaceReferenceCostActions,
+  type BranchPriceManagementAction,
+  type ListingManagementAction,
+  type WorkspacePriceManagementAction,
+} from "./operational-management-authorization-policy";
 import { branchProductFailure, branchProductSuccess, type BranchProductResult } from "./branch-product-results";
 
 const can = (context: TrustedActorContext, permission: string) => context.role === "Owner" || context.permissions.includes(permission);
 const inScope = (context: TrustedActorContext, branchId: string) => context.branchScope.type === "AllBranches" || context.branchScope.branchIds.includes(branchId);
 const price = (value: PriceValue | null) => value ? Object.freeze({ amountMinor: value.amountMinor.toString(), currency: value.currency, revision: value.revision }) : null;
 const requirePricePermission = (context: TrustedActorContext, priceType: PriceType, mutation: "Base" | "Override") => priceType === "ReferenceCost" ? can(context, mutation === "Base" ? "referenceCost.manage" : "referenceCost.branchOverride.manage") : can(context, mutation === "Base" ? "pricing.manage" : "pricing.branchOverride.manage");
+const noWorkspacePriceActions = Object.freeze([]) as readonly WorkspacePriceManagementAction[];
+const noBranchPriceActions = Object.freeze([]) as readonly BranchPriceManagementAction[];
+
+export interface PriceManagementSlot {
+  readonly state: "Configured" | "NotConfigured";
+  readonly value: null | {
+    readonly amountMinor: string;
+    readonly currency: string;
+  };
+  readonly allowedActions: readonly WorkspacePriceManagementAction[];
+}
+
+export interface ReferenceCostManagementSlot extends PriceManagementSlot {
+  readonly referenceCostRevision: number;
+}
+
+export interface WorkspacePricingManagementView {
+  readonly productId: string;
+  readonly productRevision: number;
+  readonly retail?: PriceManagementSlot;
+  readonly wholesale?: PriceManagementSlot;
+  readonly referenceCost?: ReferenceCostManagementSlot;
+}
+
+export interface BranchPriceManagementSlot {
+  readonly base: PriceManagementSlot;
+  readonly override: PriceManagementSlot;
+  readonly overrideRevision: number;
+  readonly effective: PriceManagementSlot["value"];
+  readonly source: "WorkspaceBase" | "BranchOverride" | "NotConfigured";
+  readonly allowedActions: readonly BranchPriceManagementAction[];
+}
+
+export interface BranchPricingManagementView {
+  readonly branchId: string;
+  readonly productId: string;
+  readonly baseProductRevision?: number;
+  readonly baseReferenceCostRevision?: number;
+  readonly prices: Readonly<Partial<Record<PriceType, BranchPriceManagementSlot>>>;
+}
+
+const moneyValue = (value: PriceValue | null): PriceManagementSlot["value"] => value
+  ? Object.freeze({ amountMinor: value.amountMinor.toString(), currency: value.currency })
+  : null;
+
+const managementSlot = (
+  value: PriceValue | null,
+  allowedActions: readonly WorkspacePriceManagementAction[],
+): PriceManagementSlot => Object.freeze({
+  state: value ? "Configured" : "NotConfigured",
+  value: moneyValue(value),
+  allowedActions,
+});
+
+const availableOverrideActions = (
+  potentialActions: readonly BranchPriceManagementAction[],
+  hasOverride: boolean,
+  mutable: boolean,
+): readonly BranchPriceManagementAction[] => {
+  if (!mutable) return noBranchPriceActions;
+  return hasOverride
+    ? potentialActions
+    : Object.freeze(potentialActions.filter((action) => action === "SetOverride"));
+};
 
 export interface ListingManagementStateView {
   readonly branchId: string;
@@ -71,6 +144,141 @@ export class GetBranchProductPricingUseCase {
   async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string }): Promise<BranchProductResult<Readonly<Record<string, unknown>>>> {
     if (!can(command.context, "pricing.view")) return branchProductFailure("Forbidden"); if (!inScope(command.context, command.branchId)) return branchProductFailure("BranchNotFound");
     return this.unitOfWork.execute(async ({ scope, pricing }) => { if (!await scope.findBranch(command.context.workspaceId, command.branchId)) return branchProductFailure("BranchNotFound"); if (!await scope.findProduct(command.context.workspaceId, command.productId)) return branchProductFailure("ProductNotFound"); const visible: PriceType[] = ["Retail", ...(can(command.context, "pricing.wholesale.view") ? ["Wholesale" as const] : []), ...(can(command.context, "referenceCost.view") ? ["ReferenceCost" as const] : [])]; const values: Record<string, unknown> = {}; for (const type of visible) { const base = await pricing.getBase(command.context.workspaceId, command.productId, type); const override = await pricing.getOverride(command.context.workspaceId, command.branchId, command.productId, type); values[type] = Object.freeze({ base: price(base), override: price(override), effective: price(override ?? base), source: override ? "BranchOverride" : base ? "WorkspaceBase" : "NotConfigured" }); } return branchProductSuccess(Object.freeze({ branchId: command.branchId, productId: command.productId, prices: Object.freeze(values) })); });
+  }
+}
+
+export class GetWorkspacePricingManagementUseCase {
+  constructor(private readonly unitOfWork: BranchProductUnitOfWork) {}
+
+  async execute(command: {
+    readonly context: TrustedActorContext;
+    readonly productId: string;
+  }): Promise<BranchProductResult<WorkspacePricingManagementView>> {
+    const pricingActions = permittedWorkspacePricingActions(command.context);
+    const referenceCostActions = permittedWorkspaceReferenceCostActions(command.context);
+    const retailVisible = can(command.context, "pricing.view") || pricingActions.length > 0;
+    const wholesaleVisible = (
+      can(command.context, "pricing.view")
+      && can(command.context, "pricing.wholesale.view")
+    ) || pricingActions.length > 0;
+    const referenceCostVisible = (
+      can(command.context, "pricing.view")
+      && can(command.context, "referenceCost.view")
+    ) || referenceCostActions.length > 0;
+
+    if (!retailVisible && !wholesaleVisible && !referenceCostVisible) {
+      return branchProductFailure("Forbidden");
+    }
+
+    return this.unitOfWork.execute(async ({ scope, pricing }) => {
+      const product = await scope.findProduct(command.context.workspaceId, command.productId);
+      if (!product) return branchProductFailure("ProductNotFound");
+      const mutable = product.lifecycleState !== "Archived";
+      const availablePricingActions = mutable ? pricingActions : noWorkspacePriceActions;
+      const availableReferenceCostActions = mutable ? referenceCostActions : noWorkspacePriceActions;
+
+      const view: {
+        productId: string;
+        productRevision: number;
+        retail?: PriceManagementSlot;
+        wholesale?: PriceManagementSlot;
+        referenceCost?: ReferenceCostManagementSlot;
+      } = {
+        productId: command.productId,
+        productRevision: product.revision,
+      };
+
+      if (retailVisible) {
+        view.retail = managementSlot(
+          await pricing.getBase(command.context.workspaceId, command.productId, "Retail"),
+          availablePricingActions,
+        );
+      }
+      if (wholesaleVisible) {
+        view.wholesale = managementSlot(
+          await pricing.getBase(command.context.workspaceId, command.productId, "Wholesale"),
+          availablePricingActions,
+        );
+      }
+      if (referenceCostVisible) {
+        const referenceCost = await pricing.getBase(
+          command.context.workspaceId,
+          command.productId,
+          "ReferenceCost",
+        );
+        view.referenceCost = Object.freeze({
+          ...managementSlot(referenceCost, availableReferenceCostActions),
+          referenceCostRevision: referenceCost?.revision ?? 0,
+        });
+      }
+
+      return branchProductSuccess(Object.freeze(view));
+    });
+  }
+}
+
+export class GetBranchPricingManagementUseCase {
+  constructor(private readonly unitOfWork: BranchProductUnitOfWork) {}
+
+  async execute(command: {
+    readonly context: TrustedActorContext;
+    readonly branchId: string;
+    readonly productId: string;
+  }): Promise<BranchProductResult<BranchPricingManagementView>> {
+    const pricingActions = permittedBranchPricingActions(command.context);
+    const referenceCostActions = permittedBranchReferenceCostActions(command.context);
+    const pricingVisible = pricingActions.length > 0;
+    const referenceCostVisible = referenceCostActions.length > 0;
+
+    if (!pricingVisible && !referenceCostVisible) return branchProductFailure("Forbidden");
+    if (!inScope(command.context, command.branchId)) return branchProductFailure("BranchNotFound");
+
+    return this.unitOfWork.execute(async ({ scope, pricing }) => {
+      const branch = await scope.findBranch(command.context.workspaceId, command.branchId);
+      if (!branch) return branchProductFailure("BranchNotFound");
+      const product = await scope.findProduct(command.context.workspaceId, command.productId);
+      if (!product) return branchProductFailure("ProductNotFound");
+      const mutable = branch.status === "Active" && product.lifecycleState !== "Archived";
+      const prices: Partial<Record<PriceType, BranchPriceManagementSlot>> = {};
+      let baseReferenceCostRevision: number | undefined;
+
+      const addPrice = async (
+        priceType: PriceType,
+        potentialActions: readonly BranchPriceManagementAction[],
+      ) => {
+        const base = await pricing.getBase(command.context.workspaceId, command.productId, priceType);
+        const override = await pricing.getOverride(
+          command.context.workspaceId,
+          command.branchId,
+          command.productId,
+          priceType,
+        );
+        const effective = override ?? base;
+        prices[priceType] = Object.freeze({
+          base: managementSlot(base, noWorkspacePriceActions),
+          override: managementSlot(override, noWorkspacePriceActions),
+          overrideRevision: override?.revision ?? 0,
+          effective: moneyValue(effective),
+          source: override ? "BranchOverride" : base ? "WorkspaceBase" : "NotConfigured",
+          allowedActions: availableOverrideActions(potentialActions, override !== null, mutable),
+        });
+        if (priceType === "ReferenceCost") baseReferenceCostRevision = base?.revision ?? 0;
+      };
+
+      if (pricingVisible) {
+        await addPrice("Retail", pricingActions);
+        await addPrice("Wholesale", pricingActions);
+      }
+      if (referenceCostVisible) await addPrice("ReferenceCost", referenceCostActions);
+
+      return branchProductSuccess(Object.freeze({
+        branchId: command.branchId,
+        productId: command.productId,
+        ...(pricingVisible ? { baseProductRevision: product.revision } : {}),
+        ...(referenceCostVisible ? { baseReferenceCostRevision } : {}),
+        prices: Object.freeze(prices),
+      }));
+    });
   }
 }
 

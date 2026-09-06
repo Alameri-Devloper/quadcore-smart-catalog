@@ -1,8 +1,8 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** Task 3.22-A3 implementation complete / **ReadyForReview**; A4 is not started or automatically approved · **Implementation baseline:** `43c5b5581aff634547767a198d0065d08c6a390b` · **Date:** 2026-09-02
+**Status:** Task 3.22-A4 implementation complete / **ReadyForReview**; A5 is not started or automatically approved · **Implementation baseline:** `5ad78863cf141349975f0100d2e93b674c7e6819` · **Date:** 2026-09-05
 
-A1 is merged through PR #28 and A2 is merged through PR #29. A3 implements only the approved Inventory-owned Reservation collection/detail reads. It does not approve A4, A5, or Task 3.22 Presentation; independent A3 review and merge are required before any next slice is considered.
+A1 is merged through PR #28, A2 through PR #29, and A3 through PR #30. A4 implements only the approved Catalog Branch Product-owned Workspace and Branch pricing management reads. It does not approve A5 or Task 3.22 Presentation; independent A4 review and merge are required before any next slice is considered.
 
 يعتمد هذا العقد شرائح تنفيذ عقود الخادم التصحيحية المحددة أدناه فقط، ولا يعتمد واجهة المهمة 3.22.
 
@@ -432,7 +432,7 @@ No new permission code is required.
 - **Dependency:** none. Existing TypeScript, Application ports, Drizzle/PostgreSQL, HTTP, and cursor utilities are sufficient.
 - **Architecture:** no redesign and no ADR. The selected hybrid is a documented operation-specific authorization composition, not a global permission-semantic change. Catalog Query remains canonical Product search; Branch Product owns Listing/Pricing; Inventory owns Reservations/balances/mutations; transfer remains atomic.
 
-Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence remain resolved. A1 and A2 are merged; A3 is implemented / ReadyForReview. Do not begin A4–A5 before independent A3 review and merge, and do not add migration `0016` or the Candidate Optimization.
+Capability ownership, operational query shape, cursor semantics, Pricing concurrency, and Reservation persistence remain resolved. A1, A2, and A3 are merged; A4 is implemented / ReadyForReview. Do not begin A5 before independent A4 review and merge, and do not add migration `0016` or the Candidate Optimization.
 
 ### Implementation slices and dependencies
 
@@ -452,7 +452,7 @@ Acceptance: singular/plural edit parity without aliasing; purpose-specific permi
 
 Depends on A1 policy vocabulary.
 
-#### 3.22-A3 — Reservation reads — Implemented / ReadyForReview
+#### 3.22-A3 — Reservation reads — Merged through PR #30
 
 Implemented on baseline `43c5b5581aff634547767a198d0065d08c6a390b`: Inventory exposes the Product-scoped actionable Reservation page and exact detail with the specified `(updatedAt,reservationId)` keyset, query fingerprint, live-cursor behavior, existing table/filter index, and minimal DTO. Release/Fulfill mutation contracts remain unchanged and authoritative.
 
@@ -460,9 +460,9 @@ Acceptance: `inventory.reserve` authorization; tenant/Branch/Product scoping; Ac
 
 Depends on A1 resource-action rules; consumes A2 Product selection in the future Presentation but can be implemented/tested independently.
 
-#### 3.22-A4 — Pricing management reads
+#### 3.22-A4 — Pricing management reads — Implemented / ReadyForReview
 
-Add Workspace base and Branch override management state reads with independent Retail/Wholesale/Reference Cost field authorization and explicit shared Product concurrency for Retail/Wholesale.
+Implemented on baseline `5ad78863cf141349975f0100d2e93b674c7e6819`: Catalog Branch Product Application exposes the Branch-independent Workspace base management state and Branch override management state through thin authenticated Route Handlers. It composes exact field authorization over the existing scope/pricing ports, projects the shared Product revision for Retail/Wholesale and independent Reference Cost/override revisions, preserves semantic inheritance, and suppresses write actions for Archived Products or Inactive Branches.
 
 Acceptance: exact configured/absent/zero semantics; response-level `productRevision` for configured or absent Retail/Wholesale; Retail change invalidates Wholesale and vice versa; success reloads authoritative state; conflict requires refresh/review; independent Reference Cost revision and absent-row zero; complete ordinary Reference Cost read composition; inherit/override source; no global view implication; Reference Cost isolation; no Branch required for Workspace base.
 
@@ -478,7 +478,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### Roadmap decision
 
-**A1 and A2 are merged, and A3 is implemented / ReadyForReview.** A4 is not automatically approved by A3 completion and is not started. A5 is not started. Task 3.22 Presentation remains Planned / blocked and is not approved.
+**A1, A2, and A3 are merged, and A4 is implemented / ReadyForReview.** A5 is not automatically approved by A4 completion and is not started. Task 3.22 Presentation remains Planned / blocked and is not approved.
 
 ## العقد العربي
 
@@ -513,20 +513,20 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 1. **3.22-A1 — مدمجة عبر طلب السحب #28:** إسقاط القدرات الفعلية في Identity Application ومفردات أفعال الموارد النقية دون وصول للاستمرارية.
 2. **3.22-A2 — مدمجة عبر طلب السحب #29:** استعلام Draft+Published تشغيلي واحد وقراءة حالة الإدراج الموثوقة، مع بقاء بصمة/مؤشر الكتالوج العادي متوافقين.
-3. **3.22-A3 — منفذة / جاهزة للمراجعة:** قراءات الحجوزات بعقد المؤشر الدقيق وبوابة خطة الاستعلام.
-4. **3.22-A4:** قراءات إدارة التسعير مع مراجعة المنتج المشتركة للتجزئة والجملة ومراجعة مستقلة للتكلفة المرجعية.
+3. **3.22-A3 — مدمجة عبر طلب السحب #30:** قراءات الحجوزات بعقد المؤشر الدقيق وبوابة خطة الاستعلام.
+4. **3.22-A4 — منفذة / جاهزة للمراجعة:** قراءات إدارة التسعير المستقلة عن الفرع وحالة تجاوز الفرع، مع مراجعة المنتج المشتركة للتجزئة والجملة ومراجعات مستقلة للتكلفة المرجعية وتجاوزات الفروع.
 5. **3.22-A5:** تشديد كشف المخزون ونتائج الطفرات وإعادة idempotent.
 
-دُمجت A1 عبر طلب السحب #28 وA2 عبر #29، ونُفذت A3 فوق خط الأساس `43c5b5581aff634547767a198d0065d08c6a390b`. لا تعتمد A4 تلقائياً قبل مراجعة A3 مستقلاً ودمجها، ولم تبدأ A4–A5، مع بقاء واجهة المهمة 3.22 محظورة حتى اكتمال الشرائح كلها ومراجعتها ودمجها.
+دُمجت A1 عبر طلب السحب #28 وA2 عبر #29 وA3 عبر #30. نُفذت A4 فوق خط الأساس `5ad78863cf141349975f0100d2e93b674c7e6819` وهي جاهزة للمراجعة. لا تعتمد A5 تلقائياً قبل مراجعة A4 مستقلاً ودمجها، ولم تبدأ A5، مع بقاء واجهة المهمة 3.22 محظورة حتى اكتمال الشرائح كلها ومراجعتها ودمجها.
 
 ### قرار الخارطة
 
-**دُمجت A1 وA2، ونُفذت A3 وهي جاهزة للمراجعة.** لا تعتمد A4 تلقائياً بإكمال A3 ولم تبدأ. كما لم تبدأ A5، وتبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة.
+**دُمجت A1 وA2 وA3، ونُفذت A4 وهي جاهزة للمراجعة.** لا تعتمد A5 تلقائياً بإكمال A4 ولم تبدأ، وتبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة.
 
 ## WILL IMPLEMENT | سينفذ
 
-- After independent A3 review and merge, consider the next bounded slice under the documented sequence; do not infer A4 approval from this status update.
-- بعد مراجعة A3 مستقلاً ودمجها، ينظر في الشريحة المحدودة التالية وفق التسلسل الموثق؛ ولا يستنتج اعتماد A4 من تحديث الحالة هذا.
+- After independent A4 review and merge, consider the next bounded slice under the documented sequence; do not infer A5 approval from this status update.
+- بعد مراجعة A4 مستقلاً ودمجها، ينظر في الشريحة المحدودة التالية وفق التسلسل الموثق؛ ولا يستنتج اعتماد A5 من تحديث الحالة هذا.
 
 ## WILL NOT IMPLEMENT | لن ينفذ
 

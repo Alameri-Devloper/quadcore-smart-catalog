@@ -5,8 +5,8 @@ import { and, eq, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
 import { createPlatformDatabaseConnection } from "../../../../shared/infrastructure/persistence/database";
-import { catalogProductBranchPriceOverrides, catalogProducts, workspaceCurrencyAvailability } from "../../../catalog/infrastructure/persistence/schema";
-import { ClearBranchPriceOverrideUseCase, GetBranchProductPricingUseCase, SetBranchPriceOverrideUseCase, SetWorkspaceBasePriceUseCase } from "../../../catalog/branch-products/application/branch-product.use-cases";
+import { catalogProductBranchPriceOverrides, catalogProductReferenceCosts, catalogProducts, workspaceCurrencyAvailability } from "../../../catalog/infrastructure/persistence/schema";
+import { ClearBranchPriceOverrideUseCase, ClearWorkspaceBasePriceUseCase, GetBranchPricingManagementUseCase, GetBranchProductPricingUseCase, GetWorkspacePricingManagementUseCase, SetBranchPriceOverrideUseCase, SetWorkspaceBasePriceUseCase } from "../../../catalog/branch-products/application/branch-product.use-cases";
 import { PostgreSqlBranchProductUnitOfWork } from "../../../catalog/branch-products/infrastructure/persistence/postgresql-branch-product-unit-of-work";
 import { assertSafeIntegrationTestDatabaseUrl } from "../../../catalog/infrastructure/persistence/integration-test-database-safety";
 import { workspaceBranchReferences, workspaces } from "../../../workspace/infrastructure/persistence/schema";
@@ -19,8 +19,9 @@ const connectionUrl = process.env.TEST_DATABASE_URL; assertSafeIntegrationTestDa
 const inventoryUnitOfWork = new PostgreSqlInventoryUnitOfWork(connection.database); const inventoryDependencies = { unitOfWork: inventoryUnitOfWork, clock: { now: () => new Date() }, identifiers: { next: randomUUID }, fingerprint: { create: (value: Readonly<Record<string, string>>) => createHash("sha256").update(JSON.stringify(value)).digest("hex") } };
 const receive = new ReceiveInventoryUseCase(inventoryDependencies); const issue = new IssueInventoryUseCase(inventoryDependencies); const reserve = new ReserveInventoryUseCase(inventoryDependencies); const transfer = new TransferInventoryUseCase(inventoryDependencies);
 const reservations = new ListInventoryReservationsUseCase(inventoryUnitOfWork); const reservationDetails = new GetInventoryReservationUseCase(inventoryUnitOfWork);
-const pricingUnitOfWork = new PostgreSqlBranchProductUnitOfWork(connection.database); const pricingDependencies = { unitOfWork: pricingUnitOfWork, clock: { now: () => new Date() } }; const setBase = new SetWorkspaceBasePriceUseCase(pricingDependencies); const setOverride = new SetBranchPriceOverrideUseCase(pricingDependencies); const clearOverride = new ClearBranchPriceOverrideUseCase(pricingDependencies); const getPricing = new GetBranchProductPricingUseCase(pricingUnitOfWork);
+const pricingUnitOfWork = new PostgreSqlBranchProductUnitOfWork(connection.database); const pricingDependencies = { unitOfWork: pricingUnitOfWork, clock: { now: () => new Date() } }; const setBase = new SetWorkspaceBasePriceUseCase(pricingDependencies); const clearBase = new ClearWorkspaceBasePriceUseCase(pricingDependencies); const setOverride = new SetBranchPriceOverrideUseCase(pricingDependencies); const clearOverride = new ClearBranchPriceOverrideUseCase(pricingDependencies); const getPricing = new GetBranchProductPricingUseCase(pricingUnitOfWork); const getWorkspacePricingManagement = new GetWorkspacePricingManagementUseCase(pricingUnitOfWork); const getBranchPricingManagement = new GetBranchPricingManagementUseCase(pricingUnitOfWork);
 const owner = (workspaceId = "workspace-a"): TrustedActorContext => ({ workspaceId, actorId: `owner-${workspaceId}`, role: "Owner", permissions: [], branchScope: { type: "AllBranches" }, authorizationVersion: 1 });
+const pricingManager = (workspaceId = "workspace-a", branchIds?: readonly string[]): TrustedActorContext => ({ workspaceId, actorId: `pricing-manager-${workspaceId}`, role: "Staff", permissions: ["pricing.manage", "referenceCost.manage", "pricing.branchOverride.manage", "referenceCost.branchOverride.manage"], branchScope: branchIds ? { type: "SelectedBranches", branchIds } : { type: "AllBranches" }, authorizationVersion: 1 });
 const reservationActor = (workspaceId = "workspace-a"): TrustedActorContext => ({ workspaceId, actorId: `staff-${workspaceId}`, role: "Staff", permissions: ["inventory.reserve"], branchScope: { type: "AllBranches" }, authorizationVersion: 1 });
 const reservationRow = (reservationId: string, status: "Active" | "PartiallyFulfilled" | "Fulfilled" | "Released", updatedAt: string, overrides: Partial<typeof inventoryReservations.$inferInsert> = {}): typeof inventoryReservations.$inferInsert => ({ workspaceId: "workspace-a", reservationId, branchId: "branch-a", productId: "product-a", quantity: BigInt(8), remainingQuantity: status === "Fulfilled" || status === "Released" ? BigInt(0) : BigInt(5), status, createdByActorId: "generated-test-actor", createdAt: new Date("2026-08-19T10:00:00.000Z"), updatedAt: new Date(updatedAt), ...overrides });
 
@@ -47,4 +48,104 @@ describe("PostgreSQL Reservation management reads", () => {
 describe("PostgreSQL Branch pricing", () => {
   it("persists BIGINT Money, live inheritance, override, and explicit clear", async () => { const actor = owner(); assert.ok((await setBase.execute({ context: actor, productId: "product-a", priceType: "Retail", amountMinor: "9007199254740991", currency: "USD", expectedRevision: 0 })).ok); let read = await getPricing.execute({ context: actor, branchId: "branch-a", productId: "product-a" }); assert.ok(read.ok); const inherited = (read.ok ? read.value.prices : {}) as Record<string, { effective: { amountMinor: string }; source: string }>; assert.equal(inherited.Retail.effective.amountMinor, "9007199254740991"); assert.equal(inherited.Retail.source, "WorkspaceBase"); assert.ok((await setOverride.execute({ context: actor, branchId: "branch-a", productId: "product-a", priceType: "Retail", amountMinor: "0", currency: "USD", expectedRevision: 0 })).ok); assert.ok((await setBase.execute({ context: actor, productId: "product-a", priceType: "Retail", amountMinor: "100", currency: "USD", expectedRevision: 1 })).ok); read = await getPricing.execute({ context: actor, branchId: "branch-a", productId: "product-a" }); assert.equal(((read.ok ? read.value.prices : {}) as Record<string, { effective: { amountMinor: string } }>).Retail.effective.amountMinor, "0"); assert.ok((await clearOverride.execute({ context: actor, branchId: "branch-a", productId: "product-a", priceType: "Retail", expectedRevision: 1 })).ok); read = await getPricing.execute({ context: actor, branchId: "branch-a", productId: "product-a" }); assert.equal(((read.ok ? read.value.prices : {}) as Record<string, { effective: { amountMinor: string } }>).Retail.effective.amountMinor, "100"); assert.equal((await connection.database.select().from(catalogProductBranchPriceOverrides)).length, 0); });
   it("enforces scoped override uniqueness and enabled currency", async () => { const actor = owner(); assert.deepEqual(await setOverride.execute({ context: actor, branchId: "branch-a", productId: "product-a", priceType: "Retail", amountMinor: "1", currency: "EUR", expectedRevision: 0 }), { ok: false, error: "CurrencyNotAllowed" }); assert.ok((await setOverride.execute({ context: actor, branchId: "branch-a", productId: "product-a", priceType: "Retail", amountMinor: "1", currency: "USD", expectedRevision: 0 })).ok); assert.deepEqual(await setOverride.execute({ context: actor, branchId: "branch-a", productId: "product-a", priceType: "Retail", amountMinor: "2", currency: "USD", expectedRevision: 0 }), { ok: false, error: "Conflict" }); const rows = await connection.database.select().from(catalogProductBranchPriceOverrides).where(and(eq(catalogProductBranchPriceOverrides.workspaceId, "workspace-a"), eq(catalogProductBranchPriceOverrides.branchId, "branch-a"))); assert.equal(rows.length, 1); });
+});
+
+describe("PostgreSQL Pricing management revisions and isolation", () => {
+  it("projects the shared Product revision and independent Reference Cost revision", async () => {
+    const context = pricingManager();
+    const initial = await getWorkspacePricingManagement.execute({ context, productId: "product-a" });
+    assert.ok(initial.ok);
+    if (initial.ok) {
+      assert.equal(initial.value.productRevision, 0);
+      assert.equal(initial.value.retail?.state, "NotConfigured");
+      assert.equal(initial.value.wholesale?.state, "NotConfigured");
+      assert.equal(initial.value.referenceCost?.referenceCostRevision, 0);
+    }
+
+    assert.ok((await setBase.execute({ context, productId: "product-a", priceType: "Retail", amountMinor: "0", currency: "USD", expectedRevision: 0 })).ok);
+    let read = await getWorkspacePricingManagement.execute({ context, productId: "product-a" });
+    assert.ok(read.ok);
+    if (read.ok) {
+      assert.equal(read.value.productRevision, 1);
+      assert.deepEqual(read.value.retail?.value, { amountMinor: "0", currency: "USD" });
+      assert.equal(read.value.wholesale?.state, "NotConfigured");
+    }
+
+    assert.deepEqual(await setBase.execute({ context, productId: "product-a", priceType: "Wholesale", amountMinor: "80", currency: "USD", expectedRevision: 0 }), { ok: false, error: "Conflict" });
+    assert.ok((await setBase.execute({ context, productId: "product-a", priceType: "Wholesale", amountMinor: "80", currency: "USD", expectedRevision: 1 })).ok);
+    assert.ok((await setBase.execute({ context, productId: "product-a", priceType: "ReferenceCost", amountMinor: "60", currency: "USD", expectedRevision: 0 })).ok);
+
+    read = await getWorkspacePricingManagement.execute({ context, productId: "product-a" });
+    assert.ok(read.ok);
+    if (read.ok) {
+      assert.equal(read.value.productRevision, 2);
+      assert.equal(read.value.referenceCost?.referenceCostRevision, 1);
+    }
+
+    assert.ok((await setBase.execute({ context, productId: "product-a", priceType: "Retail", amountMinor: "100", currency: "USD", expectedRevision: 2 })).ok);
+    read = await getWorkspacePricingManagement.execute({ context, productId: "product-a" });
+    assert.ok(read.ok);
+    if (read.ok) {
+      assert.equal(read.value.productRevision, 3);
+      assert.equal(read.value.referenceCost?.referenceCostRevision, 1);
+    }
+
+    assert.ok((await clearBase.execute({ context, productId: "product-a", priceType: "ReferenceCost", expectedRevision: 1 })).ok);
+    assert.ok((await clearBase.execute({ context, productId: "product-a", priceType: "Wholesale", expectedRevision: 3 })).ok);
+    read = await getWorkspacePricingManagement.execute({ context, productId: "product-a" });
+    assert.ok(read.ok);
+    if (read.ok) {
+      assert.equal(read.value.productRevision, 4);
+      assert.equal(read.value.wholesale?.state, "NotConfigured");
+      assert.equal(read.value.referenceCost?.referenceCostRevision, 0);
+    }
+    assert.equal((await connection.database.select().from(catalogProductReferenceCosts)).length, 0);
+  });
+
+  it("projects independent Branch override revisions and semantic inheritance", async () => {
+    const context = pricingManager();
+    assert.ok((await setBase.execute({ context, productId: "product-a", priceType: "Retail", amountMinor: "100", currency: "USD", expectedRevision: 0 })).ok);
+    assert.ok((await setBase.execute({ context, productId: "product-a", priceType: "ReferenceCost", amountMinor: "60", currency: "USD", expectedRevision: 0 })).ok);
+    assert.ok((await setOverride.execute({ context, branchId: "branch-a", productId: "product-a", priceType: "Wholesale", amountMinor: "0", currency: "USD", expectedRevision: 0 })).ok);
+    assert.ok((await setOverride.execute({ context, branchId: "branch-a", productId: "product-a", priceType: "ReferenceCost", amountMinor: "55", currency: "USD", expectedRevision: 0 })).ok);
+
+    let read = await getBranchPricingManagement.execute({ context, branchId: "branch-a", productId: "product-a" });
+    assert.ok(read.ok);
+    if (!read.ok) return;
+    assert.equal(read.value.baseProductRevision, 1);
+    assert.equal(read.value.baseReferenceCostRevision, 1);
+    assert.equal(read.value.prices.Retail?.source, "WorkspaceBase");
+    assert.equal(read.value.prices.Retail?.overrideRevision, 0);
+    assert.deepEqual(read.value.prices.Retail?.allowedActions, ["SetOverride"]);
+    assert.equal(read.value.prices.Wholesale?.source, "BranchOverride");
+    assert.deepEqual(read.value.prices.Wholesale?.effective, { amountMinor: "0", currency: "USD" });
+    assert.equal(read.value.prices.Wholesale?.overrideRevision, 1);
+    assert.deepEqual(read.value.prices.Wholesale?.allowedActions, ["SetOverride", "ClearOverride"]);
+    assert.equal(read.value.prices.ReferenceCost?.source, "BranchOverride");
+    assert.equal(read.value.prices.ReferenceCost?.overrideRevision, 1);
+
+    assert.ok((await setOverride.execute({ context, branchId: "branch-a", productId: "product-a", priceType: "Wholesale", amountMinor: "75", currency: "USD", expectedRevision: 1 })).ok);
+    read = await getBranchPricingManagement.execute({ context, branchId: "branch-a", productId: "product-a" });
+    assert.ok(read.ok);
+    if (read.ok) {
+      assert.equal(read.value.prices.Wholesale?.overrideRevision, 2);
+      assert.equal(read.value.baseProductRevision, 1);
+      assert.equal(read.value.baseReferenceCostRevision, 1);
+    }
+  });
+
+  it("keeps tenant, Branch, and Product persistence scopes isolated", async () => {
+    const context = pricingManager();
+    assert.ok((await setOverride.execute({ context, branchId: "branch-b", productId: "product-b", priceType: "Retail", amountMinor: "25", currency: "USD", expectedRevision: 0 })).ok);
+    const isolated = await getBranchPricingManagement.execute({ context, branchId: "branch-a", productId: "product-a" });
+    assert.ok(isolated.ok);
+    if (isolated.ok) {
+      assert.equal(isolated.value.prices.Retail?.override.state, "NotConfigured");
+      assert.equal(isolated.value.prices.Retail?.overrideRevision, 0);
+    }
+    assert.deepEqual(await getWorkspacePricingManagement.execute({ context, productId: "product-foreign" }), { ok: false, error: "ProductNotFound" });
+    assert.deepEqual(await getBranchPricingManagement.execute({ context, branchId: "foreign-branch", productId: "product-a" }), { ok: false, error: "BranchNotFound" });
+    assert.deepEqual(await getBranchPricingManagement.execute({ context, branchId: "branch-a", productId: "product-foreign" }), { ok: false, error: "ProductNotFound" });
+    assert.deepEqual(await getBranchPricingManagement.execute({ context: pricingManager("workspace-a", ["branch-a"]), branchId: "branch-b", productId: "product-a" }), { ok: false, error: "BranchNotFound" });
+  });
 });
