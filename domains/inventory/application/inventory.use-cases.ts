@@ -5,20 +5,41 @@ import type { InventoryClock, InventoryFingerprint, InventoryIdentifierGenerator
 import { inventoryFailure, inventorySuccess, type InventoryError, type InventoryResult } from "./inventory-results";
 import { permittedReservationManagementActions, type ReservationManagementAction } from "./operational-management-authorization-policy";
 
-export interface InventoryBalanceView { readonly branchId: string; readonly productId: string; readonly unit: "Piece"; readonly onHand: string; readonly reserved: string; readonly damaged: string; readonly available: string; readonly revision: number; readonly updatedAt: string }
-export interface InventoryMutationView { readonly operationId: string; readonly balance?: InventoryBalanceView; readonly sourceBalance?: InventoryBalanceView; readonly destinationBalance?: InventoryBalanceView; readonly reservationId?: string; readonly reservationStatus?: string; readonly remainingQuantity?: string; readonly transferId?: string }
+export type InventoryAvailability = "InStock" | "OutOfStock";
+export interface InventoryAvailabilityView { readonly branchId: string; readonly productId: string; readonly unit: "Piece"; readonly availability: InventoryAvailability }
+export interface InventoryQuantityView extends InventoryAvailabilityView { readonly quantities: { readonly available: string; readonly onHand: string; readonly reserved: string; readonly damaged: string }; readonly revision: number; readonly updatedAt: string }
+export type InventoryReadView = InventoryAvailabilityView | InventoryQuantityView;
+export interface InventoryMutationView { readonly operationId: string; readonly status: "Succeeded"; readonly availability?: InventoryAvailability; readonly sourceAvailability?: InventoryAvailability; readonly destinationAvailability?: InventoryAvailability; readonly balance?: InventoryQuantityView; readonly sourceBalance?: InventoryQuantityView; readonly destinationBalance?: InventoryQuantityView; readonly reservationId?: string; readonly reservationStatus?: InventoryReservation["status"]; readonly remainingQuantity?: string; readonly transferId?: string }
 export interface InventoryMovementView { readonly movementId: string; readonly movementType: InventoryMovementType; readonly quantity: string; readonly occurredAt: string; readonly createdByActorId: string; readonly operationId: string; readonly reservationId?: string; readonly correlationId?: string; readonly reasonCode?: string; readonly note?: string }
 export interface ReservationManagementView { readonly reservationId: string; readonly branchId: string; readonly productId: string; readonly status: InventoryReservation["status"]; readonly quantity: string; readonly remainingQuantity: string; readonly createdAt: string; readonly updatedAt: string; readonly allowedActions: readonly ReservationManagementAction[] }
 export interface ReservationPageView { readonly items: readonly ReservationManagementView[]; readonly nextCursor: string | null }
 
 const can = (context: TrustedActorContext, permission: string) => context.role === "Owner" || context.permissions.includes(permission);
 const inScope = (context: TrustedActorContext, branchId: string) => context.branchScope.type === "AllBranches" || context.branchScope.branchIds.includes(branchId);
-const balanceView = (balance: InventoryBalance): InventoryBalanceView => Object.freeze({ branchId: balance.branchId, productId: balance.productId, unit: "Piece", onHand: balance.onHand.toString(), reserved: balance.reserved.toString(), damaged: balance.damaged.toString(), available: availableQuantity(balance).toString(), revision: balance.revision, updatedAt: balance.updatedAt.toISOString() });
+interface InventoryBalanceOutcome { readonly branchId: string; readonly productId: string; readonly unit: "Piece"; readonly onHand: string; readonly reserved: string; readonly damaged: string; readonly available: string; readonly revision: number; readonly updatedAt: string }
+interface InventoryMutationOutcome { readonly operationId: string; readonly balance?: InventoryBalanceOutcome; readonly sourceBalance?: InventoryBalanceOutcome; readonly destinationBalance?: InventoryBalanceOutcome; readonly reservationId?: string; readonly reservationStatus?: InventoryReservation["status"]; readonly remainingQuantity?: string; readonly transferId?: string }
+const balanceOutcome = (balance: InventoryBalance): InventoryBalanceOutcome => Object.freeze({ branchId: balance.branchId, productId: balance.productId, unit: "Piece", onHand: balance.onHand.toString(), reserved: balance.reserved.toString(), damaged: balance.damaged.toString(), available: availableQuantity(balance).toString(), revision: balance.revision, updatedAt: balance.updatedAt.toISOString() });
+const semanticAvailability = (available: string): InventoryAvailability => BigInt(available) > BigInt(0) ? "InStock" : "OutOfStock";
+const availabilityView = (balance: InventoryBalanceOutcome): InventoryAvailabilityView => Object.freeze({ branchId: balance.branchId, productId: balance.productId, unit: balance.unit, availability: semanticAvailability(balance.available) });
+const quantityView = (balance: InventoryBalanceOutcome): InventoryQuantityView => Object.freeze({ ...availabilityView(balance), quantities: Object.freeze({ available: balance.available, onHand: balance.onHand, reserved: balance.reserved, damaged: balance.damaged }), revision: balance.revision, updatedAt: balance.updatedAt });
 const reservationView = (reservation: InventoryReservation, context: TrustedActorContext): ReservationManagementView => Object.freeze({ reservationId: reservation.reservationId, branchId: reservation.branchId, productId: reservation.productId, status: reservation.status, quantity: reservation.quantity.toString(), remainingQuantity: reservation.remainingQuantity.toString(), createdAt: reservation.createdAt.toISOString(), updatedAt: reservation.updatedAt.toISOString(), allowedActions: ACTIONABLE_RESERVATION_STATUSES.includes(reservation.status as typeof ACTIONABLE_RESERVATION_STATUSES[number]) ? permittedReservationManagementActions(context) : Object.freeze([]) });
-const encodeResult = (result: InventoryResult<InventoryMutationView>): Readonly<Record<string, unknown>> => result.ok ? { type: "Success", value: result.value } : { type: "Failure", error: result.error };
-const decodeResult = (value: Readonly<Record<string, unknown>> | null): InventoryResult<InventoryMutationView> | null => {
-  if (!value) return null; if (value.type === "Success" && value.value && typeof value.value === "object") return inventorySuccess(value.value as InventoryMutationView);
+const encodeResult = (result: InventoryResult<InventoryMutationOutcome>): Readonly<Record<string, unknown>> => result.ok ? { type: "Success", value: result.value } : { type: "Failure", error: result.error };
+const decodeResult = (value: Readonly<Record<string, unknown>> | null): InventoryResult<InventoryMutationOutcome> | null => {
+  if (!value) return null; if (value.type === "Success" && value.value && typeof value.value === "object") return inventorySuccess(value.value as InventoryMutationOutcome);
   if (value.type === "Failure" && typeof value.error === "string") return inventoryFailure(value.error as InventoryError); return null;
+};
+const projectMutationResult = (result: InventoryResult<InventoryMutationOutcome>, context: TrustedActorContext): InventoryResult<InventoryMutationView> => {
+  if (!result.ok) return result;
+  const outcome = result.value;
+  const minimum = {
+    operationId: outcome.operationId,
+    status: "Succeeded" as const,
+    ...(can(context, "inventory.reserve") && outcome.reservationId ? { reservationId: outcome.reservationId, ...(outcome.reservationStatus ? { reservationStatus: outcome.reservationStatus } : {}), ...(outcome.remainingQuantity !== undefined ? { remainingQuantity: outcome.remainingQuantity } : {}) } : {}),
+    ...(can(context, "inventory.transfer") && outcome.transferId ? { transferId: outcome.transferId } : {}),
+  };
+  if (can(context, "inventory.quantity.view")) return inventorySuccess(Object.freeze({ ...minimum, ...(outcome.balance ? { balance: quantityView(outcome.balance) } : {}), ...(outcome.sourceBalance ? { sourceBalance: quantityView(outcome.sourceBalance) } : {}), ...(outcome.destinationBalance ? { destinationBalance: quantityView(outcome.destinationBalance) } : {}) }));
+  if (can(context, "inventory.availability.view")) return inventorySuccess(Object.freeze({ ...minimum, ...(outcome.balance ? { availability: semanticAvailability(outcome.balance.available) } : {}), ...(outcome.sourceBalance ? { sourceAvailability: semanticAvailability(outcome.sourceBalance.available) } : {}), ...(outcome.destinationBalance ? { destinationAvailability: semanticAvailability(outcome.destinationBalance.available) } : {}) }));
+  return inventorySuccess(Object.freeze(minimum));
 };
 
 interface Dependencies { readonly unitOfWork: InventoryUnitOfWork; readonly clock: InventoryClock; readonly identifiers: InventoryIdentifierGenerator; readonly fingerprint: InventoryFingerprint }
@@ -35,14 +56,14 @@ const validateActiveScope = async (transaction: InventoryTransactionContext, con
 
 const movement = (dependencies: Dependencies, command: MutationCommand & { readonly branchId: string; readonly productId: string }, type: InventoryMovementType, quantity: bigint, now: Date, extra: Partial<Pick<InventoryMovement, "reservationId" | "correlationId" | "reasonCode" | "note">> = {}): InventoryMovement => Object.freeze({ workspaceId: command.context.workspaceId, branchId: command.branchId, movementId: dependencies.identifiers.next(), productId: command.productId, movementType: type, quantity, occurredAt: now, createdAt: now, createdByActorId: command.context.actorId, operationId: command.operationId, ...extra });
 
-const run = async (dependencies: Dependencies, command: MutationCommand, operationType: string, fingerprintValues: Readonly<Record<string, string>>, work: (transaction: InventoryTransactionContext, now: Date) => Promise<InventoryResult<InventoryMutationView>>): Promise<InventoryResult<InventoryMutationView>> => {
+const run = async (dependencies: Dependencies, command: MutationCommand, operationType: string, fingerprintValues: Readonly<Record<string, string>>, work: (transaction: InventoryTransactionContext, now: Date) => Promise<InventoryResult<InventoryMutationOutcome>>): Promise<InventoryResult<InventoryMutationView>> => {
   let operationId: string; try { operationId = normalizeOperationId(command.operationId); } catch { return inventoryFailure("InvalidInput"); }
   const now = dependencies.clock.now(); const fingerprint = dependencies.fingerprint.create({ operationType, operationId, ...fingerprintValues });
   try {
     return await dependencies.unitOfWork.execute(async (transaction) => {
       const claimed = await transaction.inventory.claimOperation({ workspaceId: command.context.workspaceId, operationId, operationType, fingerprint, createdAt: now });
-      if (claimed.type === "Existing") { if (claimed.fingerprint !== fingerprint) return inventoryFailure("IdempotencyConflict"); return decodeResult(claimed.result) ?? inventoryFailure("InventoryConflict"); }
-      const result = await work(transaction, now); await transaction.inventory.completeOperation(command.context.workspaceId, operationId, encodeResult(result)); return result;
+      if (claimed.type === "Existing") { if (claimed.fingerprint !== fingerprint) return inventoryFailure("IdempotencyConflict"); return projectMutationResult(decodeResult(claimed.result) ?? inventoryFailure("InventoryConflict"), command.context); }
+      const result = await work(transaction, now); await transaction.inventory.completeOperation(command.context.workspaceId, operationId, encodeResult(result)); return projectMutationResult(result, command.context);
     });
   } catch (error) { if (error instanceof InventoryTransactionAbort) return inventoryFailure(error.inventoryError); if (error instanceof Error && error.message === "InsufficientAvailableStock") return inventoryFailure("InsufficientAvailableStock"); return inventoryFailure("InventoryConflict"); }
 };
@@ -58,7 +79,7 @@ abstract class SingleBalanceMutation {
       if (!await transaction.inventory.saveBalance(next, current.revision)) throw new InventoryTransactionAbort("InventoryConflict");
       await transaction.inventory.appendMovement(movement(this.dependencies, command, this.movementType, quantity, now, { ...(reasonCode ? { reasonCode } : {}), ...(note ? { note } : {}) }));
       await transaction.audit.append({ workspaceId: command.context.workspaceId, actorId: command.context.actorId, eventType: this.auditEvent, metadata: { branchId: command.branchId, productId: command.productId, quantity: quantity.toString(), operationId: command.operationId }, occurredAt: now });
-      return inventorySuccess({ operationId: command.operationId, balance: balanceView(next) });
+      return inventorySuccess({ operationId: command.operationId, balance: balanceOutcome(next) });
     });
   }
 }
@@ -88,7 +109,7 @@ export class ReserveInventoryUseCase {
       const reservation: InventoryReservation = Object.freeze({ workspaceId: command.context.workspaceId, reservationId, branchId: command.branchId, productId: command.productId, quantity, remainingQuantity: quantity, status: "Active", createdByActorId: command.context.actorId, createdAt: now, updatedAt: now });
       await transaction.inventory.createReservation(reservation); await transaction.inventory.appendMovement(movement(this.dependencies, command, "Reserve", quantity, now, { reservationId }));
       await transaction.audit.append({ workspaceId: command.context.workspaceId, actorId: command.context.actorId, eventType: "InventoryReserved", metadata: { branchId: command.branchId, productId: command.productId, quantity: quantity.toString(), reservationId, operationId: command.operationId }, occurredAt: now });
-      return inventorySuccess({ operationId: command.operationId, balance: balanceView(next), reservationId, reservationStatus: "Active", remainingQuantity: quantity.toString() });
+      return inventorySuccess({ operationId: command.operationId, balance: balanceOutcome(next), reservationId, reservationStatus: "Active", remainingQuantity: quantity.toString() });
     });
   }
 }
@@ -108,7 +129,7 @@ abstract class ReservationMutation {
       if (!await transaction.inventory.saveBalance(next, current.revision)) throw new InventoryTransactionAbort("InventoryConflict"); await transaction.inventory.updateReservation(updated);
       await transaction.inventory.appendMovement(movement(this.dependencies, { ...command, productId: reservation.productId }, this.kind === "Release" ? "ReleaseReservation" : "FulfillReservation", quantity, now, { reservationId: reservation.reservationId }));
       await transaction.audit.append({ workspaceId: command.context.workspaceId, actorId: command.context.actorId, eventType: this.kind === "Release" ? "InventoryReservationReleased" : "InventoryReservationFulfilled", metadata: { branchId: command.branchId, productId: reservation.productId, quantity: quantity.toString(), reservationId: reservation.reservationId, operationId: command.operationId }, occurredAt: now });
-      return inventorySuccess({ operationId: command.operationId, balance: balanceView(next), reservationId: reservation.reservationId, reservationStatus: status, remainingQuantity: remaining.toString() });
+      return inventorySuccess({ operationId: command.operationId, balance: balanceOutcome(next), reservationId: reservation.reservationId, reservationStatus: status, remainingQuantity: remaining.toString() });
     });
   }
 }
@@ -128,16 +149,16 @@ export class TransferInventoryUseCase {
       if (!await transaction.inventory.saveBalance(nextDestination, destination.revision)) throw new InventoryTransactionAbort("InventoryConflict");
       await transaction.inventory.appendMovement(movement(this.dependencies, { ...command, branchId: command.sourceBranchId }, "TransferOut", quantity, now, { correlationId: transferId })); await transaction.inventory.appendMovement(movement(this.dependencies, { ...command, branchId: command.destinationBranchId }, "TransferIn", quantity, now, { correlationId: transferId }));
       await transaction.audit.append({ workspaceId: command.context.workspaceId, actorId: command.context.actorId, eventType: "InventoryTransferred", metadata: { sourceBranchId: command.sourceBranchId, destinationBranchId: command.destinationBranchId, productId: command.productId, quantity: quantity.toString(), transferId, operationId: command.operationId }, occurredAt: now });
-      return inventorySuccess({ operationId: command.operationId, transferId, sourceBalance: balanceView(nextSource), destinationBalance: balanceView(nextDestination) });
+      return inventorySuccess({ operationId: command.operationId, transferId, sourceBalance: balanceOutcome(nextSource), destinationBalance: balanceOutcome(nextDestination) });
     });
   }
 }
 
 export class GetBranchProductInventoryUseCase {
   constructor(private readonly unitOfWork: InventoryUnitOfWork) {}
-  async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string }): Promise<InventoryResult<InventoryBalanceView>> {
+  async execute(command: { readonly context: TrustedActorContext; readonly branchId: string; readonly productId: string }): Promise<InventoryResult<InventoryReadView>> {
     const detailed = can(command.context, "inventory.quantity.view"); const availability = can(command.context, "inventory.availability.view"); if (!detailed && !availability) return inventoryFailure("Forbidden"); if (!inScope(command.context, command.branchId)) return inventoryFailure("BranchNotFound");
-    return this.unitOfWork.execute(async (transaction) => { const branch = await transaction.scope.findBranch(command.context.workspaceId, command.branchId); if (!branch) return inventoryFailure("BranchNotFound"); if (!await transaction.scope.findProduct(command.context.workspaceId, command.productId)) return inventoryFailure("ProductNotFound"); const balance = await transaction.inventory.getBalance(command.context.workspaceId, command.branchId, command.productId); const value = balance ?? { workspaceId: command.context.workspaceId, branchId: command.branchId, productId: command.productId, onHand: BigInt(0), reserved: BigInt(0), damaged: BigInt(0), revision: 0, updatedAt: new Date(0) }; const full = balanceView(value); return inventorySuccess(detailed ? full : { ...full, onHand: "Hidden", reserved: "Hidden", damaged: "Hidden" }); });
+    return this.unitOfWork.execute(async (transaction) => { const branch = await transaction.scope.findBranch(command.context.workspaceId, command.branchId); if (!branch) return inventoryFailure("BranchNotFound"); if (!await transaction.scope.findProduct(command.context.workspaceId, command.productId)) return inventoryFailure("ProductNotFound"); const balance = await transaction.inventory.getBalance(command.context.workspaceId, command.branchId, command.productId); const value = balance ?? { workspaceId: command.context.workspaceId, branchId: command.branchId, productId: command.productId, onHand: BigInt(0), reserved: BigInt(0), damaged: BigInt(0), revision: 0, updatedAt: new Date(0) }; const outcome = balanceOutcome(value); return inventorySuccess(detailed ? quantityView(outcome) : availabilityView(outcome)); });
   }
 }
 

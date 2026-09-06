@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import type { TrustedActorContext } from "../../../shared/auth/trusted-actor-context";
 import type { InventoryBalance, InventoryMovement, InventoryReservation } from "../domain/inventory";
 import type { InventoryRepository, InventoryTransactionContext, InventoryUnitOfWork, ReservationListQuery } from "../ports/inventory-unit-of-work.port";
-import { CorrectInventoryUseCase, FulfillInventoryReservationUseCase, GetInventoryReservationUseCase, IssueInventoryUseCase, ListInventoryReservationsUseCase, MarkInventoryDamagedUseCase, ReceiveInventoryUseCase, ReleaseInventoryReservationUseCase, ReserveInventoryUseCase, RestoreDamagedInventoryUseCase, TransferInventoryUseCase } from "./inventory.use-cases";
+import { CorrectInventoryUseCase, FulfillInventoryReservationUseCase, GetBranchProductInventoryUseCase, GetInventoryReservationUseCase, IssueInventoryUseCase, ListInventoryReservationsUseCase, MarkInventoryDamagedUseCase, ReceiveInventoryUseCase, ReleaseInventoryReservationUseCase, ReserveInventoryUseCase, RestoreDamagedInventoryUseCase, TransferInventoryUseCase } from "./inventory.use-cases";
 
 const context = (branchIds?: readonly string[]): TrustedActorContext => ({ workspaceId: "workspace-a", actorId: "actor-a", role: "Owner", permissions: [], branchScope: branchIds ? { type: "SelectedBranches", branchIds } : { type: "AllBranches" }, authorizationVersion: 1 });
 const staff = (permissions: readonly string[] = [], branchIds: readonly string[] | null = ["branch-a"], workspaceId = "workspace-a"): TrustedActorContext => ({ workspaceId, actorId: "staff-a", role: "Staff", permissions, branchScope: branchIds ? { type: "SelectedBranches", branchIds } : { type: "AllBranches" }, authorizationVersion: 1 });
@@ -13,8 +13,8 @@ const reservation = (reservationId: string, status: InventoryReservation["status
 const tamperCursor = (cursor: string, changes: Readonly<Record<string, unknown>>) => Buffer.from(JSON.stringify({ ...(JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Record<string, unknown>), ...changes }), "utf8").toString("base64url");
 
 class MemoryInventory implements InventoryRepository {
-  readonly balances = new Map<string, InventoryBalance>(); readonly movements: InventoryMovement[] = []; readonly operations = new Map<string, { fingerprint: string; result: Readonly<Record<string, unknown>> | null }>(); readonly reservations = new Map<string, InventoryReservation>(); lastReservationQuery?: ReservationListQuery; lastFindForUpdate?: boolean;
-  getBalance(_workspaceId: string, branchId: string, productId: string) { return Promise.resolve(this.balances.get(key(branchId, productId)) ?? null); }
+  readonly balances = new Map<string, InventoryBalance>(); readonly movements: InventoryMovement[] = []; readonly operations = new Map<string, { fingerprint: string; result: Readonly<Record<string, unknown>> | null }>(); readonly reservations = new Map<string, InventoryReservation>(); lastReservationQuery?: ReservationListQuery; lastFindForUpdate?: boolean; lastBalanceWorkspaceId?: string;
+  getBalance(workspaceId: string, branchId: string, productId: string) { this.lastBalanceWorkspaceId = workspaceId; const found = this.balances.get(key(branchId, productId)); return Promise.resolve(found?.workspaceId === workspaceId ? found : null); }
   lockBalance(workspaceId: string, branchId: string, productId: string, now: Date) { const found = this.balances.get(key(branchId, productId)); if (found) return Promise.resolve(found); const created = Object.freeze({ workspaceId, branchId, productId, onHand: BigInt(0), reserved: BigInt(0), damaged: BigInt(0), revision: 1, updatedAt: now }); this.balances.set(key(branchId, productId), created); return Promise.resolve(created); }
   saveBalance(value: InventoryBalance, expectedRevision: number) { const current = this.balances.get(key(value.branchId, value.productId)); if (!current || current.revision !== expectedRevision) return Promise.resolve(false); this.balances.set(key(value.branchId, value.productId), value); return Promise.resolve(true); }
   appendMovement(value: InventoryMovement) { this.movements.push(Object.freeze({ ...value })); return Promise.resolve(); }
@@ -68,10 +68,122 @@ class TransactionalMemoryInventoryUnitOfWork implements InventoryUnitOfWork {
 }
 
 const fixture = () => {
-  const inventory = new MemoryInventory(); let sequence = 0; const transaction: InventoryTransactionContext = { scope: { findBranch: async (_workspaceId, branchId) => branchId === "foreign" ? null : { status: branchId === "inactive" ? "Inactive" : "Active" }, findProduct: async (_workspaceId, productId) => productId === "missing" ? null : { lifecycleState: productId === "archived" ? "Archived" : "Published" } }, inventory, audit: { append: async () => undefined } };
+  const inventory = new MemoryInventory(); const auditEvents: string[] = []; let sequence = 0; const transaction: InventoryTransactionContext = { scope: { findBranch: async (workspaceId, branchId) => workspaceId === "workspace-b" || branchId === "foreign" ? null : { status: branchId === "inactive" ? "Inactive" : "Active" }, findProduct: async (workspaceId, productId) => workspaceId === "workspace-b" || productId === "missing" ? null : { lifecycleState: productId === "archived" ? "Archived" : "Published" } }, inventory, audit: { append: async (value) => { auditEvents.push(value.eventType); } } };
   const unitOfWork: InventoryUnitOfWork = { execute: (work) => work(transaction) }; const dependencies = { unitOfWork, clock: { now: () => new Date("2026-08-20T10:00:00Z") }, identifiers: { next: () => `generated-${++sequence}` }, fingerprint: { create: (value: Readonly<Record<string, string>>) => createHash("sha256").update(JSON.stringify(value)).digest("hex") } };
-  return { inventory, receive: new ReceiveInventoryUseCase(dependencies), issue: new IssueInventoryUseCase(dependencies), reserve: new ReserveInventoryUseCase(dependencies), release: new ReleaseInventoryReservationUseCase(dependencies), fulfill: new FulfillInventoryReservationUseCase(dependencies), damage: new MarkInventoryDamagedUseCase(dependencies), restore: new RestoreDamagedInventoryUseCase(dependencies), transfer: new TransferInventoryUseCase(dependencies), correct: new CorrectInventoryUseCase(dependencies), reservations: new ListInventoryReservationsUseCase(unitOfWork), reservation: new GetInventoryReservationUseCase(unitOfWork) };
+  return { inventory, auditEvents, receive: new ReceiveInventoryUseCase(dependencies), issue: new IssueInventoryUseCase(dependencies), reserve: new ReserveInventoryUseCase(dependencies), release: new ReleaseInventoryReservationUseCase(dependencies), fulfill: new FulfillInventoryReservationUseCase(dependencies), damage: new MarkInventoryDamagedUseCase(dependencies), restore: new RestoreDamagedInventoryUseCase(dependencies), transfer: new TransferInventoryUseCase(dependencies), correct: new CorrectInventoryUseCase(dependencies), get: new GetBranchProductInventoryUseCase(unitOfWork), reservations: new ListInventoryReservationsUseCase(unitOfWork), reservation: new GetInventoryReservationUseCase(unitOfWork) };
 };
+
+const assertNoGenericQuantityDisclosure = (value: unknown) => {
+  const serialized = JSON.stringify(value);
+  for (const forbidden of ["onHand", "reserved", "damaged", "available", "revision", "updatedAt", "balance"]) assert.equal(serialized.includes(`\"${forbidden}\"`), false, forbidden);
+};
+
+describe("Inventory disclosure", () => {
+  it("projects ordinary reads through the exact Owner, quantity, availability, and forbidden matrix", async () => {
+    const app = fixture();
+    app.inventory.balances.set(key("branch-a", "product-a"), Object.freeze({ workspaceId: "workspace-a", branchId: "branch-a", productId: "product-a", onHand: BigInt(9), reserved: BigInt(2), damaged: BigInt(1), revision: 4, updatedAt: new Date("2026-08-20T10:00:00.000Z") }));
+    const expectedDetailed = { branchId: "branch-a", productId: "product-a", unit: "Piece", availability: "InStock", quantities: { available: "6", onHand: "9", reserved: "2", damaged: "1" }, revision: 4, updatedAt: "2026-08-20T10:00:00.000Z" };
+    assert.deepEqual(await app.get.execute({ context: context(), branchId: "branch-a", productId: "product-a" }), { ok: true, value: expectedDetailed });
+    assert.deepEqual(await app.get.execute({ context: staff(["inventory.quantity.view"]), branchId: "branch-a", productId: "product-a" }), { ok: true, value: expectedDetailed });
+    const availability = await app.get.execute({ context: staff(["inventory.availability.view"]), branchId: "branch-a", productId: "product-a" });
+    assert.deepEqual(availability, { ok: true, value: { branchId: "branch-a", productId: "product-a", unit: "Piece", availability: "InStock" } });
+    assertNoGenericQuantityDisclosure(availability);
+    assert.deepEqual(await app.get.execute({ context: staff([]), branchId: "branch-a", productId: "product-a" }), { ok: false, error: "Forbidden" });
+  });
+
+  it("returns OutOfStock for absent, zero, reserved-out, and damaged-out balances", async () => {
+    for (const quantities of [null, { onHand: 0, reserved: 0, damaged: 0 }, { onHand: 5, reserved: 5, damaged: 0 }, { onHand: 5, reserved: 0, damaged: 5 }]) {
+      const app = fixture();
+      if (quantities) app.inventory.balances.set(key("branch-a", "product-a"), Object.freeze({ workspaceId: "workspace-a", branchId: "branch-a", productId: "product-a", onHand: BigInt(quantities.onHand), reserved: BigInt(quantities.reserved), damaged: BigInt(quantities.damaged), revision: 2, updatedAt: new Date() }));
+      assert.deepEqual(await app.get.execute({ context: staff(["inventory.availability.view"]), branchId: "branch-a", productId: "product-a" }), { ok: true, value: { branchId: "branch-a", productId: "product-a", unit: "Piece", availability: "OutOfStock" } });
+    }
+  });
+
+  it("preserves tenant, Branch-scope, Branch, and Product safe-not-found behavior", async () => {
+    const app = fixture();
+    assert.deepEqual(await app.get.execute({ context: staff(["inventory.quantity.view"], ["branch-a"]), branchId: "branch-b", productId: "product-a" }), { ok: false, error: "BranchNotFound" });
+    assert.deepEqual(await app.get.execute({ context: staff(["inventory.quantity.view"], null), branchId: "foreign", productId: "product-a" }), { ok: false, error: "BranchNotFound" });
+    assert.deepEqual(await app.get.execute({ context: staff(["inventory.quantity.view"], null), branchId: "branch-a", productId: "missing" }), { ok: false, error: "ProductNotFound" });
+    assert.deepEqual(await app.get.execute({ context: staff(["inventory.quantity.view"], null, "workspace-b"), branchId: "branch-a", productId: "product-a" }), { ok: false, error: "BranchNotFound" });
+    assert.equal(app.inventory.lastBalanceWorkspaceId, undefined);
+  });
+
+  it("projects every single-balance mutation family from current read visibility", async () => {
+    const cases = [
+      { permission: "inventory.receive", execute: (app: ReturnType<typeof fixture>, operationId: string, actor: TrustedActorContext) => app.receive.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", operationId }) },
+      { permission: "inventory.damage", execute: async (app: ReturnType<typeof fixture>, operationId: string, actor: TrustedActorContext) => { await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "1", operationId: `${operationId}-stock` }); return app.damage.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", operationId }); } },
+      { permission: "inventory.damage", execute: async (app: ReturnType<typeof fixture>, operationId: string, actor: TrustedActorContext) => { await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "1", operationId: `${operationId}-stock` }); await app.damage.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "1", operationId: `${operationId}-setup` }); return app.restore.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", operationId }); } },
+      { permission: "inventory.adjust", execute: (app: ReturnType<typeof fixture>, operationId: string, actor: TrustedActorContext) => app.correct.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", direction: "Increase", reasonCode: "COUNT", operationId }) },
+      { permission: "inventory.issue", execute: async (app: ReturnType<typeof fixture>, operationId: string, actor: TrustedActorContext) => { await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "1", operationId: `${operationId}-setup` }); return app.issue.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", operationId }); } },
+    ];
+    for (const [index, item] of cases.entries()) {
+      const expectedAvailability = index === 0 || index === 2 || index === 3 ? "InStock" : "OutOfStock";
+      const quantityApp = fixture(); const quantity = await item.execute(quantityApp, `single-quantity-${index}`, staff([item.permission, "inventory.quantity.view"])); assert.ok(quantity.ok); if (quantity.ok) { assert.equal(quantity.value.status, "Succeeded"); assert.equal(quantity.value.balance?.availability, expectedAvailability); assert.ok(quantity.value.balance?.quantities); }
+      const availabilityApp = fixture(); const availability = await item.execute(availabilityApp, `single-available-${index}`, staff([item.permission, "inventory.availability.view"])); assert.ok(availability.ok); if (availability.ok) assert.deepEqual(availability.value, { operationId: `single-available-${index}`, status: "Succeeded", availability: expectedAvailability }); assertNoGenericQuantityDisclosure(availability);
+      const minimumApp = fixture(); const minimum = await item.execute(minimumApp, `single-minimum-${index}`, staff([item.permission])); assert.deepEqual(minimum, { ok: true, value: { operationId: `single-minimum-${index}`, status: "Succeeded" } });
+    }
+  });
+
+  it("preserves Reservation operation state while projecting reserve, release, and fulfill balances", async () => {
+    for (const visibility of [["inventory.quantity.view"], ["inventory.availability.view"], []] as const) {
+      const app = fixture();
+      await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "8", operationId: `reservation-stock-${visibility.length}` });
+      const actor = staff(["inventory.reserve", ...visibility]);
+      const reserved = await app.reserve.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "8", operationId: `reservation-create-${visibility.length}` });
+      assert.ok(reserved.ok); if (!reserved.ok || !reserved.value.reservationId) continue;
+      assert.equal(reserved.value.reservationStatus, "Active"); assert.equal(reserved.value.remainingQuantity, "8");
+      const released = await app.release.execute({ context: actor, branchId: "branch-a", reservationId: reserved.value.reservationId, quantity: "3", operationId: `reservation-release-${visibility.length}` });
+      assert.ok(released.ok); if (released.ok) { assert.equal(released.value.reservationStatus, "Active"); assert.equal(released.value.remainingQuantity, "5"); }
+      const fulfilled = await app.fulfill.execute({ context: actor, branchId: "branch-a", reservationId: reserved.value.reservationId, quantity: "5", operationId: `reservation-fulfill-${visibility.length}` });
+      assert.ok(fulfilled.ok); if (fulfilled.ok) { assert.equal(fulfilled.value.reservationStatus, "Fulfilled"); assert.equal(fulfilled.value.remainingQuantity, "0"); }
+      if (visibility[0] === "inventory.quantity.view") assert.ok(reserved.value.balance?.quantities);
+      else if (visibility[0] === "inventory.availability.view") { assert.equal(reserved.value.availability, "OutOfStock"); assertNoGenericQuantityDisclosure(reserved); }
+      else assertNoGenericQuantityDisclosure(reserved);
+    }
+  });
+
+  it("preserves transfer ID and atomic effects while projecting both balances", async () => {
+    for (const visibility of [["inventory.quantity.view"], ["inventory.availability.view"], []] as const) {
+      const app = fixture(); await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "2", operationId: `transfer-stock-${visibility.length}` });
+      const result = await app.transfer.execute({ context: staff(["inventory.transfer", ...visibility], null), sourceBranchId: "branch-a", destinationBranchId: "branch-b", productId: "product-a", quantity: "2", operationId: `transfer-view-${visibility.length}` });
+      assert.ok(result.ok); if (!result.ok) continue; assert.ok(result.value.transferId); assert.equal(app.inventory.movements.filter((movement) => movement.correlationId === result.value.transferId).length, 2);
+      if (visibility[0] === "inventory.quantity.view") { assert.ok(result.value.sourceBalance?.quantities); assert.ok(result.value.destinationBalance?.quantities); }
+      else if (visibility[0] === "inventory.availability.view") { assert.equal(result.value.sourceAvailability, "OutOfStock"); assert.equal(result.value.destinationAvailability, "InStock"); assertNoGenericQuantityDisclosure(result); }
+      else { assert.deepEqual(Object.keys(result.value).sort(), ["operationId", "status", "transferId"]); assertNoGenericQuantityDisclosure(result); }
+    }
+  });
+
+  it("re-projects persisted success with current quantity, availability-only, and no-read visibility without duplicate effects", async () => {
+    const app = fixture(); const base = { branchId: "branch-a", productId: "product-a", quantity: "4", operationId: "receive-reproject-0001" };
+    const first = await app.receive.execute({ ...base, context: context() }); assert.ok(first.ok); if (first.ok) assert.ok(first.value.balance?.quantities);
+    const stored = app.inventory.operations.get("workspace-a:receive-reproject-0001")?.result; assert.equal(JSON.stringify(stored).includes("onHand"), true);
+    const availability = await app.receive.execute({ ...base, context: staff(["inventory.receive", "inventory.availability.view"]) }); assert.deepEqual(availability, { ok: true, value: { operationId: base.operationId, status: "Succeeded", availability: "InStock" } });
+    const minimum = await app.receive.execute({ ...base, context: staff(["inventory.receive"]) }); assert.deepEqual(minimum, { ok: true, value: { operationId: base.operationId, status: "Succeeded" } });
+    const restored = await app.receive.execute({ ...base, context: staff(["inventory.receive", "inventory.quantity.view"]) }); assert.ok(restored.ok); if (restored.ok) assert.equal(restored.value.balance?.quantities.onHand, "4");
+    assert.equal(app.inventory.movements.length, 1); assert.equal(app.auditEvents.length, 1); assert.equal(app.inventory.operations.size, 1);
+    assert.deepEqual(await app.receive.execute({ ...base, quantity: "5", context: staff(["inventory.receive"]) }), { ok: false, error: "IdempotencyConflict" });
+  });
+
+  it("replays persisted Reservation and transfer results without duplicates or disclosure bypass", async () => {
+    const reservationApp = fixture(); await reservationApp.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "2", operationId: "replay-reservation-stock" });
+    const reserveCommand = { branchId: "branch-a", productId: "product-a", quantity: "1", operationId: "replay-reservation-create" };
+    const created = await reservationApp.reserve.execute({ ...reserveCommand, context: context() }); assert.ok(created.ok); const replay = await reservationApp.reserve.execute({ ...reserveCommand, context: staff(["inventory.reserve"]) });
+    assert.ok(replay.ok); if (created.ok && replay.ok) { assert.equal(replay.value.reservationId, created.value.reservationId); assert.equal(replay.value.reservationStatus, "Active"); assert.equal(replay.value.remainingQuantity, "1"); assertNoGenericQuantityDisclosure(replay); }
+    assert.equal(reservationApp.inventory.reservations.size, 1); assert.equal(reservationApp.inventory.movements.filter((movement) => movement.movementType === "Reserve").length, 1);
+
+    const transferApp = fixture(); await transferApp.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "2", operationId: "replay-transfer-stock" });
+    const transferCommand = { sourceBranchId: "branch-a", destinationBranchId: "branch-b", productId: "product-a", quantity: "1", operationId: "replay-transfer-create" };
+    const transferred = await transferApp.transfer.execute({ ...transferCommand, context: context() }); assert.ok(transferred.ok); const transferReplay = await transferApp.transfer.execute({ ...transferCommand, context: staff(["inventory.transfer", "inventory.availability.view"], null) });
+    assert.ok(transferReplay.ok); if (transferred.ok && transferReplay.ok) { assert.equal(transferReplay.value.transferId, transferred.value.transferId); assert.equal(transferReplay.value.sourceAvailability, "InStock"); assert.equal(transferReplay.value.destinationAvailability, "InStock"); assertNoGenericQuantityDisclosure(transferReplay); }
+    assert.equal(transferApp.inventory.movements.filter((movement) => movement.correlationId === (transferred.ok ? transferred.value.transferId : "")).length, 2);
+  });
+
+  it("keeps failure replay unchanged and side-effect free", async () => {
+    const app = fixture(); const command = { context: staff(["inventory.receive"]), branchId: "branch-a", productId: "archived", quantity: "1", operationId: "failure-replay-0001" };
+    assert.deepEqual(await app.receive.execute(command), { ok: false, error: "ProductArchived" }); assert.deepEqual(await app.receive.execute(command), { ok: false, error: "ProductArchived" });
+    assert.equal(app.inventory.movements.length, 0); assert.equal(app.auditEvents.length, 0); assert.equal(app.inventory.operations.size, 1);
+  });
+});
 
 describe("Inventory application", () => {
   it("receives positive pieces exactly once for an idempotent retry", async () => { const app = fixture(); const command = { context: context(), branchId: "branch-a", productId: "product-a", quantity: "10", operationId: "receive-0001" }; assert.ok((await app.receive.execute(command)).ok); assert.ok((await app.receive.execute(command)).ok); assert.equal(app.inventory.balances.get(key("branch-a", "product-a"))?.onHand, BigInt(10)); assert.equal(app.inventory.movements.length, 1); assert.equal((await app.receive.execute({ ...command, quantity: "11" })).ok, false); });
