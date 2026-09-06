@@ -1,8 +1,8 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** Task 3.22-A5 implementation complete / **ReadyForReview**; independent review and merge pending · **Implementation baseline:** `6b753ecc3d6e7627b5c63256a6983bd3d969476c` · **Date:** 2026-09-06
+**Status:** Task 3.22-A server remediation **Completed / merged** through PR #32 · **Integration baseline:** `0f102dd020efacc517f0e27601f4a54ecce2eca0` · **Date:** 2026-09-06
 
-A1 is merged through PR #28, A2 through PR #29, A3 through PR #30, and A4 through PR #31. A5 implements only the approved Inventory disclosure hardening. Task 3.22 Presentation remains blocked until A5 is independently reviewed and merged.
+A1 is merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32. Those five contracts remain correct. Independent Presentation correction review discovered a separate post-merge **Branch Selector Authorization Composition Gap**; Task 3.22 Presentation is Planned / Blocked and unstarted.
 
 يعتمد هذا العقد شرائح تنفيذ عقود الخادم التصحيحية المحددة أدناه فقط، ولا يعتمد واجهة المهمة 3.22.
 
@@ -20,7 +20,7 @@ Task 3.22-A resolves the seven independently approved blockers without changing 
 6. server-side Inventory numeric-disclosure hardening; and
 7. browser-safe semantic management capabilities.
 
-Task 3.22 remains Planned and blocked until every Task 3.22-A slice is implemented, independently reviewed, and merged. The bounded Reservation persistence gate selected `EXISTING INDEX SUFFICIENT`; no migration or preliminary persistence task is required.
+The A1–A5 merge condition is satisfied. The bounded Reservation persistence gate selected `EXISTING INDEX SUFFICIENT`; no migration is required. This does not resolve operational Branch discovery for actors whose Branch-scoped operational permission is independent from Branch view/manage; Presentation remains blocked.
 
 ### Read/manage authority options
 
@@ -432,7 +432,19 @@ No new permission code is required.
 - **Dependency:** none. Existing TypeScript, Application ports, Drizzle/PostgreSQL, HTTP, and cursor utilities are sufficient.
 - **Architecture:** no redesign and no ADR. The selected hybrid is a documented operation-specific authorization composition, not a global permission-semantic change. Catalog Query remains canonical Product search; Branch Product owns Listing/Pricing; Inventory owns Reservations/balances/mutations; transfer remains atomic.
 
-Capability ownership, operational query shape, cursor semantics, Pricing concurrency, Reservation persistence, and Inventory disclosure are resolved. A1–A4 are merged; A5 is implemented / ReadyForReview. Do not begin Task 3.22 Presentation before independent A5 review and merge, and do not add migration `0016` or the Candidate Optimization.
+Capability ownership, operational Product query shape, cursor semantics, Pricing concurrency, Reservation persistence, and Inventory disclosure are resolved. A1–A5 are merged through PRs #28–#32 at `0f102dd020efacc517f0e27601f4a54ecce2eca0`. They do not provide a browser-safe Branch selector for every independently authorized operational actor. Do not begin Presentation, migration `0016`, or the Candidate Optimization.
+
+### Post-A5 Presentation composition gap
+
+This discovery does not rewrite or invalidate A1–A5:
+
+- Staff operational permissions are independently assignable from `workspace.branches.view`; `workspace.branches.manage` remains separate.
+- A1 correctly allows an operational capability to be true while both Branch capability booleans are false.
+- `ListBranchesUseCase` and `GET /api/branches` allow only Owner or Branch view/manage.
+- A2 correctly requires `branchId` for `Listing`, `Inventory`, `BranchPricing`, and `BranchReferenceCost`, then validates the supplied ID against trusted scope and same-Workspace persistence.
+- Consequently, a valid operational actor can have no discoverable Branch option. A `403` is not an empty Branch collection.
+
+The smallest recommended remediation for separate planning is **Task 3.22-A6 — Operational Branch Selector Read**, owned by Workspace Branch Application. Conceptually it would compose exact existing Branch-scoped purposes with minimum same-Workspace, trusted-scope Branch identity; it must not broaden the general Branch list, expose raw permissions/scope IDs through A1/session state, accept free-form IDs, add a permission, or duplicate a repository. No route, DTO, use case, or implementation is approved or present. Expected decisions are `ADR NOT REQUIRED`, `NO DATABASE CHANGE`, `NO NEW DEPENDENCY`, and `NO NEW PERMISSION`, subject to the separate A6 contract review.
 
 ### Implementation slices and dependencies
 
@@ -468,7 +480,7 @@ Acceptance: exact configured/absent/zero semantics; response-level `productRevis
 
 Depends on A1 policy vocabulary.
 
-#### 3.22-A5 — Inventory disclosure hardening — Implemented / ReadyForReview
+#### 3.22-A5 — Inventory disclosure hardening — Merged through PR #32
 
 Replace availability-only numeric output with semantic availability and project every mutation result, including idempotent replay, from current trusted visibility.
 
@@ -480,7 +492,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### Roadmap decision
 
-**A1, A2, A3, and A4 are merged; A5 is implemented / ReadyForReview.** A5 is not yet independently reviewed or merged. Task 3.22 Presentation remains Planned / blocked and is not approved.
+**A1–A5 are completed and merged through PRs #28–#32.** Their implementation status is unchanged. Task 3.22 Presentation is **Planned / Blocked** by the post-merge Branch Selector Authorization Composition Gap documented in the [Gap Analysis](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md). Proposed A6 and Presentation are not implementation-approved.
 
 ## العقد العربي
 
@@ -517,18 +529,18 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 2. **3.22-A2 — مدمجة عبر طلب السحب #29:** استعلام Draft+Published تشغيلي واحد وقراءة حالة الإدراج الموثوقة، مع بقاء بصمة/مؤشر الكتالوج العادي متوافقين.
 3. **3.22-A3 — مدمجة عبر طلب السحب #30:** قراءات الحجوزات بعقد المؤشر الدقيق وبوابة خطة الاستعلام.
 4. **3.22-A4 — مدمجة عبر طلب السحب #31:** قراءات إدارة التسعير المستقلة عن الفرع وحالة تجاوز الفرع، مع مراجعة المنتج المشتركة للتجزئة والجملة ومراجعات مستقلة للتكلفة المرجعية وتجاوزات الفروع.
-5. **3.22-A5 — منفذة / جاهزة للمراجعة:** تشديد كشف المخزون ونتائج الطفرات وإعادة idempotent وفق سياق الممثل الموثوق الحالي، مع الحفاظ على حالة الحجز ومعرف النقل.
+5. **3.22-A5 — مدمجة عبر طلب السحب #32:** تشديد كشف المخزون ونتائج الطفرات وإعادة idempotent وفق سياق الممثل الموثوق الحالي، مع الحفاظ على حالة الحجز ومعرف النقل.
 
-دُمجت A1 عبر طلب السحب #28 وA2 عبر #29 وA3 عبر #30 وA4 عبر #31. نُفذت A5 فوق خط الأساس `6b753ecc3d6e7627b5c63256a6983bd3d969476c` وهي جاهزة للمراجعة، لكنها لم تراجع أو تدمج بعد. تبقى واجهة المهمة 3.22 محظورة حتى مراجعة A5 ودمجها.
+دُمجت A1 عبر #28 وA2 عبر #29 وA3 عبر #30 وA4 عبر #31 وA5 عبر #32، وتبقى عقودها صحيحة. اكتشفت مراجعة الواجهة المستقلة فجوة تركيب لاحقة للدمج: قد يملك ممثل صلاحية تشغيل مقيدة بالفرع دون عرض/إدارة الفروع، بينما تحتاج A2 معرفاً معروفاً. لذلك تبقى واجهة 3.22 مخططة ومحجوبة وغير مبدوءة.
 
 ### قرار الخارطة
 
-**دُمجت A1 وA2 وA3 وA4، ونُفذت A5 وهي جاهزة للمراجعة.** لم تراجع A5 أو تدمج بعد، وتبقى واجهة المهمة 3.22 مخططة ومحجوبة وغير معتمدة.
+**اكتملت A1–A5 ودُمجت عبر طلبات السحب #28–#32** دون تغيير حالتها. تبقى واجهة 3.22 **مخططة / محجوبة** بسبب فجوة محدد الفروع الموثقة في [تحليل الفجوة](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md). A6 المقترحة والواجهة غير معتمدتين للتنفيذ.
 
 ## WILL IMPLEMENT | سينفذ
 
-- Submit A5 for independent review and merge; do not begin Task 3.22 Presentation automatically.
-- قدم A5 للمراجعة المستقلة والدمج، ولا تبدأ واجهة المهمة 3.22 تلقائياً.
+- Separately plan and review proposed Task 3.22-A6; do not implement A6 or Task 3.22 Presentation automatically.
+- خطط وراجع A6 المقترحة بصورة مستقلة، ولا تنفذ A6 أو واجهة 3.22 تلقائياً.
 
 ## WILL NOT IMPLEMENT | لن ينفذ
 
