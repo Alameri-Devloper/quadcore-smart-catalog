@@ -1,6 +1,6 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-**Status:** A1–A5 merged; A6 Implementation completed locally / Ready for independent review; Task 3.22 Presentation remains `Blocked` · **Last Updated:** 2026-09-09 · **Scope:** Authoritative delivery sequence
+**Status:** A1–A6 Completed / merged; Presentation `ApprovedNextImplementation` — P1 only, unstarted · **Last Updated:** 2026-09-10 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -28,15 +28,17 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration | No Branch, Inventory, or Pricing management Presentation was added. |
 
-The current integration baseline is `51562151d9be79b0f6be50c6406cb207c81e70aa`, including A6 Planning PR #34 and Planning Correction PR #33. It preserves Task 3.22-A1 merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32. A6 implementation itself is not merged. Earlier slice baselines remain historical references.
+The current integration baseline is `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`, merging A6 through PR #35 (after Planning PR #34 and Correction PR #33). A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
 
-### Task 3.22 correction-review decision — Planned / Blocked
+### Task 3.22 post-A6 gate — ApprovedNextImplementation, P1 only
 
-**Task 3.22 — Branch, Inventory, and Pricing Management Presentation** is **Planned / Blocked** and is not implementation-approved. It is not started or completed. Independent correction review confirmed the **Branch Selector Authorization Composition Gap**; see the [Gap Analysis](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md).
+**Task 3.22 Presentation: `ApprovedNextImplementation` — P1 only; unstarted.** Source reconciliation proves the Branch Selector Authorization Composition Gap is closed. [A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) is **Completed / merged through PR #35** at `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`. See the [gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) and [updated Presentation contract](Task-3.22-Presentation-Implementation-Contract.md).
 
-The A1–A5 contracts remain correct and merged: capabilities, operational Product discovery, Listing state, Reservation reads, Pricing management reads/revisions, Inventory disclosure, trusted scope, and mutation-time authorization are preserved. The post-merge composition gap is separate: operational permissions are independently assignable from `workspace.branches.view/manage`; A1 can advertise a Branch-scoped capability while `GET /api/branches` is forbidden; and A2 requires a known `branchId` before Branch-scoped Product discovery can begin.
+Composition is A1 semantic navigation → A6 exact-purpose Branch discovery → Branch selection → A2 Product discovery where required → authorized resource read/actions → mutation. Operational workflows always use A6, with no general Branch List fallback. General Branch management retains List/Get under its existing Branch authority. Workspace Pricing/Reference Cost skip A6.
 
-A1–A5 are **Completed / merged** through PR #32 and Planning Correction PR #33 is merged. **Task 3.22-A6 — Operational Branch Selector Read: Implementation completed locally / Ready for independent review**, at implementation baseline `51562151d9be79b0f6be50c6406cb207c81e70aa`. A6 has not been merged. The approved [A6 Implementation Contract](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) remains binding; see actual verification in the [Implementation Report](../05-Development/Reports/QSC-Task-3.22-A6-Implementation-Report.md). No Domain/repository/database/schema/migration/dependency/permission change or ADR. Presentation stays **`Blocked`** until A6 independent review and merge plus renewed Presentation gate reconciliation; P1 is not approved. Stop for independent review.
+A6 returns Active + Inactive for all five purposes; fresh Branch-scoped A2 discovery requires Active. P1 must distinguish/disable inactive choices for new workflows while preserving existing-resource inspection that its server contract permits. Status and allowedActions are never mutation guarantees; Reservation actions may remain visible while mutation rejects BranchInactive. Transfer uses A6 Transfer for the same source/destination set and A2 Inventory with source branchId. A4 field disclosure and A5 numeric/semantic/minimal-success projection remain server-owned; raw permissions and branchScope never enter Presentation.
+
+Next slice: **P1 shell, strict clients/types, A1 capabilities, URL/coordinator state, general Branch management, A6 Branch selectors and A2 Product selectors**, including English/Arabic, LTR/RTL, mobile/tablet/desktop and touch/mouse/keyboard QA. **P2–P8 remain planned and require separate approval**, with no combined implementation authorization. No Domain/repository/database/migration/dependency/permission change or new ADR is required. This task changes documentation only and stops for reconciliation review.
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -77,15 +79,17 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 | 3.20 | واجهة موثقة لتصفح الكتالوج وتفاصيل المنتج، وربط المشاركة المباشرة عبر الجهاز، وحالة URL والاستعلام المعتمدة، وعرض التجزئة والجملة والمخزون وفق صلاحيات الخادم، وتصحيح العرض الآمن للعملات ذات الوحدة الصغرى غير المنطبقة والمرشحات الدلالية في 3.20-R1، ونقل وسائط الكتالوج الموثق | لا توجد مشاركة منتجات عامة أو وصول مجهول أو تكامل WhatsApp أو إدارة للبيانات المرجعية أو الفروع أو المخزون أو التسعير. |
 | 3.21 | واجهة موثقة وثنائية اللغة لإدارة البيانات المرجعية للكتالوج، وتنسيق HTTP مكتوب بالأنواع، ومعالجة التعارضات، وتأكيد تعطيل أصلي متاح، واستعادة دقيقة للتركيز | لم تُضف واجهة لإدارة الفروع أو المخزون أو التسعير. |
 
-خط أساس التكامل الحالي هو `51562151d9be79b0f6be50c6406cb207c81e70aa`، ويشمل دمج تخطيط A6 عبر #34 وتصحيح التخطيط عبر #33، ويحفظ A1–A5 المدمجة عبر #28–#32. لم يُدمج تنفيذ A6 نفسه. تبقى الخطوط الأقدم مراجع تاريخية.
+خط أساس التكامل الحالي هو `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6` مع دمج A6 عبر #35 بعد تخطيط #34 وتصحيح #33. تبقى A1–A5 مدمجة عبر #28–#32، والخطوط السابقة تاريخية.
 
-### قرار مراجعة تصحيح المهمة 3.22 — مخططة / محجوبة
+### بوابة المهمة 3.22 بعد A6 — ApprovedNextImplementation لشريحة P1 فقط
 
-تبقى **المهمة 3.22 — واجهة إدارة الفروع والمخزون والتسعير** **مخططة / محجوبة** وغير معتمدة للتنفيذ. لم تبدأ ولم تكتمل. أكدت مراجعة التصحيح المستقلة **فجوة تركيب تفويض محدد الفروع**؛ راجع [تحليل الفجوة](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md).
+**واجهة 3.22: `ApprovedNextImplementation` لشريحة P1 فقط؛ لم يبدأ التنفيذ.** يثبت المصدر إغلاق فجوة محدد الفروع. **اكتملت A6 ودُمجت عبر #35** عند الخط المذكور؛ راجع [تقرير البوابة](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) و[عقد الواجهة المحدث](Task-3.22-Presentation-Implementation-Contract.md).
 
-تبقى عقود A1–A5 صحيحة ومدمجة وتحفظ القدرات واكتشاف المنتج والإدراج والحجوزات والتسعير وكشف المخزون والنطاق والتفويض عند التعديل. أما فجوة التركيب اللاحقة للدمج فهي مستقلة: يمكن تعيين صلاحية تشغيل مقيدة بالفرع دون عرض/إدارة الفروع؛ وقد تعرض A1 القدرة بينما تمنع قائمة الفروع؛ وتتطلب A2 معرف فرع معروفاً قبل بدء الاكتشاف.
+التسلسل هو قدرات A1 الدلالية ثم اكتشاف A6 بالغرض المطابق ثم اختيار الفرع واكتشاف A2 عند الحاجة ثم قراءة المورد وأفعاله المخولة ثم الطفرة. تستخدم العمليات A6 دائماً دون fallback لقائمة الفروع العامة، وتبقى List/Get العامة لإدارة الفروع بصلاحيتها الحالية. يتجاوز تسعير وتكلفة مساحة العمل A6.
 
-اكتملت A1–A5 ودُمجت عبر #32 ودُمج تصحيح التخطيط عبر #33. **اكتمل تنفيذ A6 محلياً / جاهز للمراجعة المستقلة** عند خط أساس التنفيذ `51562151d9be79b0f6be50c6406cb207c81e70aa`، ولم تُدمج A6. يبقى [عقد A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) ملزماً وترد نتائج التحقق الفعلية في [تقرير التنفيذ](../05-Development/Reports/QSC-Task-3.22-A6-Implementation-Report.md). لا تغيير مجال أو عقد مستودع أو قاعدة أو مخطط أو ترحيل أو اعتماد أو صلاحية ولا ADR. تبقى الواجهة **`Blocked`** حتى مراجعة A6 المستقلة ودمجها وإعادة مصالحة بوابتها؛ لا يعتمد P1. التوقف للمراجعة المستقلة.
+تعيد A6 النشط وغير النشط للأغراض الخمسة، بينما يتطلب اكتشاف A2 الجديد فرعاً نشطاً. تميز P1 الخيارات غير النشطة وتعطلها للتدفق الجديد مع حفظ فحص المورد القائم المسموح بعقده. ليست الحالة ولا allowedActions ضمان طفرة؛ قد تظهر أفعال الحجز مع رفض BranchInactive. يستخدم التحويل A6 Transfer بمجموعة واحدة للفرعين ثم A2 Inventory ومعرف المصدر. يبقى كشف الحقول في A4 والكشف الرقمي أو الدلالي أو نجاح العملية الأدنى في A5 ملك الخادم، ولا تدخل الصلاحيات الخام أو branchScope العرض.
+
+الشريحة التالية **P1: الغلاف والأنواع والعملاء الصارمة وقدرات A1 وحالة URL والمنسق وإدارة الفروع العامة ومحدد A6 ومحدد منتجات A2**، مع تحقق اللغتين والاتجاهين والجوال واللوحي وسطح المكتب واللمس والفأرة واللوحة. **تبقى P2–P8 مخططة وتتطلب اعتماداً مستقلاً** دون تصريح مجمع. لا تغيير مجال أو عقد مستودع أو قاعدة أو ترحيل أو اعتماد أو صلاحية ولا ADR جديد. هذه المهمة توثيقية وتتوقف لمراجعة المصالحة.
 
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 

@@ -1,6 +1,8 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** A1–A5 **Completed / merged** through PR #32; A6 planning completed — `ApprovedForImplementation`, implementation NOT started; Presentation `Blocked` · **Integration baseline:** `54b27673824b833f8597594c1e0107c5f017da69` / Planning Correction PR #33 · **Date:** 2026-09-09
+**Status:** A1–A6 Completed / merged; A6 through PR #35 · **Current merge baseline:** `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6` · **Reconciled:** 2026-09-10
+
+> **Current delivery authority:** The [post-A6 gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) and [Presentation contract](Task-3.22-Presentation-Implementation-Contract.md) establish `ApprovedNextImplementation` for P1 only, unstarted; P2–P8 require separate approval. A6 is Completed / merged through PR #35 at the baseline above. The A1–A5 contracts below remain unchanged. Earlier status prose, A6 planning recommendations and WILL IMPLEMENT/roadmap decisions below record the pre-A6 planning session and are superseded for current delivery status only. | **مرجعية التسليم الحالية:** يثبت تقرير البوابة وعقد الواجهة اعتماد P1 وحدها تالياً دون بدء التنفيذ، وتحتاج P2–P8 اعتماداً مستقلاً. اكتملت A6 ودُمجت عبر #35 عند الخط أعلاه. تحفظ عقود A1–A5 أدناه دون تغيير؛ تصف نصوص الحالة وتوصيات تخطيط A6 وقرارات الخارطة والتنفيذ السابقة جلسة ما قبل الدمج، ويستبدلها هذا الإشعار في حالة التسليم الحالية فقط.
 
 A1 is merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32. Those five contracts remain correct. Independent Presentation correction review discovered a separate post-merge **Branch Selector Authorization Composition Gap**; Task 3.22 Presentation is Planned / Blocked and unstarted.
 
