@@ -1,6 +1,6 @@
 # Task 3.22-A Operational Management Contract | عقد تصحيح إدارة العمليات للمهمة 3.22-A
 
-**Status:** Task 3.22-A server remediation **Completed / merged** through PR #32 · **Integration baseline:** `0f102dd020efacc517f0e27601f4a54ecce2eca0` · **Date:** 2026-09-06
+**Status:** A1–A5 **Completed / merged** through PR #32; A6 planning completed — `ApprovedForImplementation`, implementation NOT started; Presentation `Blocked` · **Integration baseline:** `54b27673824b833f8597594c1e0107c5f017da69` / Planning Correction PR #33 · **Date:** 2026-09-09
 
 A1 is merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32. Those five contracts remain correct. Independent Presentation correction review discovered a separate post-merge **Branch Selector Authorization Composition Gap**; Task 3.22 Presentation is Planned / Blocked and unstarted.
 
@@ -422,7 +422,7 @@ No new permission code is required.
 - Every Branch-scoped read uses `branchId` only as requested input and validates it against `TrustedActorContext.branchScope` plus same-Workspace persistence.
 - Operational transfer still validates both Branches in the existing atomic mutation. Discovery against one Branch does not authorize the destination.
 - Every repository call receives `workspaceId` from trusted context; no request accepts Workspace or actor identity.
-- Selected-Branch Staff never receive `allowedBranchIds`; existing Branch listing remains the safe selector.
+- Selected-Branch Staff never receive `allowedBranchIds`; general Branch listing remains for Branch management. Operational selection will use the separately contracted A6 minimum read after implementation and merge.
 - Foreign/out-of-scope Branch, Product, or Reservation states remain non-disclosing. Capability booleans reveal permissions only as semantic actions, not resource existence.
 
 ### Database, migration, dependency, and architecture decisions
@@ -444,7 +444,7 @@ This discovery does not rewrite or invalidate A1–A5:
 - A2 correctly requires `branchId` for `Listing`, `Inventory`, `BranchPricing`, and `BranchReferenceCost`, then validates the supplied ID against trusted scope and same-Workspace persistence.
 - Consequently, a valid operational actor can have no discoverable Branch option. A `403` is not an empty Branch collection.
 
-The smallest recommended remediation for separate planning is **Task 3.22-A6 — Operational Branch Selector Read**, owned by Workspace Branch Application. Conceptually it would compose exact existing Branch-scoped purposes with minimum same-Workspace, trusted-scope Branch identity; it must not broaden the general Branch list, expose raw permissions/scope IDs through A1/session state, accept free-form IDs, add a permission, or duplicate a repository. No route, DTO, use case, or implementation is approved or present. Expected decisions are `ADR NOT REQUIRED`, `NO DATABASE CHANGE`, `NO NEW DEPENDENCY`, and `NO NEW PERMISSION`, subject to the separate A6 contract review.
+Separate **Task 3.22-A6 — Operational Branch Selector Read** planning is completed with decision **`ApprovedForImplementation`**, owned by Workspace Branch Application. The [A6 Contract](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) defines five purposes, exact existing permissions, a four-field DTO, Active/Inactive discovery and `GET /api/branches/operational`. It preserves general Branch reads and raw-authority non-disclosure. Domain/repository/database/migration/dependency/permission gates require no changes; `ADR NOT REQUIRED`. Planning Correction PR #33 is merged and the gap is confirmed. A6 implementation has NOT started; submit the contract for review and do not start Presentation.
 
 ### Implementation slices and dependencies
 
@@ -492,7 +492,7 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### Roadmap decision
 
-**A1–A5 are completed and merged through PRs #28–#32.** Their implementation status is unchanged. Task 3.22 Presentation is **Planned / Blocked** by the post-merge Branch Selector Authorization Composition Gap documented in the [Gap Analysis](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md). Proposed A6 and Presentation are not implementation-approved.
+**A1–A5 are completed and merged through PRs #28–#32; Planning Correction PR #33 is merged.** A6 planning is completed with **`ApprovedForImplementation`**, the next bounded remediation subject to planning review; implementation has NOT started. Task 3.22 Presentation remains **`Blocked`** until A6 is implemented, independently reviewed, merged, and the Presentation gate reconciled again. A6 approval does not approve P1.
 
 ## العقد العربي
 
@@ -535,12 +535,12 @@ Depends on A1 visibility policy. It may proceed in parallel with A2–A4 after A
 
 ### قرار الخارطة
 
-**اكتملت A1–A5 ودُمجت عبر طلبات السحب #28–#32** دون تغيير حالتها. تبقى واجهة 3.22 **مخططة / محجوبة** بسبب فجوة محدد الفروع الموثقة في [تحليل الفجوة](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md). A6 المقترحة والواجهة غير معتمدتين للتنفيذ.
+**اكتملت A1–A5 ودُمجت عبر #28–#32 ودُمج تصحيح التخطيط عبر #33** دون تغيير العقود. تأكدت الفجوة واكتمل تخطيط A6 بقرار **`ApprovedForImplementation`** وفق [عقدها](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md): خمسة أغراض وصلاحيات حالية وأربعة حقول وإعادة النشط وغير النشط ومسار operational ضمن تطبيق الفروع دون تغيير البوابات المعمارية. هي المعالجة التالية بعد مراجعة التخطيط ولم يبدأ تنفيذها. تبقى الواجهة **`Blocked`** حتى تنفيذ A6 ومراجعتها المستقلة ودمجها وإعادة مصالحة بوابة الواجهة؛ لا يعتمد P1 ولا تستخرج معرفات النطاق الخام، وتبقى القائمة العامة لإدارة الفروع فقط.
 
 ## WILL IMPLEMENT | سينفذ
 
-- Separately plan and review proposed Task 3.22-A6; do not implement A6 or Task 3.22 Presentation automatically.
-- خطط وراجع A6 المقترحة بصورة مستقلة، ولا تنفذ A6 أو واجهة 3.22 تلقائياً.
+- Submit the completed A6 contract/report for review; implementation is the next bounded task after approval. Stop after planning; no A6 or Presentation implementation in this task.
+- قدم عقد A6 وتقريرها المكتملين للمراجعة؛ التنفيذ المهمة المحدودة التالية بعد الاعتماد. توقف بعد التخطيط دون تنفيذ A6 أو الواجهة هنا.
 
 ## WILL NOT IMPLEMENT | لن ينفذ
 
