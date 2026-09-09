@@ -1,6 +1,6 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-**Status:** A1–A5 merged; A6 planning completed — `ApprovedForImplementation`, implementation not started; Task 3.22 Presentation remains `Blocked` · **Last Updated:** 2026-09-09 · **Scope:** Authoritative delivery sequence
+**Status:** A1–A5 merged; A6 Implementation completed locally / Ready for independent review; Task 3.22 Presentation remains `Blocked` · **Last Updated:** 2026-09-09 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -28,7 +28,7 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration | No Branch, Inventory, or Pricing management Presentation was added. |
 
-The current integration baseline is `54b27673824b833f8597594c1e0107c5f017da69`, including Planning Correction PR #33. It preserves Task 3.22-A1 merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32. Earlier slice baselines remain historical references.
+The current integration baseline is `51562151d9be79b0f6be50c6406cb207c81e70aa`, including A6 Planning PR #34 and Planning Correction PR #33. It preserves Task 3.22-A1 merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32. A6 implementation itself is not merged. Earlier slice baselines remain historical references.
 
 ### Task 3.22 correction-review decision — Planned / Blocked
 
@@ -36,7 +36,7 @@ The current integration baseline is `54b27673824b833f8597594c1e0107c5f017da69`, 
 
 The A1–A5 contracts remain correct and merged: capabilities, operational Product discovery, Listing state, Reservation reads, Pricing management reads/revisions, Inventory disclosure, trusted scope, and mutation-time authorization are preserved. The post-merge composition gap is separate: operational permissions are independently assignable from `workspace.branches.view/manage`; A1 can advertise a Branch-scoped capability while `GET /api/branches` is forbidden; and A2 requires a known `branchId` before Branch-scoped Product discovery can begin.
 
-A1–A5 are **Completed / merged** through PR #32 and Planning Correction PR #33 is merged. The A6 gap is confirmed; separate **Task 3.22-A6 — Operational Branch Selector Read** planning is completed with decision **`ApprovedForImplementation`**. The [A6 Implementation Contract](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) defines the next bounded remediation in Workspace Branch Application, subject to planning review. A6 implementation has **NOT started**. No Domain/repository/database/migration/dependency/permission change or ADR is required. Presentation stays **`Blocked`** until A6 is implemented, independently reviewed, merged, and its Presentation gate reconciled again; A6 approval does not approve P1. Stop for planning review. See the [A6 Planning Report](../05-Development/Reports/QSC-Task-3.22-A6-Planning-Report.md).
+A1–A5 are **Completed / merged** through PR #32 and Planning Correction PR #33 is merged. **Task 3.22-A6 — Operational Branch Selector Read: Implementation completed locally / Ready for independent review**, at implementation baseline `51562151d9be79b0f6be50c6406cb207c81e70aa`. A6 has not been merged. The approved [A6 Implementation Contract](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) remains binding; see actual verification in the [Implementation Report](../05-Development/Reports/QSC-Task-3.22-A6-Implementation-Report.md). No Domain/repository/database/schema/migration/dependency/permission change or ADR. Presentation stays **`Blocked`** until A6 independent review and merge plus renewed Presentation gate reconciliation; P1 is not approved. Stop for independent review.
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -77,7 +77,7 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 | 3.20 | واجهة موثقة لتصفح الكتالوج وتفاصيل المنتج، وربط المشاركة المباشرة عبر الجهاز، وحالة URL والاستعلام المعتمدة، وعرض التجزئة والجملة والمخزون وفق صلاحيات الخادم، وتصحيح العرض الآمن للعملات ذات الوحدة الصغرى غير المنطبقة والمرشحات الدلالية في 3.20-R1، ونقل وسائط الكتالوج الموثق | لا توجد مشاركة منتجات عامة أو وصول مجهول أو تكامل WhatsApp أو إدارة للبيانات المرجعية أو الفروع أو المخزون أو التسعير. |
 | 3.21 | واجهة موثقة وثنائية اللغة لإدارة البيانات المرجعية للكتالوج، وتنسيق HTTP مكتوب بالأنواع، ومعالجة التعارضات، وتأكيد تعطيل أصلي متاح، واستعادة دقيقة للتركيز | لم تُضف واجهة لإدارة الفروع أو المخزون أو التسعير. |
 
-خط أساس التكامل الحالي هو `54b27673824b833f8597594c1e0107c5f017da69`، ويشمل دمج تصحيح التخطيط عبر #33 ويحفظ A1–A5 المدمجة عبر #28–#32. تبقى الخطوط الأقدم مراجع تاريخية.
+خط أساس التكامل الحالي هو `51562151d9be79b0f6be50c6406cb207c81e70aa`، ويشمل دمج تخطيط A6 عبر #34 وتصحيح التخطيط عبر #33، ويحفظ A1–A5 المدمجة عبر #28–#32. لم يُدمج تنفيذ A6 نفسه. تبقى الخطوط الأقدم مراجع تاريخية.
 
 ### قرار مراجعة تصحيح المهمة 3.22 — مخططة / محجوبة
 
@@ -85,7 +85,7 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 تبقى عقود A1–A5 صحيحة ومدمجة وتحفظ القدرات واكتشاف المنتج والإدراج والحجوزات والتسعير وكشف المخزون والنطاق والتفويض عند التعديل. أما فجوة التركيب اللاحقة للدمج فهي مستقلة: يمكن تعيين صلاحية تشغيل مقيدة بالفرع دون عرض/إدارة الفروع؛ وقد تعرض A1 القدرة بينما تمنع قائمة الفروع؛ وتتطلب A2 معرف فرع معروفاً قبل بدء الاكتشاف.
 
-اكتملت A1–A5 ودُمجت عبر #32 ودُمج تصحيح التخطيط عبر #33. تأكدت فجوة A6 واكتمل تخطيطها بقرار **`ApprovedForImplementation`** وفق [عقد A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) و[تقريرها](../05-Development/Reports/QSC-Task-3.22-A6-Planning-Report.md). هي المعالجة المحدودة التالية ضمن تطبيق الفروع بعد مراجعة التخطيط، ولم يبدأ تنفيذها. لا يلزم تغيير مجال أو مستودع أو قاعدة أو ترحيل أو اعتماد أو صلاحية أو ADR. تبقى الواجهة **`Blocked`** حتى تنفيذ A6 ومراجعتها المستقلة ودمجها وإعادة مصالحة بوابة الواجهة؛ لا يعتمد P1. التوقف للمراجعة.
+اكتملت A1–A5 ودُمجت عبر #32 ودُمج تصحيح التخطيط عبر #33. **اكتمل تنفيذ A6 محلياً / جاهز للمراجعة المستقلة** عند خط أساس التنفيذ `51562151d9be79b0f6be50c6406cb207c81e70aa`، ولم تُدمج A6. يبقى [عقد A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) ملزماً وترد نتائج التحقق الفعلية في [تقرير التنفيذ](../05-Development/Reports/QSC-Task-3.22-A6-Implementation-Report.md). لا تغيير مجال أو عقد مستودع أو قاعدة أو مخطط أو ترحيل أو اعتماد أو صلاحية ولا ADR. تبقى الواجهة **`Blocked`** حتى مراجعة A6 المستقلة ودمجها وإعادة مصالحة بوابتها؛ لا يعتمد P1. التوقف للمراجعة المستقلة.
 
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 

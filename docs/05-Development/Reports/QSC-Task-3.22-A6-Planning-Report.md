@@ -1,6 +1,8 @@
 ﻿# QSC Task 3.22-A6 Planning Report | تقرير تخطيط المهمة QSC 3.22-A6
 
-**Planning only, completed for review. A6: `ApprovedForImplementation`. Presentation: `Blocked`.** No A6 or Presentation implementation started. | **اكتمل التخطيط فقط للمراجعة. A6: `ApprovedForImplementation`، والواجهة: `Blocked`.** لم يبدأ تنفيذ أي منهما.
+**Current delivery status: Implementation completed locally / Ready for independent review.** See the [Implementation Report](QSC-Task-3.22-A6-Implementation-Report.md). A6 has not been merged. Presentation remains **`Blocked`** until A6 independent review and merge plus renewed Presentation gate reconciliation. The remainder records the historical planning session; its decision remains `ApprovedForImplementation`. | **حالة التسليم الحالية: اكتمل التنفيذ محلياً / جاهز للمراجعة المستقلة.** لم تُدمج A6، وتبقى الواجهة **`Blocked`** حتى مراجعة A6 المستقلة ودمجها وإعادة مصالحة بوابتها. يسجل باقي التقرير جلسة التخطيط التاريخية ويبقى قرارها `ApprovedForImplementation`.
+
+**Historical planning status: Planning only, completed for review. A6: `ApprovedForImplementation`. Presentation: `Blocked`.** No A6 or Presentation implementation had started in that session. | **حالة التخطيط التاريخية: اكتمل التخطيط فقط للمراجعة.** لم يكن تنفيذ A6 أو الواجهة قد بدأ في تلك الجلسة.
 
 ## Baseline and draft reconciliation | خط الأساس ومصالحة المسودات
 

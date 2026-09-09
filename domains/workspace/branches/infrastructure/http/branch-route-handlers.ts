@@ -3,12 +3,24 @@ import type { BranchResult } from "../../application/branch-results";
 import type { BranchServerApplication } from "../branch-server-runtime";
 
 type Open = () => BranchServerApplication; type Body = Record<string, unknown>;
-const json = (value: unknown, status = 200) => Response.json(value, { status });
-const response = <T>(result: BranchResult<T>, created = false) => result.ok ? json({ type: "Success", value: result.value }, created ? 201 : 200) : json({ type: result.error }, result.error === "Forbidden" ? 403 : result.error === "NotFound" ? 404 : result.error === "Conflict" || result.error === "CodeConflict" ? 409 : 400);
+const json = (value: unknown, status = 200, privateCache = false) => Response.json(value, { status, ...(privateCache ? { headers: { "cache-control": "private, no-store" } } : {}) });
+const response = <T>(result: BranchResult<T>, created = false, privateCache = false) => result.ok ? json({ type: "Success", value: result.value }, created ? 201 : 200, privateCache) : json({ type: result.error }, result.error === "Forbidden" ? 403 : result.error === "NotFound" ? 404 : result.error === "Conflict" || result.error === "CodeConflict" ? 409 : 400, privateCache);
 const bodyOf = async (request: Request): Promise<Body | null> => { try { const body = await request.json() as unknown; return body && typeof body === "object" && !Array.isArray(body) ? body as Body : null; } catch { return null; } };
-const withApp = async (open: Open, request: Request, write: boolean, work: (app: BranchServerApplication, context: TrustedActorContext) => Promise<Response>) => { let app: BranchServerApplication | undefined; try { app = open(); if (write && !app.origin.allows(request)) return json({ type: "OriginNotAllowed" }, 403); return await work(app, await app.context.resolve(request)); } catch (error) { if (error instanceof AuthenticatedContextUnavailableError) return json({ type: "AuthenticationRequired" }, 401); if (error instanceof RestrictedSessionContextError) return json({ type: "ForbiddenForRestrictedSession" }, 403); return json({ type: "BranchServiceUnavailable" }, 503); } finally { try { await app?.close(); } catch {} } };
+const withApp = async (open: Open, request: Request, write: boolean, work: (app: BranchServerApplication, context: TrustedActorContext) => Promise<Response>, privateCache = false) => { let app: BranchServerApplication | undefined; try { app = open(); if (write && !app.origin.allows(request)) return json({ type: "OriginNotAllowed" }, 403, privateCache); return await work(app, await app.context.resolve(request)); } catch (error) { if (error instanceof AuthenticatedContextUnavailableError) return json({ type: "AuthenticationRequired" }, 401, privateCache); if (error instanceof RestrictedSessionContextError) return json({ type: "ForbiddenForRestrictedSession" }, 403, privateCache); return json({ type: "BranchServiceUnavailable" }, 503, privateCache); } finally { try { await app?.close(); } catch {} } };
+
+const operationalPurposeOf = (request: Request): string | null => {
+  const parameters = new URL(request.url).searchParams;
+  if (parameters.getAll("purpose").length !== 1 || [...parameters.keys()].some((key) => key !== "purpose")) return null;
+  return parameters.get("purpose");
+};
 
 export const createBranchRouteHandlers = (open: Open) => ({
+  operationalList: (request: Request) => withApp(open, request, false, async (app, context) => {
+    const purpose = operationalPurposeOf(request);
+    return purpose === null
+      ? json({ type: "InvalidInput" }, 400, true)
+      : response(await app.operationalList.execute({ context, purpose }), false, true);
+  }, true),
   list: (request: Request) => withApp(open, request, false, async (app, context) => response(await app.list.execute({ context }))),
   get: (request: Request, branchId: string) => withApp(open, request, false, async (app, context) => response(await app.get.execute({ context, branchId }))),
   create: (request: Request) => withApp(open, request, true, async (app, context) => { const body = await bodyOf(request); return body && typeof body.code === "string" && typeof body.displayName === "string" && typeof body.sortOrder === "number" ? response(await app.create.execute({ context, code: body.code, displayName: body.displayName, sortOrder: body.sortOrder }), true) : json({ type: "InvalidInput" }, 400); }),
