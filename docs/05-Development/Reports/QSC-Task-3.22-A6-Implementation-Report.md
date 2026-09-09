@@ -1,6 +1,8 @@
 # QSC Task 3.22-A6 Implementation Report | تقرير تنفيذ المهمة 3.22-A6
 
-## Summary | الملخص
+> **Delivery reconciliation — 2026-09-10:** A6 is **Completed / merged through PR #35**, merge baseline `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`. See the [post-A6 gate report](QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md): `ApprovedNextImplementation` for P1 only; no Presentation implementation. The original report below is preserved as implementation-session evidence, including its then-unmerged status, verification results and review recommendation; those historical statuses are superseded by this notice. | **مصالحة التسليم:** اكتملت A6 ودُمجت عبر #35 عند خط الدمج المذكور. يثبت تقرير البوابة اعتماد P1 وحدها تالياً دون تنفيذ الواجهة. يُحفظ التقرير الأصلي أدناه دليلاً لجلسة التنفيذ بحالة عدم الدمج آنذاك ونتائج التحقق وتوصية المراجعة؛ يستبدل هذا الإشعار حالاته التاريخية.
+
+## Historical Summary | الملخص التاريخي
 
 **Implementation completed locally / Ready for independent review.** A6 has not been merged. This A6-3 session preserved all eight previously reviewed source/test files and performed verification plus delivery documentation only. Task 3.22 Presentation remains **Blocked**, including P1, until A6 independent review and merge plus renewed Presentation gate reconciliation.
 

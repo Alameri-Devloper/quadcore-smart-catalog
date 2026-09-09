@@ -1,25 +1,22 @@
 # Task 3.22 — Operational Management Presentation Implementation Contract | عقد تنفيذ واجهة إدارة العمليات للمهمة 3.22
 
-> **A6 reconciliation — 2026-09-09:** Planning Correction PR #33 is merged at `54b27673824b833f8597594c1e0107c5f017da69`; A1–A5 remain merged. Separate [A6 planning](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) is completed with `ApprovedForImplementation`; implementation has NOT started. Its five-purpose operational selector contract supersedes recommendations below to plan A6, while this document's original baseline and Presentation design remain historical planning context. Operational workflows will always use A6; general Branch management keeps its current contract. Presentation remains **`Blocked`** until A6 is implemented, independently reviewed, merged, and this gate reconciled again. A6 approval does not approve P1. | **مصالحة A6:** دُمج #33 عند الخط المذكور وبقيت A1–A5 مدمجة. اكتمل تخطيط A6 بقرار `ApprovedForImplementation` دون بدء التنفيذ، ويستبدل عقدها توصيات التخطيط السابقة هنا مع حفظ سياق خط الأساس والتصميم. تستخدم العمليات A6 دائماً وتبقى إدارة الفروع على عقدها الحالي. تبقى الواجهة **`Blocked`** حتى تنفيذ A6 ومراجعتها المستقلة ودمجها وإعادة مصالحة البوابة؛ لا يعتمد P1.
+> **Post-A6 gate — 2026-09-10:** A6 is **Completed / merged through PR #35** at `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`. Decision: **`ApprovedNextImplementation` — P1 only**. Presentation is unstarted; this reconciliation implements no P1–P8 code. See the [source evidence and gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md). | **بوابة ما بعد A6:** اكتملت A6 ودُمجت عبر #35 عند الخط المذكور. القرار **`ApprovedNextImplementation` لشريحة P1 فقط**. لم يبدأ تنفيذ الواجهة ولا تنفذ هذه المصالحة كود P1–P8؛ راجع تقرير الأدلة والبوابة.
 
 ## 1. Status | الحالة
 
-**Planning decision: `Blocked`.** Task 3.22-A1–A5 server remediation is completed and merged through PRs #28–#32, but independent correction review confirmed a remaining **Branch Selector Authorization Composition Gap**. This document preserves the future Presentation design; it does not approve implementation, and Task 3.22 remains unstarted. | **قرار التخطيط: `Blocked`.** اكتملت معالجة الخادم A1–A5 ودُمجت عبر طلبات السحب #28–#32، لكن مراجعة التصحيح المستقلة أكدت بقاء **فجوة تركيب تفويض محدد الفروع**. تحفظ الوثيقة تصميم الواجهة المستقبلي ولا تعتمد التنفيذ، وتبقى المهمة 3.22 غير مبدوءة.
+The Branch Selector Authorization Composition Gap is resolved by merged A6. A1–A5 remain merged through PRs #28–#32. All necessary browser composition contracts exist with the inactive-Branch distinction below; no server remediation is required. Only P1 is the next implementation slice after reconciliation review. P2–P8 remain planned and require separate scope/review; this is not combined implementation approval. | حلت A6 المدمجة فجوة تركيب تفويض محدد الفروع مع بقاء A1–A5 مدمجة. تتوفر عقود تركيب المتصفح اللازمة مع التمييز أدناه للفروع غير النشطة، ولا تلزم معالجة خادم. P1 وحدها شريحة التنفيذ التالية بعد مراجعة المصالحة، وتبقى P2–P8 مخططة وتتطلب نطاقاً ومراجعة مستقلين دون اعتماد تنفيذها مجتمعة.
 
-### Independent correction | التصحيح المستقل
+### Historical root cause and merged resolution | السبب التاريخي وحله المدمج
 
-The merged permission registry permits a Staff actor to hold `catalog.product.edit`, any Inventory operation permission, `pricing.branchOverride.manage`, or `referenceCost.branchOverride.manage` without either `workspace.branches.view` or `workspace.branches.manage`. A1 intentionally projects these capabilities independently. `ListBranchesUseCase` authorizes only Owner, Branch view, or Branch manage, while A2 requires a known `branchId` for `Listing`, `Inventory`, `BranchPricing`, and `BranchReferenceCost`. Therefore a valid operational actor can have a relevant capability and trusted Branch scope but no browser-safe way to discover a Branch. Treating `GET /api/branches` `403` as “no accessible Branches” hides a missing composition contract; it is not a legitimate empty result. | يسمح سجل الصلاحيات لموظف بامتلاك تعديل الإدراج أو صلاحية مخزون أو تجاوز تسعير/تكلفة مرجعية دون صلاحية عرض/إدارة الفروع. تعرض A1 هذه القدرات باستقلال، بينما لا تسمح قائمة الفروع إلا للمالك أو صلاحية عرض/إدارة الفروع، وتتطلب أغراض A2 المقيدة بالفرع معرفاً معروفاً مسبقاً. لذلك قد يملك الممثل قدرة تشغيلية ونطاق فرع موثوقاً دون وسيلة آمنة لاكتشاف الفرع. اعتبار `403` قائمة فارغة يخفي عقد تركيب مفقوداً.
+A Staff actor with only `inventory.receive` and trusted Branch scope receives A1 `canReceive=true` while general Branch List is forbidden and A2 requires a Branch ID. That was a real missing selector contract, never an empty collection. Merged `ListOperationalBranchesUseCase` now authorizes A6 Inventory for that same actor and supplies scoped Branch IDs without general Branch view/manage. Equivalent exact-purpose composition covers Listing, Transfer and Branch overrides. General Branch permissions and A1/A2 semantics remain unchanged. | كان موظف يملك الاستلام ونطاقاً موثوقاً يرى القدرة في A1، لكن قائمة الفروع العامة تمنعه وتحتاج A2 معرف فرع؛ كانت فجوة حقيقية وليست قائمة فارغة. تتيح A6 الآن اكتشاف الفروع المخولة لنفس الموظف بغرض Inventory دون صلاحيات الفروع العامة، وبالمثل للأغراض الأخرى، مع حفظ دلالات A1 وA2 والصلاحيات.
 
 ## 2. Baseline | خط الأساس
 
-- Planning branch: `feature/task-3.22-presentation-planning`.
-- Exact reconciled integration baseline and HEAD: `0f102dd020efacc517f0e27601f4a54ecce2eca0`.
-- A1 merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32.
-- Source, not historical planning prose, is the implementation authority.
-
-- فرع التخطيط هو `feature/task-3.22-presentation-planning`، وخط الأساس وHEAD المطابقان هما `0f102dd020efacc517f0e27601f4a54ecce2eca0`.
-- دُمجت A1 عبر #28 وA2 عبر #29 وA3 عبر #30 وA4 عبر #31 وA5 عبر #32.
-- المصدر المدمج هو سلطة التنفيذ، وليس نص التخطيط التاريخي.
+- Reconciliation branch / فرع المصالحة: `feature/task-3.22-presentation-gate-reconciliation`.
+- Exact clean starting HEAD and merge baseline / HEAD الأولي النظيف وخط الدمج المطابق: `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`.
+- Local merge commit identifies PR #35 and parents `51562151d9be79b0f6be50c6406cb207c81e70aa` and `85503ca` (abbreviated A6 parent); required ancestor check passed. / يثبت سجل الدمج المحلي #35 والأبوين المذكورين ونجح فحص السلف.
+- Historical Presentation planning baseline: `0f102dd020efacc517f0e27601f4a54ecce2eca0`, branch `feature/task-3.22-presentation-planning`; preserved in the [original report](../05-Development/Reports/QSC-Task-3.22-Presentation-Planning-Report.md). / حُفظ خط التخطيط وفرعه التاريخيان في التقرير الأصلي.
+- Merged source and current contracts govern; earlier blocked decisions describe their earlier baselines. / يحكم المصدر المدمج والعقود الحالية، وتصف قرارات الحجب السابقة خطوطها التاريخية.
 
 ## 3. Source reconciliation | مصالحة المصدر
 
@@ -39,18 +36,18 @@ The review covered the current roadmap and Sprint continuation; the Task 3.22-A 
 | 8 | Reference Cost revision/visibility could be conflated with pricing | A4 returns independent `referenceCostRevision`, `baseReferenceCostRevision`, and field omission | Safe independent concurrency and non-disclosure |
 | 9 | Availability-only Inventory exposed numeric state | A5; Inventory Application; discriminated `InventoryReadView` | Only `InStock | OutOfStock` without quantities/revision/time |
 | 10 | Idempotent replay could return previously stored detailed balances | A5; Inventory Application current-context mutation projector | Fresh and replayed success have identical current-visibility filtering |
-| 11 | Branch/Product/Workspace scoping and non-disclosure needed proof | Resource endpoints correctly validate trusted scope, but no browser-safe Branch selector composes independently assigned Branch-scoped operational authority with Branch discovery | **Blocked:** safe validation after an ID is supplied does not make the ID discoverable |
+| 11 | Branch/Product/Workspace scoping and discoverable Branch IDs | A6; Workspace Branch Application; `ListOperationalBranchesUseCase`; `GET /api/branches/operational?purpose=...` composes exact operational permission with trusted Workspace/Branch scope | Resolved; four-field options, not resource read/write authority |
 | 12 | Resource-specific action availability was missing | A1 semantic global capabilities plus A2 Listing, A3 Reservation, and A4 Pricing `allowedActions` | Render only returned actions; every mutation still reauthorizes |
 
-النتيجة العربية: حلت A1–A5 إحدى عشرة حاجة تصحيحية وتحفظ النطاق وعدم الكشف، لكنها لا توفر اكتشاف فرع لممثل تشغيلي يفتقد صلاحية عرض/إدارة الفروع. التحقق الآمن من معرف معروف لا يعوض غياب المحدد؛ لذلك تبقى الواجهة محجوبة.
+النتيجة العربية: تحفظ A1–A5 عقودها، وتحل A6 الحاجة المتبقية لاكتشاف الفرع دون صلاحية عرض/إدارة الفروع العامة؛ لا تمنح نتيجة المحدد أهلية القراءة أو الطفرة.
 
 ## 5. Architecture decision | القرار المعماري
 
-The proposed future `/operations` and Domain-aligned Presentation files remain architecturally valid, but none may be implemented until a bounded Workspace Branch Application selector contract is separately planned, approved, implemented, reviewed, and merged. Route composition remains with Workspace Branch Presentation; Identity Presentation owns capability coordination; Catalog Query owns Product selection; Catalog Branch Product owns Listing/Pricing; Inventory owns Inventory workflows. No new Operations Domain, generic BFF, or client authorization authority is approved. | يبقى تصميم `/operations` المستقبلي والملفات الموزعة حسب المجالات سليماً، لكن لا ينفذ شيء قبل تخطيط واعتماد وتنفيذ ومراجعة ودمج عقد محدد محدود يملكه تطبيق فروع مساحة العمل. تبقى الملكيات الأخرى كما هي، ولا يعتمد مجال Operations أو BFF أو سلطة تفويض في العميل.
+The existing `/operations` plan remains valid with A6 consumed by Workspace Branch Presentation. Route composition stays there; Identity owns capability coordination, Catalog Query owns Product selection, Catalog Branch Product owns Listing/Pricing, and Inventory owns its workflows. Preserve TypeScript, DDD, Clean Architecture, Modular Monolith, Multi-Tenant isolation, Mobile First with first-class tablet/desktop, English/Arabic and LTR/RTL. React renders DTOs and delegates coordination; it has no business rules, repository access or infrastructure runtime imports. No new Domain, generic Operations BFF or permission. | يبقى تصميم العمليات صالحاً مع استهلاك A6 داخل عرض فروع مساحة العمل وحفظ ملكيات الهوية واكتشاف المنتج والإدراج والتسعير والمخزون. تُحفظ TypeScript وDDD والمعمارية النظيفة والتطبيق الأحادي المعياري وتعدد المستأجرين والجوال أولاً مع دعم اللوحي وسطح المكتب واللغتين والاتجاهين. تعرض React الحمولات وتفوض التنسيق دون قواعد أعمال أو وصول للمستودعات أو بيئات البنية، ولا مجال أو BFF أو صلاحية جديدة.
 
 ## 6. Exact Presentation scope | نطاق الواجهة الدقيق
 
-The approved authenticated scope is: Branch list/detail/create/update/activate/deactivate; Branch/Product Listing state and Set Listed/Unlisted; operational Product discovery; Inventory read plus Receive, Issue, Correct Increase/Decrease, Mark Damaged, Restore Damaged, Reserve, Release, Fulfill, and atomic Transfer; actionable Reservation list/detail; Workspace Retail/Wholesale/Reference Cost base management; and Branch Retail/Wholesale/Reference Cost override management. Movement history may be displayed only through the already-existing quantity-authorized endpoint and is not redesigned. | النطاق الموثق المعتمد هو: عرض/تفاصيل/إنشاء/تحديث/تفعيل/تعطيل الفروع؛ إدارة إدراج المنتج في الفرع؛ اكتشاف المنتج التشغيلي؛ قراءة المخزون وعمليات الاستلام والصرف والتصحيح والتلف والاستعادة والحجز والتحرير والتنفيذ والتحويل الذري؛ قائمة/تفاصيل الحجوزات القابلة للفعل؛ إدارة أسعار مساحة العمل والتكلفة المرجعية؛ وإدارة تجاوزات الفرع. يمكن عرض سجل الحركات عبر المسار الحالي المخول بالكميات فقط دون إعادة تصميمه.
+The retained P1–P8 design scope (only P1 is approved next) is: Branch list/detail/create/update/activate/deactivate; Branch/Product Listing state and Set Listed/Unlisted; operational Product discovery; Inventory read plus Receive, Issue, Correct Increase/Decrease, Mark Damaged, Restore Damaged, Reserve, Release, Fulfill, and atomic Transfer; actionable Reservation list/detail; Workspace Retail/Wholesale/Reference Cost base management; and Branch Retail/Wholesale/Reference Cost override management. Movement history may be displayed only through the already-existing quantity-authorized endpoint and is not redesigned. | نطاق تصميم P1–P8 المحفوظ (P1 وحدها معتمدة تالياً) هو: عرض/تفاصيل/إنشاء/تحديث/تفعيل/تعطيل الفروع؛ إدارة إدراج المنتج في الفرع؛ اكتشاف المنتج التشغيلي؛ قراءة المخزون وعمليات الاستلام والصرف والتصحيح والتلف والاستعادة والحجز والتحرير والتنفيذ والتحويل الذري؛ قائمة/تفاصيل الحجوزات القابلة للفعل؛ إدارة أسعار مساحة العمل والتكلفة المرجعية؛ وإدارة تجاوزات الفرع. يمكن عرض سجل الحركات عبر المسار الحالي المخول بالكميات فقط دون إعادة تصميمه.
 
 ## 7. Information architecture | بنية المعلومات
 
@@ -60,7 +57,7 @@ Create one authenticated **Operations / العمليات** entry in the establis
 
 1. Load the authenticated actor, then A1 capabilities; choose the first usable section or show “no operational capability”.
 2. For Branch management, load `GET /api/branches`, select a Branch, and create/edit/status-change with its exact revision. Activation and deactivation are both the existing `PATCH`; there is no delete.
-3. For Branch-scoped Product work, choose an accessible Branch, search with the exact A2 purpose, select a Product, then load the resource-owned state.
+3. For fresh Branch-scoped Product work, load the exact A6 purpose, select an Active Branch, search with the exact A2 purpose, select a Product, then load resource-owned state where authorized. Existing-resource inspection follows section 10's inactive policy.
 4. Listing: review current status/actions, explicitly Set Listed or Set Unlisted, then refetch.
 5. Inventory: render the A5 read shape, choose only an A1-enabled mutation, review the command, submit once, and refresh readable state.
 6. Reservations: select a Product, page actionable rows, open current detail, then Release/Fulfill only when returned actions permit it; refetch after write or stale failure.
@@ -74,7 +71,8 @@ Create one authenticated **Operations / العمليات** entry in the establis
 | Surface | Exact HTTP contract |
 | --- | --- |
 | Capabilities | `GET /api/operations/capabilities` |
-| Branches | `GET/POST /api/branches`; `GET/PATCH /api/branches/{branchId}` |
+| General Branch management | `GET/POST /api/branches`; `GET/PATCH /api/branches/{branchId}` |
+| Canonical operational Branch selector (A6) | `GET /api/branches/operational?purpose=Listing` (example; exactly one of the five purposes in section 10) |
 | Product selector | `GET /api/catalog/operational-products?purpose=...&q=...&branchId=...&cursor=...&limit=...` |
 | Listing | `GET/PUT /api/branches/{branchId}/products/{productId}/listing` |
 | Inventory read | `GET /api/branches/{branchId}/inventory/{productId}` |
@@ -89,14 +87,38 @@ All success envelopes are validated as `{ type: "Success", value }`. Typed adapt
 ## 10. Authorization and capability rules | قواعد التفويض والقدرات
 
 - A1 booleans control navigation, section availability, and initial selection only; raw permissions are never requested, stored, rendered, or submitted.
-- Branch management continues to use `GET /api/branches`, authorized by Branch view/manage. It is **not** a complete operational selector for independently authorized operational actors. The future Presentation must consume a separately approved Workspace Branch Application operational selector; until that contract exists, no Branch-scoped Presentation workflow may begin. Do not extract Branch IDs from session internals, accept free-form Branch IDs, or reinterpret `403` as an empty collection.
+- Branch management keeps general List/Get under its existing Owner or Branch view/manage authority. Every operational workflow uses A6, even when general Branch view is available; **no general `GET /api/branches` fallback**. Never consume session `branchScope`, accept free-form Branch discovery IDs, or treat `403` as an empty collection.
+
 - A2 `purpose` is derived by the coordinator: `Listing`, `Inventory`, `WorkspacePricing`, `BranchPricing`, `WorkspaceReferenceCost`, or `BranchReferenceCost`. It never grants authority.
 - Resource actions come from `allowedActions`. Hidden/disabled controls are usability only; writes remain decisive.
 - Field omission is authorization-sensitive, especially Wholesale and Reference Cost; omission is not `NotConfigured`.
 
 - تستخدم قدرات A1 للتنقل فقط ولا تعرض صلاحيات خاماً.
-- تبقى قائمة الفروع الحالية لإدارة الفروع فقط ولا تكفي محدداً لكل ممثل تشغيلي مستقل. يلزم عقد محدد تشغيلي مستقل ومعتمد قبل تنفيذ الواجهة، ولا يجوز تحويل `403` إلى فراغ أو استخراج معرفات الجلسة أو قبول معرف حر.
+- تبقى List/Get العامة لإدارة الفروع بصلاحيتها الحالية، وتستخدم كل العمليات A6 دائماً حتى مع صلاحية العرض العام دون fallback. لا يحول `403` إلى فراغ ولا تستخرج معرفات النطاق من الجلسة ولا تقبل معرفات اكتشاف حرة.
 - يشتق المنسق غرض A2 ولا يعده تفويضاً، وتأتي أفعال المورد من `allowedActions`، ويختلف غياب الحقل عن `NotConfigured`.
+
+### A6 composition and inactive Branch policy | تركيب A6 وسياسة الفرع غير النشط
+
+A6 accepts exactly one case-sensitive `purpose` query key, with no extra keys, search or pagination. Its exact purposes are `Listing`, `Inventory`, `Transfer`, `BranchPricing`, `BranchReferenceCost`. Success is `{ type: "Success", value: [{ branchId, code, displayName, status }] }`; `value` is a direct array. Preserve server order and parse exactly the four option fields. All responses/errors are private, no-store. Authorized `[]`, `403 Forbidden`, and a non-empty all-inactive collection are different UI states. | تقبل A6 معامل purpose واحداً مطابقاً لحالة الأحرف من الأغراض الخمسة المذكورة دون مفاتيح أخرى أو بحث أو صفحات. النجاح مصفوفة مباشرة بأربعة حقول فقط، ويُحفظ ترتيب الخادم. كل النتائج خاصة وغير مخزنة، وتختلف القائمة الفارغة المصرح بها عن المنع وعن قائمة كاملة غير نشطة.
+
+| Workflow / التدفق | Branch discovery / اكتشاف الفرع | Product discovery / اكتشاف المنتج | Authoritative resource / المورد المرجعي |
+| --- | --- | --- | --- |
+| Listing / الإدراج | A6 Listing | A2 Listing + branchId | Listing GET state/revision/allowedActions → PUT; no ordinary Catalog browse grant / دون منح تصفح عام |
+| Inventory / المخزون | A6 Inventory | A2 Inventory + branchId | A5 read only when authorized → named mutation; mutation-only actors need no generic balance GET / لا تشترط قراءة الرصيد لمن يملك الطفرة فقط |
+| Reservations / الحجوزات | A6 Inventory | A2 Inventory + branchId | A3 collection/detail → Reserve/Release/Fulfill under existing contracts / وفق العقود الحالية |
+| Transfer / التحويل | A6 Transfer; one set for source and destination / مجموعة واحدة للفرعين | A2 Inventory + source branchId | Read balances only when authorized → one atomic Transfer / قراءات مخولة ثم تحويل ذري واحد |
+| Branch Pricing / تسعير الفرع | A6 BranchPricing | A2 BranchPricing + branchId | A4 Branch management fields/actions → override mutation / حقول وأفعال الإدارة ثم الطفرة |
+| Branch Reference Cost / تكلفة الفرع المرجعية | A6 BranchReferenceCost | A2 BranchReferenceCost + branchId | A4 independently disclosed Reference Cost → override mutation / كشف مستقل ثم طفرة التجاوز |
+| Workspace Pricing / تسعير مساحة العمل | No A6 / دون A6 | A2 WorkspacePricing, no branchId / دون فرع | A4 Workspace management → base mutation / إدارة الأساس ثم الطفرة |
+| Workspace Reference Cost / تكلفة مساحة العمل المرجعية | No A6 / دون A6 | A2 WorkspaceReferenceCost, no branchId / دون فرع | A4 independent field/revision → base mutation / حقل ومراجعة مستقلان |
+
+For fresh Branch-scoped Product discovery, show status and disable inactive choices with localized text explaining that an Active Branch is required. A6 returns Active + Inactive for **every** purpose; neither membership in its result nor Active status proves A2 or mutation eligibility. An all-inactive result means “no active Branch for this new workflow,” not “no accessible Branches.” This is Presentation guidance using a server DTO, not a permission/lifecycle policy engine. | للاكتشاف الجديد تعرض الحالة وتعطل الخيارات غير النشطة مع شرح مترجم لاشتراط فرع نشط. تعيد A6 الحالتين لكل غرض؛ لا تعني عضوية القائمة أو النشاط أهلية A2 أو الطفرة. تعني القائمة غير النشطة بالكامل عدم وجود فرع نشط للتدفق الجديد لا غياب الفروع المتاحة، وهذا إرشاد عرض من حمولة الخادم وليس محرك صلاحيات أو دورة حياة.
+
+Do not globally filter out inactive Branches or make A2 success a prerequisite for an already identified resource GET that intentionally permits inactive inspection. Retain such context, for example a resource selected before deactivation or an existing resource URL, and revalidate through its exact resource endpoint. URL identifiers remain untrusted references, never authority or a manual discovery mechanism. If no Product/resource context exists, explain that fresh discovery requires Active; do not fabricate IDs, use another purpose/catalog route to evade A2, or invent historical Product search. Normal Branch changes still clear dependent Product/cursor state; a lifecycle refresh of an existing resource must not erase its permitted inspection view solely because status is Inactive. | لا تحذف الفروع غير النشطة من كل العروض ولا تشترط نجاح A2 لقراءة مورد معروف يسمح عقده بفحص غير النشط. يُحفظ سياق مورد اختير قبل التعطيل أو رابط مورد قائم مع إعادة تحققه عبر مساره؛ المعرفات مراجع غير موثوقة وليست سلطة أو وسيلة اكتشاف يدوي. عند غياب السياق يلزم النشاط للاكتشاف الجديد، دون اختلاق معرفات أو التحايل بغرض آخر أو اختراع بحث تاريخي. يظل تغيير الفرع يمسح الحالة التابعة، لكن تحديث دورة حياة المورد الحالي لا يمحو فحصه المسموح لمجرد تعطيل الفرع.
+
+For new operational mutations, inactive status may disable submission as usability guidance. Never synthesize, extend or rewrite `allowedActions`; never equate them with a lifecycle guarantee. Listing and Branch Pricing reads suppress actions on inactive Branches; Reservation actions currently intersect permission with Reservation status only, so Release/Fulfill can be returned while a fresh mutation rejects `BranchInactive`. Render only server-returned actions, explain inactive/stale state, refetch current resources/options after rejection and require deliberate retry. Inventory reads/mutations retain their own permission checks; A1 is an entry hint where no resource action DTO exists. | قد تعطل الحالة غير النشطة إرسال طفرة جديدة كإرشاد فقط. لا تنشئ أو توسع أو تعدل allowedActions ولا تعتبرها ضمان دورة حياة. تحجب قراءات الإدراج والتسعير أفعال غير النشط، بينما تعتمد أفعال الحجز حالته وصلاحيته فقط وقد تعيد التحرير/التنفيذ مع رفض الطفرة BranchInactive. تعرض الأفعال المعادة فقط ويشرح التعطيل أو التقادم وتعاد قراءة المورد والخيارات قبل إعادة متعمدة، وتحفظ قراءات وطفرات المخزون صلاحياتها مع بقاء A1 تلميح دخول عند غياب DTO أفعال المورد.
+
+**Sufficient entirely in Presentation: yes.** A6 status, existing resource reads/actions, A2 rejection and mutation errors supply the distinction. No server contract is missing for this scope. | **تكفي معالجة التمييز في العرض: نعم.** توفر حالة A6 وقراءات وأفعال الموارد ورفض A2 وأخطاء الطفرات العقود اللازمة دون عقد خادم مفقود لهذا النطاق.
 
 ## 11. Inventory disclosure rules | قواعد كشف المخزون
 
@@ -119,6 +141,8 @@ Branch slots display `base`, `override`, `effective`, and `source`. `ClearOverri
 The collection is Product-scoped, actionable-only (`Active | PartiallyFulfilled`), default 24/max 60, ordered `updatedAt DESC, reservationId DESC`, with the opaque server cursor. “Next” sends the returned cursor unchanged. `InvalidCursor` clears only `reservationCursor` and reloads page one with an explanation. Detail may show any current status; Release/Fulfill are rendered only from current detail `allowedActions`. Before submission show quantity and remaining quantity; after success refetch detail/list. `ReservationNotActive`, missing action, or stale state is a review state, never a client-side override. | القائمة مقيدة بالمنتج والحالات القابلة للفعل وبمؤشر الخادم المعتم. عند مؤشر غير صالح تبدأ الصفحة الأولى. تعرض التفاصيل الحالة الحالية، ولا تظهر إجراءات التحرير/التنفيذ إلا من `allowedActions`. تعاد القراءة بعد النجاح أو الحالة القديمة، ولا تفترض الواجهة بقاء الحجز قابلاً للفعل.
 
 ## 14. Transfer UX | تجربة التحويل
+
+Use A6 `Transfer`, authorized only by `inventory.transfer`, for the same source/destination option set; A6 Inventory deliberately excludes transfer-only authority. Product discovery remains A2 `Inventory` with source `branchId`. Disable inactive options for a new Transfer and destination equal to source only for usability. Inventory remains authoritative for same Workspace, both Branch scopes, source != destination, activity, Product, quantity, stock, deterministic locks, atomic writes/rollback and idempotency. Existing replay returns the stored outcome under current disclosure; it is not a new mutation or a fresh lifecycle guarantee. | يستخدم التحويل غرض A6 Transfer بصلاحية inventory.transfer وحدها ومجموعة واحدة للفرعين؛ لا تقبل A6 Inventory صاحب التحويل وحده. يبقى اكتشاف المنتج عبر A2 Inventory ومعرف المصدر. تعطيل غير النشط والوجهة المطابقة إرشاد فقط؛ يفرض المخزون مساحة العمل والنطاقين والاختلاف والنشاط والمنتج والكمية والرصيد والأقفال والذرية والتراجع والتكرار الآمن. تعيد إعادة الطلب نتيجته المخزنة بالكشف الحالي ولا تمثل طفرة جديدة أو ضمان نشاط.
 
 Collect source Branch, destination Branch, Product, positive Piece quantity, and optional current `reasonCode`; do not invent fields. Reject an identical source/destination locally for usability, but let Inventory Application validate both scope, activity, Product, and stock. Generate an operation ID with the browser crypto API for the exact confirmed command; preserve it only for an uncertain retry of the identical payload and generate a new ID when the command changes. Submit one `POST /api/inventory/transfers`; never split or optimistically infer partial success. On success announce `transferId` and reload source/destination state only where current disclosure permits. | تجمع الواجهة الفرعين المختلفين والمنتج والكمية والسبب الاختياري الحالي، وتولد معرف عملية للأمر المؤكد. يحفظ المعرف فقط عند إعادة غير مؤكدة لنفس الحمولة. يرسل طلب ذري واحد، ويعرض `transferId` ثم يعيد تحميل الحالة المسموح بها دون افتراض نجاح جزئي.
 
@@ -145,7 +169,7 @@ Use `/operations` and only these allow-listed query keys: `section=branches|inve
 
 ## 19. HTTP/client coordination | تنسيق HTTP والعميل
 
-Create bounded Domain-aligned clients with injected fetch ports: an Identity capability client; a Workspace Branch management client; a Catalog Query operational-product client; a Catalog Branch Product Listing/Pricing client; and an Inventory management client. Each uses same-origin credentials, `cache: "no-store"`, exact allow-listed DTOs, envelope/field validation, and normalized failures. Pure `operations-query-state.ts` and the route-level Presentation coordinator live under Workspace Branch Presentation and own purpose selection, dependent-state reset, request keys, mutation lifecycle, refetch rules, and operation-ID lifecycle only. React never imports repositories, Domain entities, or infrastructure runtimes. Do not turn the existing Catalog Query, Identity, or Reference Data clients into a generic framework. | تنشأ عملاء محدودة وموزعة حسب المجال مع fetch محقون: للقدرات والفروع واكتشاف المنتج والإدراج/التسعير والمخزون. يستخدم كل عميل بيانات الاعتماد من المصدر نفسه وعدم التخزين وDTO مسموحاً به وتحليلاً صارماً. تعيش حالة URL والمنسق على مستوى الصفحة مع عرض الفروع وتملك تنسيق الطلب فقط. لا تستورد React المستودعات أو كيانات المجال ولا تحول العملاء الحاليين إلى إطار عام.
+Create bounded Domain-aligned clients with injected fetch ports: an Identity capability client; a Workspace Branch client with separate general-management and A6 operational-selector methods; a Catalog Query operational-product client; a Catalog Branch Product Listing/Pricing client; and an Inventory management client. Each uses same-origin credentials, `cache: "no-store"`, exact allow-listed DTOs, envelope/field validation, and normalized failures. Pure `operations-query-state.ts` and the route-level Presentation coordinator live under Workspace Branch Presentation and own purpose selection, dependent-state reset, request keys, mutation lifecycle, refetch rules, and operation-ID lifecycle only. React never imports repositories, Domain entities, or infrastructure runtimes. Do not turn the existing Catalog Query, Identity, or Reference Data clients into a generic framework. | تنشأ عملاء محدودة وموزعة حسب المجال مع fetch محقون: للقدرات والفروع واكتشاف المنتج والإدراج/التسعير والمخزون. يستخدم كل عميل بيانات الاعتماد من المصدر نفسه وعدم التخزين وDTO مسموحاً به وتحليلاً صارماً. تعيش حالة URL والمنسق على مستوى الصفحة مع عرض الفروع وتملك تنسيق الطلب فقط. لا تستورد React المستودعات أو كيانات المجال ولا تحول العملاء الحاليين إلى إطار عام.
 
 ## 20. Component boundaries | حدود المكونات
 
@@ -153,7 +177,7 @@ Create bounded Domain-aligned clients with injected fetch ports: an Identity cap
 | --- | --- | --- |
 | `OperationsPage` | Client composition, request keys, selected URL state | No authorization rules; page heading/status regions |
 | `OperationsNavigation` | Capability-shaped primary sections | Semantic nav, keyboard/focus; booleans are hints only |
-| `BranchSelector` / `OperationalProductSelector` | Server results, q, pagination, selection | No scope/lifecycle filtering after pagination; labeled listbox/search |
+| `BranchSelector` / `OperationalProductSelector` | A6 four-field ordered options/status; A2 q/cursor selection | Local filtering of authorized Branch labels/codes only; inactive guidance per section 10; no Product scope/lifecycle filtering after pagination; labeled controls |
 | `BranchManagementPanel` | Branch cards and create/edit/status dialogs | Temporary form state only; exact revision/refetch; accessible confirmation |
 | `ListingPanel` | Listing DTO and explicit Set actions | Uses returned revision/actions only |
 | `InventorySummary` | Discriminated A5 rendering | Exhaustive type handling; never infer numbers |
@@ -195,7 +219,7 @@ Create bounded Domain-aligned clients with injected fetch ports: an Identity cap
 
 ## 23. Implementation slices | شرائح التنفيذ
 
-1. **3.22-P1 — Operations shell, strict types/client, capabilities, URL state, Branch collection/management, and selectors.** **Blocked** until the proposed Branch selector remediation is separately approved, implemented, reviewed, and merged.
+1. **3.22-P1 — Operations shell, strict types/client, capabilities, URL state, general Branch collection/management, A6 Branch selectors and A2 Product selectors.** **`ApprovedNextImplementation` — P1 only**, unstarted; reviewed as a bounded task.
 2. **3.22-P2 — Listing.** Small state/revision/action workflow on the Branch/Product selector.
 3. **3.22-P3 — Inventory read and basic mutations.** Implement A5 exhaustive rendering and Receive/Issue/Correct/Damage/Restore.
 4. **3.22-P4 — Reservations.** Actionable page/detail plus Reserve/Release/Fulfill and cursor/stale-state recovery.
@@ -204,7 +228,7 @@ Create bounded Domain-aligned clients with injected fetch ports: an Identity cap
 7. **3.22-P7 — Branch overrides.** Base/override/effective/source and override revision/actions.
 8. **3.22-P8 — Integration hardening.** Navigation, bilingual copy, responsive/accessibility/touch/mouse/keyboard verification, and security regression.
 
-All Presentation slices P1–P8 are blocked because they depend directly or transitively on P1’s safe Branch selection seam. Their designs remain proposed, independently testable future slices; none is implementation-approved by this contract. | كل شرائح العرض P1–P8 محجوبة لاعتمادها المباشر أو غير المباشر على محدد الفروع الآمن في P1. تبقى تصاميم مستقبلية مقترحة وقابلة للاختبار، ولا تعتمد الوثيقة تنفيذ أي منها.
+P1 must implement strict A6 parsing, exact-purpose request coordination, no general-list fallback, inactive/new-workflow versus existing-resource context, and session-change clearing of options/pending responses. P1 includes its own English/Arabic, LTR/RTL, mobile/tablet/desktop and touch/mouse/keyboard QA; these are not postponed to P8. P2–P8 remain planned, unstarted and separately approval-gated; no Listing/Inventory/Reservation/Transfer/Pricing editors are included in P1. | يجب أن تنفذ P1 تحليل A6 الصارم وتنسيق أغراضها دون fallback وتمييز التدفق الجديد عن سياق المورد القائم ومسح الخيارات والنتائج المعلقة عند تغير الجلسة. تشمل P1 تحقق اللغتين والاتجاهين والجوال واللوحي وسطح المكتب واللمس والفأرة واللوحة ولا يؤجل إلى P8. تبقى P2–P8 مخططة وغير مبدوءة وتتطلب اعتماداً مستقلاً؛ لا تضم P1 محررات الإدراج أو المخزون أو الحجوزات أو التحويل أو التسعير.
 
 ## 24. Tests and verification plan | خطة الاختبارات والتحقق
 
@@ -220,11 +244,11 @@ All Presentation slices P1–P8 are blocked because they depend directly or tran
 
 ## 25. WILL IMPLEMENT | سينفذ
 
-- The eight Presentation slices above only after the Branch selector remediation is separately approved, implemented, reviewed, merged, and this planning gate is reconciled again.
+- Next bounded implementation: P1 only after this reconciliation review. A6 is completed/merged; P2–P8 require their own subsequent approval.
 - Existing shell/shared UI/i18n conventions and strict Domain-owned HTTP contracts.
 - Explicit authoritative refetch, safe conflict handling, semantic non-disclosure, and full responsive/accessibility QA.
 
-- الشرائح الثماني فقط بعد اعتماد وتنفيذ ومراجعة ودمج معالجة محدد الفروع ثم إعادة مصالحة بوابة التخطيط، مع بقاء بقية ضوابط العرض المقترحة.
+- التنفيذ التالي المحدود هو P1 فقط بعد مراجعة المصالحة. اكتملت A6 ودُمجت، وتتطلب P2–P8 اعتماداً لاحقاً مستقلاً، مع حفظ ضوابط العرض المذكورة.
 
 ## 26. WILL NOT IMPLEMENT | لن ينفذ
 
@@ -232,7 +256,7 @@ Public Product Share Link, anonymous access, `wa.me`, WhatsApp Cloud API/backend
 
 ## 27. ADR decision | قرار ADR
 
-**`ADR NOT REQUIRED` for the recommended remediation.** A bounded operation-specific selector read belongs to the existing Workspace Branch Application and reuses trusted context and Branch persistence; it does not change a Domain boundary or global permission semantics. Exact implementation still requires a separately reviewed Task 3.22-A6 contract. | **`ADR NOT REQUIRED` للمعالجة الموصى بها** لأنها قراءة محدودة خاصة بالعملية ضمن تطبيق فروع مساحة العمل وتعيد استخدام السياق والاستمرارية الحاليين دون تغيير حدود المجال أو دلالات الصلاحيات العامة. يبقى عقد A6 المستقل مطلوباً.
+**`ADR NOT REQUIRED`.** This gate composes merged A1–A6 and existing resource contracts within current ownership. **NO DOMAIN CHANGE; NO REPOSITORY CONTRACT CHANGE; NO NEW PERMISSION.** No new architecture decision is introduced. | **لا حاجة إلى ADR**؛ تركب البوابة العقود المدمجة ضمن ملكياتها الحالية دون قرار معماري جديد أو تغيير مجال أو عقد مستودع أو صلاحية جديدة.
 
 ## 28. Database/migration decision | قرار قاعدة البيانات والترحيل
 
@@ -244,4 +268,4 @@ Public Product Share Link, anonymous access, `wa.me`, WhatsApp Cloud API/backend
 
 ## 30. Final planning decision | قرار التخطيط النهائي
 
-Independent review confirms the **Branch Selector Authorization Composition Gap**. A1–A5 remain correctly merged, but they do not let every independently authorized Branch-scoped operational actor discover a valid Branch. **Task 3.22 is `Blocked`, unstarted, and not implementation-approved.** Recommend separately planning **Task 3.22-A6 — Operational Branch Selector Read**; this recommendation does not approve or implement A6. | تؤكد المراجعة المستقلة فجوة تركيب تفويض محدد الفروع. تبقى A1–A5 صحيحة ومدمجة، لكنها لا تمكن كل ممثل تشغيلي مستقل من اكتشاف فرع صالح. **المهمة 3.22 محجوبة وغير مبدوءة وغير معتمدة للتنفيذ.** يوصى بتخطيط مستقل للمهمة **3.22-A6 — قراءة محدد الفروع التشغيلي** دون اعتماد تنفيذها أو تنفيذها هنا.
+**Decision: `ApprovedNextImplementation` — Task 3.22-P1 only.** Merged A6 closes Branch discovery for independently authorized operational actors. The Active/Inactive distinction is fully expressible using A6 status and existing server contracts. No additional API or server remediation is required. Presentation remains unstarted; P2–P8 are planned and not approved as one task. Stop for reconciliation review; no implementation in this task. | **القرار: `ApprovedNextImplementation` للمهمة 3.22-P1 فقط.** تحل A6 المدمجة اكتشاف الفرع لأصحاب الصلاحيات التشغيلية المستقلة، ويمكن التعبير عن تمييز النشاط من حالتها وعقود الخادم الحالية دون API أو معالجة خادم إضافية. تبقى الواجهة غير مبدوءة وP2–P8 مخططة دون اعتماد مجمع. التوقف لمراجعة المصالحة دون تنفيذ هنا.
