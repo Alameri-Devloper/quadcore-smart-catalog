@@ -1,6 +1,10 @@
 ﻿# Task 3.22-A6 — Operational Branch Selector Read Implementation Contract | عقد تنفيذ قراءة محدد الفروع التشغيلي
 
-## Status and baseline | الحالة وخط الأساس
+## Current delivery status | حالة التسليم الحالية
+
+**Task 3.22-A6: Implementation completed locally / Ready for independent review.** Verified on `feature/task-3.22-a6-operational-branch-selector` at baseline `51562151d9be79b0f6be50c6406cb207c81e70aa`. See the [Implementation Report](../05-Development/Reports/QSC-Task-3.22-A6-Implementation-Report.md). A6 has not been merged. Task 3.22 Presentation remains **`Blocked`** until A6 independent review and merge plus renewed Presentation gate reconciliation. The planning decision remains `ApprovedForImplementation`; the planning-session statements below are historical. | **اكتمل تنفيذ A6 محلياً / جاهز للمراجعة المستقلة.** تم التحقق عند الفرع وخط الأساس المذكورين، ولم تُدمج A6. تبقى الواجهة **`Blocked`** حتى مراجعة A6 المستقلة ودمجها وإعادة مصالحة بوابة الواجهة. يبقى قرار التخطيط كما هو، وتصف العبارات أدناه جلسة التخطيط التاريخية.
+
+## Planning status and baseline (historical) | حالة التخطيط وخط أساسه (تاريخي)
 
 **A6 planning decision: `ApprovedForImplementation`.** Planning only; A6 implementation has NOT started. Task 3.22 Presentation remains **`Blocked`**, including P1. Approval of this bounded contract does not authorize implementation in this planning session. | **قرار تخطيط A6: `ApprovedForImplementation`.** التخطيط فقط؛ لم يبدأ تنفيذ A6، وتبقى واجهة 3.22 بما فيها P1 **`Blocked`**. لا يصرح اعتماد العقد بالتنفيذ في جلسة التخطيط هذه.
 
