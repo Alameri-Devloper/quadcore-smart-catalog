@@ -10,6 +10,7 @@ const messages: Readonly<Record<string, Translation>> = {
   brand: { ar: "كتالوج كوادكور الذكي", en: "Quadcore Smart Catalog" },
   language: { ar: "English", en: "العربية" },
   catalog: { ar: "الكتالوج", en: "Catalog" },
+  operations: { ar: "العمليات", en: "Operations" },
   members: { ar: "الأعضاء", en: "Members" },
   signIn: { ar: "تسجيل الدخول", en: "Sign in" },
   signOut: { ar: "تسجيل الخروج", en: "Sign out" },
