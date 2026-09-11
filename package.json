@@ -13,7 +13,7 @@
     "test:product-entry": "tsx --test domains/catalog/product-entry/domain/*.test.ts domains/catalog/product-entry/application/*.test.ts domains/catalog/product-entry/infrastructure/*.test.ts",
     "test:reference-data": "tsx --test domains/catalog/reference-data/domain/*.test.ts domains/catalog/reference-data/application/*.test.ts domains/catalog/reference-data/infrastructure/http/*.test.ts domains/catalog/reference-data/presentation/*.test.ts",
     "test:identity": "tsx --test domains/identity/domain/*.test.ts domains/identity/application/*.test.ts domains/identity/infrastructure/crypto/*.test.ts domains/identity/infrastructure/http/*.test.ts domains/identity/infrastructure/recovery-delivery/*.test.ts domains/identity/presentation/*.test.ts scripts/identity/*.test.ts",
-    "test:branch": "tsx --test domains/workspace/branches/application/*.test.ts domains/workspace/branches/infrastructure/http/*.test.ts",
+    "test:branch": "tsx --test domains/workspace/branches/application/*.test.ts domains/workspace/branches/infrastructure/http/*.test.ts domains/workspace/branches/presentation/*.test.ts",
     "test:inventory": "tsx --test domains/inventory/application/*.test.ts domains/inventory/infrastructure/http/*.test.ts",
     "test:pricing": "tsx --test domains/catalog/branch-products/application/*.test.ts domains/catalog/branch-products/infrastructure/http/*.test.ts",
     "test:catalog-query": "tsx --test domains/catalog/query/application/*.test.ts domains/catalog/query/infrastructure/http/*.test.ts",

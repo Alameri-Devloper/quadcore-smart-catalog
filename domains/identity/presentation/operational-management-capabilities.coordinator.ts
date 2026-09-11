@@ -22,12 +22,12 @@ export const operationalManagementSections = (
 export const hasOperationalManagementCapability = (value: OperationalManagementCapabilitiesView): boolean =>
   operationalManagementSections(value).length > 0;
 
-/** No destination exists in P1.1. A visible section is never write authority. */
+/** A visible destination is a navigation hint, never write authority. */
 export const operationalManagementNavigationStatus = (
   state: OperationalManagementCapabilityState,
-): "Hidden" | "NavigationLinkBlockedUntilP1.2" =>
+): "Hidden" | "Available" =>
   state.type === "Ready" && hasOperationalManagementCapability(state.value)
-    ? "NavigationLinkBlockedUntilP1.2"
+    ? "Available"
     : "Hidden";
 
 interface CapabilityPort {
@@ -99,3 +99,10 @@ export class OperationalManagementCapabilitiesCoordinator {
     }
   }
 }
+
+/** Effect-owned lifecycle. Deferring the first load avoids a request during React's setup/cleanup probe. */
+export const mountOperationalManagementCapabilities = (port: CapabilityPort, events: CapabilityEvents) => {
+  const coordinator = new OperationalManagementCapabilitiesCoordinator(port, events);
+  queueMicrotask(() => { void coordinator.load(); });
+  return coordinator;
+};

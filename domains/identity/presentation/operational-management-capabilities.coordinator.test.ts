@@ -5,6 +5,7 @@ import {
   operationalManagementNavigationStatus,
   operationalManagementSections,
   OperationalManagementCapabilitiesCoordinator,
+  mountOperationalManagementCapabilities,
 } from "./operational-management-capabilities.coordinator";
 import type { OperationalManagementCapabilityResult, OperationalManagementCapabilityState } from "./operational-management-capabilities.types";
 import { operationalManagementCapabilitiesFixture as fixture } from "./mock/operational-management-capabilities.fixture";
@@ -28,12 +29,12 @@ describe("A1 semantic navigation composition", () => {
     ["pricing", "Pricing"], ["referenceCost", "Pricing"],
   ] as const) {
     for (const key of Object.keys(fixture()[group])) {
-      it(`uses ${group}.${key} alone for ${section}, without granting a route`, () => {
+      it(`uses ${group}.${key} alone for ${section} and the Operations link`, () => {
         const value = fixture();
         Object.assign(value[group], { [key]: true });
         assert.deepEqual(operationalManagementSections(value), [section]);
         assert.equal(hasOperationalManagementCapability(value), true);
-        assert.equal(operationalManagementNavigationStatus({ type: "Ready", value }), "NavigationLinkBlockedUntilP1.2");
+        assert.equal(operationalManagementNavigationStatus({ type: "Ready", value }), "Available");
       });
     }
   }
@@ -53,6 +54,49 @@ describe("A1 semantic navigation composition", () => {
       { type: "Failed", kind: "OperationalManagementCapabilityServiceUnavailable" },
     ];
     for (const state of states) assert.equal(operationalManagementNavigationStatus(state), "Hidden");
+  });
+});
+
+describe("A1 provider effect lifecycle", () => {
+  it("loads once through setup/cleanup/setup, shares state and refreshes deliberately", async () => {
+    let calls = 0;
+    const states: OperationalManagementCapabilityState[] = [];
+    const port = { load: async (): Promise<OperationalManagementCapabilityResult> => {
+      calls++;
+      return { ok: true, value: fixture() };
+    } };
+    const events = { onChange: (state: OperationalManagementCapabilityState) => states.push(state), onAuthenticationRequired: () => assert.fail() };
+    const probe = mountOperationalManagementCapabilities(port, events);
+    probe.dispose();
+    const mounted = mountOperationalManagementCapabilities(port, events);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(calls, 1);
+    assert.deepEqual(states.map(({ type }) => type), ["Loading", "Ready"]);
+    assert.equal(mounted.getState(), states.at(-1));
+    await mounted.refresh();
+    assert.equal(calls, 2);
+    mounted.dispose();
+  });
+
+  it("replaces an authenticated lifecycle without accepting an old success or expired response", async () => {
+    for (const stale of [{ ok: true, value: fixture() }, { ok: false, kind: "AuthenticationRequired" }] as const) {
+      const oldRequest = deferred();
+      let oldUpdates = 0, currentRedirects = 0;
+      const old = mountOperationalManagementCapabilities({ load: () => oldRequest.promise }, {
+        onChange: () => { oldUpdates++; }, onAuthenticationRequired: () => assert.fail("old session redirected"),
+      });
+      await Promise.resolve();
+      old.dispose();
+      const current = mountOperationalManagementCapabilities({ load: async () => ({ ok: false, kind: "AuthenticationRequired" }) }, {
+        onChange: () => undefined, onAuthenticationRequired: () => { currentRedirects++; },
+      });
+      oldRequest.resolve(stale);
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      assert.equal(oldUpdates, 1);
+      assert.equal(currentRedirects, 1);
+      assert.deepEqual(current.getState(), { type: "Failed", kind: "AuthenticationRequired" });
+      current.dispose();
+    }
   });
 });
 
