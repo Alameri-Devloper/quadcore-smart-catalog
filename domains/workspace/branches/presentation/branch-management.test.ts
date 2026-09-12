@@ -39,7 +39,7 @@ describe("Branch management Presentation", () => {
     const html = renderToStaticMarkup(createElement(OperationsContent, { state: { type: "Ready", value }, sectionValues: ["inventory"], locale: "en", onRetry() {},
       branchManagement: content(initialBranchManagementState()),
     }));
-    assert.doesNotMatch(html, /Branch Management|branch-management/); assert.match(html, /Inventory workflows/);
+    assert.doesNotMatch(html, /Branch Management|branch-management/); assert.match(html, /Branch selection is available/);
   });
   it("renders ordered selection buttons, bilingual status text, escaped names and isolated codes", () => {
     const html = render({ list: { type: "Ready", value: [fixture({ branchId: "z", displayName: "<script>unsafe</script>" }), fixture({ branchId: "a", code: "last", status: "Inactive" })] } });
@@ -102,7 +102,7 @@ describe("Branch management Presentation", () => {
     assert.match(panel, /coordinator\.dispose\(\)/); assert.match(panel, /snapshot\?\.lifecycle === lifecycle/); assert.match(panel, /editorHeading\.current\?\.focus/); assert.match(panel, /errorSummary\.current\?\.focus/);
     const page = readFileSync("domains/workspace/branches/presentation/OperationsPage.tsx", "utf8");
     assert.match(page, /lifecycle=\{actor\} onAuthenticationRequired=\{redirectExpired\}/);
-    assert.match(page, /selected === "Branches" \? branchManagement/);
+    assert.match(page, /context.section === "Branches" \? branchManagement/);
   });
   it("has responsive logical layout, native controls, 44px targets and existing visible focus", () => {
     const css = readFileSync("app/globals.css", "utf8");

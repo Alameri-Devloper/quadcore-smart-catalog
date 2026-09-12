@@ -22,7 +22,7 @@ describe("Operations landing Presentation", () => {
     assert.match(html, /<nav[^>]*aria-label="Operational areas"/);
     assert.match(html, /<a[^>]*aria-current="page"[^>]*href="\/operations\?section=inventory"/);
     assert.match(html, /<h2[^>]*>Inventory<\/h2>/);
-    assert.match(html, /Inventory workflows are not available here yet/);
+    assert.match(html, /Branch selection is available/);
     assert.doesNotMatch(html, /<button|<form|<input/);
   });
   it("omits unavailable areas and safely renders the fallback area", () => {
@@ -59,7 +59,7 @@ describe("Operations landing Presentation", () => {
     const value = fixture(); value.branches.canView = value.inventory.canReceive = value.pricing.canView = true;
     const arabic = render({ type: "Ready", value }, ["pricing"], "ar");
     for (const label of ["العمليات", "الفروع", "المخزون", "التسعير"]) assert.ok(arabic.includes(label));
-    assert.ok(arabic.includes(operationsText("ar", "PricingFoundation")));
+    assert.ok(arabic.includes(operationsText("ar", "workspacePricingFoundation")));
     assert.match(render({ type: "Failed", kind: "Unavailable" }, [], "ar"), /إعادة المحاولة/);
     assert.ok(render({ type: "Ready", value: fixture() }, [], "ar").includes(operationsText("ar", "empty")));
     assert.ok(render({ type: "Loading" }, [], "ar").includes(operationsText("ar", "loading")));
