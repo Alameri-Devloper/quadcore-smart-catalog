@@ -39,12 +39,17 @@ const has = <T extends readonly string[]>(values: T, value: string | undefined):
 const identifier = (value: string | undefined): string | undefined => value === undefined || value === "" ? undefined : value === value.trim() && value.length <= 160 && !/[\u0000-\u001f\u007f]/u.test(value) ? value : (() => { throw new Error("InvalidIdentifier"); })();
 const money = (value: string | undefined): string | undefined => value === undefined || value === "" ? undefined : /^(0|[1-9][0-9]{0,15})$/u.test(value) && BigInt(value) <= BigInt("9007199254740991") ? value : (() => { throw new Error("InvalidMoney"); })();
 
+export const normalizeCatalogPresentationSearch = (value: string): string | null => {
+  const normalized = value.trim().replace(/\s+/gu, " ");
+  return normalized.length <= 200 ? normalized : null;
+};
+
 export const parseCatalogQueryState = (input: URLSearchParams): CatalogQueryStateResult => {
   try {
     for (const key of input.keys()) if (!keys.has(key) || input.getAll(key).length !== 1) return { ok: false };
     const raw = (key: string) => input.get(key) ?? undefined;
-    const q = (raw("q") ?? "").trim().replace(/\s+/gu, " ");
-    if (q.length > 200) return { ok: false };
+    const q = normalizeCatalogPresentationSearch(raw("q") ?? "");
+    if (q === null) return { ok: false };
     const branchId = identifier(raw("branchId"));
     const lifecycleRaw = raw("lifecycle") ?? "Published";
     const sortRaw = raw("sort") ?? (q ? "relevance" : "newest");

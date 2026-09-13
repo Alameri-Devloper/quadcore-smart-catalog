@@ -1,5 +1,7 @@
 import type { OperationalManagementCapabilitiesView } from "../../../identity/presentation/operational-management-capabilities.types";
 import type { OperationalBranchPurpose } from "./operational-branch-selector.types";
+import type { OperationalProductPurpose, OperationalProductQuery } from "../../../catalog/query/presentation/operational-product-selector.types";
+import { emptyOperationalProductQuery, operationalProductCursor, operationalProductId, parseOperationalProductQuery } from "../../../catalog/query/presentation/operational-product-query-state";
 import { operationsSectionHref, parseOperationsSection, resolveOperationsSection } from "./operations-section-state";
 
 export type OperationsContext =
@@ -17,6 +19,17 @@ export const operationalBranchPurpose = (context: OperationsContext | null): Ope
   }
 };
 
+export const operationalProductPurpose = (context: OperationsContext | null): OperationalProductPurpose | null => {
+  if (!context) return null;
+  switch (context.section) {
+    case "Branches": return context.branchTool === "listing" ? "Listing" : null;
+    case "Inventory": return "Inventory";
+    case "Pricing": return context.pricingScope === "workspace"
+      ? context.pricingField === "reference-cost" ? "WorkspaceReferenceCost" : "WorkspacePricing"
+      : context.pricingField === "reference-cost" ? "BranchReferenceCost" : "BranchPricing";
+  }
+};
+
 /** Bounded URL syntax only; identifiers still require membership in the current A6 response. */
 export const operationalBranchId = (value: unknown): string | null =>
   typeof value === "string" && value.trim() === value && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/u.test(value) ? value : null;
@@ -29,10 +42,11 @@ const choice = <T extends string>(values: readonly string[], options: readonly T
       : { value: fallback, valid: false };
 
 export const resolveOperationsQuery = (query: OperationsQueryInput, capabilities: OperationalManagementCapabilitiesView) => {
-  // Read only this slice's six supported keys. Unknown query input is never propagated.
+  // Read only approved context and Product keys. Unknown input is never propagated.
   const input = Object.fromEntries(keys.map((key) => [key, query.getAll(key)])) as Record<(typeof keys)[number], readonly string[]>;
+  const productInput = parseOperationalProductQuery(query);
   const { sections, selected } = resolveOperationsSection(input.section, capabilities);
-  if (!selected) return { sections, context: null, branchId: null };
+  if (!selected) return { sections, context: null, branchId: null, products: emptyOperationalProductQuery() };
   const compatibleSection = parseOperationsSection(input.section) === selected;
   const duplicates = keys.some((key) => input[key].length > 1);
   const read = (key: (typeof keys)[number]) => compatibleSection ? input[key] : [];
@@ -53,16 +67,30 @@ export const resolveOperationsQuery = (query: OperationsQueryInput, capabilities
   }
   const branchId = compatibleSection && !duplicates && compatible && operationalBranchPurpose(context) !== null
     ? operationalBranchId(input.branchId[0]) : null;
-  return { sections, context, branchId };
+  const products = compatibleSection && !duplicates && compatible && operationalProductPurpose(context) &&
+    (operationalBranchPurpose(context) === null || branchId !== null) ? productInput : emptyOperationalProductQuery();
+  return { sections, context, branchId, products };
 };
 
 /** Context navigation calls this without an ID, clearing the preceding selection. */
-export const operationsContextHref = (context: OperationsContext, branchId: string | null = null): string => {
+export const operationsContextHref = (context: OperationsContext, branchId: string | null = null, products?: OperationalProductQuery): string => {
   const query = new URLSearchParams();
   if (context.section === "Branches") query.set("branchTool", context.branchTool);
   if (context.section === "Inventory") query.set("inventoryTool", context.inventoryTool);
   if (context.section === "Pricing") { query.set("pricingScope", context.pricingScope); query.set("pricingField", context.pricingField); }
   const id = operationalBranchId(branchId);
   if (id && operationalBranchPurpose(context)) query.set("branchId", id);
+  if (products && operationalProductPurpose(context) && (!operationalBranchPurpose(context) || id)) {
+    // Reparse before serialization; never spread URL input or authority fields.
+    const productQuery = new URLSearchParams();
+    if (products.q) productQuery.set("q", products.q);
+    const cursor = operationalProductCursor(products.productCursor), productId = operationalProductId(products.productId);
+    if (cursor) productQuery.set("productCursor", cursor);
+    if (productId) productQuery.set("productId", productId);
+    const normalized = parseOperationalProductQuery(productQuery);
+    if (normalized.q) query.set("q", normalized.q);
+    if (normalized.productCursor) query.set("productCursor", normalized.productCursor);
+    if (normalized.productId) query.set("productId", normalized.productId);
+  }
   return `${operationsSectionHref(context.section)}&${query}`;
 };

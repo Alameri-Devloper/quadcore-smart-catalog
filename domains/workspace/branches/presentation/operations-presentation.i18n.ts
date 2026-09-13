@@ -32,7 +32,7 @@ const messages = {
   selectorRestricted: { en: "Operational branch selection is unavailable in this restricted session.", ar: "اختيار الفرع التشغيلي غير متاح في هذه الجلسة المقيدة." },
   selectorInvalidInput: { en: "The branch selection request was not accepted. Choose the operation context again.", ar: "لم يُقبل طلب اختيار الفرع. اختر سياق العملية مجدداً." },
   selectorUnavailable: { en: "Operational branches could not be loaded. Please retry.", ar: "تعذر تحميل الفروع التشغيلية. يرجى إعادة المحاولة." },
-  branchContextFoundation: { en: "Branch selection is available. Further workflow steps are not available here yet.", ar: "اختيار الفرع متاح. بقية خطوات الإجراء غير متاحة هنا بعد." },
+  branchContextFoundation: { en: "Branch selection is available. Select an active branch, then search for a Product.", ar: "اختيار الفرع متاح. اختر فرعًا نشطًا، ثم ابحث عن المنتج." },
   workspacePricingFoundation: { en: "Workspace pricing does not require a branch. Pricing workflows are not available here yet.", ar: "لا يتطلب تسعير مساحة العمل اختيار فرع. إجراءات التسعير غير متاحة هنا بعد." },
   management: { en: "Branch Management", ar: "إدارة الفروع" },
   createBranch: { en: "Create Branch", ar: "إنشاء فرع" },

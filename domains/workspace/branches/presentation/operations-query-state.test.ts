@@ -18,10 +18,10 @@ describe("Bounded Operations context and purpose derivation", () => {
     assert.equal(operationalBranchPurpose(resolve(query).context), purpose);
     assert.equal(operationalBranchPurpose(resolve(`${query}&purpose=Anything`).context), purpose);
   });
-  it("reads only six allow-listed query keys and never reads URL purpose or authority", () => {
+  it("reads only nine allow-listed query keys and never reads URL purpose or authority", () => {
     const read: string[] = [];
     resolveOperationsQuery({ getAll(key) { read.push(key); return []; } }, capabilities());
-    assert.deepEqual(read, ["section", "branchTool", "inventoryTool", "pricingScope", "pricingField", "branchId"]);
+    assert.deepEqual(read, ["section", "branchTool", "inventoryTool", "pricingScope", "pricingField", "branchId", "q", "productCursor", "productId"]);
     const resolved = resolve("section=inventory&purpose=Transfer&branchId=branch-a&actor=foreign&productId=p&q=term");
     assert.equal(operationalBranchPurpose(resolved.context), "Inventory");
     assert.equal(operationsContextHref(resolved.context!, resolved.branchId), "/operations?section=inventory&inventoryTool=stock&branchId=branch-a");
@@ -49,8 +49,8 @@ describe("Bounded Operations context and purpose derivation", () => {
   it("falls back to an available section without adopting another section's tool or branch", () => {
     const value = operationalManagementCapabilitiesFixture(); value.inventory.canTransfer = true;
     const result = resolveOperationsQuery(new URLSearchParams("section=branches&branchTool=listing&inventoryTool=transfer&branchId=a"), value);
-    assert.deepEqual(result, { sections: ["Inventory"], context: { section: "Inventory", inventoryTool: "stock" }, branchId: null });
-    assert.deepEqual(resolveOperationsQuery(new URLSearchParams("section=inventory"), operationalManagementCapabilitiesFixture()), { sections: [], context: null, branchId: null });
+    assert.deepEqual(result, { sections: ["Inventory"], context: { section: "Inventory", inventoryTool: "stock" }, branchId: null, products: { q: "", productCursor: null, productId: null, issue: null } });
+    assert.deepEqual(resolveOperationsQuery(new URLSearchParams("section=inventory"), operationalManagementCapabilitiesFixture()), { sections: [], context: null, branchId: null, products: { q: "", productCursor: null, productId: null, issue: null } });
     assert.equal(operationalBranchPurpose(null), null);
   });
   it("validates URL identifier syntax without treating valid IDs as membership", () => {

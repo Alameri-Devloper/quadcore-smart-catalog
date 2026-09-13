@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Locale } from "../../../identity/presentation/identity-presentation.types";
 import { OperationalBranchApiClient } from "./operational-branch-api.client";
 import { freshOperationalBranchEligible, mountOperationalBranchSelector, operationalBranchSelection, type OperationalBranchSelectorCoordinator } from "./operational-branch-selector.coordinator";
@@ -52,9 +52,10 @@ export const OperationalBranchSelectorContent = ({ state, purpose, branchId, loc
   </section>;
 };
 
-export const OperationalBranchSelector = ({ purpose, branchId, locale, lifecycle, onAuthenticationRequired, onSelectBranch }: {
+export const OperationalBranchSelector = ({ purpose, branchId, locale, lifecycle, onAuthenticationRequired, onSelectBranch, children }: {
   readonly purpose: OperationalBranchPurpose; readonly branchId: string | null; readonly locale: Locale;
   readonly lifecycle: object; readonly onAuthenticationRequired: () => void; readonly onSelectBranch: (id: string | null) => void;
+  readonly children?: (state: OperationalBranchState) => ReactNode;
 }) => {
   const [snapshot, setSnapshot] = useState<{ lifecycle: object; state: OperationalBranchState } | null>(null);
   const mounted = useRef<{ lifecycle: object; purpose: OperationalBranchPurpose; coordinator: OperationalBranchSelectorCoordinator } | null>(null);
@@ -67,8 +68,8 @@ export const OperationalBranchSelector = ({ purpose, branchId, locale, lifecycle
   }, [lifecycle, purpose, onAuthenticationRequired]);
   // Mask previous lifecycle/purpose data before effect cleanup, without refetching on URL selection alone.
   const state = snapshot?.lifecycle === lifecycle ? snapshot.state : { type: "Idle" as const };
-  return <OperationalBranchSelectorContent state={state} purpose={purpose} branchId={branchId} locale={locale}
+  return <><OperationalBranchSelectorContent state={state} purpose={purpose} branchId={branchId} locale={locale}
     onSelectBranch={onSelectBranch} onRetry={() => {
       if (mounted.current?.lifecycle === lifecycle && mounted.current.purpose === purpose) void mounted.current.coordinator.load(purpose);
-    }} />;
+    }} />{children?.(state)}</>;
 };
