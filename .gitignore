@@ -49,3 +49,5 @@ docs/05-Development/Tasks/*-Review.zip
 artifacts/task-reviews/
 QSC-Reviews/
 *.review-temp
+
+graphify-out/

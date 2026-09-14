@@ -1,5 +1,7 @@
 # Task 3.22 — Operational Management Presentation Implementation Contract | عقد تنفيذ واجهة إدارة العمليات للمهمة 3.22
 
+> **P1 closure — 2026-09-14 | إغلاق P1:** `P1CompletionGate: PASS`; foundation implementation and safe automated verification complete, awaiting independent review with live browser QA debt. P1 stops at Product selection; P2–P8 remain unstarted and separately gated. [P1.6 evidence](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) supersedes only historical P1-unstarted/next-implementation status statements below; the architecture and later-slice contracts are unchanged. | اكتمل تنفيذ الأساسات والتحقق الآلي الآمن مع انتظار مراجعة مستقلة وبقاء دين تحقق المتصفح. تتوقف P1 عند اختيار المنتج، وتبقى P2–P8 غير مبدوءة ومشروطة باعتماد مستقل. يحل تقرير P1.6 محل عبارات الحالة التاريخية لبدء P1 فقط، دون تغيير المعمارية أو عقود الشرائح اللاحقة.
+
 > **Post-A6 gate — 2026-09-10:** A6 is **Completed / merged through PR #35** at `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`. Decision: **`ApprovedNextImplementation` — P1 only**. Presentation is unstarted; this reconciliation implements no P1–P8 code. See the [source evidence and gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md). | **بوابة ما بعد A6:** اكتملت A6 ودُمجت عبر #35 عند الخط المذكور. القرار **`ApprovedNextImplementation` لشريحة P1 فقط**. لم يبدأ تنفيذ الواجهة ولا تنفذ هذه المصالحة كود P1–P8؛ راجع تقرير الأدلة والبوابة.
 
 ## 1. Status | الحالة
@@ -219,7 +221,7 @@ Create bounded Domain-aligned clients with injected fetch ports: an Identity cap
 
 ## 23. Implementation slices | شرائح التنفيذ
 
-1. **3.22-P1 — Operations shell, strict types/client, capabilities, URL state, general Branch collection/management, A6 Branch selectors and A2 Product selectors.** **`ApprovedNextImplementation` — P1 only**, unstarted; reviewed as a bounded task.
+1. **3.22-P1 — Operations shell, strict types/client, capabilities, URL state, general Branch collection/management, A6 Branch selectors and A2 Product selectors.** **`P1CompletionGate: PASS`**, implementation complete, awaiting independent review; live browser QA debt remains. / **اكتمل التنفيذ وتنتظر P1 المراجعة المستقلة مع بقاء دين تحقق المتصفح.**
 2. **3.22-P2 — Listing.** Small state/revision/action workflow on the Branch/Product selector.
 3. **3.22-P3 — Inventory read and basic mutations.** Implement A5 exhaustive rendering and Receive/Issue/Correct/Damage/Restore.
 4. **3.22-P4 — Reservations.** Actionable page/detail plus Reserve/Release/Fulfill and cursor/stale-state recovery.

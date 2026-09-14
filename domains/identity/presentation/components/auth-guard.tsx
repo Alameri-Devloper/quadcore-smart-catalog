@@ -6,6 +6,7 @@ import { identityApiClient } from "../identity-api.client";
 import type { AuthViewState, SafeActorView } from "../identity-presentation.types";
 import { authViewStateFromResult, safeReturnPath } from "../identity-presentation.utils";
 import { PresentationShell, StatusMessage, usePageI18n } from "./presentation-shell";
+import { OperationalManagementCapabilitiesProvider } from "../operational-management-capabilities.context";
 
 export const useAuthViewState = (): { readonly state: AuthViewState; readonly refresh: () => void } => {
   const [state, setState] = useState<AuthViewState>({ type: "Loading" });
@@ -35,6 +36,7 @@ export const ProtectedPage = ({ children, ownerOnly = false, allowRestricted = f
   readonly allowRestricted?: boolean;
 }) => {
   const { state, refresh } = useAuthViewState();
+  const redirectExpired = useSessionExpiryRedirect();
   const router = useRouter();
   const i18n = usePageI18n();
 
@@ -57,5 +59,8 @@ export const ProtectedPage = ({ children, ownerOnly = false, allowRestricted = f
   if (ownerOnly && actor.role !== "Owner") {
     return <PresentationShell i18n={i18n} actor={actor} compact><StatusMessage kind="error">{i18n.t("forbidden")}</StatusMessage></PresentationShell>;
   }
-  return <>{children(actor)}</>;
+  if (state.type === "Restricted") return <>{children(actor)}</>;
+  return <OperationalManagementCapabilitiesProvider lifecycle={actor} onAuthenticationRequired={redirectExpired}>
+    {children(actor)}
+  </OperationalManagementCapabilitiesProvider>;
 };
