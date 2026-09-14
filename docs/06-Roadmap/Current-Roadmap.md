@@ -1,6 +1,6 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-**Status:** A1–A6 Completed / merged; Presentation `ApprovedNextImplementation` — P1 only, unstarted · **Last Updated:** 2026-09-10 · **Scope:** Authoritative delivery sequence
+**Status:** A1–A6 Completed / merged; P1 Presentation Foundation implementation complete, `P1CompletionGate: PASS`, awaiting independent review; live browser QA debt remains · **Last Updated:** 2026-09-14 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -30,15 +30,15 @@ This document is the current delivery authority. The original [project roadmap](
 
 The current integration baseline is `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`, merging A6 through PR #35 (after Planning PR #34 and Correction PR #33). A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
 
-### Task 3.22 post-A6 gate — ApprovedNextImplementation, P1 only
+### Task 3.22-P1 — Foundation complete, awaiting review
 
-**Task 3.22 Presentation: `ApprovedNextImplementation` — P1 only; unstarted.** Source reconciliation proves the Branch Selector Authorization Composition Gap is closed. [A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) is **Completed / merged through PR #35** at `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`. See the [gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) and [updated Presentation contract](Task-3.22-Presentation-Implementation-Contract.md).
+**P1CompletionGate: PASS — implementation complete, awaiting independent review; not a merge or P2 approval.** [P1.6 closure evidence](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) reconciles P1.1–P1.5 and records passing safe automated checks. Browser discovery returned no available browser; English/Arabic viewport and touch/mouse/keyboard QA remain explicit P1 acceptance debt. P1 stops after Product selection. [A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) remains **Completed / merged through PR #35**; the [post-A6 gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) records the historical approval to begin P1.
 
 Composition is A1 semantic navigation → A6 exact-purpose Branch discovery → Branch selection → A2 Product discovery where required → authorized resource read/actions → mutation. Operational workflows always use A6, with no general Branch List fallback. General Branch management retains List/Get under its existing Branch authority. Workspace Pricing/Reference Cost skip A6.
 
 A6 returns Active + Inactive for all five purposes; fresh Branch-scoped A2 discovery requires Active. P1 must distinguish/disable inactive choices for new workflows while preserving existing-resource inspection that its server contract permits. Status and allowedActions are never mutation guarantees; Reservation actions may remain visible while mutation rejects BranchInactive. Transfer uses A6 Transfer for the same source/destination set and A2 Inventory with source branchId. A4 field disclosure and A5 numeric/semantic/minimal-success projection remain server-owned; raw permissions and branchScope never enter Presentation.
 
-Next slice: **P1 shell, strict clients/types, A1 capabilities, URL/coordinator state, general Branch management, A6 Branch selectors and A2 Product selectors**, including English/Arabic, LTR/RTL, mobile/tablet/desktop and touch/mouse/keyboard QA. **P2–P8 remain planned and require separate approval**, with no combined implementation authorization. No Domain/repository/database/migration/dependency/permission change or new ADR is required. This task changes documentation only and stops for reconciliation review.
+Review the completed **P1 shell, strict clients/types, A1 capabilities, URL/coordinator state, general Branch management, A6 Branch selectors and A2 Product selectors**, then complete the documented live browser QA. **P2–P8 remain planned and require separate approval**, with no combined implementation authorization. No Domain/repository/database/migration/dependency/permission change or new ADR was required. Stop for P1.6 review.
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -81,15 +81,15 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 خط أساس التكامل الحالي هو `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6` مع دمج A6 عبر #35 بعد تخطيط #34 وتصحيح #33. تبقى A1–A5 مدمجة عبر #28–#32، والخطوط السابقة تاريخية.
 
-### بوابة المهمة 3.22 بعد A6 — ApprovedNextImplementation لشريحة P1 فقط
+### المهمة 3.22-P1 — اكتملت الأساسات وتنتظر المراجعة
 
-**واجهة 3.22: `ApprovedNextImplementation` لشريحة P1 فقط؛ لم يبدأ التنفيذ.** يثبت المصدر إغلاق فجوة محدد الفروع. **اكتملت A6 ودُمجت عبر #35** عند الخط المذكور؛ راجع [تقرير البوابة](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) و[عقد الواجهة المحدث](Task-3.22-Presentation-Implementation-Contract.md).
+**P1CompletionGate: PASS — اكتمل التنفيذ وينتظر مراجعة مستقلة؛ لا يعني الدمج أو اعتماد P2.** يصالح [تقرير إغلاق P1.6](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) الشرائح P1.1–P1.5 ويوثق نجاح الفحوص الآلية الآمنة. لم يتوفر متصفح، لذلك يبقى تحقق الأحجام واللغتين واللمس والفأرة ولوحة المفاتيح دين تحقق صريحاً لقبول P1. تتوقف P1 بعد اختيار المنتج. **تبقى A6 مكتملة ومدمجة عبر #35**، ويحفظ [تقرير البوابة](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) الاعتماد التاريخي لبدء P1.
 
 التسلسل هو قدرات A1 الدلالية ثم اكتشاف A6 بالغرض المطابق ثم اختيار الفرع واكتشاف A2 عند الحاجة ثم قراءة المورد وأفعاله المخولة ثم الطفرة. تستخدم العمليات A6 دائماً دون fallback لقائمة الفروع العامة، وتبقى List/Get العامة لإدارة الفروع بصلاحيتها الحالية. يتجاوز تسعير وتكلفة مساحة العمل A6.
 
 تعيد A6 النشط وغير النشط للأغراض الخمسة، بينما يتطلب اكتشاف A2 الجديد فرعاً نشطاً. تميز P1 الخيارات غير النشطة وتعطلها للتدفق الجديد مع حفظ فحص المورد القائم المسموح بعقده. ليست الحالة ولا allowedActions ضمان طفرة؛ قد تظهر أفعال الحجز مع رفض BranchInactive. يستخدم التحويل A6 Transfer بمجموعة واحدة للفرعين ثم A2 Inventory ومعرف المصدر. يبقى كشف الحقول في A4 والكشف الرقمي أو الدلالي أو نجاح العملية الأدنى في A5 ملك الخادم، ولا تدخل الصلاحيات الخام أو branchScope العرض.
 
-الشريحة التالية **P1: الغلاف والأنواع والعملاء الصارمة وقدرات A1 وحالة URL والمنسق وإدارة الفروع العامة ومحدد A6 ومحدد منتجات A2**، مع تحقق اللغتين والاتجاهين والجوال واللوحي وسطح المكتب واللمس والفأرة واللوحة. **تبقى P2–P8 مخططة وتتطلب اعتماداً مستقلاً** دون تصريح مجمع. لا تغيير مجال أو عقد مستودع أو قاعدة أو ترحيل أو اعتماد أو صلاحية ولا ADR جديد. هذه المهمة توثيقية وتتوقف لمراجعة المصالحة.
+راجع **P1 المكتملة: الغلاف والأنواع والعملاء الصارمة وقدرات A1 وحالة URL والمنسق وإدارة الفروع العامة ومحدد A6 ومحدد منتجات A2**، ثم أكمل تحقق المتصفح الموثق. **تبقى P2–P8 مخططة وتتطلب اعتماداً مستقلاً** دون تصريح مجمع. لم يلزم تغيير مجال أو عقد مستودع أو قاعدة أو ترحيل أو اعتماد أو صلاحية أو ADR جديد. التوقف لمراجعة P1.6.
 
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 
