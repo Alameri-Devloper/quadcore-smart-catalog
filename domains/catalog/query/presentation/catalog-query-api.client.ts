@@ -131,7 +131,8 @@ export class CatalogQueryApiClient {
 
   private async get<T>(path: string, parse: (value: unknown) => T): Promise<CatalogApiResult<T>> {
     try {
-      const response = await this.fetchPort(path, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
+      const fetchPort = this.fetchPort;
+      const response = await fetchPort(path, { credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" } });
       const body = await response.json().catch(() => null) as unknown;
       if (!response.ok) return { ok: false, kind: failureKind(response.status), code: codeOf(body), status: response.status };
       const envelope = record(body);

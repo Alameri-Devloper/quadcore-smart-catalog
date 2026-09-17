@@ -14,6 +14,21 @@ const card = {
 const success = (value: unknown) => new Response(JSON.stringify({ type: "Success", value }), { status: 200, headers: { "content-type": "application/json" } });
 
 describe("Catalog Presentation API client", () => {
+  it("invokes a receiver-sensitive FetchPort without binding the client instance", async () => {
+    let calledWithoutReceiver = false;
+    const fetchPort = async function (this: unknown): Promise<Response> {
+      calledWithoutReceiver = this === undefined;
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      return success({ items: [], nextCursor: null });
+    };
+    const client = new CatalogQueryApiClient(fetchPort);
+
+    const result = await client.search({ q: "", lifecycle: "Published", sort: "newest" });
+
+    assert.equal(calledWithoutReceiver, true);
+    assert.deepEqual(result, { ok: true, value: { items: [], nextCursor: null } });
+  });
+
   it("uses only the canonical private API and preserves the opaque cursor", async () => {
     let observed = ""; let init: RequestInit | undefined;
     const client = new CatalogQueryApiClient(async (input, options) => { observed = String(input); init = options; return success({ items: [card], nextCursor: "next_server_cursor" }); });
