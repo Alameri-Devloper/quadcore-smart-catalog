@@ -7,6 +7,23 @@ import { OPERATIONAL_PRODUCT_PURPOSES, type OperationalProductRequest } from "./
 const request: OperationalProductRequest = { purpose: "Listing", branchId: "branch-a", q: "" };
 const client = (body: unknown, status = 200) => new OperationalProductApiClient(async () => Response.json(body, { status }));
 describe("Strict A2 operational Product client", () => {
+  it("invokes a receiver-sensitive FetchPort unbound and preserves the A2 request contract", async () => {
+    const signal = new AbortController().signal;
+    let calledWithoutReceiver = false;
+    const fetchPort: FetchPort = async function (this: unknown, input, init): Promise<Response> {
+      calledWithoutReceiver = this === undefined;
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      assert.equal(input, "/api/catalog/operational-products?purpose=Listing&branchId=branch-a");
+      assert.deepEqual(init, { method: "GET", credentials: "same-origin", cache: "no-store", signal, headers: { accept: "application/json" } });
+      return Response.json({ type: "Success", value: page("branch-a") });
+    };
+
+    const result = await new OperationalProductApiClient(fetchPort).search(request, signal);
+
+    assert.equal(calledWithoutReceiver, true);
+    assert.deepEqual(result, { ok: true, value: page("branch-a") });
+  });
+
   it("has exactly the six Application purposes", () => {
     assert.deepEqual(OPERATIONAL_PRODUCT_PURPOSES, ["Listing", "Inventory", "WorkspacePricing", "BranchPricing", "WorkspaceReferenceCost", "BranchReferenceCost"]);
     // @ts-expect-error A6 Transfer is deliberately not an A2 purpose.

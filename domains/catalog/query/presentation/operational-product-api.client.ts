@@ -44,8 +44,9 @@ export class OperationalProductApiClient implements OperationalProductPort {
     if (request.branchId) query.set("branchId", request.branchId);
     if (request.cursor) query.set("cursor", request.cursor);
     if (request.limit !== undefined) query.set("limit", String(request.limit));
+    const fetchPort = this.fetchPort;
     let response: Response;
-    try { response = await this.fetchPort(`/api/catalog/operational-products?${query}`, {
+    try { response = await fetchPort(`/api/catalog/operational-products?${query}`, {
       method: "GET", credentials: "same-origin", cache: "no-store", signal, headers: { accept: "application/json" },
     }); } catch { return { ok: false, kind: "NetworkFailure" }; }
     let body: JsonObject, type: unknown;

@@ -72,8 +72,9 @@ export class OperationalManagementCapabilitiesClient {
   constructor(private readonly fetchPort: FetchPort = fetch) {}
 
   async load(signal?: AbortSignal): Promise<OperationalManagementCapabilityResult> {
+    const fetchPort = this.fetchPort;
     try {
-      const response = await this.fetchPort("/api/operations/capabilities", {
+      const response = await fetchPort("/api/operations/capabilities", {
         method: "GET",
         credentials: "same-origin",
         cache: "no-store",
