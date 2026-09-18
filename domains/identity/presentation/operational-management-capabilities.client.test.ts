@@ -4,6 +4,23 @@ import { OperationalManagementCapabilitiesClient, parseOperationalManagementCapa
 import { operationalManagementCapabilitiesFixture as fixture } from "./mock/operational-management-capabilities.fixture";
 
 describe("A1 Presentation client", () => {
+  it("invokes a receiver-sensitive FetchPort unbound and preserves the A1 request contract", async () => {
+    const signal = new AbortController().signal;
+    let calledWithoutReceiver = false;
+    const fetchPort = async function (this: unknown, input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      calledWithoutReceiver = this === undefined;
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      assert.equal(input, "/api/operations/capabilities");
+      assert.deepEqual(init, { method: "GET", credentials: "same-origin", cache: "no-store", headers: { accept: "application/json" }, signal });
+      return Response.json(fixture());
+    };
+
+    const result = await new OperationalManagementCapabilitiesClient(fetchPort).load(signal);
+
+    assert.equal(calledWithoutReceiver, true);
+    assert.deepEqual(result, { ok: true, value: fixture() });
+  });
+
   it("reconstructs the direct boolean DTO without keeping transport references", () => {
     const payload = fixture();
     payload.inventory.canReceive = true;

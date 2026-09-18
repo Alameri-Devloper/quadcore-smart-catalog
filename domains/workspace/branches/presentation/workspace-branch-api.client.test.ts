@@ -5,6 +5,23 @@ import { reconstructBranchManagementView, WorkspaceBranchApiClient } from "./wor
 
 const success = (value: unknown, status = 200) => Response.json({ type: "Success", value, extra: true }, { status });
 describe("Strict General Branch client", () => {
+  it("invokes a receiver-sensitive FetchPort unbound and preserves the General Branch request contract", async () => {
+    const signal = new AbortController().signal;
+    let calledWithoutReceiver = false;
+    const fetchPort = async function (this: unknown, input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      calledWithoutReceiver = this === undefined;
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      assert.equal(input, "/api/branches");
+      assert.deepEqual(init, { method: "GET", credentials: "same-origin", cache: "no-store", signal, headers: { accept: "application/json" } });
+      return success([]);
+    };
+
+    const result = await new WorkspaceBranchApiClient(fetchPort).list(signal);
+
+    assert.equal(calledWithoutReceiver, true);
+    assert.deepEqual(result, { ok: true, value: [] });
+  });
+
   it("uses exact General endpoints, same-origin/no-store, signals and allow-listed payloads", async () => {
     const calls: { path: string; init?: RequestInit }[] = [];
     const client = new WorkspaceBranchApiClient(async (path, init) => {

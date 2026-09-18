@@ -46,9 +46,10 @@ export class WorkspaceBranchApiClient implements WorkspaceBranchPort {
   constructor(private readonly fetchPort: FetchPort = fetch) {}
 
   private async request<T>(path: string, method: "GET" | "POST" | "PATCH", parse: (value: unknown) => T, signal?: AbortSignal, input?: CreateBranchInput | UpdateBranchInput): Promise<BranchManagementResult<T>> {
+    const fetchPort = this.fetchPort;
     let response: Response;
     try {
-      response = await this.fetchPort(path, { method, credentials: "same-origin", cache: "no-store", signal,
+      response = await fetchPort(path, { method, credentials: "same-origin", cache: "no-store", signal,
         headers: { accept: "application/json", ...(input ? { "content-type": "application/json" } : {}) },
         ...(input ? { body: JSON.stringify(input) } : {}) });
     } catch { return { ok: false, kind: "NetworkFailure" }; }

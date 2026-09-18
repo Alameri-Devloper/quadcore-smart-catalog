@@ -33,9 +33,10 @@ export class OperationalBranchApiClient implements OperationalBranchPort {
   constructor(private readonly fetchPort: FetchPort = fetch) {}
   async list(purpose: OperationalBranchPurpose, signal?: AbortSignal): Promise<OperationalBranchResult> {
     if (!OPERATIONAL_BRANCH_PURPOSES.includes(purpose)) return { ok: false, kind: "InvalidInput" };
+    const fetchPort = this.fetchPort;
     let response: Response;
     try {
-      response = await this.fetchPort(`/api/branches/operational?purpose=${encodeURIComponent(purpose)}`, {
+      response = await fetchPort(`/api/branches/operational?purpose=${encodeURIComponent(purpose)}`, {
         method: "GET", credentials: "same-origin", cache: "no-store", signal, headers: { accept: "application/json" },
       });
     } catch { return { ok: false, kind: "NetworkFailure" }; }

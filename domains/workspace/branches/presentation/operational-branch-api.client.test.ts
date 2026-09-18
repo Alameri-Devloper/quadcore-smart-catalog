@@ -6,6 +6,23 @@ import { OPERATIONAL_BRANCH_PURPOSES, type OperationalBranchPurpose } from "./op
 
 const success = (value: unknown = [fixture()], status = 200) => Response.json({ type: "Success", value }, { status });
 describe("Strict A6 operational Branch client", () => {
+  it("invokes a receiver-sensitive FetchPort unbound and preserves the A6 request contract", async () => {
+    const signal = new AbortController().signal;
+    let calledWithoutReceiver = false;
+    const fetchPort = async function (this: unknown, input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+      calledWithoutReceiver = this === undefined;
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      assert.equal(input, "/api/branches/operational?purpose=Listing");
+      assert.deepEqual(init, { method: "GET", credentials: "same-origin", cache: "no-store", signal, headers: { accept: "application/json" } });
+      return success([]);
+    };
+
+    const result = await new OperationalBranchApiClient(fetchPort).list("Listing", signal);
+
+    assert.equal(calledWithoutReceiver, true);
+    assert.deepEqual(result, { ok: true, value: [] });
+  });
+
   for (const purpose of OPERATIONAL_BRANCH_PURPOSES) it(`serializes only exact ${purpose} with same-origin/no-store and signal`, async () => {
     const signal = new AbortController().signal; let calls = 0;
     const client = new OperationalBranchApiClient(async (path, init) => {
