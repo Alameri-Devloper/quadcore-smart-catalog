@@ -6,7 +6,7 @@ import { OperationalProductApiClient } from "./operational-product-api.client";
 import { changeOperationalProductSearch, operationalProductRequestKey } from "./operational-product-query-state";
 import { mountOperationalProductSelector, operationalProductSelection, type OperationalProductSelectorCoordinator } from "./operational-product-selector.coordinator";
 import { operationalProductText } from "./operational-product-selector.i18n";
-import type { OperationalProductQuery, OperationalProductRequest, OperationalProductState } from "./operational-product-selector.types";
+import type { OperationalProductQuery, OperationalProductRequest, OperationalProductState, OperationalProductView } from "./operational-product-selector.types";
 
 export const OperationalProductWaiting = ({ locale, reason }: { readonly locale: Locale; readonly reason: "SelectBranch" | "InactiveBranch" | "StaleBranch" }) =>
   <section className="operational-product-selector" aria-label={operationalProductText(locale, "product")}>
@@ -75,9 +75,10 @@ export const OperationalProductSelectorContent = ({ state, requestKey, query, lo
   </section>;
 };
 
-export const OperationalProductSelector = ({ request, query, locale, lifecycle, onAuthenticationRequired, onQueryChange }: {
+export const OperationalProductSelector = ({ request, query, locale, lifecycle, onAuthenticationRequired, onQueryChange, onSelectionChange }: {
   readonly request: OperationalProductRequest; readonly query: OperationalProductQuery; readonly locale: Locale; readonly lifecycle: object;
   readonly onAuthenticationRequired: () => void; readonly onQueryChange: (query: OperationalProductQuery) => void;
+  readonly onSelectionChange?: (product: OperationalProductView | null) => void;
 }) => {
   const { purpose, branchId, q, cursor, limit } = request;
   const stableRequest = useMemo(() => ({ purpose, ...(branchId ? { branchId } : {}), q, cursor, limit }) as OperationalProductRequest, [purpose, branchId, q, cursor, limit]);
@@ -93,6 +94,9 @@ export const OperationalProductSelector = ({ request, query, locale, lifecycle, 
     return () => { coordinator.dispose(); if (mounted.current === coordinator) mounted.current = null; };
   }, [lifecycle, stableRequest, onAuthenticationRequired, query.issue]);
   const state = snapshot?.lifecycle === lifecycle ? snapshot.state : { type: "Idle" as const };
+  const selection = operationalProductSelection(state, key, query.productId);
+  const selectedProduct = !query.issue && selection.type === "Selected" ? selection.product : null;
+  useEffect(() => { onSelectionChange?.(selectedProduct); }, [onSelectionChange, selectedProduct]);
   return <OperationalProductSelectorContent key={`${key}:${query.issue}`} state={state} requestKey={key} query={query} locale={locale}
     onQueryChange={onQueryChange} onRetry={() => { onQueryChange({ ...query, productId: null }); void mounted.current?.load(stableRequest); }} />;
 };
