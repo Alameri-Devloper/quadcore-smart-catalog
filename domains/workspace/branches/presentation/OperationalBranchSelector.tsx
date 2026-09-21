@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Locale } from "../../../identity/presentation/identity-presentation.types";
 import { OperationalBranchApiClient } from "./operational-branch-api.client";
 import { freshOperationalBranchEligible, mountOperationalBranchSelector, operationalBranchSelection, type OperationalBranchSelectorCoordinator } from "./operational-branch-selector.coordinator";
@@ -55,9 +55,10 @@ export const OperationalBranchSelectorContent = ({ state, purpose, branchId, loc
 export const OperationalBranchSelector = ({ purpose, branchId, locale, lifecycle, onAuthenticationRequired, onSelectBranch, children }: {
   readonly purpose: OperationalBranchPurpose; readonly branchId: string | null; readonly locale: Locale;
   readonly lifecycle: object; readonly onAuthenticationRequired: () => void; readonly onSelectBranch: (id: string | null) => void;
-  readonly children?: (state: OperationalBranchState) => ReactNode;
+  readonly children?: (state: OperationalBranchState, refresh: () => void) => ReactNode;
 }) => {
   const [snapshot, setSnapshot] = useState<{ lifecycle: object; state: OperationalBranchState } | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const mounted = useRef<{ lifecycle: object; purpose: OperationalBranchPurpose; coordinator: OperationalBranchSelectorCoordinator } | null>(null);
   useEffect(() => {
     const coordinator = mountOperationalBranchSelector(new OperationalBranchApiClient(), purpose, {
@@ -65,11 +66,10 @@ export const OperationalBranchSelector = ({ purpose, branchId, locale, lifecycle
     });
     mounted.current = { lifecycle, purpose, coordinator };
     return () => { coordinator.dispose(); if (mounted.current?.coordinator === coordinator) mounted.current = null; };
-  }, [lifecycle, purpose, onAuthenticationRequired]);
+  }, [lifecycle, purpose, onAuthenticationRequired, refreshVersion]);
   // Mask previous lifecycle/purpose data before effect cleanup, without refetching on URL selection alone.
   const state = snapshot?.lifecycle === lifecycle ? snapshot.state : { type: "Idle" as const };
+  const refresh = useCallback(() => setRefreshVersion(version => version + 1), []);
   return <><OperationalBranchSelectorContent state={state} purpose={purpose} branchId={branchId} locale={locale}
-    onSelectBranch={onSelectBranch} onRetry={() => {
-      if (mounted.current?.lifecycle === lifecycle && mounted.current.purpose === purpose) void mounted.current.coordinator.load(purpose);
-    }} />{children?.(state)}</>;
+    onSelectBranch={onSelectBranch} onRetry={refresh} />{children?.(state, refresh)}</>;
 };

@@ -116,7 +116,7 @@ describe("A6 selector Presentation and Operations composition", () => {
     }
     const component = readFileSync("domains/workspace/branches/presentation/OperationalBranchSelector.tsx", "utf8");
     assert.match(component, /coordinator\.dispose\(\)/); assert.match(component, /snapshot\?\.lifecycle === lifecycle/);
-    assert.match(component, /\[lifecycle, purpose, onAuthenticationRequired\]/);
+    assert.match(component, /\[lifecycle, purpose, onAuthenticationRequired, refreshVersion\]/);
     const page = readFileSync("domains/workspace/branches/presentation/OperationsPage.tsx", "utf8");
     assert.match(page, /key=\{purpose\}/); assert.match(page, /router.replace\(operationsContextHref\(context, id\), \{ scroll: false \}\)/);
     assert.match(page, /lifecycle=\{actor\} onAuthenticationRequired=\{redirectExpired\}/);

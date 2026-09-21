@@ -81,7 +81,8 @@ describe("Accessible bilingual A2 Product selector", () => {
     }
     const composition = readFileSync(branchRoot + "OperationsPage.tsx", "utf8");
     assert.match(composition, /useSessionExpiryRedirect\(\)/); assert.match(composition, /onAuthenticationRequired=\{redirectExpired\}/);
-    assert.match(composition, /\(branches\) => renderProducts\(context, branchId, products, branches\)/);
+    assert.match(composition, /: renderProducts\(context, branchId, products, branches\)/);
+    assert.match(composition, /context\.section === "Branches" && context\.branchTool === "listing"/);
     assert.match(composition, /key=\{operationsContextHref\(context, branchId, \{ \.\.\.products, productId: null \}\)\}/);
     const css = readFileSync("app/globals.css", "utf8");
     assert.match(css, /:focus-visible\s*\{[^}]*outline:/);

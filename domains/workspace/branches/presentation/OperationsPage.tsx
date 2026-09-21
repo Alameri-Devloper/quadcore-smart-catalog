@@ -18,6 +18,7 @@ import type { OperationsContext } from "./operations-query-state";
 import type { OperationalProductQuery } from "../../../catalog/query/presentation/operational-product-selector.types";
 import { OperationalProductSelector, OperationalProductWaiting } from "../../../catalog/query/presentation/OperationalProductSelector";
 import { operationsProductDiscovery } from "./operations-product-context";
+import { OperationsListingWorkflow } from "./OperationsListingWorkflow";
 
 export const OperationsContent = ({ state, sectionValues, locale, onRetry, branchManagement, query, operationalSelector, workspaceProductSelector }: {
   readonly state: OperationalManagementCapabilityState;
@@ -49,7 +50,7 @@ export const OperationsContent = ({ state, sectionValues, locale, onRetry, branc
       <OperationsContextNavigation context={context} locale={locale} />
       {purpose ? <>
         {operationalSelector?.(purpose, branchId, context, products)}
-        <p>{operationsText(locale, "branchContextFoundation")}</p>
+        {context.section !== "Branches" || context.branchTool !== "listing" ? <p>{operationsText(locale, "branchContextFoundation")}</p> : null}
       </> : context.section === "Branches" ? branchManagement : <>
         <p>{operationsText(locale, "workspacePricingFoundation")}</p>{workspaceProductSelector?.(context, products)}
       </>}
@@ -81,7 +82,11 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
           if (state.type !== "Ready") return;
           const { context } = resolveOperationsQuery(search, state.value);
           if (context) router.replace(operationsContextHref(context, id), { scroll: false });
-        }}>{(branches) => renderProducts(context, branchId, products, branches)}</OperationalBranchSelector>} />
+        }}>{(branches, refreshBranches) => context.section === "Branches" && context.branchTool === "listing"
+          ? <OperationsListingWorkflow context={context} branchId={branchId} query={products} branches={branches} lifecycle={actor} locale={i18n.locale}
+            onAuthenticationRequired={redirectExpired} refreshBranches={refreshBranches}
+            onQueryChange={next => router.replace(operationsContextHref(context, branchId, next), { scroll: false })} />
+          : renderProducts(context, branchId, products, branches)}</OperationalBranchSelector>} />
   </PresentationShell>;
 };
 
