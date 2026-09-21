@@ -1,6 +1,8 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-**Status:** A1–A6 Completed / merged; P1 Presentation Foundation implementation complete, `P1CompletionGate: PASS`, awaiting independent review; live browser QA debt remains · **Last Updated:** 2026-09-14 · **Scope:** Authoritative delivery sequence
+> **Current P1 closure — 2026-09-21 | حالة إغلاق P1 الحالية:** P1 Live Browser Acceptance QA: **PASS**; `P1CompletionGate: PASS`; **P1: COMPLETE**. P2 is **READY_FOR_PLANNING** only and requires its own scope and approval before implementation. Cosmetic, non-blocking UI ordering feedback is deferred as a UX follow-up. This checkpoint supersedes earlier P1 browser-debt and awaiting-review statements below while preserving their historical evidence and all architecture decisions. See the [P1 closure checkpoint](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md). | نجح تحقق قبول P1 في المتصفح الحي وبوابة اكتمالها، واكتملت P1. أصبحت P2 جاهزة للتخطيط فقط، ويتطلب تنفيذها تحديد نطاقها واعتمادها بشكل مستقل. أُجّلت ملاحظات ترتيب الواجهة الشكلية غير المانعة لمتابعة تجربة المستخدم. يحل هذا التحديث محل عبارات دين تحقق المتصفح وانتظار المراجعة السابقة مع حفظ أدلتها وقرارات المعمارية.
+
+**Status:** A1–A6 Completed / merged; P1 Live Browser Acceptance QA: PASS; `P1CompletionGate: PASS`; P1: COMPLETE; P2: READY_FOR_PLANNING · **Last Updated:** 2026-09-21 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -30,15 +32,15 @@ This document is the current delivery authority. The original [project roadmap](
 
 The current integration baseline is `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6`, merging A6 through PR #35 (after Planning PR #34 and Correction PR #33). A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
 
-### Task 3.22-P1 — Foundation complete, awaiting review
+### Task 3.22-P1 — Complete
 
-**P1CompletionGate: PASS — implementation complete, awaiting independent review; not a merge or P2 approval.** [P1.6 closure evidence](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) reconciles P1.1–P1.5 and records passing safe automated checks. Browser discovery returned no available browser; English/Arabic viewport and touch/mouse/keyboard QA remain explicit P1 acceptance debt. P1 stops after Product selection. [A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) remains **Completed / merged through PR #35**; the [post-A6 gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) records the historical approval to begin P1.
+**P1 Live Browser Acceptance QA: PASS; `P1CompletionGate: PASS`; P1: COMPLETE.** [P1.6 closure evidence](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) reconciles P1.1–P1.5, records passing safe automated checks, and now records the later passing live browser acceptance. P1 stops after Product selection. [A6](Task-3.22-A6-Operational-Branch-Selector-Implementation-Contract.md) remains **Completed / merged through PR #35**; the [post-A6 gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) records the historical approval to begin P1.
 
 Composition is A1 semantic navigation → A6 exact-purpose Branch discovery → Branch selection → A2 Product discovery where required → authorized resource read/actions → mutation. Operational workflows always use A6, with no general Branch List fallback. General Branch management retains List/Get under its existing Branch authority. Workspace Pricing/Reference Cost skip A6.
 
 A6 returns Active + Inactive for all five purposes; fresh Branch-scoped A2 discovery requires Active. P1 must distinguish/disable inactive choices for new workflows while preserving existing-resource inspection that its server contract permits. Status and allowedActions are never mutation guarantees; Reservation actions may remain visible while mutation rejects BranchInactive. Transfer uses A6 Transfer for the same source/destination set and A2 Inventory with source branchId. A4 field disclosure and A5 numeric/semantic/minimal-success projection remain server-owned; raw permissions and branchScope never enter Presentation.
 
-Review the completed **P1 shell, strict clients/types, A1 capabilities, URL/coordinator state, general Branch management, A6 Branch selectors and A2 Product selectors**, then complete the documented live browser QA. **P2–P8 remain planned and require separate approval**, with no combined implementation authorization. No Domain/repository/database/migration/dependency/permission change or new ADR was required. Stop for P1.6 review.
+The **P1 shell, strict clients/types, A1 capabilities, URL/coordinator state, general Branch management, A6 Branch selectors and A2 Product selectors** have passed the documented P1 acceptance. **P2 is READY_FOR_PLANNING**; P2–P8 implementation requires separate scope and approval, with no combined implementation authorization. Cosmetic, non-blocking UI ordering feedback is deferred as a UX follow-up. No Domain/repository/database/migration/dependency/permission change or new ADR was required. Stop for P1 closure checkpoint review.
 
 ### Task 3.22-A1–A5 — Completed / merged
 

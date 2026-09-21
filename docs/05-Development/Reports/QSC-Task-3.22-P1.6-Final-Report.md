@@ -1,5 +1,22 @@
 # Task 3.22-P1.6 — Final Report | التقرير النهائي
 
+> **P1 closure checkpoint — 2026-09-21 | نقطة إغلاق P1:** The subsequently completed P1 Live Browser Acceptance QA is **PASS**. `P1CompletionGate: PASS`; **P1: COMPLETE**. P2 is **READY_FOR_PLANNING** only; implementation remains separately gated. The original P1.6 implementation and automated evidence below remain historical and valid. | اكتمل تحقق قبول P1 في المتصفح الحي بنجاح. بوابة اكتمال P1 ناجحة، وحالة P1 مكتملة. أصبحت P2 جاهزة للتخطيط فقط، ويبقى تنفيذها مشروطاً باعتماد مستقل. تظل أدلة تنفيذ P1.6 والتحقق الآلي أدناه محفوظة وصحيحة تاريخياً.
+
+### P1 live browser acceptance checkpoint | نقطة تحقق القبول في المتصفح الحي
+
+**Result: PASS.** Confirmed manual browser evidence covers authenticated shell/navigation; Operations entry; Branches, Inventory, and Pricing; General Branch list and Create Branch validation/cancel; A6 Listing with Active selectable and Inactive visible but not selectable; A2 Listing Product selection; pagination 24 + 1; search `QA-P1-SEARCHABLE` returning 5 and `QA-P1-NO-MATCH-ZZZZ` returning 0; Workspace Pricing without branchId; and URL/query-state reset behavior. Responsive acceptance covers approximately 375px mobile, Arabic/RTL, touch, selectors, pagination/search, no blocking overflow or wrapping, and approximately 768px tablet navigation/selectors/layout. Previously completed automated evidence remains valid; no full suite or build was rerun for this documentation checkpoint.
+
+**Deferred UX follow-up:** Cosmetic, non-blocking UI ordering feedback is recorded for later UX planning. It does not block P1 acceptance or authorize P2 implementation. | **متابعة تجربة المستخدم المؤجلة:** أُجّلت ملاحظات ترتيب عناصر الواجهة الشكلية وغير المانعة إلى تخطيط تجربة المستخدم لاحقاً، ولا تمنع قبول P1 أو تعتمد تنفيذ P2.
+
+### P1 closure checkpoint report | تقرير نقطة إغلاق P1
+
+- **Files Created:** None. / **الملفات المنشأة:** لا يوجد.
+- **Files Modified:** This P1.6 report, Current Roadmap, Sprint 03 Continuation, and Task 3.22 Presentation Implementation Contract. / **الملفات المعدلة:** هذا التقرير وخارطة الطريق الحالية واستمرار Sprint 03 وعقد تنفيذ واجهة المهمة 3.22.
+- **Files Deleted:** None. / **الملفات المحذوفة:** لا يوجد.
+- **Architecture Changes:** None. / **التغييرات المعمارية:** لا يوجد.
+- **Summary:** P1 Live Browser Acceptance QA and `P1CompletionGate` are PASS; P1 is COMPLETE. P2 is unlocked for planning only. / **الملخص:** نجح تحقق المتصفح وبوابة اكتمال P1، واكتملت P1 وأصبحت P2 متاحة للتخطيط فقط.
+- **Next Recommendation:** Review this documentation checkpoint, then scope P2 planning separately; retain the deferred cosmetic ordering feedback as a UX follow-up. / **التوصية التالية:** مراجعة نقطة التوثيق هذه ثم تحديد نطاق تخطيط P2 بصورة مستقلة، مع حفظ ملاحظات الترتيب الشكلية كمتابعة لتجربة المستخدم.
+
 ### Summary
 
 **P1CompletionGate: PASS.** P1 foundation implementation and required safe automated verification are complete. Independent review and live browser acceptance QA remain. P2–P8 are unstarted and separately gated.
