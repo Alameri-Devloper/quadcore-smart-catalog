@@ -19,6 +19,7 @@ import type { OperationalProductQuery } from "../../../catalog/query/presentatio
 import { OperationalProductSelector, OperationalProductWaiting } from "../../../catalog/query/presentation/OperationalProductSelector";
 import { operationsProductDiscovery } from "./operations-product-context";
 import { OperationsListingWorkflow } from "./OperationsListingWorkflow";
+import { OperationsInventoryWorkflow } from "./OperationsInventoryWorkflow";
 
 export const OperationsContent = ({ state, sectionValues, locale, onRetry, branchManagement, query, operationalSelector, workspaceProductSelector }: {
   readonly state: OperationalManagementCapabilityState;
@@ -64,6 +65,9 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
   const router = useRouter();
   const { state, refresh } = useOperationalManagementCapabilities();
   const redirectExpired = useSessionExpiryRedirect();
+  const inventoryHints = state.type === "Ready" ? state.value.inventory : {
+    canViewAvailability: false, canViewQuantities: false, canReceive: false, canIssue: false, canManageDamage: false, canAdjust: false,
+  };
   const renderProducts = (context: OperationsContext, branchId: string | null, products: OperationalProductQuery, branches?: OperationalBranchState) => {
     const discovery = operationsProductDiscovery(context, branchId, branches);
     if (discovery.type === "None") return null;
@@ -86,6 +90,10 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
           ? <OperationsListingWorkflow context={context} branchId={branchId} query={products} branches={branches} lifecycle={actor} locale={i18n.locale}
             onAuthenticationRequired={redirectExpired} refreshBranches={refreshBranches}
             onQueryChange={next => router.replace(operationsContextHref(context, branchId, next), { scroll: false })} />
+          : context.section === "Inventory" && context.inventoryTool === "stock"
+            ? <OperationsInventoryWorkflow context={context} branchId={branchId} query={products} branches={branches} hints={inventoryHints}
+              lifecycle={actor} locale={i18n.locale} onAuthenticationRequired={redirectExpired} refreshBranches={refreshBranches}
+              onQueryChange={next => router.replace(operationsContextHref(context, branchId, { ...next, productId: null }), { scroll: false })} />
           : renderProducts(context, branchId, products, branches)}</OperationalBranchSelector>} />
   </PresentationShell>;
 };
