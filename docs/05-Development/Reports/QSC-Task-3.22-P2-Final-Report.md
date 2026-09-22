@@ -60,21 +60,21 @@ None. / لا يوجد.
 
 نجحت شرائح العميل والمنسق والربط والواجهة آلياً. تتحكم مراجعة GET والأفعال المعادة في التعديل، وتُحفظ النية عند التعارض مع إعادة القراءة والمراجعة الصريحة دون إعادة تلقائية. يبقى فحص المورد المعروف متاحاً وفق استجابة الخادم بعد تعطيل الفرع، بينما يظل الاكتشاف الجديد محظوراً. أضيفت ترجمة عربية وإنجليزية وتأكيد متاح واستعادة تركيز وضوابط متجاوبة؛ لم يُدع نجاح تحقق متصفح يدوي.
 
-| Final verification | Result |
-| --- | --- |
-| Listing client tests | PASS — 18/18 |
-| Listing coordinator tests | PASS — 9/9 |
-| Operations Listing integration tests | PASS — 3/3 |
-| Listing UI/i18n tests | PASS — 8/8 |
-| Directly affected P1 selection/foundation regressions | PASS — 66/66 |
-| Total targeted tests | 104 passed, 0 failed, 0 skipped |
-| Full TypeScript (`npx tsc --noEmit --incremental false`) | PASS |
-| Full ESLint (`npm run lint`) | PASS |
-| Production build (`npm run build`) | PASS |
-| `git diff --check` | PASS; only Git LF/CRLF notices |
-| Full repository `npm test` | NOT_RUN — targeted coverage and final gates were sufficient for this bounded change |
-| Database/migration/integration preparation | NOT_RUN |
-| Manual browser acceptance | PENDING |
+| Final verification                                       | Result                                                                              |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Listing client tests                                     | PASS — 18/18                                                                        |
+| Listing coordinator tests                                | PASS — 9/9                                                                          |
+| Operations Listing integration tests                     | PASS — 3/3                                                                          |
+| Listing UI/i18n tests                                    | PASS — 8/8                                                                          |
+| Directly affected P1 selection/foundation regressions    | PASS — 66/66                                                                        |
+| Total targeted tests                                     | 104 passed, 0 failed, 0 skipped                                                     |
+| Full TypeScript (`npx tsc --noEmit --incremental false`) | PASS                                                                                |
+| Full ESLint (`npm run lint`)                             | PASS                                                                                |
+| Production build (`npm run build`)                       | PASS                                                                                |
+| `git diff --check`                                       | PASS; only Git LF/CRLF notices                                                      |
+| Full repository `npm test`                               | NOT_RUN — targeted coverage and final gates were sufficient for this bounded change |
+| Database/migration/integration preparation               | NOT_RUN                                                                             |
+| Manual browser acceptance                                | PASS — live authenticated browser acceptance completed                              |
 
 Final evidence is collected by the existing task-review runner API with this task's safe verification profile. Executable/configuration source hashes are checked before/after verification and again before bundling; documentation is finalized after verification. No new dependency, runner framework or E2E tooling was introduced. Initial development failures were limited to test method/type assumptions, a ref callback lint issue resolved through explicit refresh state, and the two directly affected source-shape assertions; the final recorded gates all pass.
 
@@ -99,8 +99,63 @@ The pre-existing unstaged `.serena/project.yml` modification is preserved byte-f
 
 ## Next Recommendation | التوصية التالية
 
-ReadyForManualBrowserQA: YES. ReadyForPushAfterBrowserQA: YES, conditional on passing manual acceptance. Implementation blockers: NONE. Stop for review; do not push yet.
+ReadyForManualBrowserQA: COMPLETED.
+P2CompletionGate: PASS.
+P2Status: COMPLETE.
+Merged via PR #41 into `feature/product-entry-engine`.
 
-Manual acceptance should exercise Listing selection, NotConfigured, both Set actions, cancel/confirm and focus restoration, successful authoritative refresh, conflict/review/retry, stale/inactive inspection, safe failure/session handling, and selection clearing. Cover approximately 375px mobile, 768px tablet and desktop in English/LTR and Arabic/RTL using touch, mouse and keyboard. Do not repeat the complete P1 acceptance matrix or begin P3.
+Manual acceptance was completed successfully across the approved Listing workflow, including Listing selection, Set Listed and Set Unlisted actions, confirmation and cancellation, focus restoration, authoritative refetch, conflict review and deliberate retry, known-resource inspection after Branch deactivation, fresh inactive-Branch discovery blocking, and responsive interaction across mobile, tablet, and desktop.
 
-التوصية: مراجعة الالتزام ثم التحقق اليدوي من مسار الإدراج والتأكيد والإلغاء والتعارض وإعادة القراءة وحالة الفرع غير النشط والأخطاء ومسح الاختيار على الجوال واللوحي وسطح المكتب باللغتين والاتجاهين واللمس والفأرة ولوحة المفاتيح. الجاهزية للدفع مشروطة بنجاح هذا القبول. التوقف للمراجعة دون دفع أو بدء P3.
+تم إكمال القبول اليدوي بنجاح لمسار الإدراج المعتمد، بما في ذلك اختيار المنتج، الإدراج وإلغاء الإدراج، التأكيد والإلغاء، استعادة التركيز، إعادة القراءة الموثوقة من الخادم، مراجعة التعارض وإعادة المحاولة الصريحة، فحص المورد المعروف بعد تعطيل الفرع، منع الاكتشاف الجديد على الفرع غير النشط، والتحقق من الواجهة على الجوال واللوحي وسطح المكتب.
+
+## Manual Browser Acceptance
+
+Status: PASS
+
+The P2 Listing workflow completed live authenticated browser acceptance after the automated implementation checkpoint.
+
+Verified manually:
+
+- Listing resource GET loads authoritative state.
+- Products can be explicitly set to Listed.
+- Products can be explicitly set to Unlisted.
+- Successful mutations are followed by an authoritative refetch.
+- Refetched state is reflected in the UI.
+- Multiple Product selections were exercised successfully.
+- A real two-tab stale-revision conflict was reproduced.
+- The stale PUT returned HTTP 409.
+- The conflict was followed by an authoritative Listing GET.
+- No automatic mutation replay occurred.
+- The user was required to explicitly review the latest state.
+- Deliberate retry succeeded only after explicit confirmation.
+- Successful retry was followed by authoritative refetch.
+- A known Listing resource remained inspectable after Branch deactivation.
+- No Listing mutation actions were exposed for the inactive resource.
+- Fresh Product discovery on the inactive Branch remained blocked.
+- The QA Branch was restored to Active after testing.
+- Keyboard and focus interaction passed.
+- Mobile Arabic/RTL presentation passed.
+- Tablet presentation passed.
+- No blocking responsive overflow was observed.
+
+## P2 Completion Gate
+
+P2CompletionGate: PASS
+
+P2Status: COMPLETE
+
+Implementation commit:
+
+`13b3bbafcd5724b55838fe8d5ca0f44476014af4`
+
+Merge:
+
+PR #41 — Task 3.22 P2 — Listing workflow
+
+Integration merge commit:
+
+`6e3205c`
+
+No Domain, Application, Infrastructure, server contract, database, migration, dependency, permission, or architecture changes were introduced by P2.
+
+Non-blocking cosmetic UI/UX ordering feedback remains deferred to a later UX refinement task.

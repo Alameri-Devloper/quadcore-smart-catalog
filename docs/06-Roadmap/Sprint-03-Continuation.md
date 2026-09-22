@@ -1,10 +1,10 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
-> **Current P1 closure — 2026-09-21 | حالة إغلاق P1 الحالية:** P1 Live Browser Acceptance QA: **PASS**; `P1CompletionGate: PASS`; **P1: COMPLETE**. P2 is **READY_FOR_PLANNING** only; implementation remains separately gated. Cosmetic, non-blocking UI ordering feedback is deferred as a UX follow-up. This checkpoint supersedes earlier P1 browser-debt/awaiting-review notices; the post-A6 statements below remain historical. See the [P1 closure checkpoint](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md). | نجح تحقق قبول P1 في المتصفح الحي وبوابة اكتمالها، واكتملت P1. أصبحت P2 جاهزة للتخطيط فقط، ويبقى تنفيذها مشروطاً باعتماد مستقل. أُجّلت ملاحظات ترتيب الواجهة الشكلية غير المانعة لمتابعة تجربة المستخدم، وتبقى عبارات ما بعد A6 أدلة تاريخية.
+> **Current P2 closure — 2026-09-22 | حالة إغلاق P2 الحالية:** P1 is **COMPLETE**. P2 Listing implementation, automated verification, and live browser acceptance are **PASS**; `P2CompletionGate: PASS`; **P2: COMPLETE**. P2 was merged through PR #41 at integration merge `6e3205c`. P3 is **READY_FOR_PLANNING** only and remains separately implementation-gated. Cosmetic, non-blocking UI ordering feedback remains deferred as a UX follow-up. Earlier post-A6/P1-unstarted statements below are historical. See the [P2 final report](../05-Development/Reports/QSC-Task-3.22-P2-Final-Report.md). | اكتملت P1. نجح تنفيذ P2 للإدراج والتحقق الآلي والقبول اليدوي في المتصفح؛ `P2CompletionGate: PASS`؛ **P2 مكتملة**. دُمجت عبر PR #41 عند دمج التكامل `6e3205c`. أصبحت P3 جاهزة للتخطيط فقط ويبقى تنفيذها مشروطاً باعتماد مستقل. تبقى ملاحظات ترتيب الواجهة الشكلية غير المانعة مؤجلة، وتُعد عبارات ما بعد A6 وعدم بدء P1 أدناه تاريخية.
 
-**Status:** A1–A6 Completed / merged; P1 Live Browser Acceptance QA: PASS; `P1CompletionGate: PASS`; P1: COMPLETE; P2: READY_FOR_PLANNING · **Merge baseline:** `08e0d0dd0237c80ba52dcd12caec7f825ab2a5a6` · **Updated:** 2026-09-21
+**Status:** A1–A6 Completed / merged; P1: COMPLETE; P2 Live Browser Acceptance QA: PASS; `P2CompletionGate: PASS`; P2: COMPLETE; P3: READY_FOR_PLANNING · **Merge baseline:** `6e3205c` · **Updated:** 2026-09-22
 
-> **Current P1 state | حالة P1 الحالية:** [P1.6](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) closes foundation implementation and safe automated verification. Live browser QA remains P1 acceptance debt; no merge is claimed. The P1-unstarted/next-implementation statements below describe the historical post-A6 reconciliation and are superseded only for P1 by this notice and the [Current Roadmap](Current-Roadmap.md). P2–P8 remain separately gated. | اكتمل تنفيذ أساسات P1 والتحقق الآلي الآمن، ويبقى تحقق المتصفح دين قبول دون ادعاء الدمج. تصف عبارات عدم بدء P1 واعتمادها تالياً أدناه المصالحة التاريخية، ويحل هذا الإشعار وخارطة الطريق الحالية محلها لحالة P1 فقط. تبقى P2–P8 مشروطة باعتماد مستقل.
+> **Current P1/P2 state | حالة P1/P2 الحالية:** P1 is **COMPLETE** with its automated and live browser acceptance closed. P2 Listing is also **COMPLETE**, with automated verification and live browser acceptance PASS and merge through PR #41 at `6e3205c`. P3 is ready for separate planning only; P3 implementation has not started. | اكتملت P1 مع إغلاق التحقق الآلي والقبول اليدوي في المتصفح. كما اكتملت P2 للإدراج بعد نجاح التحقق الآلي والقبول اليدوي ودمجها عبر PR #41 عند `6e3205c`. أصبحت P3 جاهزة للتخطيط المستقل فقط ولم يبدأ تنفيذها.
 
 > **Post-A6 gate | بوابة ما بعد A6:** A6 is Completed / merged through PR #35 at the exact baseline above. The [gate report](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) proves `ApprovedNextImplementation` for P1 only. P2–P8 remain separately approval-gated; Presentation is unstarted. | اكتملت A6 ودُمجت عبر #35 عند الخط المطابق أعلاه. يثبت تقرير البوابة اعتماد P1 وحدها تالياً؛ تبقى P2–P8 مشروطة باعتماد مستقل ولم يبدأ تنفيذ الواجهة.
 
@@ -18,17 +18,17 @@ Legacy Catalog mocks remain fixtures only. They are not Production truth and mus
 
 ### Candidate evaluation and ADR status
 
-| Candidate | Value and dependency position | ADR status | Roadmap disposition |
-| --- | --- | --- | --- |
-| Canonical Catalog browsing Presentation | Makes the merged 3.18 query/search boundary usable; prerequisite host for Product Details and sharing | No ADR; existing architecture is sufficient | Included in Task 3.20 |
-| Product Details Presentation | Completes browse-to-inspect workflow using the existing permission-filtered detail read model | No ADR | Included in Task 3.20 |
-| Direct Device Sharing UI integration | Converts the completed 3.19 boundary into a reachable customer workflow without a new channel | No ADR | Included in Task 3.20 |
-| Public Product Share Link | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary | ADR required | Deferred; excluded from Task 3.20 |
-| WhatsApp-oriented customer sharing | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20 |
-| Operational management contract remediation A1–A5 | Resolves read/manage composition, canonical Product query, Reservation pagination, Pricing concurrency, Inventory disclosure, and semantic capabilities | Correctly merged; current Reservation index remains sufficient | Completed / merged through PR #32 |
-| Operational Branch selector remediation | Five-purpose, four-field trusted-scope Branch discovery | Workspace Branch Application; no Domain/repository/DB/dependency/permission change or ADR | A6 Completed / merged through PR #35 |
-| Branch/Inventory/Pricing management Presentation | Composes merged A6 discovery with A1–A5 | Existing Presentation architecture and server contracts are sufficient | Task 3.22 — ApprovedNextImplementation: P1 only; not started |
-| Reference Data management Presentation | Makes 3.16 management APIs usable and supports Workspace setup | No ADR; implemented within the approved contract | Task 3.21 — Completed / merged through PR #24 |
+| Candidate                                         | Value and dependency position                                                                                                                           | ADR status                                                                                   | Roadmap disposition                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Canonical Catalog browsing Presentation           | Makes the merged 3.18 query/search boundary usable; prerequisite host for Product Details and sharing                                                   | No ADR; existing architecture is sufficient                                                  | Included in Task 3.20                                               |
+| Product Details Presentation                      | Completes browse-to-inspect workflow using the existing permission-filtered detail read model                                                           | No ADR                                                                                       | Included in Task 3.20                                               |
+| Direct Device Sharing UI integration              | Converts the completed 3.19 boundary into a reachable customer workflow without a new channel                                                           | No ADR                                                                                       | Included in Task 3.20                                               |
+| Public Product Share Link                         | High customer value, but creates a new anonymous security, lifecycle, media, privacy, and price-authority boundary                                      | ADR required                                                                                 | Deferred; excluded from Task 3.20                                   |
+| WhatsApp-oriented customer sharing                | Native target selection already works indirectly; `wa.me`, Cloud API, and backend delivery introduce distinct phone/recipient/provider policies         | ADR required for a dedicated WhatsApp channel; provider/backend delivery always requires ADR | Deferred; excluded from Task 3.20                                   |
+| Operational management contract remediation A1–A5 | Resolves read/manage composition, canonical Product query, Reservation pagination, Pricing concurrency, Inventory disclosure, and semantic capabilities | Correctly merged; current Reservation index remains sufficient                               | Completed / merged through PR #32                                   |
+| Operational Branch selector remediation           | Five-purpose, four-field trusted-scope Branch discovery                                                                                                 | Workspace Branch Application; no Domain/repository/DB/dependency/permission change or ADR    | A6 Completed / merged through PR #35                                |
+| Branch/Inventory/Pricing management Presentation  | Composes merged A6 discovery with A1–A5                                                                                                                 | Existing Presentation architecture and server contracts are sufficient                       | Task 3.22 — P1 COMPLETE; P2 Listing COMPLETE; P3 READY_FOR_PLANNING |
+| Reference Data management Presentation            | Makes 3.16 management APIs usable and supports Workspace setup                                                                                          | No ADR; implemented within the approved contract                                             | Task 3.21 — Completed / merged through PR #24                       |
 
 Combining browsing, details, and existing direct sharing is one coherent vertical slice: find a Product, inspect the Product, then prepare/share its approved customer payload. Separating any one of these would leave either an incomplete navigation path or the completed sharing component unreachable. Adding public access, management mutations, or provider delivery would expand the architecture and is not part of that slice.
 
@@ -177,14 +177,14 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 
 ### Risks and controls
 
-| Risk | Control |
-| --- | --- |
-| Presentation recreates permission or price rules | Render server DTO presence only; keep all authority in existing use cases. |
-| Branch selector leaks or overclaims scope | Block Presentation until a Workspace Branch Application selector is merged; never consume raw session scope; revalidate every resource request. |
-| Query state becomes inconsistent across navigation | One typed coordinator owns normalized UI state and cursor invalidation/restoration. |
-| Share call loses user activation | Keep prepare and native-share actions explicit and preserve the 3.19 adapter contract. |
-| Responsive/RTL integration exposes late layout defects | Treat all three viewport classes and both directions as acceptance gates. |
-| Scope expands into public sharing or management | Enforce WILL NOT boundaries and require a separately approved task/ADR. |
+| Risk                                                   | Control                                                                                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Presentation recreates permission or price rules       | Render server DTO presence only; keep all authority in existing use cases.                                                                      |
+| Branch selector leaks or overclaims scope              | Block Presentation until a Workspace Branch Application selector is merged; never consume raw session scope; revalidate every resource request. |
+| Query state becomes inconsistent across navigation     | One typed coordinator owns normalized UI state and cursor invalidation/restoration.                                                             |
+| Share call loses user activation                       | Keep prepare and native-share actions explicit and preserve the 3.19 adapter contract.                                                          |
+| Responsive/RTL integration exposes late layout defects | Treat all three viewport classes and both directions as acceptance gates.                                                                       |
+| Scope expands into public sharing or management        | Enforce WILL NOT boundaries and require a separately approved task/ADR.                                                                         |
 
 ### What becomes possible after Task 3.20 (historical outlook; current gate below)
 
@@ -198,8 +198,10 @@ No schema change, migration, seed/bootstrap data, Production database operation,
 - **Task 3.21 — Catalog Reference Data Management Presentation — Completed / merged:** merged through PR #24 at `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
 - **Task 3.22-A1–A5 — Completed / merged:** A1 is merged through PR #28, A2 through #29, A3 through #30, A4 through #31, and A5 through #32 at `0f102dd020efacc517f0e27601f4a54ecce2eca0`.
 - **Task 3.22-A6 — Completed / merged through PR #35:** canonical five-purpose operational Branch discovery; no general Branch List fallback.
-- **Task 3.22 — ApprovedNextImplementation, P1 only:** shell, typed clients/coordinator, A1, URL state, general Branch management, A6 Branch selection and A2 Product selection; no implementation in this reconciliation.
-- P2–P8 remain planned, unstarted and subject to separate approval; they are not one combined implementation task.
+- **Task 3.22-P1 — COMPLETE:** foundation Presentation and selector composition are implemented, verified and accepted.
+- **Task 3.22-P2 Listing — COMPLETE:** implementation commit `13b3bbafcd5724b55838fe8d5ca0f44476014af4`, merged through PR #41 at `6e3205c`; automated verification and live browser acceptance PASS.
+- **Task 3.22-P3 — READY_FOR_PLANNING:** scope and implementation remain separately gated; implementation has not started.
+- P4–P8 remain planned, unstarted and subject to separate approval; they are not one combined implementation task.
 
 A1 supplies semantic hints without resource IDs. A6 returns scoped Active + Inactive Branches for Listing, Inventory, Transfer, BranchPricing and BranchReferenceCost. Fresh A2 Branch-scoped Product discovery requires Active; label/disable inactive new-workflow choices while retaining server-permitted existing-resource inspection. Reservation allowedActions can outlive Branch activity, so mutation may reject BranchInactive. Transfer uses one A6 Transfer set for both Branches and A2 Inventory with source branchId. Workspace Pricing/Reference Cost skip A6. A4 disclosure, A5 numeric/semantic/minimal success, trusted Workspace/session/permissions/scope and resource mutation checks remain authoritative; Presentation never consumes raw permission/scope arrays. No server remediation, Domain/repository/database/migration/dependency/permission change or ADR is required. P1 includes bilingual, RTL/LTR, responsive and touch/mouse/keyboard QA.
 
@@ -213,17 +215,17 @@ A1 supplies semantic hints without resource IDs. A6 returns scoped Active + Inac
 
 ### تقييم المرشحين وحالة ADR
 
-| المرشح | القيمة وموقع الاعتماد | حالة ADR | قرار الخارطة |
-| --- | --- | --- | --- |
-| واجهة تصفح الكتالوج المعتمدة | تجعل حدود استعلام وبحث 3.18 المدمجة قابلة للاستخدام، وهي المضيف اللازم للتفاصيل والمشاركة | لا يحتاج ADR؛ المعمارية الحالية كافية | ضمن 3.20 |
-| واجهة تفاصيل المنتج | تكمل سير التصفح إلى الفحص باستخدام نموذج التفاصيل المرشح بالصلاحيات | لا يحتاج ADR | ضمن 3.20 |
-| ربط واجهة المشاركة المباشرة عبر الجهاز | يجعل حدود 3.19 المكتملة قابلة للوصول دون قناة جديدة | لا يحتاج ADR | ضمن 3.20 |
-| رابط مشاركة منتج عام | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة | ADR مطلوب | مؤجل وخارج 3.20 |
-| مشاركة موجهة إلى WhatsApp | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي | مؤجل وخارج 3.20 |
-| معالجة عقود A1–A5 | تحل القراءة/الإدارة والاستعلام والحجوزات والتزامن والكشف والقدرات | صحيحة ومدمجة، ويبقى فهرس الحجوزات كافياً | مكتملة ومدمجة عبر #32 |
-| معالجة محدد الفروع التشغيلي | خمسة أغراض وأربعة حقول ضمن النطاق الموثوق | تطبيق فروع مساحة العمل؛ لا تغيير مجال/مستودع/قاعدة/اعتماد/صلاحية ولا ADR | اكتملت A6 ودُمجت عبر #35 |
-| واجهة إدارة الفروع والمخزون والتسعير | تركب اكتشاف A6 المدمج مع A1–A5 | تكفي معمارية العرض وعقود الخادم الحالية | المهمة 3.22 — ApprovedNextImplementation لشريحة P1 فقط؛ غير مبدوءة |
-| واجهة إدارة البيانات المرجعية | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل | لا يحتاج ADR؛ نُفذت ضمن العقد المعتمد | المهمة 3.21 — مكتملة ومدمجة عبر طلب السحب #24 |
+| المرشح                                 | القيمة وموقع الاعتماد                                                                                                   | حالة ADR                                                                 | قرار الخارطة                                                 |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| واجهة تصفح الكتالوج المعتمدة           | تجعل حدود استعلام وبحث 3.18 المدمجة قابلة للاستخدام، وهي المضيف اللازم للتفاصيل والمشاركة                               | لا يحتاج ADR؛ المعمارية الحالية كافية                                    | ضمن 3.20                                                     |
+| واجهة تفاصيل المنتج                    | تكمل سير التصفح إلى الفحص باستخدام نموذج التفاصيل المرشح بالصلاحيات                                                     | لا يحتاج ADR                                                             | ضمن 3.20                                                     |
+| ربط واجهة المشاركة المباشرة عبر الجهاز | يجعل حدود 3.19 المكتملة قابلة للوصول دون قناة جديدة                                                                     | لا يحتاج ADR                                                             | ضمن 3.20                                                     |
+| رابط مشاركة منتج عام                   | قيمته مرتفعة لكنه ينشئ حدود أمان مجهولة ودورة حياة وسياسة وسائط وخصوصية وسلطة سعر جديدة                                 | ADR مطلوب                                                                | مؤجل وخارج 3.20                                              |
+| مشاركة موجهة إلى WhatsApp              | اختيار الهدف الأصلي يعمل بصورة غير مباشرة؛ أما `wa.me` وCloud API والإرسال الخلفي فتضيف سياسات هاتف ومستلم ومزود مستقلة | ADR مطلوب لقناة WhatsApp مستقلة، ومطلوب دائماً للمزود أو الإرسال الخلفي  | مؤجل وخارج 3.20                                              |
+| معالجة عقود A1–A5                      | تحل القراءة/الإدارة والاستعلام والحجوزات والتزامن والكشف والقدرات                                                       | صحيحة ومدمجة، ويبقى فهرس الحجوزات كافياً                                 | مكتملة ومدمجة عبر #32                                        |
+| معالجة محدد الفروع التشغيلي            | خمسة أغراض وأربعة حقول ضمن النطاق الموثوق                                                                               | تطبيق فروع مساحة العمل؛ لا تغيير مجال/مستودع/قاعدة/اعتماد/صلاحية ولا ADR | اكتملت A6 ودُمجت عبر #35                                     |
+| واجهة إدارة الفروع والمخزون والتسعير   | تركب اكتشاف A6 المدمج مع A1–A5                                                                                          | تكفي معمارية العرض وعقود الخادم الحالية                                  | المهمة 3.22 — P1 مكتملة؛ P2 للإدراج مكتملة؛ P3 جاهزة للتخطيط |
+| واجهة إدارة البيانات المرجعية          | تجعل واجهات إدارة 3.16 قابلة للاستخدام وتدعم إعداد مساحة العمل                                                          | لا يحتاج ADR؛ نُفذت ضمن العقد المعتمد                                    | المهمة 3.21 — مكتملة ومدمجة عبر طلب السحب #24                |
 
 يجمع التصفح والتفاصيل والمشاركة الحالية شريحة رأسية واحدة: العثور على المنتج ثم فحصه ثم تجهيز ومشاركة حمولته الآمنة للعميل. فصل أحدها يترك مسار تنقل ناقصاً أو مكوّن المشاركة غير قابل للوصول. أما الوصول العام أو تعديلات الإدارة أو تسليم المزود فتوسع المعمارية وليست جزءاً من هذه الشريحة.
 
@@ -321,14 +323,14 @@ A1 supplies semantic hints without resource IDs. A6 returns scoped Active + Inac
 
 ### المخاطر والضوابط
 
-| الخطر | الضابط |
-| --- | --- |
-| إعادة بناء قواعد الصلاحية أو السعر في العرض | عرض وجود حقول DTO فقط وإبقاء السلطة في حالات الاستخدام. |
-| تسريب نطاق الفرع | حجب الواجهة حتى دمج محدد يملكه تطبيق الفروع، وعدم استهلاك نطاق الجلسة الخام، وإعادة التحقق لكل طلب مورد. |
-| اضطراب حالة الاستعلام بين الصفحات | منسق مكتوب بالأنواع يملك التطبيع وإبطال المؤشر والاستعادة. |
-| فقدان تفعيل المستخدم عند المشاركة | إبقاء التجهيز والمشاركة الأصلية فعلين صريحين وفق عقد 3.19. |
-| عيوب تجاوب/RTL متأخرة | جعل الأحجام الثلاثة والاتجاهين بوابات قبول. |
-| تمدد النطاق إلى العام أو الإدارة | تطبيق حدود «لن تفعل» واشتراط مهمة/ADR مستقلة. |
+| الخطر                                       | الضابط                                                                                                   |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| إعادة بناء قواعد الصلاحية أو السعر في العرض | عرض وجود حقول DTO فقط وإبقاء السلطة في حالات الاستخدام.                                                  |
+| تسريب نطاق الفرع                            | حجب الواجهة حتى دمج محدد يملكه تطبيق الفروع، وعدم استهلاك نطاق الجلسة الخام، وإعادة التحقق لكل طلب مورد. |
+| اضطراب حالة الاستعلام بين الصفحات           | منسق مكتوب بالأنواع يملك التطبيع وإبطال المؤشر والاستعادة.                                               |
+| فقدان تفعيل المستخدم عند المشاركة           | إبقاء التجهيز والمشاركة الأصلية فعلين صريحين وفق عقد 3.19.                                               |
+| عيوب تجاوب/RTL متأخرة                       | جعل الأحجام الثلاثة والاتجاهين بوابات قبول.                                                              |
+| تمدد النطاق إلى العام أو الإدارة            | تطبيق حدود «لن تفعل» واشتراط مهمة/ADR مستقلة.                                                            |
 
 ### ما يصبح ممكناً بعد 3.20 (تصور تاريخي؛ البوابة الحالية أدناه)
 
@@ -337,8 +339,10 @@ A1 supplies semantic hints without resource IDs. A6 returns scoped Active + Inac
 ### قرار التخطيط الحالي
 
 - **المهمة 3.21 — واجهة إدارة البيانات المرجعية للكتالوج — مكتملة ومدمجة:** دُمجت عبر طلب السحب #24 عند `4f1115d2ac98fc4411ac46f081652554f6d04ec9`.
-- **المهمة 3.22-A1–A5 — مكتملة / مدمجة:** دُمجت عبر #28–#32 عند `0f102dd020efacc517f0e27601f4a54ecce2eca0`.
-- **المهمة 3.22-A6 — مكتملة ومدمجة عبر #35:** اكتشاف تشغيلي موحد للفروع بخمسة أغراض دون fallback للقائمة العامة.
+- **المهمة 3.22-P1 — مكتملة:** اكتملت أسس واجهة العرض وتركيب المحددات والتحقق والقبول.
+- **المهمة 3.22-P2 للإدراج — مكتملة:** نُفذت في commit `13b3bbafcd5724b55838fe8d5ca0f44476014af4` ودُمجت عبر PR #41 عند `6e3205c`، ونجح التحقق الآلي والقبول اليدوي في المتصفح.
+- **المهمة 3.22-P3 — جاهزة للتخطيط:** يبقى النطاق والتنفيذ مشروطين باعتماد مستقل، ولم يبدأ التنفيذ.
+- تبقى P4–P8 مخططة وغير مبدوءة وتتطلب اعتماداً مستقلاً، وليست مهمة تنفيذ مجمعة.
 - **المهمة 3.22 — ApprovedNextImplementation لشريحة P1 فقط:** الغلاف والعملاء والمنسق والأنواع وA1 وحالة URL وإدارة الفروع العامة ومحدد A6 ومحدد منتجات A2؛ دون تنفيذ في المصالحة.
 - تبقى P2–P8 مخططة وغير مبدوءة وتتطلب اعتماداً مستقلاً، وليست مهمة تنفيذ مجمعة.
 
@@ -359,6 +363,7 @@ A1 supplies semantic hints without resource IDs. A6 returns scoped Active + Inac
 - [Task 3.22-A Planning-R1 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R1-Final-Report.md)
 - [Task 3.22-A Planning-R2 Final Report](../05-Development/Reports/QSC-Task-3.22-A-Planning-R2-Final-Report.md)
 - [Task 3.22-A Reservation Performance Planning Final Report](../05-Development/Reports/QSC-Task-3.22-A-Reservation-Performance-Planning-Final-Report.md)
+- [Task 3.22-P2 Final Report](../05-Development/Reports/QSC-Task-3.22-P2-Final-Report.md)
 - [Task 3.22-A1 Final Report](../05-Development/Reports/QSC-Task-3.22-A1-Final-Report.md)
 - [Task 3.22-A2 Final Report](../05-Development/Reports/QSC-Task-3.22-A2-Final-Report.md)
 - [Task 3.22-A3 Final Report](../05-Development/Reports/QSC-Task-3.22-A3-Final-Report.md)
