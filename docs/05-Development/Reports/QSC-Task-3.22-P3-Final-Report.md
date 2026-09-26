@@ -2,7 +2,7 @@
 
 ## Status | الحالة
 
-`P3Implementation: PASS` at the automated implementation checkpoint. Task 3.22-P3 implements the bounded Inventory read and basic-mutation Presentation workflow on branch `feature/task-3.22-p3-inventory`, based on `982bd8bfc1ad7ae1828e653c230687d323de5e30`. Manual live-browser acceptance remains the next independent gate before push. | `P3Implementation: PASS` عند نقطة التحقق الآلي. تنفذ P3 تدفق عرض قراءة المخزون والطفرات الأساسية المحدود على الفرع المذكور وخط الأساس المحدد، وتبقى مراجعة المتصفح الحية اليدوية البوابة المستقلة التالية قبل الدفع.
+`P3Implementation: PASS`; `P3ManualBrowserQA: PASS`; `P3CompletionGate: PASS`; **P3: COMPLETE**. Task 3.22-P3 implements the bounded Inventory read and basic-mutation Presentation workflow from base `982bd8bfc1ad7ae1828e653c230687d323de5e30`. Automated verification passed, independent live-browser acceptance passed, and the implementation was merged through PR #42 at integration merge `c2943d1`. P4 is ready for separate planning only and has not started. | `P3Implementation: PASS` و`P3ManualBrowserQA: PASS` و`P3CompletionGate: PASS`؛ **P3 مكتملة**. نُفذت شريحة P3 المحدودة لقراءة المخزون والطفرات الأساسية من خط الأساس المذكور، ونجح التحقق الآلي والقبول اليدوي المستقل في المتصفح، ودُمج التنفيذ عبر PR #42 عند دمج التكامل `c2943d1`. أصبحت P4 جاهزة للتخطيط المستقل فقط ولم يبدأ تنفيذها.
 
 ## Objective and Scope | الهدف والنطاق
 
@@ -27,16 +27,67 @@ P3 composes the existing A1 semantic hints, A6 `Inventory` Branch selector, A2 `
 
 ## Verification | التحقق
 
-| Check | Result |
-| --- | --- |
-| Focused P3 client/coordinator/rendering/context/integration suite | 36/36 PASS |
-| Affected Branch/Operations/P1/P2 regression suite | 188/188 PASS |
-| Full TypeScript (`npx.cmd tsc --noEmit`) | PASS |
-| Full ESLint (`npm.cmd run lint`) | PASS |
-| Production build (`npm.cmd run build`) | PASS; 45 static pages generated and `/operations` completed |
-| `git diff --check` | PASS; Windows line-ending notice only |
+| Check                                                             | Result                                                      |
+| ----------------------------------------------------------------- | ----------------------------------------------------------- |
+| Focused P3 client/coordinator/rendering/context/integration suite | 36/36 PASS                                                  |
+| Affected Branch/Operations/P1/P2 regression suite                 | 188/188 PASS                                                |
+| Full TypeScript (`npx.cmd tsc --noEmit`)                          | PASS                                                        |
+| Full ESLint (`npm.cmd run lint`)                                  | PASS                                                        |
+| Production build (`npm.cmd run build`)                            | PASS; 45 static pages generated and `/operations` completed |
+| `git diff --check`                                                | PASS; Windows line-ending notice only                       |
 
 The automated review bundle is generated from the exact final pre-commit repository state after this report is written. Its manifest and sanitized verification evidence are authoritative for the bundle-run full unit, integration, schema, build, and audit commands. No live browser acceptance was executed automatically. | تنشأ حزمة المراجعة الآلية من حالة المستودع النهائية نفسها قبل الالتزام بعد كتابة هذا التقرير، ويعد بيانها وأدلة التحقق المنقحة مرجعاً لأوامر الوحدة والتكامل والمخطط والبناء والتدقيق. لم ينفذ قبول متصفح حي تلقائياً.
+
+## Manual Browser Acceptance | القبول اليدوي في المتصفح
+
+Status: PASS
+
+Verified manually:
+
+- Detailed Inventory rendering for a quantity-authorized actor.
+- Availability-only rendering with semantic availability only and no quantity, revision, or timestamp leakage.
+- Mutation-only actor behavior: Inventory read unavailable while independently authorized Receive remains available.
+- Mutation-only success does not disclose quantity or availability.
+- Receive.
+- Issue.
+- Correct Increase.
+- Correct Decrease.
+- Mark Damaged.
+- Restore Damaged.
+- Authoritative refetch after readable mutations.
+- Insufficient-stock guard.
+- Known Inventory resource remains inspectable after Branch deactivation where the server permits it.
+- Fresh inactive-Branch Product discovery remains blocked.
+- QA Branch restored to Active after testing.
+- QA Inventory fixture restored after testing.
+- Keyboard/focus behavior.
+- Arabic/RTL mobile presentation.
+- Tablet responsive presentation.
+- No blocking responsive overflow.
+
+A temporary Next.js dev route-registration issue caused `damage/restore` to return framework 404 during one run. The route existed in source; restarting the dev server restored normal route registration, after which Restore Damaged passed with `200` followed by authoritative Inventory refetch. No source change was required.
+
+## P3 Completion Gate | بوابة اكتمال P3
+
+`P3CompletionGate: PASS`
+
+`P3Status: COMPLETE`
+
+Implementation commit:
+
+`ff106434ab90270cfa65f436fc64d2b0cbd33d1d`
+
+PR:
+
+`#42 — Task 3.22 P3 — Inventory workflow`
+
+Integration merge commit:
+
+`c2943d1`
+
+No Domain, Application, Infrastructure, server contract, API contract, database, migration, dependency, permission, or architecture change was introduced by P3.
+
+The existing non-blocking dependency advisories remain a separate security follow-up outside P3 scope.
 
 ## Files Created | الملفات المنشأة
 
@@ -77,4 +128,4 @@ P3 is implemented as a bounded Presentation slice with strict A5 disclosure, ind
 
 ## Next Recommendation | التوصية التالية
 
-Perform independent manual live-browser QA for quantity-visible, availability-only, and mutation-only actors in English LTR and Arabic RTL across mobile, tablet, and desktop using keyboard, mouse, and touch. Verify focus restoration, live announcements, duplicate-submit blocking, inactive known-resource inspection, and each basic mutation. If browser acceptance passes, review the commit and review bundle, then push only with explicit approval. Do not begin P4 automatically. | نفذ قبولاً يدوياً مستقلاً في المتصفح لحالات عرض الكميات والإتاحة فقط والطفرة فقط باللغتين والاتجاهين وعلى أحجام وأجهزة إدخال متعددة. تحقق من التركيز والإعلانات ومنع التكرار وفحص المورد غير النشط وكل طفرة. بعد النجاح راجع الالتزام والحزمة ثم ادفع بموافقة صريحة فقط، ولا تبدأ P4 تلقائياً.
+P3 is complete, merged, and accepted. Perform only the documentation/roadmap closure needed to publish the completion state. After that, P4 may enter a separate bounded planning task; do not begin P4 implementation without its own scope review and approval. | اكتملت P3 ودُمجت واجتازت القبول. المتبقي فقط تحديث التوثيق وخارطة الطريق لنشر حالة الإغلاق. بعد ذلك يمكن بدء تخطيط P4 كمهمة مستقلة ومحدودة، ولا يبدأ تنفيذ P4 قبل مراجعة نطاقه واعتماده بشكل مستقل.

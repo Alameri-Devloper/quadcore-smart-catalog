@@ -1,8 +1,8 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-> **Current P2 closure — 2026-09-22 | حالة إغلاق P2 الحالية:** P1 is **COMPLETE**. P2 Listing implementation, automated verification, and live browser acceptance are **PASS**; `P2CompletionGate: PASS`; **P2: COMPLETE**. P2 was merged through PR #41 at integration merge `6e3205c`. P3 is ready for separate planning only and is not implementation-approved. Cosmetic, non-blocking UI ordering feedback remains deferred as a UX follow-up. See the [P2 final report](../05-Development/Reports/QSC-Task-3.22-P2-Final-Report.md). | اكتملت P1. نجح تنفيذ P2 للإدراج والتحقق الآلي والقبول اليدوي في المتصفح؛ `P2CompletionGate: PASS`؛ **P2 مكتملة**. دُمجت P2 عبر طلب السحب #41 عند دمج التكامل `6e3205c`. أصبحت P3 جاهزة للتخطيط المستقل فقط ولم يُعتمد تنفيذها بعد. تبقى ملاحظات ترتيب الواجهة الشكلية غير المانعة مؤجلة لمتابعة تجربة المستخدم. راجع [التقرير النهائي لـP2](../05-Development/Reports/QSC-Task-3.22-P2-Final-Report.md).
+> **Current P3 closure — 2026-09-26 | حالة إغلاق P3 الحالية:** P1 and P2 are **COMPLETE**. P3 Inventory implementation, automated verification, and live browser acceptance are **PASS**; `P3CompletionGate: PASS`; **P3: COMPLETE**. P3 was merged through PR #42 at integration merge `c2943d1`. P4 is **READY_FOR_PLANNING** only and is not implementation-approved. Existing non-blocking UX feedback and dependency advisories remain separate follow-ups outside P3 scope. See the [P3 final report](../05-Development/Reports/QSC-Task-3.22-P3-Final-Report.md). | اكتملت P1 وP2. نجح تنفيذ P3 للمخزون والتحقق الآلي والقبول اليدوي في المتصفح؛ `P3CompletionGate: PASS`؛ **P3 مكتملة**. دُمجت P3 عبر PR #42 عند دمج التكامل `c2943d1`. أصبحت P4 **جاهزة للتخطيط فقط** ولم يُعتمد تنفيذها بعد. تبقى ملاحظات الواجهة غير المانعة وتحذيرات الاعتماديات متابعات مستقلة خارج نطاق P3. راجع [التقرير النهائي لـP3](../05-Development/Reports/QSC-Task-3.22-P3-Final-Report.md).
 
-**Status:** A1–A6 Completed / merged; P1: COMPLETE; P2 Live Browser Acceptance QA: PASS; `P2CompletionGate: PASS`; P2: COMPLETE; P3: READY_FOR_PLANNING · **Last Updated:** 2026-09-22 · **Scope:** Authoritative delivery sequence
+**Status:** A1–A6 Completed / merged; P1: COMPLETE; P2: COMPLETE; P3 Live Browser Acceptance QA: PASS; `P3CompletionGate: PASS`; P3: COMPLETE; P4: READY_FOR_PLANNING · **Last Updated:** 2026-09-26 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -30,7 +30,7 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration                                                                                                                                              | No Branch, Inventory, or Pricing management Presentation was added.                                                                          |
 
-The current integration baseline is `6e3205c`, merging Task 3.22-P2 through PR #41 into `feature/product-entry-engine`. P1 remains completed and published, A6 remains merged through PR #35, and A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
+The current integration baseline is `c2943d1`, merging Task 3.22-P3 through PR #42 into `feature/product-entry-engine`. P1, P2, and P3 are complete. A6 remains merged through PR #35, and A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
 
 ### Task 3.22-P1 — Complete
 
@@ -45,6 +45,12 @@ The **P1 foundation and P2 Listing workflow** have passed their documented autom
 ### Task 3.22-P2 — Complete
 
 **P2 Live Browser Acceptance QA: PASS; `P2CompletionGate: PASS`; P2: COMPLETE.** The bounded Listing workflow was implemented in commit `13b3bbafcd5724b55838fe8d5ca0f44476014af4` and merged through PR #41 at integration merge `6e3205c`. Targeted automated verification passed 104/104 tests with TypeScript, ESLint and production build PASS. Live browser acceptance verified Listed/Unlisted mutations, authoritative refetch, real 409 conflict recovery without automatic replay, explicit retry, inactive known-resource inspection, blocked fresh inactive-Branch discovery, keyboard/focus behavior, Arabic/RTL mobile presentation and tablet/desktop responsiveness. See the [P2 final report](../05-Development/Reports/QSC-Task-3.22-P2-Final-Report.md).
+
+### Task 3.22-P3 — Complete
+
+**P3 Live Browser Acceptance QA: PASS; `P3CompletionGate: PASS`; P3: COMPLETE.** The bounded Inventory workflow was implemented in commit `ff106434ab90270cfa65f436fc64d2b0cbd33d1d` and merged through PR #42 at integration merge `c2943d1`. Automated verification passed with 1,223 passed, 0 failed, and 1 platform skip across 1,224 executions, with TypeScript, ESLint, production build, and repository test gates PASS. Live browser acceptance verified detailed Inventory reads, availability-only disclosure without numeric leakage, mutation-only operation without read authority, all six basic mutations, authoritative refetch, insufficient-stock protection, inactive known-resource inspection, blocked fresh inactive-Branch discovery, keyboard/focus behavior, Arabic/RTL mobile presentation, and tablet/desktop responsiveness. See the [P3 final report](../05-Development/Reports/QSC-Task-3.22-P3-Final-Report.md).
+
+**P4 is READY_FOR_PLANNING only. P4 implementation requires its own bounded planning and approval.**
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -100,6 +106,12 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 **نجح القبول اليدوي لـP2؛ `P2CompletionGate: PASS`؛ P2 مكتملة.** نُفذ مسار الإدراج المحدود في commit `13b3bbafcd5724b55838fe8d5ca0f44476014af4` ودُمج عبر PR #41 عند دمج التكامل `6e3205c`. نجحت 104/104 من الاختبارات المستهدفة مع TypeScript وESLint والبناء. تحقق القبول اليدوي من الإدراج وإلغائه، إعادة القراءة الموثوقة، تعارض 409 دون إعادة تلقائية، إعادة المحاولة الصريحة، فحص المورد المعروف بعد تعطيل الفرع، منع الاكتشاف الجديد على الفرع غير النشط، لوحة المفاتيح والتركيز، والعربية/RTL والاستجابة على الجوال واللوحي وسطح المكتب. أصبحت P3 جاهزة للتخطيط المستقل فقط، ولم يبدأ تنفيذها.
 
+### المهمة 3.22-P3 — مكتملة
+
+**نجح القبول اليدوي لـP3؛ `P3CompletionGate: PASS`؛ P3 مكتملة.** نُفذ مسار المخزون المحدود في commit `ff106434ab90270cfa65f436fc64d2b0cbd33d1d` ودُمج عبر PR #42 عند دمج التكامل `c2943d1`. نجح التحقق الآلي مع 1,223 اختباراً ناجحاً دون فشل وتجاوز واحد خاص بالمنصة ضمن 1,224 تنفيذاً، مع نجاح TypeScript وESLint والبناء واختبارات المستودع. تحقق القبول اليدوي من القراءة التفصيلية للمخزون، كشف الإتاحة فقط دون تسريب رقمي، تنفيذ الطفرة دون صلاحية القراءة، العمليات الست الأساسية، إعادة القراءة الموثوقة، منع الصرف عند عدم كفاية الرصيد، فحص المورد المعروف بعد تعطيل الفرع، منع الاكتشاف الجديد على الفرع غير النشط، لوحة المفاتيح والتركيز، العربية/RTL والاستجابة على الجوال واللوحي وسطح المكتب.
+
+**أصبحت P4 جاهزة للتخطيط فقط، ويتطلب تنفيذها تخطيطاً واعتماداً مستقلين.**
+
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 
 دُمجت A1–A5 عبر طلبات السحب #28–#32 عند خط الأساس `0f102dd020efacc517f0e27601f4a54ecce2eca0`. لا تحتاج الواجهة إلى تغيير مستودع أو مخطط أو ترحيل أو اعتماد أو سجل صلاحيات أو حد معاملة. وتبقى نتيجة بوابة الحجوزات `EXISTING INDEX SUFFICIENT`، ولا يلزم الترحيل `0016`.
@@ -131,6 +143,7 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 - [Task 3.22-A Operational Management Contract](Task-3.22-A-Operational-Management-Contract.md)
 - [Task 3.22 Presentation Implementation Contract](Task-3.22-Presentation-Implementation-Contract.md)
 - [Task 3.22 Presentation Planning Report](../05-Development/Reports/QSC-Task-3.22-Presentation-Planning-Report.md)
+- [Task 3.22-P3 Final Report](../05-Development/Reports/QSC-Task-3.22-P3-Final-Report.md)
 - [Task 3.22 Branch Selector Gap Analysis](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md)
 - [Future Capabilities](Future-Capabilities.md)
 - [Deferred Decisions](Deferred-Decisions.md)
