@@ -36,6 +36,16 @@ export const operationalBranchId = (value: unknown): string | null =>
 
 export interface OperationsQueryInput { getAll(key: string): readonly string[] }
 const keys = ["section", "branchTool", "inventoryTool", "pricingScope", "pricingField", "branchId"] as const;
+const reservationKeys = ["reservationCursor", "reservationId"] as const;
+export interface OperationsReservationQuery {
+  readonly reservationCursor: string | null;
+  readonly reservationId: string | null;
+  readonly issue: "InvalidCursor" | null;
+}
+export const emptyOperationsReservationQuery = (): OperationsReservationQuery => ({ reservationCursor: null, reservationId: null, issue: null });
+export const operationalReservationId = (value: unknown): string | null => operationalBranchId(value);
+export const operationalReservationCursor = (value: unknown): string | null => typeof value === "string" && value.length >= 1 && value.length <= 2048
+  && /^[A-Za-z0-9_-]+$/u.test(value) ? value : null;
 const choice = <T extends string>(values: readonly string[], options: readonly T[], fallback: T): { value: T; valid: boolean } =>
   values.length === 0 ? { value: fallback, valid: true }
     : values.length === 1 && options.includes(values[0] as T) ? { value: values[0] as T, valid: true }
@@ -46,7 +56,7 @@ export const resolveOperationsQuery = (query: OperationsQueryInput, capabilities
   const input = Object.fromEntries(keys.map((key) => [key, query.getAll(key)])) as Record<(typeof keys)[number], readonly string[]>;
   const productInput = parseOperationalProductQuery(query);
   const { sections, selected } = resolveOperationsSection(input.section, capabilities);
-  if (!selected) return { sections, context: null, branchId: null, products: emptyOperationalProductQuery() };
+  if (!selected) return { sections, context: null, branchId: null, products: emptyOperationalProductQuery(), reservations: emptyOperationsReservationQuery() };
   const compatibleSection = parseOperationsSection(input.section) === selected;
   const duplicates = keys.some((key) => input[key].length > 1);
   const read = (key: (typeof keys)[number]) => compatibleSection ? input[key] : [];
@@ -67,9 +77,20 @@ export const resolveOperationsQuery = (query: OperationsQueryInput, capabilities
   }
   const branchId = compatibleSection && !duplicates && compatible && operationalBranchPurpose(context) !== null
     ? operationalBranchId(input.branchId[0]) : null;
-  const products = compatibleSection && !duplicates && compatible && operationalProductPurpose(context) &&
+  let products = compatibleSection && !duplicates && compatible && operationalProductPurpose(context) &&
     (operationalBranchPurpose(context) === null || branchId !== null) ? productInput : emptyOperationalProductQuery();
-  return { sections, context, branchId, products };
+  const reservationInput = Object.fromEntries(reservationKeys.map(key => [key, query.getAll(key)])) as Record<(typeof reservationKeys)[number], readonly string[]>;
+  const reservationContext = compatibleSection && !duplicates && compatible && context.section === "Inventory" && context.inventoryTool === "reservations" && branchId !== null;
+  let reservations = emptyOperationsReservationQuery();
+  if (reservationContext) {
+    const cursor = reservationInput.reservationCursor.length === 1 ? operationalReservationCursor(reservationInput.reservationCursor[0]) : null;
+    const reservationId = reservationInput.reservationId.length === 1 ? operationalReservationId(reservationInput.reservationId[0]) : null;
+    const cursorInvalid = reservationInput.reservationCursor.length > 1 || reservationInput.reservationCursor.length === 1 && cursor === null;
+    reservations = { reservationCursor: cursor, reservationId: reservationInput.reservationId.length > 1 ? null : reservationId,
+      issue: cursorInvalid ? "InvalidCursor" : null };
+    products = { ...products, productId: null };
+  }
+  return { sections, context, branchId, products, reservations };
 };
 
 /** Context navigation calls this without an ID, clearing the preceding selection. */
@@ -93,4 +114,15 @@ export const operationsContextHref = (context: OperationsContext, branchId: stri
     if (normalized.productId) query.set("productId", normalized.productId);
   }
   return `${operationsSectionHref(context.section)}&${query}`;
+};
+
+export const operationsReservationHref = (context: OperationsContext, branchId: string, products: OperationalProductQuery,
+  reservations: OperationsReservationQuery): string => {
+  const base = operationsContextHref(context, branchId, { ...products, productId: null });
+  if (context.section !== "Inventory" || context.inventoryTool !== "reservations") return base;
+  const url = new URL(base, "https://operations.local");
+  const cursor = operationalReservationCursor(reservations.reservationCursor), reservationId = operationalReservationId(reservations.reservationId);
+  if (cursor) url.searchParams.set("reservationCursor", cursor);
+  if (reservationId) url.searchParams.set("reservationId", reservationId);
+  return `${url.pathname}?${url.searchParams}`;
 };
