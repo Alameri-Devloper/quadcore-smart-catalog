@@ -2,7 +2,7 @@
 
 ## Status | الحالة
 
-`P4Implementation: PASS`. The bounded Reservations Presentation workflow is implemented on `feature/task-3.22-p4-reservations` from base `c208a41ad5c03a5f6921d9a27464927be57f5b5b`. It is ready for independent manual browser QA. No browser acceptance was run automatically. | تم تنفيذ مسار عرض الحجوزات المحدود بنجاح على الفرع المذكور ومن نقطة الأساس المحددة، وهو جاهز لاختبار القبول اليدوي المستقل في المتصفح. لم يُنفذ قبول المتصفح تلقائياً.
+`P4Implementation: PASS`; `P4ManualBrowserQA: PASS`; `P4CompletionGate: PASS`; **P4: COMPLETE**. The bounded Reservations Presentation workflow was implemented from base `c208a41ad5c03a5f6921d9a27464927be57f5b5b`, committed as `a68fe4daae3aa93799bc0bb0c60ee4f36f30f188`, independently accepted in live-browser QA, and merged through PR #43 at integration merge `7ca1663`. P5 is ready for separate planning only and has not started. | `P4Implementation: PASS` و`P4ManualBrowserQA: PASS` و`P4CompletionGate: PASS`؛ **P4 مكتملة**. نُفذ مسار عرض الحجوزات المحدود من خط الأساس المذكور، والتزم في `a68fe4daae3aa93799bc0bb0c60ee4f36f30f188`، واجتاز القبول اليدوي المستقل في المتصفح، ودُمج عبر PR #43 عند دمج التكامل `7ca1663`. أصبحت P5 جاهزة للتخطيط المستقل فقط ولم يبدأ تنفيذها.
 
 ## Scope and Implementation | النطاق والتنفيذ
 
@@ -26,17 +26,51 @@
 
 ## Verification | التحقق
 
-| Check | Result |
-| --- | --- |
-| Focused P4 client/coordinator/UI/query/context/integration suite | PASS — 64/64 |
-| Affected Inventory and Branch/Operations Presentation regression suite | PASS — 228/228 |
-| Full repository `npm.cmd test` | PASS — exit 0 |
-| Guarded PostgreSQL integration suite (`npm.cmd run test:integration`) | PASS — 140/140 across 26 suites |
-| Full TypeScript (`npx.cmd tsc --noEmit --pretty false`) | PASS |
-| Full ESLint (`npm.cmd run lint`) | PASS |
-| Production build (`npm.cmd run build`) | PASS — 45 static pages generated; `/operations` completed |
-| `git diff --check` | PASS — line-ending notices only |
-| Manual browser acceptance | NOT_RUN — explicitly deferred for independent QA |
+| Check                                                                  | Result                                                    |
+| ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| Focused P4 client/coordinator/UI/query/context/integration suite       | PASS — 64/64                                              |
+| Affected Inventory and Branch/Operations Presentation regression suite | PASS — 228/228                                            |
+| Full repository `npm.cmd test`                                         | PASS — exit 0                                             |
+| Guarded PostgreSQL integration suite (`npm.cmd run test:integration`)  | PASS — 140/140 across 26 suites                           |
+| Full TypeScript (`npx.cmd tsc --noEmit --pretty false`)                | PASS                                                      |
+| Full ESLint (`npm.cmd run lint`)                                       | PASS                                                      |
+| Production build (`npm.cmd run build`)                                 | PASS — 45 static pages generated; `/operations` completed |
+| `git diff --check`                                                     | PASS — line-ending notices only                           |
+| Manual browser acceptance                                              | PASS — independent live-browser QA completed              |
+
+## Manual Browser Acceptance | القبول اليدوي في المتصفح
+
+Status: PASS
+
+Independent live-browser QA verified:
+
+- Reserve success with an Active Reservation.
+- Release success with final `Released` state and zero remaining quantity.
+- Partial Fulfill followed by final Fulfill.
+- Finalized Reservations leave the actionable collection while final detail remains inspectable.
+- Two-tab stale-state conflict detection with preserved review intent, explicit retry requirement, and no automatic replay.
+- Known Reservation collection/detail remains inspectable after Branch deactivation.
+- Fresh Product discovery is blocked for an inactive Branch.
+- Release on an inactive Branch is rejected authoritatively with HTTP `400` and `BranchInactive`.
+- After Branch reactivation, Release succeeds authoritatively.
+- Reservation actor without balance-read permissions can Reserve and see Reservation-specific quantity/remaining quantity without Inventory balance or availability leakage.
+- Availability-plus-Reserve actor receives semantic availability without detailed Inventory quantities.
+- Insufficient available stock is rejected without automatic retry.
+- Keyboard navigation and focus behavior passed.
+- Arabic/RTL mobile acceptance at 375 px passed.
+- Tablet acceptance at 768 px passed.
+- Session/logout clearing passed.
+- QA actionable Reservations were cleaned up after testing.
+
+The live-browser stale-conflict run verified conflict detection, preserved review intent, and no automatic retry. The detailed authoritative-refetch behavior is additionally covered by the automated P4 coordinator/mutation suites.
+
+Non-blocking UX observations remain separate follow-ups:
+
+- Generic success copy such as `نجحت عملية الحجز` is reused after Release/Fulfill instead of operation-specific success text.
+- Existing Branch guidance copy can remain visible even after a Branch/Product is already selected.
+- These observations do not change authorization, disclosure, mutation, or completion behavior.
+
+GitHub PR #43 initially reported one PostgreSQL Integration failure in the existing Identity concurrency test. A rerun passed without any source change, and all four required PR checks were green before merge.
 
 The 64 focused checks are included in the 228-test affected suite; the latter is the unique final counted targeted/regression set. The full repository command also passed but is reported separately because it is a multi-script aggregate. The first bundle attempt failed closed before integration assertions because Docker Desktop and the existing local PostgreSQL test service were stopped. Docker Desktop and only the repository-defined `postgres` service were started; the unchanged guarded `TEST_DATABASE_URL` then passed 140/140 assertions. No application/Production database was contacted or migrated, and no credential or URL was printed. The review bundle records its own configured verification evidence and sanitizes evidence only; source copies remain byte-exact. | اختبارات P4 المركزة جزء من مجموعة الاختبارات المتأثرة البالغ عددها 228، لذا تمثل الأخيرة العدد الفريد النهائي. نجح أمر المستودع الكامل أيضاً لكنه معروض منفصلاً لأنه يجمع عدة أوامر فرعية. فشلت محاولة الحزمة الأولى بشكل آمن قبل تنفيذ تأكيدات التكامل لأن Docker Desktop وخدمة PostgreSQL الاختبارية كانتا متوقفتين. شُغّل Docker Desktop وخدمة `postgres` المعرفة في المستودع فقط، ثم نجح رابط قاعدة الاختبار المحمي دون تغيير في 140 من 140 اختباراً. لم تُتصل أو تُرحّل أي قاعدة تطبيق أو إنتاج، ولم تُطبع بيانات اعتماد أو روابط. تسجل حزمة المراجعة أدلة التحقق المنقحة مع إبقاء ملفات المصدر مطابقة بايتياً.
 
@@ -77,8 +111,10 @@ None. Existing TypeScript, DDD, Clean Architecture, Modular Monolith, Multi-Tena
 
 ## Summary | الخلاصة
 
-P4 delivers the approved product-scoped Reservation operations slice with strict disclosure, authoritative actions, explicit mutation review, safe cursor and stale-state recovery, inactive-known-resource inspection, bilingual responsive accessibility, and regression protection for P1/P2/P3. The implementation commit is created only after the automated review bundle, using the exact requested message, and is not pushed. | تقدم P4 شريحة عمليات الحجوزات المعتمدة والمقيدة بالمنتج، مع كشف صارم وإجراءات موثوقة ومراجعة صريحة للطفرات واسترداد آمن للمؤشر والحالة القديمة وفحص الموارد المعروفة غير النشطة وإتاحة ثنائية اللغة ومتجاوبة وحماية انحدارات P1 وP2 وP3. يُنشأ الالتزام بعد حزمة المراجعة بالرسالة المطلوبة ولا يُدفع إلى البعيد.
+P4 delivers the approved product-scoped Reservation operations slice with strict disclosure, authoritative actions, explicit mutation review, safe cursor and stale-state recovery, inactive-known-resource inspection, bilingual responsive accessibility, and regression protection for P1/P2/P3. Implementation commit `a68fe4daae3aa93799bc0bb0c60ee4f36f30f188` was pushed, accepted through independent live-browser QA, and merged through PR #43 at integration merge `7ca1663`. | تقدم P4 شريحة عمليات الحجوزات المعتمدة والمقيدة بالمنتج، مع كشف صارم وإجراءات موثوقة ومراجعة صريحة للطفرات واسترداد آمن للمؤشر والحالة القديمة وفحص الموارد المعروفة غير النشطة وإتاحة ثنائية اللغة ومتجاوبة وحماية انحدارات P1 وP2 وP3. دُفع التزام التنفيذ `a68fe4daae3aa93799bc0bb0c60ee4f36f30f188`، واجتاز القبول اليدوي المستقل في المتصفح، ودُمج عبر PR #43 عند دمج التكامل `7ca1663`.
 
 ## Next Recommendation | التوصية التالية
 
-Perform the independent live browser QA for keyboard, mouse, touch, focus restoration, Arabic/RTL, mobile/tablet/desktop layouts, real authorization projections, inactive-Branch behavior, and stale/conflict recovery. Push or merge only after that acceptance. | نفّذ اختبار المتصفح الحي المستقل للوحة المفاتيح والفأرة واللمس واستعادة التركيز والعربية واتجاه RTL وتخطيطات الجوال واللوحي وسطح المكتب وإسقاطات التفويض الحقيقية وسلوك الفرع غير النشط واسترداد التعارض والحالة القديمة، ولا تدفع أو تدمج إلا بعد القبول.
+## Next Recommendation | التوصية التالية
+
+P4 is complete, merged, and accepted. Complete only the documentation/roadmap closure needed to publish that state. After closure, P5 Transfer may enter a separate bounded planning task; do not begin P5 implementation without its own contract review and explicit approval. | اكتملت P4 ودُمجت واجتازت القبول. المتبقي فقط إغلاق التوثيق وخارطة الطريق لنشر هذه الحالة. بعد الإغلاق يمكن أن تدخل P5 الخاصة بالتحويل في مهمة تخطيط مستقلة ومحدودة، ولا يبدأ تنفيذ P5 قبل مراجعة عقدها واعتمادها بشكل صريح.
