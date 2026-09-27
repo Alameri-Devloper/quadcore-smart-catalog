@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { operationalManagementCapabilitiesFixture } from "../../../identity/presentation/mock/operational-management-capabilities.fixture";
-import { operationalBranchId, operationalBranchPurpose, operationsContextHref, resolveOperationsQuery, type OperationsContext } from "./operations-query-state";
+import { operationalBranchId, operationalBranchPurpose, operationalReservationCursor, operationalReservationId, operationsContextHref,
+  operationsReservationHref, resolveOperationsQuery, type OperationsContext } from "./operations-query-state";
 
 const capabilities = () => { const value = operationalManagementCapabilitiesFixture(); value.branches.canView = value.listing.canManage = value.inventory.canReceive = value.pricing.canView = true; return value; };
 const resolve = (query: string) => resolveOperationsQuery(new URLSearchParams(query), capabilities());
@@ -18,10 +19,10 @@ describe("Bounded Operations context and purpose derivation", () => {
     assert.equal(operationalBranchPurpose(resolve(query).context), purpose);
     assert.equal(operationalBranchPurpose(resolve(`${query}&purpose=Anything`).context), purpose);
   });
-  it("reads only nine allow-listed query keys and never reads URL purpose or authority", () => {
+  it("reads only the existing nine keys plus approved reservationId/reservationCursor and never reads URL purpose or authority", () => {
     const read: string[] = [];
     resolveOperationsQuery({ getAll(key) { read.push(key); return []; } }, capabilities());
-    assert.deepEqual(read, ["section", "branchTool", "inventoryTool", "pricingScope", "pricingField", "branchId", "q", "productCursor", "productId"]);
+    assert.deepEqual(read, ["section", "branchTool", "inventoryTool", "pricingScope", "pricingField", "branchId", "q", "productCursor", "productId", "reservationCursor", "reservationId"]);
     const resolved = resolve("section=inventory&purpose=Transfer&branchId=branch-a&actor=foreign&productId=p&q=term");
     assert.equal(operationalBranchPurpose(resolved.context), "Inventory");
     assert.equal(operationsContextHref(resolved.context!, resolved.branchId), "/operations?section=inventory&inventoryTool=stock&branchId=branch-a");
@@ -49,8 +50,8 @@ describe("Bounded Operations context and purpose derivation", () => {
   it("falls back to an available section without adopting another section's tool or branch", () => {
     const value = operationalManagementCapabilitiesFixture(); value.inventory.canTransfer = true;
     const result = resolveOperationsQuery(new URLSearchParams("section=branches&branchTool=listing&inventoryTool=transfer&branchId=a"), value);
-    assert.deepEqual(result, { sections: ["Inventory"], context: { section: "Inventory", inventoryTool: "stock" }, branchId: null, products: { q: "", productCursor: null, productId: null, issue: null } });
-    assert.deepEqual(resolveOperationsQuery(new URLSearchParams("section=inventory"), operationalManagementCapabilitiesFixture()), { sections: [], context: null, branchId: null, products: { q: "", productCursor: null, productId: null, issue: null } });
+    assert.deepEqual(result, { sections: ["Inventory"], context: { section: "Inventory", inventoryTool: "stock" }, branchId: null, products: { q: "", productCursor: null, productId: null, issue: null }, reservations: { reservationCursor: null, reservationId: null, issue: null } });
+    assert.deepEqual(resolveOperationsQuery(new URLSearchParams("section=inventory"), operationalManagementCapabilitiesFixture()), { sections: [], context: null, branchId: null, products: { q: "", productCursor: null, productId: null, issue: null }, reservations: { reservationCursor: null, reservationId: null, issue: null } });
     assert.equal(operationalBranchPurpose(null), null);
   });
   it("validates URL identifier syntax without treating valid IDs as membership", () => {
@@ -72,5 +73,25 @@ describe("Bounded Operations context and purpose derivation", () => {
       assert.equal(new URL(url, "https://local.test").searchParams.has("branchId"), operationalBranchPurpose(context) !== null);
       assert.deepEqual(resolve(url.split("?")[1]).context, context);
     }
+  });
+  it("coordinates only approved Reservation URL state and keeps Product selection local", () => {
+    const context = { section: "Inventory", inventoryTool: "reservations" } as const;
+    const parsed = resolve("section=inventory&inventoryTool=reservations&branchId=branch-a&q=phone&productCursor=products_page&productId=must-stay-local&reservationCursor=reservations_page&reservationId=reservation-a");
+    assert.equal(parsed.products.productId, null); assert.deepEqual(parsed.reservations, { reservationCursor: "reservations_page", reservationId: "reservation-a", issue: null });
+    const href = operationsReservationHref(context, "branch-a", parsed.products, parsed.reservations);
+    assert.match(href, /reservationCursor=reservations_page/u); assert.match(href, /reservationId=reservation-a/u); assert.doesNotMatch(href, /productId=/u);
+    assert.deepEqual(resolve(href.split("?")[1]).reservations, parsed.reservations);
+    assert.deepEqual(resolve("section=inventory&inventoryTool=stock&branchId=branch-a&reservationId=reservation-a").reservations,
+      { reservationCursor: null, reservationId: null, issue: null });
+  });
+  it("normalizes invalid or duplicated Reservation state without clearing a safe selected Reservation for cursor errors", () => {
+    const base = "section=inventory&inventoryTool=reservations&branchId=branch-a";
+    assert.deepEqual(resolve(`${base}&reservationCursor=bad%2Fcursor&reservationId=reservation-a`).reservations,
+      { reservationCursor: null, reservationId: "reservation-a", issue: "InvalidCursor" });
+    assert.deepEqual(resolve(`${base}&reservationCursor=a&reservationCursor=b&reservationId=reservation-a`).reservations,
+      { reservationCursor: null, reservationId: "reservation-a", issue: "InvalidCursor" });
+    assert.equal(resolve(`${base}&reservationId=a&reservationId=b`).reservations.reservationId, null);
+    assert.equal(operationalReservationCursor("opaque_-") , "opaque_-"); assert.equal(operationalReservationCursor("bad/cursor"), null);
+    assert.equal(operationalReservationId("reservation-a"), "reservation-a"); assert.equal(operationalReservationId("a/b"), null);
   });
 });
