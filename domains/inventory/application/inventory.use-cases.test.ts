@@ -68,9 +68,9 @@ class TransactionalMemoryInventoryUnitOfWork implements InventoryUnitOfWork {
 }
 
 const fixture = () => {
-  const inventory = new MemoryInventory(); const auditEvents: string[] = []; let sequence = 0; const transaction: InventoryTransactionContext = { scope: { findBranch: async (workspaceId, branchId) => workspaceId === "workspace-b" || branchId === "foreign" ? null : { status: branchId === "inactive" ? "Inactive" : "Active" }, findProduct: async (workspaceId, productId) => workspaceId === "workspace-b" || productId === "missing" ? null : { lifecycleState: productId === "archived" ? "Archived" : "Published" } }, inventory, audit: { append: async (value) => { auditEvents.push(value.eventType); } } };
+  const inventory = new MemoryInventory(); const auditEvents: string[] = []; const auditMetadata: Array<Readonly<Record<string, string | number | boolean | null>>> = []; let sequence = 0; const transaction: InventoryTransactionContext = { scope: { findBranch: async (workspaceId, branchId) => workspaceId === "workspace-b" || branchId === "foreign" ? null : { status: branchId === "inactive" ? "Inactive" : "Active" }, findProduct: async (workspaceId, productId) => workspaceId === "workspace-b" || productId === "missing" ? null : { lifecycleState: productId === "archived" ? "Archived" : "Published" } }, inventory, audit: { append: async (value) => { auditEvents.push(value.eventType); auditMetadata.push(value.metadata); } } };
   const unitOfWork: InventoryUnitOfWork = { execute: (work) => work(transaction) }; const dependencies = { unitOfWork, clock: { now: () => new Date("2026-08-20T10:00:00Z") }, identifiers: { next: () => `generated-${++sequence}` }, fingerprint: { create: (value: Readonly<Record<string, string>>) => createHash("sha256").update(JSON.stringify(value)).digest("hex") } };
-  return { inventory, auditEvents, receive: new ReceiveInventoryUseCase(dependencies), issue: new IssueInventoryUseCase(dependencies), reserve: new ReserveInventoryUseCase(dependencies), release: new ReleaseInventoryReservationUseCase(dependencies), fulfill: new FulfillInventoryReservationUseCase(dependencies), damage: new MarkInventoryDamagedUseCase(dependencies), restore: new RestoreDamagedInventoryUseCase(dependencies), transfer: new TransferInventoryUseCase(dependencies), correct: new CorrectInventoryUseCase(dependencies), get: new GetBranchProductInventoryUseCase(unitOfWork), reservations: new ListInventoryReservationsUseCase(unitOfWork), reservation: new GetInventoryReservationUseCase(unitOfWork) };
+  return { inventory, auditEvents, auditMetadata, receive: new ReceiveInventoryUseCase(dependencies), issue: new IssueInventoryUseCase(dependencies), reserve: new ReserveInventoryUseCase(dependencies), release: new ReleaseInventoryReservationUseCase(dependencies), fulfill: new FulfillInventoryReservationUseCase(dependencies), damage: new MarkInventoryDamagedUseCase(dependencies), restore: new RestoreDamagedInventoryUseCase(dependencies), transfer: new TransferInventoryUseCase(dependencies), correct: new CorrectInventoryUseCase(dependencies), get: new GetBranchProductInventoryUseCase(unitOfWork), reservations: new ListInventoryReservationsUseCase(unitOfWork), reservation: new GetInventoryReservationUseCase(unitOfWork) };
 };
 
 const assertNoGenericQuantityDisclosure = (value: unknown) => {
@@ -190,6 +190,38 @@ describe("Inventory application", () => {
   it("rejects malformed and insufficient issue quantities without negative stock", async () => { const app = fixture(); assert.deepEqual(await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "0", operationId: "receive-zero" }), { ok: false, error: "InvalidQuantity" }); await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "2", operationId: "receive-0002" }); assert.deepEqual(await app.issue.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "3", operationId: "issue-0001" }), { ok: false, error: "InsufficientAvailableStock" }); assert.equal(app.inventory.balances.get(key("branch-a", "product-a"))?.onHand, BigInt(2)); });
   it("reserves, releases, fulfills, damages, restores, and corrects through movements", async () => { const app = fixture(); const actor = context(); await app.receive.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "20", operationId: "receive-0003" }); const reserved = await app.reserve.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "8", operationId: "reserve-0001" }); assert.ok(reserved.ok); if (!reserved.ok || !reserved.value.reservationId) return; await app.release.execute({ context: actor, branchId: "branch-a", reservationId: reserved.value.reservationId, quantity: "3", operationId: "release-0001" }); await app.fulfill.execute({ context: actor, branchId: "branch-a", reservationId: reserved.value.reservationId, quantity: "5", operationId: "fulfill-0001" }); await app.damage.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "2", operationId: "damage-0001" }); await app.restore.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", operationId: "restore-0001" }); await app.correct.execute({ context: actor, branchId: "branch-a", productId: "product-a", quantity: "1", direction: "Increase", reasonCode: "COUNT", operationId: "correct-0001" }); const balance = app.inventory.balances.get(key("branch-a", "product-a"))!; assert.deepEqual({ onHand: balance.onHand, reserved: balance.reserved, damaged: balance.damaged }, { onHand: BigInt(16), reserved: BigInt(0), damaged: BigInt(1) }); assert.equal(app.inventory.movements.length, 7); });
   it("transfers atomically and requires scope for both branches", async () => { const app = fixture(); await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "5", operationId: "receive-0004" }); const denied = await app.transfer.execute({ context: context(["branch-a"]), sourceBranchId: "branch-a", destinationBranchId: "branch-b", productId: "product-a", quantity: "2", operationId: "transfer-denied" }); assert.deepEqual(denied, { ok: false, error: "BranchNotFound" }); const moved = await app.transfer.execute({ context: context(), sourceBranchId: "branch-a", destinationBranchId: "branch-b", productId: "product-a", quantity: "2", operationId: "transfer-0001" }); assert.ok(moved.ok); assert.equal(app.inventory.balances.get(key("branch-a", "product-a"))?.onHand, BigInt(3)); assert.equal(app.inventory.balances.get(key("branch-b", "product-a"))?.onHand, BigInt(2)); assert.equal(app.inventory.movements.filter((value) => value.correlationId === (moved.ok ? moved.value.transferId : "")).length, 2); });
+  it("normalizes Transfer reason metadata and treats it as exact idempotent intent", async () => {
+    const app = fixture();
+    await app.receive.execute({ context: context(), branchId: "branch-a", productId: "product-a", quantity: "5", operationId: "transfer-reason-stock" });
+    const command = { sourceBranchId: "branch-a", destinationBranchId: "branch-b", productId: "product-a", quantity: "2", operationId: "transfer-reason-0001", reasonCode: "  REBALANCE_01  " };
+    const first = await app.transfer.execute({ ...command, context: context() });
+    assert.ok(first.ok);
+    if (!first.ok) return;
+    const transferMovements = app.inventory.movements.filter((value) => value.correlationId === first.value.transferId);
+    assert.deepEqual(transferMovements.map((value) => [value.movementType, value.reasonCode]), [["TransferOut", "REBALANCE_01"], ["TransferIn", "REBALANCE_01"]]);
+    assert.equal(app.auditMetadata.at(-1)?.reasonCode, "REBALANCE_01");
+
+    const replay = await app.transfer.execute({ ...command, reasonCode: "REBALANCE_01", context: staff(["inventory.transfer"], null) });
+    assert.deepEqual(replay, { ok: true, value: { operationId: command.operationId, status: "Succeeded", transferId: first.value.transferId } });
+    assert.equal(app.inventory.movements.filter((value) => value.correlationId === first.value.transferId).length, 2);
+    assert.equal(app.auditEvents.filter((value) => value === "InventoryTransferred").length, 1);
+    assert.deepEqual(await app.transfer.execute({ ...command, reasonCode: "REBALANCE_02", context: context() }), { ok: false, error: "IdempotencyConflict" });
+
+    const withoutReason = { ...command, operationId: "transfer-reason-omitted" };
+    delete (withoutReason as { reasonCode?: string }).reasonCode;
+    assert.ok((await app.transfer.execute({ ...withoutReason, context: context() })).ok);
+    assert.deepEqual(await app.transfer.execute({ ...withoutReason, reasonCode: "REBALANCE_01", context: context() }), { ok: false, error: "IdempotencyConflict" });
+  });
+  it("rejects invalid Transfer reasons before persistence", async () => {
+    for (const [index, reasonCode] of ["", "   ", "#INVALID", "INVALID REASON", `R${"X".repeat(64)}`].entries()) {
+      const app = fixture();
+      const result = await app.transfer.execute({ context: context(), sourceBranchId: "branch-a", destinationBranchId: "branch-b", productId: "product-a", quantity: "1", operationId: `transfer-invalid-reason-${index}`, reasonCode });
+      assert.deepEqual(result, { ok: false, error: "InvalidInput" });
+      assert.equal(app.inventory.operations.size, 0);
+      assert.equal(app.inventory.movements.length, 0);
+      assert.equal(app.auditEvents.length, 0);
+    }
+  });
   it("rolls back a successful source save when the destination save fails and permits retry", async () => {
     const unitOfWork = new TransactionalMemoryInventoryUnitOfWork();
     const now = new Date("2026-08-23T10:00:00Z");
