@@ -22,6 +22,7 @@ import { operationsProductDiscovery } from "./operations-product-context";
 import { OperationsListingWorkflow } from "./OperationsListingWorkflow";
 import { OperationsInventoryWorkflow } from "./OperationsInventoryWorkflow";
 import { OperationsReservationWorkflow } from "./OperationsReservationWorkflow";
+import { OperationsTransferWorkflow } from "./OperationsTransferWorkflow";
 
 export const OperationsContent = ({ state, sectionValues, locale, onRetry, branchManagement, query, operationalSelector, workspaceProductSelector }: {
   readonly state: OperationalManagementCapabilityState;
@@ -72,6 +73,7 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
     canViewAvailability: false, canViewQuantities: false, canReceive: false, canIssue: false, canManageDamage: false, canAdjust: false,
   };
   const canReserveHint = state.type === "Ready" && state.value.inventory.canReserve;
+  const canTransferHint = state.type === "Ready" && state.value.inventory.canTransfer;
   const renderProducts = (context: OperationsContext, branchId: string | null, products: OperationalProductQuery, branches?: OperationalBranchState) => {
     const discovery = operationsProductDiscovery(context, branchId, branches);
     if (discovery.type === "None") return null;
@@ -105,6 +107,11 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
                 { ...reservationNavigation, issue: null }), { scroll: false })}
               onReservationChange={value => branchId && router.replace(operationsReservationHref(context, branchId, { ...products, productId: null },
                 { ...value, issue: null }), { scroll: false })} />
+          : context.section === "Inventory" && context.inventoryTool === "transfer"
+            ? <OperationsTransferWorkflow context={context} branchId={branchId} query={products} branches={branches} hints={inventoryHints}
+              canTransferHint={canTransferHint} lifecycle={actor} locale={i18n.locale} onAuthenticationRequired={redirectExpired}
+              refreshBranches={refreshBranches}
+              onQueryChange={next => router.replace(operationsContextHref(context, branchId, { ...next, productId: null }), { scroll: false })} />
           : renderProducts(context, branchId, products, branches)}</OperationalBranchSelector>} />
   </PresentationShell>;
 };
