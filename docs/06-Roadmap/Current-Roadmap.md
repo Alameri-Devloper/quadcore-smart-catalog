@@ -1,8 +1,8 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-> **Current P4 closure — 2026-09-27 | حالة إغلاق P4 الحالية:** P1, P2, P3, and P4 are **COMPLETE**. P4 Reservations implementation, automated verification, required CI checks, and independent live-browser acceptance are **PASS**; `P4CompletionGate: PASS`; **P4: COMPLETE**. P4 was implemented in `a68fe4daae3aa93799bc0bb0c60ee4f36f30f188` and merged through PR #43 at integration merge `7ca1663`. P5 Transfer is **READY_FOR_PLANNING** only and is not implementation-approved. Existing non-blocking UX observations remain separate follow-ups outside P4 scope. See the [P4 final report](../05-Development/Reports/QSC-Task-3.22-P4-Final-Report.md). | اكتملت P1 وP2 وP3 وP4. نجح تنفيذ P4 للحجوزات والتحقق الآلي وفحوص CI المطلوبة والقبول اليدوي المستقل في المتصفح؛ `P4CompletionGate: PASS`؛ **P4 مكتملة**. نُفذت P4 في `a68fe4daae3aa93799bc0bb0c60ee4f36f30f188` ودُمجت عبر PR #43 عند دمج التكامل `7ca1663`. أصبحت P5 الخاصة بالتحويل **جاهزة للتخطيط فقط** ولم يُعتمد تنفيذها بعد. تبقى ملاحظات UX غير المانعة متابعات مستقلة خارج نطاق P4. راجع [التقرير النهائي لـP4](../05-Development/Reports/QSC-Task-3.22-P4-Final-Report.md).
+> **Current P5 closure — 2026-09-28 | حالة إغلاق P5 الحالية:** P1, P2, P3, P4, and P5 are **COMPLETE**. P5 Transfer implementation, automated verification, 4/4 required CI checks, and independent live-browser acceptance are **PASS**; `P5CompletionGate: PASS`; **P5: COMPLETE**. P5 was implemented in `a14143288f7618e93563f520827daadf81784c47` and merged through PR #45 at integration merge `80cc2e0`. P6 is **READY_FOR_PLANNING** only. See the [P5 final report](../05-Development/Reports/QSC-Task-3.22-P5-Final-Report.md). | اكتملت P1 وP2 وP3 وP4 وP5. نجح تنفيذ P5 للتحويل والتحقق الآلي وفحوص CI المطلوبة وعددها 4/4 والقبول اليدوي المستقل في المتصفح؛ `P5CompletionGate: PASS`؛ **P5 مكتملة**. نُفذت P5 في `a14143288f7618e93563f520827daadf81784c47` ودُمجت عبر PR #45 عند دمج التكامل `80cc2e0`. P6 **جاهزة للتخطيط فقط**. راجع [التقرير النهائي لـP5](../05-Development/Reports/QSC-Task-3.22-P5-Final-Report.md).
 
-**Status:** A1–A6 Completed / merged; P1: COMPLETE; P2: COMPLETE; P3: COMPLETE; P4 Live Browser Acceptance QA: PASS; `P4CompletionGate: PASS`; P4: COMPLETE; P5: READY_FOR_PLANNING · **Last Updated:** 2026-09-27 · **Scope:** Authoritative delivery sequence
+**Status:** A1–A6 Completed / merged; P1: COMPLETE; P2: COMPLETE; P3: COMPLETE; P4: COMPLETE; P5 Live Browser Acceptance QA: PASS; `P5CompletionGate: PASS`; P5: COMPLETE; P6: READY_FOR_PLANNING · **Last Updated:** 2026-09-28 · **Scope:** Authoritative delivery sequence
 
 ## English
 
@@ -30,7 +30,7 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration                                                                                                                                              | No Branch, Inventory, or Pricing management Presentation was added.                                                                          |
 
-The current integration baseline is `7ca1663`, merging Task 3.22-P4 through PR #43 into `feature/product-entry-engine`. P1, P2, P3, and P4 are complete. A6 remains merged through PR #35, and A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
+The current integration baseline is `80cc2e0`, merging Task 3.22-P5 through PR #45 into `feature/product-entry-engine`. P1, P2, P3, P4, and P5 are complete. P6 is `READY_FOR_PLANNING` only. A6 remains merged through PR #35, and A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
 
 ### Task 3.22-P1 — Complete
 
@@ -56,7 +56,11 @@ The **P1 foundation and P2 Listing workflow** have passed their documented autom
 
 Live browser acceptance verified Reserve, Release, partial and final Fulfill, actionable/finalized Reservation lifecycle, stale-state conflict handling without automatic replay, inactive known-resource inspection, authoritative `BranchInactive` rejection, Reservation-specific disclosure without Inventory balance leakage, semantic availability-only projection, insufficient-stock handling, keyboard/focus behavior, Arabic/RTL mobile presentation, tablet responsiveness, and session/logout clearing. See the [P4 final report](../05-Development/Reports/QSC-Task-3.22-P4-Final-Report.md).
 
-**P5 Transfer is READY_FOR_PLANNING only. P5 implementation requires its own bounded planning and approval.**
+### Task 3.22-P5 — Complete
+
+**P5 Live Browser Acceptance QA: PASS; `P5CompletionGate: PASS`; P5: COMPLETE.** The bounded Transfer workflow was implemented in commit `a14143288f7618e93563f520827daadf81784c47` and merged through PR #45 at integration merge `80cc2e0`. Existing automated verification evidence remains recorded in the [P5 final report](../05-Development/Reports/QSC-Task-3.22-P5-Final-Report.md), and all 4/4 required CI checks passed. Independent live-browser acceptance verified the active-to-active Review/Confirm workflow, same-Branch prevention, success and `transferId`, all three disclosure tiers without unauthorized Inventory leakage, `reasonCode`, insufficient-stock handling without automatic retry, Branch deactivation recovery on both sides, inactive-Branch blocking for fresh work, session/logout clearing, keyboard/focus behavior, 375 px mobile, and 768 px tablet.
+
+**P6 is READY_FOR_PLANNING only. Do not begin implementation without its own bounded planning and approval.**
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -122,7 +126,11 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 تحقق القبول اليدوي من الحجز والتحرير والتنفيذ الجزئي والنهائي، دورة حالة الحجز، معالجة الحالة القديمة دون إعادة تلقائية، فحص الحجز المعروف على الفرع غير النشط، الرفض الموثوق `BranchInactive`، كشف بيانات الحجز دون تسريب رصيد المخزون، كشف الإتاحة الدلالية فقط، منع الحجز عند عدم كفاية المخزون، لوحة المفاتيح والتركيز، العربية/RTL على الجوال، الاستجابة على اللوحي، ومسح الحالة عند تسجيل الخروج.
 
-**أصبحت P5 الخاصة بالتحويل جاهزة للتخطيط فقط، ويتطلب تنفيذها تخطيطاً واعتماداً مستقلين.**
+### المهمة 3.22-P5 — مكتملة
+
+**نجح القبول اليدوي لـP5؛ `P5CompletionGate: PASS`؛ P5 مكتملة.** نُفذ مسار التحويل المحدود في الالتزام `a14143288f7618e93563f520827daadf81784c47` ودُمج عبر PR #45 عند دمج التكامل `80cc2e0`. تبقى أدلة التحقق الآلي الحالية موثقة في [التقرير النهائي لـP5](../05-Development/Reports/QSC-Task-3.22-P5-Final-Report.md)، ونجحت فحوص CI المطلوبة وعددها 4/4. تحقق القبول المستقل في المتصفح من مسار التحويل من فرع نشط إلى فرع نشط والمراجعة والتأكيد، ومنع الفرع نفسه، والنجاح و`transferId`، ومستويات الكشف الثلاثة دون تسريب غير مصرح به للمخزون، و`reasonCode`، ومعالجة نقص المخزون دون إعادة تلقائية، والتعافي من تعطيل أي من الفرعين، ومنع الفرع غير النشط للعمل الجديد، ومسح الجلسة وتسجيل الخروج، ولوحة المفاتيح والتركيز، والجوال عند 375 بكسل، واللوحي عند 768 بكسل.
+
+**P6 جاهزة للتخطيط فقط. لا يبدأ تنفيذها دون تخطيط محدود واعتماد مستقلين.**
 
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 
@@ -157,6 +165,7 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 - [Task 3.22 Presentation Planning Report](../05-Development/Reports/QSC-Task-3.22-Presentation-Planning-Report.md)
 - [Task 3.22-P3 Final Report](../05-Development/Reports/QSC-Task-3.22-P3-Final-Report.md)
 - [Task 3.22-P4 Final Report](../05-Development/Reports/QSC-Task-3.22-P4-Final-Report.md)
+- [Task 3.22-P5 Final Report](../05-Development/Reports/QSC-Task-3.22-P5-Final-Report.md)
 - [Task 3.22 Branch Selector Gap Analysis](../05-Development/Reports/QSC-Task-3.22-Branch-Selector-Gap-Analysis.md)
 - [Future Capabilities](Future-Capabilities.md)
 - [Deferred Decisions](Deferred-Decisions.md)

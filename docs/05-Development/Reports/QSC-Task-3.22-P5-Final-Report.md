@@ -2,7 +2,7 @@
 
 ## Status | الحالة
 
-`P5Implementation: PASS`; `P5ManualBrowserQA: PENDING`; `P5CompletionGate: NOT RUN`; **P5 is not marked complete**. The bounded Inventory Transfer Presentation workflow is implemented on `feature/task-3.22-p5-transfer` from base `87bf073a8ea10682e2f56dc1fa6445f0c9c9f990`. Independent live-browser acceptance remains a separate gate. | `P5Implementation: PASS`؛ `P5ManualBrowserQA: PENDING`؛ `P5CompletionGate: NOT RUN`؛ **لم تُعلَّم P5 كمكتملة**. نُفذ مسار عرض تحويل المخزون المحدود على الفرع `feature/task-3.22-p5-transfer` انطلاقًا من الأساس المذكور، ويبقى قبول المتصفح الحي المستقل بوابة منفصلة.
+`P5Implementation: PASS`; `P5ManualBrowserQA: PASS`; `P5CompletionGate: PASS`; **P5: COMPLETE**. The bounded Inventory Transfer Presentation workflow was implemented in commit `a14143288f7618e93563f520827daadf81784c47` and merged through PR #45 at integration merge `80cc2e0`. All 4/4 required CI checks passed. | `P5Implementation: PASS`؛ `P5ManualBrowserQA: PASS`؛ `P5CompletionGate: PASS`؛ **P5 مكتملة**. نُفذ مسار عرض تحويل المخزون المحدود في الالتزام `a14143288f7618e93563f520827daadf81784c47` ودُمج عبر PR #45 عند دمج التكامل `80cc2e0`. نجحت فحوص CI المطلوبة وعددها 4/4.
 
 ## Scope and P5-R1 Dependency | النطاق واعتماد P5-R1
 
@@ -54,7 +54,7 @@ Insufficient stock, Inventory conflict, and idempotency conflict preserve editab
 
 ## Accessibility, Responsive, and I18n | الإتاحة والاستجابة والترجمة
 
-The workflow uses one English/Arabic tree, source/destination-specific labels, bidi isolation for identifiers/codes/quantities, native radio controls, existing 44 px touch targets, responsive auto-fit Inventory summaries, live success/error/busy regions, dialog semantics, initial focus, Escape/cancel handling, focus restoration, and duplicate-submit guards. Static Presentation coverage verifies the 320–480 px-safe no-fixed-width structure and tablet/desktop auto-fit behavior; independent 375 px/768 px live-browser acceptance remains pending. | يستخدم المسار شجرة واحدة للإنجليزية والعربية، وتسميات واضحة للمصدر والوجهة، وعزل اتجاهي للمعرفات والرموز والكميات، وعناصر اختيار أصلية، وأهداف لمس قائمة بحجم 44 بكسل، وملخصات مخزون متجاوبة، ومناطق حية للنجاح والخطأ والانشغال، ودلالات حوار وتركيزًا أوليًا وإلغاء Escape واستعادة التركيز ومنع الإرسال المكرر. تتحقق اختبارات العرض الساكنة من بنية آمنة للجوال واللوحي وسطح المكتب، ويبقى القبول الحي المستقل عند 375 و768 بكسل معلقًا.
+The workflow uses one English/Arabic tree, source/destination-specific labels, bidi isolation for identifiers/codes/quantities, native radio controls, existing 44 px touch targets, responsive auto-fit Inventory summaries, live success/error/busy regions, dialog semantics, initial focus, Escape/cancel handling, focus restoration, and duplicate-submit guards. Static Presentation coverage verifies the 320–480 px-safe no-fixed-width structure and tablet/desktop auto-fit behavior; independent live-browser acceptance passed for keyboard/focus behavior and the 375 px mobile and 768 px tablet viewports. | يستخدم المسار شجرة واحدة للإنجليزية والعربية، وتسميات واضحة للمصدر والوجهة، وعزل اتجاهي للمعرفات والرموز والكميات، وعناصر اختيار أصلية، وأهداف لمس قائمة بحجم 44 بكسل، وملخصات مخزون متجاوبة، ومناطق حية للنجاح والخطأ والانشغال، ودلالات حوار وتركيزًا أوليًا وإلغاء Escape واستعادة التركيز ومنع الإرسال المكرر. تتحقق اختبارات العرض الساكنة من بنية آمنة للجوال واللوحي وسطح المكتب، ونجح القبول المستقل في المتصفح الحي لسلوك لوحة المفاتيح والتركيز وعرض الجوال عند 375 بكسل واللوحي عند 768 بكسل.
 
 ## Verification | التحقق
 
@@ -71,9 +71,35 @@ The workflow uses one English/Arabic tree, source/destination-specific labels, b
 | Guarded PostgreSQL integration suite | PASS — automated review bundle verification; repository-defined test database only |
 | Production build | PASS — automated review bundle verification |
 | Drizzle schema check | PASS — automated review bundle verification |
-| Manual live-browser QA | PENDING — explicitly independent |
+| Required PR CI | PASS — 4/4 |
+| Manual live-browser QA | PASS — independently verified |
 
 The focused checks are included in the 339-test affected suite; the latter is the unique affected-regression count. The automated review bundle reruns its trusted required verification matrix and preserves byte-exact source while sanitizing evidence only. No Production database, credentials, or real environment file is included. | تدخل الاختبارات المركزة ضمن مجموعة الانحدار المتأثرة ذات 339 اختبارًا، وهي العدد الفريد النهائي لهذه المجموعة. تعيد حزمة المراجعة الآلية تشغيل مصفوفة التحقق الموثوقة وتحافظ على المصدر مطابقًا بايتيًا مع تنقيح الأدلة فقط. لا تُضمّن قاعدة بيانات إنتاج أو بيانات اعتماد أو ملف بيئة حقيقي.
+
+## Independent Manual Browser QA | التحقق اليدوي المستقل في المتصفح
+
+The following paths were independently exercised and passed: | تم التحقق المستقل من المسارات التالية ونجحت:
+
+- Active → Active Transfer; same-Branch prevention; Transfer Review / Confirm flow; Transfer success result and `transferId`; and visible `reasonCode` in Review.
+- Full-quantity disclosure; availability-only disclosure; Transfer-only disclosure without Inventory read access; confirmation that mutation authority does not imply Inventory read authority; and no balance/availability leakage for a Transfer-only actor.
+- `InsufficientAvailableStock` handling without automatic retry.
+- Destination Branch deactivated between Review and Confirm; Source Branch deactivated between Review and Confirm; and inactive Branch remaining visible but blocked for fresh work.
+- Session/logout clearing; keyboard and focus behavior; 375 px mobile; and 768 px tablet.
+
+- التحويل من فرع نشط إلى فرع نشط؛ منع اختيار الفرع نفسه؛ تدفق المراجعة والتأكيد؛ نتيجة نجاح التحويل و`transferId`؛ وظهور `reasonCode` في المراجعة.
+- كشف الكمية الكامل؛ كشف الإتاحة فقط؛ كشف التحويل فقط دون صلاحية قراءة المخزون؛ التأكد من أن صلاحية الطفرة لا تعني صلاحية قراءة المخزون؛ وعدم تسريب الرصيد أو الإتاحة لممثل يملك صلاحية التحويل فقط.
+- معالجة `InsufficientAvailableStock` دون إعادة محاولة تلقائية.
+- تعطيل فرع الوجهة بين المراجعة والتأكيد؛ تعطيل فرع المصدر بين المراجعة والتأكيد؛ وبقاء الفرع غير النشط ظاهرًا مع منعه للعمل الجديد.
+- مسح الحالة عند انتهاء الجلسة أو تسجيل الخروج؛ لوحة المفاتيح والتركيز؛ الجوال عند 375 بكسل؛ واللوحي عند 768 بكسل.
+
+Detailed recovery paths for `ProductArchived`, `ProductNotFound`, `InventoryConflict`, `IdempotencyConflict`, and uncertain transport retry are covered by automated tests rather than claimed as independently exercised live-browser evidence. | تغطي الاختبارات الآلية مسارات التعافي التفصيلية لـ`ProductArchived` و`ProductNotFound` و`InventoryConflict` و`IdempotencyConflict` وإعادة المحاولة بعد نقل غير مؤكد؛ ولا يدعي هذا التقرير أنها اختُبرت استقلاليًا في المتصفح الحي.
+
+## Non-Blocking Follow-Ups | متابعات غير مانعة
+
+1. Branch reactivation performed in another browser tab is not reflected until a refetch or refresh occurs. | لا ينعكس تنشيط الفرع المنفذ في علامة تبويب أخرى حتى تحدث إعادة جلب أو تحديث.
+2. After the Source Branch becomes inactive, stale local selection can remain internally and show "إلغاء تحديد الفرع" even when the selected Branch name is no longer clearly displayed. | بعد أن يصبح الفرع المصدر غير نشط، قد يبقى الاختيار المحلي المتقادم داخليًا ويظهر النص "إلغاء تحديد الفرع" حتى عندما لا يعود اسم الفرع المحدد ظاهرًا بوضوح.
+3. The generic guidance "اختيار الفرع متاح. اختر فرعًا نشطًا، ثم ابحث عن المنتج." may remain visible even after valid workflow context is selected. | قد يبقى الإرشاد العام المذكور ظاهرًا حتى بعد تحديد سياق صالح لسير العمل.
+4. A separate QA user-management issue was observed: some permission changes could fail to persist with the validation message "راجع الحقول الموضحة ثم حاول مرة أخرى." This is not a P5 Transfer blocker and must be tracked separately. | لوحظت مشكلة منفصلة في إدارة مستخدمي QA: قد تفشل بعض تغييرات الصلاحيات في الاستمرار مع رسالة التحقق المذكورة. ليست هذه مشكلة مانعة لتحويل P5 ويجب تتبعها بصورة منفصلة.
 
 ## Files Created | الملفات المنشأة
 
@@ -114,8 +140,8 @@ None. Existing TypeScript, DDD, Clean Architecture, Modular Monolith, Multi-Tena
 
 ## Summary | الخلاصة
 
-P5 delivers the approved, source-scoped Inventory Transfer Presentation workflow with one A6 Transfer Branch set, local destination/Product/result state, strict three-tier disclosure, exact optional reason intent, explicit review/confirmation, bounded idempotent retry, authoritative lifecycle recovery, and conditional two-sided Inventory refetch. The task is ready for independent manual browser QA after review; it is not ready to be declared complete before that gate. | تقدم P5 مسار عرض تحويل المخزون المعتمد والمقيد بالمصدر، باستخدام مجموعة A6 Transfer واحدة وحالة محلية للوجهة والمنتج والنتيجة وكشف صارم بثلاثة مستويات وقصد دقيق للسبب الاختياري ومراجعة وتأكيد صريحين وإعادة محاولة محدودة غير مكررة وتعافٍ سلطوي من تغيرات دورة الحياة وتحديث مشروط لجانبي المخزون. المهمة جاهزة لمراجعة المتصفح اليدوية المستقلة بعد مراجعة الحزمة، وليست جاهزة لإعلان الاكتمال قبل تلك البوابة.
+P5 delivers the approved, source-scoped Inventory Transfer Presentation workflow with one A6 Transfer Branch set, local destination/Product/result state, strict three-tier disclosure, exact optional reason intent, explicit review/confirmation, bounded idempotent retry, authoritative lifecycle recovery, and conditional two-sided Inventory refetch. Implementation, automated verification, required CI, and independent manual browser QA passed; `P5CompletionGate: PASS`; **P5: COMPLETE**. | تقدم P5 مسار عرض تحويل المخزون المعتمد والمقيد بالمصدر، باستخدام مجموعة A6 Transfer واحدة وحالة محلية للوجهة والمنتج والنتيجة وكشف صارم بثلاثة مستويات وقصد دقيق للسبب الاختياري ومراجعة وتأكيد صريحين وإعادة محاولة محدودة غير مكررة وتعافٍ سلطوي من تغيرات دورة الحياة وتحديث مشروط لجانبي المخزون. نجح التنفيذ والتحقق الآلي وفحوص CI المطلوبة والتحقق اليدوي المستقل في المتصفح؛ `P5CompletionGate: PASS`؛ **P5 مكتملة**.
 
 ## Next Recommendation | التوصية التالية
 
-Review the implementation and automated evidence, then run independent live-browser acceptance for keyboard, mouse, touch, English/Arabic, RTL/LTR, 375 px mobile, 768 px tablet, desktop, stale two-tab behavior, inactive Branch recovery, all disclosure tiers, and session/logout clearing. Do not mark P5 complete, push, merge, or begin P6+ until that acceptance is recorded. | راجع التنفيذ والأدلة الآلية، ثم نفذ قبولًا مستقلاً في المتصفح الحي للوحة المفاتيح والفأرة واللمس والإنجليزية والعربية واتجاهي RTL/LTR والجوال بعرض 375 بكسل واللوحي بعرض 768 بكسل وسطح المكتب وسلوك التقادم بين علامتي تبويب والتعافي من الفرع غير النشط ومستويات الكشف الثلاثة ومسح الجلسة وتسجيل الخروج. لا تعلن اكتمال P5 ولا تدفع أو تدمج أو تبدأ P6 وما بعدها حتى يُسجل هذا القبول.
+P6 is `READY_FOR_PLANNING` only. Define and approve its bounded plan before implementation, and track the non-blocking P5 UX observations separately. | P6 `READY_FOR_PLANNING` فقط. يجب تعريف خطتها المحدودة واعتمادها قبل التنفيذ، مع تتبع ملاحظات UX غير المانعة الخاصة بـP5 بصورة منفصلة.
