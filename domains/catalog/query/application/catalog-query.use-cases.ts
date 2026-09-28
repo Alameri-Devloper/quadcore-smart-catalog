@@ -103,14 +103,19 @@ const productView = (value: CatalogProductProjection, visibility: CatalogQueryVi
 
 const invalid = () => catalogQueryFailure("InvalidQuery");
 const operationalBranchPurposes = new Set<OperationalProductSearchPurpose>(["Listing", "Inventory", "BranchPricing", "BranchReferenceCost"]);
-const operationalPurposePermissions: Readonly<Record<OperationalProductSearchPurpose, readonly PermissionCode[]>> = Object.freeze({
+type DirectOperationalPurpose = Exclude<OperationalProductSearchPurpose, "WorkspacePricing" | "WorkspaceReferenceCost">;
+const operationalPurposePermissions: Readonly<Record<DirectOperationalPurpose, readonly PermissionCode[]>> = Object.freeze({
   Listing: Object.freeze(["catalog.product.edit", "catalog.products.edit"] as const),
   Inventory: Object.freeze(["inventory.availability.view", "inventory.quantity.view", "inventory.receive", "inventory.issue", "inventory.reserve", "inventory.transfer", "inventory.damage", "inventory.adjust"] as const),
-  WorkspacePricing: Object.freeze(["pricing.manage"] as const),
   BranchPricing: Object.freeze(["pricing.branchOverride.manage"] as const),
-  WorkspaceReferenceCost: Object.freeze(["referenceCost.manage"] as const),
   BranchReferenceCost: Object.freeze(["referenceCost.branchOverride.manage"] as const),
 });
+const canDiscoverOperationalProducts = (context: TrustedActorContext, purpose: OperationalProductSearchPurpose): boolean => {
+  if (purpose === "WorkspacePricing") return can(context, "pricing.manage") || can(context, "pricing.view");
+  if (purpose === "WorkspaceReferenceCost") return can(context, "referenceCost.manage")
+    || (can(context, "pricing.view") && can(context, "referenceCost.view"));
+  return operationalPurposePermissions[purpose].some((permission) => can(context, permission));
+};
 const normalize = (input: CatalogSearchInput, visibility: CatalogQueryVisibility): { searchText: string; branchId: string | null; filters: CatalogSearchFilters; sort: CatalogSort; limit: number } | null => {
   try {
     const searchText = normalizeCatalogSearchText(input.q);
@@ -162,7 +167,7 @@ export class SearchOperationalProductsUseCase {
   async execute(command: { readonly context: TrustedActorContext; readonly input: OperationalProductSearchInput }): Promise<CatalogQueryResult<OperationalProductSearchView>> {
     const purpose = command.input.purpose;
     if (!isOperationalProductSearchPurpose(purpose)) return invalid();
-    if (!operationalPurposePermissions[purpose].some((permission) => can(command.context, permission))) return catalogQueryFailure("Forbidden");
+    if (!canDiscoverOperationalProducts(command.context, purpose)) return catalogQueryFailure("Forbidden");
 
     let searchText: string, branchId: string | null;
     try { searchText = normalizeCatalogSearchText(command.input.q); branchId = validateCatalogId(command.input.branchId) ?? null; } catch { return invalid(); }
