@@ -71,12 +71,13 @@ describe("P1 foundation client/coordinator integration", () => {
       ];
       assert.deepEqual(calls, expected);
       for (const productId of ["product-z", "missing", null]) {
-        const selected = resolveOperationsQuery(new URLSearchParams(operationsContextHref(query.context, query.branchId,
-          { ...query.products, productId }).split("?")[1]), capabilities.value);
-        assert.equal(operationalProductSelection(a2.snapshot, key, selected.products.productId).type,
+        const href = operationsContextHref(query.context, query.branchId, { ...query.products, productId });
+        const selected = resolveOperationsQuery(new URLSearchParams(href.split("?")[1]), capabilities.value);
+        assert.equal(selected.products.productId, null); assert.equal(href.includes("productId="), false);
+        assert.equal(operationalProductSelection(a2.snapshot, key, productId).type,
           productId === null ? "None" : productId === "missing" ? "Stale" : "Selected");
         assert.equal(operationalProductRequestKey({ ...discovery.scope, q: selected.products.q }), key);
-        assert.deepEqual(calls, expected); // No discovery reload, resource GET, or mutation from URL selection.
+        assert.deepEqual(calls, expected); // Local selection performs no discovery reload, resource GET, or mutation.
       }
       assert.equal(a2.snapshot.type, "Ready");
       if (a2.snapshot.type === "Ready") assert.deepEqual(a2.snapshot.value.items.map(({ productId }) => productId), ["product-z", "product-a"]);

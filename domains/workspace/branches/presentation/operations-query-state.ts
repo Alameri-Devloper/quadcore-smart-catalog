@@ -90,6 +90,8 @@ export const resolveOperationsQuery = (query: OperationsQueryInput, capabilities
       issue: cursorInvalid ? "InvalidCursor" : null };
     products = { ...products, productId: null };
   }
+  if (compatibleSection && !duplicates && compatible && context.section === "Inventory" && context.inventoryTool === "transfer")
+    products = { ...products, productId: null };
   return { sections, context, branchId, products, reservations };
 };
 
@@ -105,7 +107,8 @@ export const operationsContextHref = (context: OperationsContext, branchId: stri
     // Reparse before serialization; never spread URL input or authority fields.
     const productQuery = new URLSearchParams();
     if (products.q) productQuery.set("q", products.q);
-    const cursor = operationalProductCursor(products.productCursor), productId = operationalProductId(products.productId);
+    const cursor = operationalProductCursor(products.productCursor), productId = context.section === "Inventory" && context.inventoryTool === "transfer"
+      ? null : operationalProductId(products.productId);
     if (cursor) productQuery.set("productCursor", cursor);
     if (productId) productQuery.set("productId", productId);
     const normalized = parseOperationalProductQuery(productQuery);

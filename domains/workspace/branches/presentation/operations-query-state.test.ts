@@ -84,6 +84,14 @@ describe("Bounded Operations context and purpose derivation", () => {
     assert.deepEqual(resolve("section=inventory&inventoryTool=stock&branchId=branch-a&reservationId=reservation-a").reservations,
       { reservationCursor: null, reservationId: null, issue: null });
   });
+  it("keeps Transfer destination, Product, and result local without adding URL keys", () => {
+    const context = { section: "Inventory", inventoryTool: "transfer" } as const;
+    const parsed = resolve("section=inventory&inventoryTool=transfer&branchId=branch-a&q=phone&productCursor=products_page&productId=must-stay-local&destinationBranchId=branch-b&transferId=transfer-a");
+    assert.equal(parsed.branchId, "branch-a"); assert.equal(parsed.products.productId, null);
+    const href = operationsContextHref(context, parsed.branchId, { ...parsed.products, productId: "product-one" });
+    assert.match(href, /branchId=branch-a/u); assert.match(href, /q=phone/u); assert.match(href, /productCursor=products_page/u);
+    assert.doesNotMatch(href, /productId|destinationBranchId|transferId/u);
+  });
   it("normalizes invalid or duplicated Reservation state without clearing a safe selected Reservation for cursor errors", () => {
     const base = "section=inventory&inventoryTool=reservations&branchId=branch-a";
     assert.deepEqual(resolve(`${base}&reservationCursor=bad%2Fcursor&reservationId=reservation-a`).reservations,
