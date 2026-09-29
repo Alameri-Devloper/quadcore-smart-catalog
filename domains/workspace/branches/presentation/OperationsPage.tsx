@@ -23,6 +23,7 @@ import { OperationsListingWorkflow } from "./OperationsListingWorkflow";
 import { OperationsInventoryWorkflow } from "./OperationsInventoryWorkflow";
 import { OperationsReservationWorkflow } from "./OperationsReservationWorkflow";
 import { OperationsTransferWorkflow } from "./OperationsTransferWorkflow";
+import { OperationsPricingWorkflow } from "./OperationsPricingWorkflow";
 
 export const OperationsContent = ({ state, sectionValues, locale, onRetry, branchManagement, query, operationalSelector, workspaceProductSelector }: {
   readonly state: OperationalManagementCapabilityState;
@@ -86,7 +87,9 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
   return <PresentationShell actor={actor} i18n={i18n}>
     <OperationsContent state={state} sectionValues={search.getAll("section")} query={search} locale={i18n.locale} onRetry={refresh}
       branchManagement={<BranchManagementPanel locale={i18n.locale} lifecycle={actor} onAuthenticationRequired={redirectExpired} />}
-      workspaceProductSelector={(context, products) => renderProducts(context, null, products)}
+      workspaceProductSelector={(context, products) => <OperationsPricingWorkflow context={context} query={products} lifecycle={actor}
+        locale={i18n.locale} onAuthenticationRequired={redirectExpired}
+        onQueryChange={next => router.replace(operationsContextHref(context, null, next), { scroll: false })} />}
       operationalSelector={(purpose, branchId, context, products, reservations) => <OperationalBranchSelector key={purpose} purpose={purpose} branchId={branchId} locale={i18n.locale}
         lifecycle={actor} onAuthenticationRequired={redirectExpired} onSelectBranch={(id) => {
           if (state.type !== "Ready") return;
