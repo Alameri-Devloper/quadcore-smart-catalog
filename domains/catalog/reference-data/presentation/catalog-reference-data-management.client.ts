@@ -114,8 +114,9 @@ export class CatalogReferenceDataManagementClient {
   constructor(private readonly fetcher: FetchPort = fetch) {}
 
   private async request<T>(path: string, init: RequestInit, read: (value: unknown) => T | null): Promise<CatalogReferenceApiResult<T>> {
+    const fetcher = this.fetcher;
     try {
-      const response = await this.fetcher(path, {
+      const response = await fetcher(path, {
         ...init,
         credentials: "same-origin",
         headers: { accept: "application/json", ...(init.body ? { "content-type": "application/json" } : {}) },
