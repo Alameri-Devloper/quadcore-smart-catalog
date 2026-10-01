@@ -30,6 +30,22 @@ test("management read uses only the exact includeInactive query", async () => {
   assert.equal((await client.load(true)).ok, true); assert.equal(request, "/api/catalog/reference-data?includeInactive=true");
 });
 
+test("management read invokes a receiver-sensitive FetchPort unbound", async () => {
+  const signal = new AbortController().signal;
+  let invocations = 0; let calledWithoutReceiver = false;
+  const fetchPort = async function (this: unknown, input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    invocations += 1; calledWithoutReceiver = this === undefined;
+    if (this !== undefined) throw new TypeError("Illegal invocation");
+    assert.equal(input, "/api/catalog/reference-data?includeInactive=true");
+    assert.deepEqual(init, { method: "GET", signal, credentials: "same-origin", headers: { accept: "application/json" } });
+    return success(rawSnapshot());
+  };
+
+  const result = await new CatalogReferenceDataManagementClient(fetchPort).load(true, signal);
+
+  assert.equal(invocations, 1); assert.equal(calledWithoutReceiver, true); assert.equal(result.ok, true);
+});
+
 test("active read uses the base endpoint", async () => {
   let request = ""; const client = new CatalogReferenceDataManagementClient(async (input) => { request = String(input); return success(rawSnapshot()); });
   assert.equal((await client.load(false)).ok, true); assert.equal(request, "/api/catalog/reference-data");
