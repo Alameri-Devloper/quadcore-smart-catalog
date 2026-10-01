@@ -24,6 +24,7 @@ import { OperationsInventoryWorkflow } from "./OperationsInventoryWorkflow";
 import { OperationsReservationWorkflow } from "./OperationsReservationWorkflow";
 import { OperationsTransferWorkflow } from "./OperationsTransferWorkflow";
 import { OperationsPricingWorkflow } from "./OperationsPricingWorkflow";
+import { OperationsBranchPricingWorkflow } from "./OperationsBranchPricingWorkflow";
 
 export const OperationsContent = ({ state, sectionValues, locale, onRetry, branchManagement, query, operationalSelector, workspaceProductSelector }: {
   readonly state: OperationalManagementCapabilityState;
@@ -115,6 +116,10 @@ const AuthenticatedOperations = ({ actor }: { readonly actor: SafeActorView }) =
               canTransferHint={canTransferHint} lifecycle={actor} locale={i18n.locale} onAuthenticationRequired={redirectExpired}
               refreshBranches={refreshBranches}
               onQueryChange={next => router.replace(operationsContextHref(context, branchId, { ...next, productId: null }), { scroll: false })} />
+          : context.section === "Pricing" && context.pricingScope === "branch"
+            ? <OperationsBranchPricingWorkflow context={context} branchId={branchId} query={products} branches={branches}
+              lifecycle={actor} locale={i18n.locale} onAuthenticationRequiredAction={redirectExpired} refreshBranchesAction={refreshBranches}
+              onQueryChangeAction={next => router.replace(operationsContextHref(context, branchId, next), { scroll: false })} />
           : renderProducts(context, branchId, products, branches)}</OperationalBranchSelector>} />
   </PresentationShell>;
 };
