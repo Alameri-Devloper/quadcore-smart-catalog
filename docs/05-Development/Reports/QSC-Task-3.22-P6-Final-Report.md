@@ -3,11 +3,11 @@
 ## Status | الحالة
 
 - `P6Implementation: PASS`
-- `P6ManualBrowserQA: PENDING`
-- `P6CompletionGate: PENDING`
+- `P6ManualBrowserQA: PASS`
+- `P6CompletionGate: READY_FOR_PR_CI`
 - **P6: NOT COMPLETE**
 
-The bounded Workspace Pricing and Reference Cost Presentation implementation is complete and automatically verified. Independent browser acceptance, merge, and closure remain required before P6 can be marked complete. | اكتمل تنفيذ واجهة تسعير مساحة العمل والتكلفة المرجعية ضمن النطاق المحدد، ونجح التحقق الآلي. يبقى قبول المتصفح المستقل والدمج والإغلاق مطلوبًا قبل إعلان اكتمال P6.
+The bounded Workspace Pricing and Reference Cost Presentation implementation is complete and automatically verified, and the live manual browser QA matrix passed. PR CI, merge, and post-merge documentation closure remain required before P6 can be marked complete. | اكتمل تنفيذ واجهة تسعير مساحة العمل والتكلفة المرجعية ضمن النطاق المحدد، ونجح التحقق الآلي ومصفوفة التحقق اليدوي المباشر في المتصفح. تبقى اختبارات CI لطلب السحب والدمج وإغلاق التوثيق بعد الدمج مطلوبة قبل إعلان اكتمال P6.
 
 ## Implementation Scope | نطاق التنفيذ
 
@@ -37,7 +37,67 @@ The existing `/operations` query contract remains unchanged: workspace price and
 
 ## Accessibility and Responsive Presentation | الإتاحة والاستجابة
 
-The single English/Arabic component tree uses inherited LTR/RTL direction, labeled native inputs and buttons, focus-restored native review dialogs, alert/live regions, keyboard cancellation, duplicate-submit blocking, 44px touch targets, wrapping actions, responsive auto-fit cards, bounded dialogs, and LTR bidi isolation for minor-unit amounts, currency codes, IDs, and revisions. Manual browser verification remains pending for touch, mouse, keyboard, 375px mobile, 768px tablet, Arabic RTL, and real two-tab conflict scenarios. | تستخدم شجرة المكونات الواحدة الإنجليزية والعربية واتجاه LTR/RTL الموروث، وعناصر أصلية معنونة، وحوارات مراجعة تعيد التركيز، ورسائل حية وتنبيهات، وإلغاء بلوحة المفاتيح، ومنع الإرسال المكرر، وأهداف لمس 44 بكسل، وبطاقات متجاوبة، وعزلًا ثنائي الاتجاه للقيم التقنية. يبقى التحقق اليدوي في المتصفح معلقًا لأجهزة الإدخال والأحجام والعربية وتعارض النافذتين الحقيقي.
+The single English/Arabic component tree uses inherited LTR/RTL direction, labeled native inputs and buttons, focus-restored native review dialogs, alert/live regions, keyboard cancellation, duplicate-submit blocking, 44px touch targets, wrapping actions, responsive auto-fit cards, bounded dialogs, and LTR bidi isolation for minor-unit amounts, currency codes, IDs, and revisions. Live browser verification passed for Arabic RTL, keyboard/focus controls, 375px mobile, and 768px tablet, with no blocking horizontal overflow or inaccessible review controls observed. | تستخدم شجرة المكونات الواحدة الإنجليزية والعربية واتجاه LTR/RTL الموروث، وعناصر أصلية معنونة، وحوارات مراجعة تعيد التركيز، ورسائل حية وتنبيهات، وإلغاء بلوحة المفاتيح، ومنع الإرسال المكرر، وأهداف لمس 44 بكسل، وبطاقات متجاوبة، وعزلًا ثنائي الاتجاه للقيم التقنية. نجح التحقق المباشر في المتصفح للعربية RTL وعناصر لوحة المفاتيح والتركيز وعرض الهاتف 375 بكسل والجهاز اللوحي 768 بكسل، ولم يُلاحظ تجاوز أفقي معيق أو عناصر مراجعة يتعذر الوصول إليها.
+
+## Live Manual Browser QA Evidence | أدلة التحقق اليدوي المباشر في المتصفح
+
+### Workspace Prices | أسعار مساحة العمل
+
+- PASS — No Branch selector was present, Product discovery worked, and Retail and Wholesale rendered independently. | نجاح — لم يظهر محدد فرع، وعمل اكتشاف المنتج، وعُرض سعرا التجزئة والجملة بصورة مستقلة.
+- PASS — `NotConfigured` remained distinct from configured zero. | نجاح — بقيت `NotConfigured` مختلفة عن الصفر المهيأ.
+- PASS — Retail Set, Wholesale Set, Retail Clear, and Wholesale Clear each completed successfully. | نجاح — اكتملت عمليات تعيين ومسح سعر التجزئة وسعر الجملة كلٌ على حدة بنجاح.
+
+### Shared Retail/Wholesale Product Revision | مراجعة المنتج المشتركة للتجزئة والجملة
+
+- PASS — The shared revision was confirmed, and a sibling write invalidated stale review authority. | نجاح — تأكدت المراجعة المشتركة، وأبطلت كتابة الحقل الشقيق صلاحية المراجعة القديمة.
+- PASS — A real two-tab conflict produced an authoritative refetch, preserved the safe draft, and performed no automatic retry. | نجاح — أدى تعارض حقيقي بين نافذتين إلى إعادة قراءة موثوقة، مع حفظ المسودة الآمنة وعدم تنفيذ إعادة تلقائية.
+- PASS — Recovery required and accepted explicit re-review and reconfirmation. | نجاح — تطلب التعافي مراجعة وإعادة تأكيد صريحتين وقبلهما.
+
+### Reference Cost | التكلفة المرجعية
+
+- PASS — Authoritative absence rendered as `NotConfigured` with revision `0`. | نجاح — ظهر الغياب الموثوق كحالة `NotConfigured` مع المراجعة `0`.
+- PASS — Clear against authoritative absence conflicted and did not fabricate success. | نجاح — تعارض المسح عند الغياب الموثوق ولم يُنشئ نجاحًا زائفًا.
+- PASS — Set completed successfully, and the independent Reference Cost revision was confirmed in both directions. | نجاح — اكتمل التعيين بنجاح، وتأكد استقلال مراجعة التكلفة المرجعية في الاتجاهين.
+- PASS — A real two-tab Reference Cost conflict and its recovery/re-review flow completed successfully. | نجاح — اكتمل بنجاح تعارض حقيقي للتكلفة المرجعية بين نافذتين ومسار التعافي وإعادة المراجعة.
+- PASS — Clearing a configured value returned to authoritative absence at revision `0`. | نجاح — أعاد مسح القيمة المهيأة الحالة إلى الغياب الموثوق عند المراجعة `0`.
+- PASS — Zero remained a valid configured value and rendered as `0 USD`. | نجاح — بقي الصفر قيمة مهيأة صالحة وعُرض كـ `0 USD`.
+
+### Authorization and Field Omission | التفويض وحذف الحقول
+
+- PASS — With `pricing.view` only, Retail was visible, Wholesale was omitted, and the presentation was view-only. | نجاح — مع `pricing.view` فقط ظهر سعر التجزئة، وحُذف سعر الجملة، وكان العرض للقراءة فقط.
+- PASS — With `pricing.view` plus `pricing.wholesale.view`, Retail and Wholesale were visible and view-only. | نجاح — مع `pricing.view` و`pricing.wholesale.view` ظهر سعرا التجزئة والجملة للقراءة فقط.
+- PASS — With `pricing.view` plus `referenceCost.view`, Retail and Reference Cost were visible, Wholesale was omitted, and the presentation was view-only. | نجاح — مع `pricing.view` و`referenceCost.view` ظهر سعر التجزئة والتكلفة المرجعية، وحُذف سعر الجملة، وكان العرض للقراءة فقط.
+- PASS — `referenceCost.manage` allowed Reference Cost management without ordinary pricing disclosure. | نجاح — أتاح `referenceCost.manage` إدارة التكلفة المرجعية دون كشف التسعير العادي.
+- PASS — `pricing.manage` allowed Retail and Wholesale management while Reference Cost discovery was denied. | نجاح — أتاح `pricing.manage` إدارة التجزئة والجملة مع منع اكتشاف التكلفة المرجعية.
+- PASS — Negative discovery cases with insufficient Reference Cost viewing authority were denied. No unauthorized field placeholders or value leakage were observed. | نجاح — مُنعت حالات الاكتشاف السلبية عند عدم كفاية صلاحية عرض التكلفة المرجعية، ولم تُلاحظ عناصر نائبة لحقول غير مصرح بها أو أي تسريب للقيم.
+
+### Session and Lifecycle | الجلسة ودورة الحالة
+
+- PASS — Logout cleared draft and review state; a fresh login reloaded trusted server state. | نجاح — مسح تسجيل الخروج حالة المسودة والمراجعة، وأعاد تسجيل الدخول الجديد تحميل حالة الخادم الموثوقة.
+
+### Presentation and Browser | العرض والمتصفح
+
+- PASS — Arabic RTL, keyboard/focus controls, 375px mobile, and 768px tablet. | نجاح — العربية RTL وعناصر لوحة المفاتيح والتركيز وعرض الهاتف 375 بكسل والجهاز اللوحي 768 بكسل.
+- PASS — No blocking horizontal overflow or inaccessible review controls were observed. | نجاح — لم يُلاحظ تجاوز أفقي معيق أو عناصر مراجعة يتعذر الوصول إليها.
+
+### QA Fixture State at Completion | حالة بيانات التحقق عند الإكمال
+
+- Retail: `1250 USD`
+- Wholesale: `NotConfigured`
+- Product revision: `11`
+- Reference Cost: `0 USD`
+- Reference Cost revision: `3`
+
+### Prerequisite Runtime Fix | إصلاح التشغيل السابق
+
+Task 3.21-R3's browser `FetchPort` fix was handled separately and merged through PR #47. It is a prerequisite/runtime fix and is not part of the P6 implementation scope. | عولج إصلاح `FetchPort` في المتصفح للمهمة 3.21-R3 بصورة منفصلة ودُمج عبر طلب السحب #47. وهو إصلاح سابق للتشغيل وليس جزءًا من نطاق تنفيذ P6.
+
+## Report Traceability | تتبع التقرير
+
+- Baseline: `019a702`
+- P6 implementation commit: `e717383`
+- Manual browser QA: `PASS`
+- Completion gate: `READY_FOR_PR_CI`
 
 ## Automated Verification | التحقق الآلي
 
@@ -88,8 +148,8 @@ None. P6 is Presentation-only. Domain, Application, Infrastructure, server route
 
 ## Summary | الخلاصة
 
-`P6Implementation: PASS`. The implementation preserves server-owned partial disclosure and actions, shared Retail/Wholesale concurrency, independent Reference Cost concurrency, authoritative refetch, no automatic retry, and P1–P5 behavior. `P6ManualBrowserQA` and `P6CompletionGate` remain `PENDING`; P6 is **NOT COMPLETE**. | نجح تنفيذ P6 مع حفظ الكشف والأفعال المملوكة للخادم، ومراجعة التجزئة والجملة المشتركة، واستقلال مراجعة التكلفة المرجعية، وإعادة القراءة الموثوقة، ومنع الإعادة التلقائية، وسلوك P1–P5. يبقى قبول المتصفح وبوابة الاكتمال معلقين، وP6 غير مكتملة.
+`P6Implementation: PASS`. The implementation preserves server-owned partial disclosure and actions, shared Retail/Wholesale concurrency, independent Reference Cost concurrency, authoritative refetch, no automatic retry, and P1–P5 behavior. `P6ManualBrowserQA: PASS` and `P6CompletionGate: READY_FOR_PR_CI`; P6 is **NOT COMPLETE** because PR CI, merge, and post-merge documentation closure remain outstanding. | نجح تنفيذ P6 مع حفظ الكشف والأفعال المملوكة للخادم، ومراجعة التجزئة والجملة المشتركة، واستقلال مراجعة التكلفة المرجعية، وإعادة القراءة الموثوقة، ومنع الإعادة التلقائية، وسلوك P1–P5. حالة `P6ManualBrowserQA: PASS` وبوابة `P6CompletionGate: READY_FOR_PR_CI`؛ وتبقى P6 **غير مكتملة** لأن اختبارات CI لطلب السحب والدمج وإغلاق التوثيق بعد الدمج ما تزال مطلوبة.
 
 ## Next Recommendation | التوصية التالية
 
-Perform independent manual browser QA for the approved P6 matrix, including real two-tab Retail/Wholesale and Reference Cost conflicts, then complete review/merge/closure separately. Do not begin P7 and do not mark P6 complete before those gates pass. | نفّذ قبولًا يدويًا مستقلًا في المتصفح لمصفوفة P6، بما في ذلك تعارضات حقيقية بنافذتين للتجزئة والجملة والتكلفة المرجعية، ثم نفّذ المراجعة والدمج والإغلاق بشكل مستقل. لا تبدأ P7 ولا تعلن اكتمال P6 قبل نجاح تلك البوابات.
+Run PR CI, then complete merge and post-merge documentation closure separately. Do not mark P6 complete before those remaining gates pass. | شغّل اختبارات CI لطلب السحب، ثم أكمل الدمج وإغلاق التوثيق بعد الدمج بصورة منفصلة. لا تعلن اكتمال P6 قبل نجاح هذه البوابات المتبقية.
