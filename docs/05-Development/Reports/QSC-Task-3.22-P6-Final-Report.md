@@ -4,10 +4,11 @@
 
 - `P6Implementation: PASS`
 - `P6ManualBrowserQA: PASS`
-- `P6CompletionGate: READY_FOR_PR_CI`
-- **P6: NOT COMPLETE**
+- `P6PRCI: PASS`
+- `P6CompletionGate: PASS`
+- **P6: COMPLETE**
 
-The bounded Workspace Pricing and Reference Cost Presentation implementation is complete and automatically verified, and the live manual browser QA matrix passed. PR CI, merge, and post-merge documentation closure remain required before P6 can be marked complete. | اكتمل تنفيذ واجهة تسعير مساحة العمل والتكلفة المرجعية ضمن النطاق المحدد، ونجح التحقق الآلي ومصفوفة التحقق اليدوي المباشر في المتصفح. تبقى اختبارات CI لطلب السحب والدمج وإغلاق التوثيق بعد الدمج مطلوبة قبل إعلان اكتمال P6.
+The bounded Workspace Pricing and Reference Cost Presentation implementation, automated verification, independent live manual browser QA, and all 4/4 required PR CI checks passed. P6 was merged without conflicts through PR #48 at integration merge `f1b354a`; `P6CompletionGate: PASS`; **P6: COMPLETE**. | اكتمل تنفيذ واجهة تسعير مساحة العمل والتكلفة المرجعية ضمن النطاق المحدد، ونجح التحقق الآلي والتحقق اليدوي المستقل المباشر في المتصفح وجميع فحوص CI المطلوبة لطلب السحب وعددها 4/4. دُمجت P6 دون تعارضات عبر طلب السحب #48 عند دمج التكامل `f1b354a`؛ `P6CompletionGate: PASS`؛ **P6 مكتملة**.
 
 ## Implementation Scope | نطاق التنفيذ
 
@@ -94,10 +95,13 @@ Task 3.21-R3's browser `FetchPort` fix was handled separately and merged through
 
 ## Report Traceability | تتبع التقرير
 
-- Baseline: `019a702`
+- Implementation baseline: `019a702`
 - P6 implementation commit: `e717383`
+- Implementation PR: #48
+- Integration merge: `f1b354a`
 - Manual browser QA: `PASS`
-- Completion gate: `READY_FOR_PR_CI`
+- Required PR CI: `PASS` — 4/4
+- Completion gate: `PASS`
 
 ## Automated Verification | التحقق الآلي
 
@@ -113,6 +117,7 @@ Task 3.21-R3's browser `FetchPort` fix was handled separately and merged through
 | Production build (`npm.cmd run build`) | PASS |
 | Full repository unit suite (`npm.cmd test`) | PASS — exit 0 |
 | Guarded PostgreSQL integration (`npm.cmd run test:integration`) | PASS — 140/140 across 26 suites (review-bundle verification) |
+| Required PR CI | PASS — 4/4 |
 
 نجحت اختبارات P6 المركزة وكل اختبارات العرض المتأثرة واختبارات A2 وTypeScript وESLint والبناء ومجموعة الوحدة الكاملة، كما نجحت اختبارات PostgreSQL المحمية بعدد 140/140 ضمن تحقق حزمة المراجعة، دون أن يغير تنفيذ P6 الخادم أو التطبيق أو البنية التحتية أو التخزين.
 
@@ -148,8 +153,8 @@ None. P6 is Presentation-only. Domain, Application, Infrastructure, server route
 
 ## Summary | الخلاصة
 
-`P6Implementation: PASS`. The implementation preserves server-owned partial disclosure and actions, shared Retail/Wholesale concurrency, independent Reference Cost concurrency, authoritative refetch, no automatic retry, and P1–P5 behavior. `P6ManualBrowserQA: PASS` and `P6CompletionGate: READY_FOR_PR_CI`; P6 is **NOT COMPLETE** because PR CI, merge, and post-merge documentation closure remain outstanding. | نجح تنفيذ P6 مع حفظ الكشف والأفعال المملوكة للخادم، ومراجعة التجزئة والجملة المشتركة، واستقلال مراجعة التكلفة المرجعية، وإعادة القراءة الموثوقة، ومنع الإعادة التلقائية، وسلوك P1–P5. حالة `P6ManualBrowserQA: PASS` وبوابة `P6CompletionGate: READY_FOR_PR_CI`؛ وتبقى P6 **غير مكتملة** لأن اختبارات CI لطلب السحب والدمج وإغلاق التوثيق بعد الدمج ما تزال مطلوبة.
+`P6Implementation: PASS`; `P6ManualBrowserQA: PASS`; `P6PRCI: PASS`; `P6CompletionGate: PASS`; **P6: COMPLETE**. The implementation preserves server-owned partial disclosure and actions, shared Retail/Wholesale concurrency, independent Reference Cost concurrency, authoritative refetch, no automatic retry, and P1–P5 behavior. P6 passed 4/4 required PR CI checks and merged without conflicts through PR #48 at integration merge `f1b354a`. | `P6Implementation: PASS`؛ `P6ManualBrowserQA: PASS`؛ `P6PRCI: PASS`؛ `P6CompletionGate: PASS`؛ **P6 مكتملة**. يحفظ التنفيذ الكشف والأفعال المملوكة للخادم، ومراجعة التجزئة والجملة المشتركة، واستقلال مراجعة التكلفة المرجعية، وإعادة القراءة الموثوقة، ومنع الإعادة التلقائية، وسلوك P1–P5. نجحت فحوص CI المطلوبة وعددها 4/4 ودُمجت P6 دون تعارضات عبر طلب السحب #48 عند دمج التكامل `f1b354a`.
 
 ## Next Recommendation | التوصية التالية
 
-Run PR CI, then complete merge and post-merge documentation closure separately. Do not mark P6 complete before those remaining gates pass. | شغّل اختبارات CI لطلب السحب، ثم أكمل الدمج وإغلاق التوثيق بعد الدمج بصورة منفصلة. لا تعلن اكتمال P6 قبل نجاح هذه البوابات المتبقية.
+P7 is `READY_FOR_PLANNING` only. Define, review, and approve its bounded scope separately before any implementation; this P6 closure does not approve P7 implementation. | P7 `READY_FOR_PLANNING` فقط. يجب تعريف نطاقها المحدود ومراجعته واعتماده بصورة مستقلة قبل أي تنفيذ؛ ولا يعتمد إغلاق P6 هذا تنفيذ P7.
