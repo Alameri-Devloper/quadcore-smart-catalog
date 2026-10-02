@@ -569,7 +569,7 @@ export class PostgreSqlMemberAdministrationReadRepository implements MemberAdmin
     const rows = await this.database.execute<{
       actorId: string; displayName: string; username: string; role: WorkspaceRole; accountStatus: AccountStatus;
       passwordLifecycle: "Temporary" | "Permanent"; whatsappPhoneE164: string; locale: "ar" | "en";
-      branchScope: WorkspaceMembership["branchScope"]; authorizationVersion: number; recoveryContactVersion: number;
+      branchScope: WorkspaceMembership["branchScope"]; authorizationVersion: string | number; recoveryContactVersion: number;
       profileUpdatedAt: Date; createdAt: Date; lastSessionIssuedAt: Date | null;
     }>(sql`
       SELECT accounts.actor_id AS "actorId", profiles.display_name AS "displayName", accounts.username,
@@ -616,7 +616,8 @@ export class PostgreSqlMemberAdministrationReadRepository implements MemberAdmin
       branchScope: row.branchScope,
       branchIds: Object.freeze(branchRows.filter((item) => item.actorId === row.actorId).map(({ branchId }) => branchId).sort()),
       permissionCodes: Object.freeze(permissionRows.filter((item) => item.actorId === row.actorId).map(({ permissionCode }) => permissionCode).sort()),
-      authorizationVersion: row.authorizationVersion,
+      // Raw execute does not apply the schema's bigint number decoder.
+      authorizationVersion: Number(row.authorizationVersion),
       recoveryContactVersion: row.recoveryContactVersion,
       profileUpdatedAt: new Date(row.profileUpdatedAt),
       createdAt: new Date(row.createdAt),
