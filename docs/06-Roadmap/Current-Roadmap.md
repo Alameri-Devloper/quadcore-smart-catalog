@@ -1,8 +1,8 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-> **Current P6 closure — 2026-10-01 | حالة إغلاق P6 الحالية:** P1–P6 are **COMPLETE**. P6 Workspace Pricing and Reference Cost implementation, automated verification, independent live-browser acceptance, and 4/4 required PR CI checks are **PASS**; `P6CompletionGate: PASS`; **P6: COMPLETE**. P6 was implemented in `e717383` and merged without conflicts through PR #48 at integration merge `f1b354a`. P7 is **READY_FOR_PLANNING** only; it requires separate planning, scope, and review and is not implementation-approved. See the [P6 final report](../05-Development/Reports/QSC-Task-3.22-P6-Final-Report.md). | اكتملت P1–P6. نجح تنفيذ P6 لتسعير مساحة العمل والتكلفة المرجعية والتحقق الآلي والقبول اليدوي المستقل في المتصفح وفحوص CI المطلوبة لطلب السحب وعددها 4/4؛ `P6CompletionGate: PASS`؛ **P6 مكتملة**. نُفذت P6 في `e717383` ودُمجت دون تعارضات عبر طلب السحب #48 عند دمج التكامل `f1b354a`. P7 **جاهزة للتخطيط فقط**؛ وتتطلب تخطيطًا ونطاقًا ومراجعة مستقلة ولم يُعتمد تنفيذها. راجع [التقرير النهائي لـP6](../05-Development/Reports/QSC-Task-3.22-P6-Final-Report.md).
+> **Current P7 closure — 2026-10-02 | حالة إغلاق P7 الحالية:** P1–P7 are **COMPLETE**. P7 Branch overrides implementation, user-confirmed Admin live-browser QA, and actual 4/4 PR CI checks are **PASS**; `P7CompletionGate: PASS`. P7 merged through [PR #50](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/50) at `031bb484633efb966976757d570db004e007bc86`. The documentation-only post-merge closure follows the established P6 branch/PR convention. P8 is **READY_FOR_PLANNING only**; no P8 planning or implementation started. The Branch helper text remains a non-blocking UX follow-up. | اكتملت P1–P7. نجح تنفيذ تجاوزات الفرع P7 والتحقق اليدوي بصلاحية Admin وفق تأكيد المستخدم وفحوص PR الفعلية الأربعة؛ `P7CompletionGate: PASS`. دُمجت P7 عبر #50 عند الالتزام المذكور، ويتبع إغلاق التوثيق بعد الدمج نمط فرع وطلب سحب P6 القائم. أصبحت P8 **جاهزة للتخطيط فقط** دون بدء تخطيط أو تنفيذ. يبقى النص الإرشادي للفرع متابعة غير مانعة. See the [P7 final report](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
 
-**Status:** A1–A6 Completed / merged; P1–P6: COMPLETE; P6 Live Browser Acceptance QA: PASS; `P6PRCI: PASS`; `P6CompletionGate: PASS`; P7: READY_FOR_PLANNING only; P7 implementation: NOT APPROVED · **Last Updated:** 2026-10-01 · **Scope:** Authoritative delivery sequence
+**Status:** P1–P7 COMPLETE; P7Implementation PASS; P7ManualBrowserQA PASS; P7PRCI PASS; P7CompletionGate PASS; P8 READY_FOR_PLANNING only; P8Started NO · **Updated:** 2026-10-02
 
 ## English
 
@@ -30,7 +30,7 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration                                                                                                                                              | No Branch, Inventory, or Pricing management Presentation was added.                                                                          |
 
-The current integration baseline is `f1b354a`, merging Task 3.22-P6 through PR #48 into `feature/product-entry-engine`. P1–P6 are complete; `P6CompletionGate: PASS`. P7 is `READY_FOR_PLANNING` only and requires separate planning, scope, and review; P7 implementation is not approved. Task 3.21-R3 remains a separate prerequisite/runtime fix merged earlier through PR #47 and is not P6 implementation scope. A6 remains merged through PR #35, and A1–A5 remain merged through PRs #28–#32. Earlier slice baselines are historical.
+The current implementation integration baseline is `031bb484633efb966976757d570db004e007bc86`, merging Task 3.22-P7 through PR #50 into `feature/product-entry-engine`. P1–P7 are complete; `P7CompletionGate: PASS`. P8 is READY_FOR_PLANNING only and requires separate planning and approval. The documentation-only closure uses its own PR. Prior P1–P6 and A1–A6 baselines remain historical evidence.
 
 ### Task 3.22-P1 — Complete
 
@@ -64,7 +64,9 @@ Live browser acceptance verified Reserve, Release, partial and final Fulfill, ac
 
 **P6 Live Browser Acceptance QA: PASS; `P6PRCI: PASS`; `P6CompletionGate: PASS`; P6: COMPLETE.** The bounded Workspace Pricing and Reference Cost workflow was implemented in commit `e717383` and merged without conflicts through PR #48 at integration merge `f1b354a`. Existing automated verification evidence remains recorded in the [P6 final report](../05-Development/Reports/QSC-Task-3.22-P6-Final-Report.md), and all 4/4 required PR CI checks passed. Independent live-browser acceptance verified Workspace prices without a Branch selector, Product discovery, Retail and Wholesale Set/Clear with a shared revision and real two-tab sibling conflict recovery, independent Reference Cost revision and conflict recovery including configured zero, server-owned authorization/field omission without leakage, session/logout clearing, Arabic RTL, keyboard/focus behavior, 375 px mobile, and 768 px tablet.
 
-**P7 is READY_FOR_PLANNING only. P7 requires separate planning, scope, and review and is not implementation-approved.**
+### Task 3.22-P7 — Complete
+
+P1–P7 are **COMPLETE**. P7 Branch overrides implementation, user-confirmed Admin live-browser QA, and actual 4/4 PR CI checks are **PASS**; `P7CompletionGate: PASS`. P7 merged through [PR #50](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/50) at `031bb484633efb966976757d570db004e007bc86`. The documentation-only post-merge closure follows the established P6 branch/PR convention. P8 is **READY_FOR_PLANNING only**; no P8 planning or implementation started. The Branch helper text remains a non-blocking UX follow-up. See the [P7 final report](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -138,7 +140,9 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 **نجح القبول اليدوي لـP6؛ `P6PRCI: PASS`؛ `P6CompletionGate: PASS`؛ P6 مكتملة.** نُفذ مسار تسعير مساحة العمل والتكلفة المرجعية المحدود في الالتزام `e717383` ودُمج دون تعارضات عبر طلب السحب #48 عند دمج التكامل `f1b354a`. تبقى أدلة التحقق الآلي موثقة في [التقرير النهائي لـP6](../05-Development/Reports/QSC-Task-3.22-P6-Final-Report.md)، ونجحت فحوص CI المطلوبة لطلب السحب وعددها 4/4. تحقق القبول المستقل في المتصفح من أسعار مساحة العمل دون محدد فرع، واكتشاف المنتج، وتعيين ومسح التجزئة والجملة بالمراجعة المشتركة والتعافي من تعارض حقيقي بين نافذتين، واستقلال مراجعة التكلفة المرجعية والتعافي من تعارضها بما في ذلك الصفر المهيأ، والتفويض وحذف الحقول المملوكين للخادم دون تسريب، ومسح الحالة عند انتهاء الجلسة وتسجيل الخروج، والعربية RTL، ولوحة المفاتيح والتركيز، والجوال عند 375 بكسل، واللوحي عند 768 بكسل.
 
-**P7 جاهزة للتخطيط فقط. تتطلب P7 تخطيطًا ونطاقًا ومراجعة مستقلة، ولم يُعتمد تنفيذها.**
+### المهمة 3.22-P7 — مكتملة
+
+اكتملت P1–P7. نجح تنفيذ تجاوزات الفرع P7 والتحقق اليدوي بصلاحية Admin وفق تأكيد المستخدم وفحوص PR الفعلية الأربعة؛ `P7CompletionGate: PASS`. دُمجت P7 عبر #50 عند الالتزام المذكور، ويتبع إغلاق التوثيق بعد الدمج نمط فرع وطلب سحب P6 القائم. أصبحت P8 **جاهزة للتخطيط فقط** دون بدء تخطيط أو تنفيذ. يبقى النص الإرشادي للفرع متابعة غير مانعة. راجع [التقرير النهائي لـP7](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
 
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 
