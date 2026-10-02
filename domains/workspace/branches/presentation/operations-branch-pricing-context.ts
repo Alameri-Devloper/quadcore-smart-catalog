@@ -9,7 +9,7 @@ export interface KnownBranchPricingSelection {
 }
 
 export const branchPricingSelectionKey = (context: OperationsContext, branchId: string | null, query: OperationalProductQuery) =>
-  operationsContextHref(context, branchId, query);
+  operationsContextHref(context, branchId, { ...query, productId: null });
 
 /** A6 and A2 establish only known references. The management GET owns disclosure and mutation actions. */
 export const operationsBranchPricingTarget = (context: OperationsContext, branchId: string | null, query: OperationalProductQuery,

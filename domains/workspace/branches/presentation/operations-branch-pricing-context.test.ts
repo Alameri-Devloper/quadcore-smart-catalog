@@ -12,7 +12,7 @@ const branches = (status: "Active" | "Inactive" = "Active") => ({ type: "Ready" 
   options: [operationalBranchFixture({ status })], availability: status === "Active" ? "Available" as const : "AllInactive" as const });
 
 describe("Branch pricing Operations context", () => {
-  it("retains a target only for the exact actor/context/Branch/Product/search/page key", () => {
+  it("retains a target only for the exact actor/context/Branch/search/page key and separately validates Product identity", () => {
     const product = operationalProductFixture({ branchId: "branch-main", listingStatus: "Unlisted" });
     const known = { lifecycle, key: branchPricingSelectionKey(context, "branch-main", query), product };
     assert.deepEqual(operationsBranchPricingTarget(context, "branch-main", query, branches(), lifecycle, known), {
@@ -21,6 +21,8 @@ describe("Branch pricing Operations context", () => {
     });
     assert.equal(operationsBranchPricingTarget(context, "branch-main", { ...query, q: "changed" }, branches(), lifecycle, known), null);
     assert.equal(operationsBranchPricingTarget(context, "branch-main", { ...query, productCursor: "next" }, branches(), lifecycle, known), null);
+    assert.equal(branchPricingSelectionKey(context, "branch-main", { ...query, productId: null }), known.key);
+    assert.equal(operationsBranchPricingTarget(context, "branch-main", { ...query, productId: "product-y" }, branches(), lifecycle, known), null);
     assert.equal(operationsBranchPricingTarget({ ...context, pricingField: "reference-cost" }, "branch-main", query, branches(), lifecycle, known), null);
     assert.equal(operationsBranchPricingTarget(context, "branch-main", query, branches(), {}, known), null);
     assert.equal(operationsBranchPricingTarget(context, null, query, branches(), lifecycle, known), null);
