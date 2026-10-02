@@ -3,16 +3,22 @@
 ## Status | الحالة
 
 - `P7Implementation: PASS`
-- `P7ManualBrowserQA: PENDING`
+- `P7ManualBrowserQA: PASS`
 - `P7PRCI: PENDING`
-- `P7CompletionGate: READY_FOR_MANUAL_BROWSER_QA`
+- `P7CompletionGate: AWAITING_PR_CI_AND_MERGE`
 - **P7: NOT COMPLETE**
 
-The approved P7 Presentation-only implementation is complete and its automated gates pass. Completion still requires independent live manual browser QA, PR CI, merge into `feature/product-entry-engine`, and post-merge documentation closure. | اكتمل تنفيذ P7 المعتمد ضمن طبقة العرض فقط ونجحت بواباته الآلية. ما زال الاكتمال يتطلب تحققًا يدويًا مستقلاً مباشرًا في المتصفح، وفحوص CI لطلب السحب، والدمج في `feature/product-entry-engine`، ثم إغلاق التوثيق بعد الدمج.
+The approved P7 Presentation-only implementation and the user-confirmed Admin manual browser retest pass. PR CI, merge into `feature/product-entry-engine`, and post-merge documentation closure remain required. | نجح تنفيذ P7 المعتمد ضمن طبقة العرض وإعادة الاختبار اليدوي في المتصفح بصلاحية Admin وفق تأكيد المستخدم. تبقى فحوص CI والدمج في `feature/product-entry-engine` وإغلاق التوثيق بعد الدمج مطلوبة.
 
 Branch: `feature/task-3.22-p7-branch-pricing-overrides`
 
 Base: `155ddd1d2bd15b0df9001754e4b2bfa7b72a4df0`
+
+Implementation commit: `2f805e40cfedf2fe8123ce439c4cc7b6daef5b82`.
+
+Browser-fix commit: `cef73f3fdfdd3e99456c59e776854d0975c088dc` — `fix(pricing): restore P7 branch management state rendering`. The known-selection key excludes only `productId`; Product identity remains independently validated. | يستثني مفتاح الاختيار `productId` فقط مع الحفاظ على التحقق المستقل من هوية المنتج.
+
+The implementation-run evidence below is historical. The subsequent manual retest evidence and current status supersede its pending browser statements. | أدلة جولة التنفيذ أدناه تاريخية؛ تتجاوزها أدلة إعادة الاختبار اللاحقة والحالة الحالية فيما يتعلق بانتظار اختبار المتصفح.
 
 ## Summary | الملخص
 
@@ -88,16 +94,30 @@ None. P7 remains inside the existing Presentation boundaries owned by Catalog Br
 
 No live browser QA was run or claimed. The automated markup tests cover bilingual output, server-owned omission, Review → Confirm, conflict acknowledgement, zero versus absence, independent pending controls, native semantics, focus hooks, and responsive bounds; touch, mouse, keyboard, real focus behavior, RTL rendering, and mobile/tablet/desktop viewport behavior require the independent live-browser pass. | لم يُنفذ تحقق يدوي مباشر في المتصفح ولم يُدّع نجاحه. تغطي اختبارات الوسوم الآلية اللغتين وحذف الحقول المملوك للخادم والمراجعة ثم التأكيد وإقرار التعارض والتمييز بين الصفر والغياب واستقلال عناصر التحكم والدلالات الأصلية وخطافات التركيز وحدود التجاوب؛ ويتطلب اللمس والفأرة ولوحة المفاتيح وسلوك التركيز الفعلي وعرض RTL وأحجام الجوال واللوحي وسطح المكتب تحققًا مستقلاً مباشرًا في المتصفح.
 
+## Manual Browser Retest — 2026-10-02 | إعادة الاختبار اليدوي في المتصفح
+
+Evidence source: the user's closure request confirms successful manual QA as Admin after the browser-fix commit. This agent records that evidence; it does not claim to have rerun the browser scenarios. | مصدر الأدلة: يؤكد طلب الإغلاق نجاح التحقق اليدوي بصلاحية Admin بعد إصلاح المتصفح. يسجل الوكيل هذه الأدلة ولا يدّعي إعادة تنفيذ السيناريوهات.
+
+- **Branch Reference Cost: PASS.** Active Branch selection, Product discovery/selection, and management state rendering passed. Workspace base, Branch override, effective value/source, and independent override state were verified. Set → Review → Confirm at **1234 USD** produced effective **1234 USD** from **Branch Override**; Clear → Review → Confirm restored **Workspace Base**. Authoritative refetch passed after both mutations. | **التكلفة المرجعية للفرع: نجاح.** نجح اختيار الفرع النشط واكتشاف المنتج واختياره وعرض حالة الإدارة. تم التحقق من الأساس والتجاوز والقيمة الفعلية ومصدرها واستقلال الحالة. أدى تعيين **1234 USD** بعد المراجعة والتأكيد إلى القيمة نفسها من تجاوز الفرع، وأعاد المسح أساس مساحة العمل، مع نجاح إعادة القراءة الموثوقة بعد العمليتين.
+- **Retail/Wholesale independence: PASS.** Retail base **1250 USD**, Retail override **1500 USD**, and independent Wholesale override **1100 USD** were verified. Clearing Retail did not affect Wholesale; clearing Wholesale restored its independent no-override state. Authoritative refetch passed after mutations. | **استقلال التجزئة والجملة: نجاح.** تم التحقق من أساس التجزئة **1250 USD** وتجاوزها **1500 USD** وتجاوز الجملة المستقل **1100 USD**. لم يؤثر مسح التجزئة على الجملة، وأعاد مسح الجملة حالتها المستقلة دون تجاوز، مع نجاح إعادة القراءة الموثوقة.
+- **LifecycleQA: PASS.** Inactive Branches remain visible and cannot be selected for a fresh workflow. | **دورة الحياة: نجاح.** تبقى الفروع غير النشطة مرئية ولا يمكن اختيارها لبدء سير عمل جديد.
+- **ConflictRecovery: PASS.** A stale concurrent mutation was manually reproduced. The server-side change was detected, the mutation was not automatically replayed, the safe draft was preserved, latest authoritative values appeared, and explicit review was required before reconfirmation. | **التعافي من التعارض: نجاح.** أُعيد إنتاج طفرة متزامنة قديمة يدوياً؛ كُشف تغيير الخادم ولم تُعد الطفرة تلقائياً، وحُفظت المسودة الآمنة وعُرضت القيم الموثوقة الأحدث وطُلبت مراجعة صريحة قبل إعادة التأكيد.
+- **ArabicRTLQA / KeyboardAccessibilityQA / MobileQA / TabletQA / DesktopQA: PASS.** | **العربية RTL وإتاحة لوحة المفاتيح والهاتف والجهاز اللوحي وسطح المكتب: نجاح.**
+
+**Non-blocking UX follow-up:** the helper text “اختيار الفرع متاح. اختر فرعًا نشطًا، ثم ابحث عن المنتج.” may remain visible after Branch and Product selection. No explicit requirement to remove this text was found in the existing P7 contract. Record it for a separately scoped UX follow-up; it does not block P7 and introduces no code change here. | **متابعة تجربة استخدام غير مانعة:** قد يبقى النص الإرشادي المذكور ظاهراً بعد اختيار الفرع والمنتج. لم يُعثر على اشتراط صريح لإزالته في عقد P7 الحالي. يُسجل لمتابعة مستقلة ولا يمنع P7 ولا يستدعي تغيير كود هنا.
+
+`P7Implementation: PASS`; `P7ManualBrowserQA: PASS`; `P7PRCI: PENDING`; `P7CompletionGate: AWAITING_PR_CI_AND_MERGE`; **P7: NOT COMPLETE**. P8 has not started. | نجح التنفيذ والتحقق اليدوي؛ ما زالت فحوص CI والدمج والإغلاق مطلوبة ولم تبدأ P8.
+
 ## Serena and Repository State | سيرينا وحالة المستودع
 
 Serena was used first for bounded semantic inspection and diagnostics. Graphify was not used because no architectural ambiguity remained and the approved task restricted it to real ambiguity. The pre-existing `.serena/project.yml` SHA-256 remained `3EFC30BE05FDF94FBFC3D9BDD3E4FE7FB122D465903CA2F89027B509B4ECB998`; it was not edited, restored, staged, committed, normalized, or stashed by P7 work. | استُخدمت Serena أولًا للفحص الدلالي المحدود والتشخيص. لم تُستخدم Graphify لعدم وجود غموض معماري فعلي ولأن المهمة المعتمدة قيدت استخدامها بحالة الغموض الحقيقي. بقيت بصمة ملف Serena الموجود مسبقًا كما هي، ولم يُعدل أو يُستعد أو يُدرج أو يُلتزم أو يُطبّع أو يُخزن مؤقتًا ضمن عمل P7.
 
 ## Next Recommendation | التوصية التالية
 
-Run independent live manual browser QA against the approved P7 matrix: both Branch pricing contexts, active/inactive/stale Branch lifecycle, Product discovery and selection, Retail/Wholesale/Reference Cost Set and Clear, independent sibling revisions, real two-tab same-field conflicts, authoritative refetch, preserved safe drafts, no automatic retry, omission/authorization combinations, logout/fresh login, English LTR, Arabic RTL, touch/mouse/keyboard, focus restoration, and 375 px/768 px/desktop layouts. Then run PR CI, merge, and perform post-merge documentation closure. Do not mark P7 complete before all of those gates pass. | نفّذ تحققًا يدويًا مستقلاً مباشرًا في المتصفح وفق مصفوفة P7 المعتمدة، ثم نفّذ فحوص CI لطلب السحب والدمج وإغلاق التوثيق بعد الدمج. لا تعلن اكتمال P7 قبل نجاح جميع هذه البوابات.
+Push the P7 branch, use its PR into `feature/product-entry-engine`, verify actual required PR CI, merge only after passing checks, and close the authoritative documentation after merge. Do not start P8 or mark P7 complete before closure is proven. | ادفع فرع P7 واستخدم طلب السحب إلى `feature/product-entry-engine`، وتحقق من فحوص CI الفعلية المطلوبة، وادمج بعد نجاحها فقط، ثم أغلق التوثيق الحاكم بعد الدمج. لا تبدأ P8 ولا تعلن اكتمال P7 قبل إثبات الإغلاق.
 
-`ReadyForManualBrowserQA: YES`
+`ManualBrowserQARecorded: YES`
 
-`P7CompletionGate: READY_FOR_MANUAL_BROWSER_QA`
+`P7CompletionGate: AWAITING_PR_CI_AND_MERGE`
 
 **P7: NOT COMPLETE**
