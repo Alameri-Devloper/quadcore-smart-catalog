@@ -1,0 +1,72 @@
+import type { Locale } from "../../../identity/presentation/identity-presentation.types";
+import type { BranchPricingFailure, BranchPricingField } from "./branch-pricing.types";
+
+const messages = {
+  pricesTitle: { en: "Branch price overrides", ar: "تجاوزات أسعار الفرع" },
+  referenceCostTitle: { en: "Branch Reference Cost override", ar: "تجاوز التكلفة المرجعية للفرع" },
+  loading: { en: "Loading authoritative branch pricing…", ar: "جارٍ تحميل تسعير الفرع الموثوق…" },
+  refreshing: { en: "Refreshing authoritative branch pricing…", ar: "جارٍ تحديث تسعير الفرع الموثوق…" },
+  selectProduct: { en: "Select a Product to load its authoritative branch pricing.", ar: "اختر منتجًا لتحميل تسعير الفرع الموثوق الخاص به." },
+  inspectionOnly: { en: "This inactive branch is available for existing-resource inspection only.", ar: "هذا الفرع غير النشط متاح لفحص المورد الموجود فقط." },
+  retry: { en: "Retry", ar: "إعادة المحاولة" },
+  Retail: { en: "Retail", ar: "التجزئة" },
+  Wholesale: { en: "Wholesale", ar: "الجملة" },
+  ReferenceCost: { en: "Reference Cost", ar: "التكلفة المرجعية" },
+  Configured: { en: "Configured", ar: "مهيأة" },
+  NotConfigured: { en: "Not configured", ar: "غير مهيأة" },
+  base: { en: "Workspace base", ar: "أساس مساحة العمل" },
+  override: { en: "Branch override", ar: "تجاوز الفرع" },
+  effective: { en: "Effective value", ar: "القيمة الفعلية" },
+  source: { en: "Effective source", ar: "مصدر القيمة الفعلية" },
+  WorkspaceBase: { en: "Workspace base", ar: "أساس مساحة العمل" },
+  BranchOverride: { en: "Branch override", ar: "تجاوز الفرع" },
+  NotConfiguredSource: { en: "Not configured", ar: "غير مهيأة" },
+  baseRevision: { en: "Workspace base revision", ar: "مراجعة أساس مساحة العمل" },
+  overrideRevision: { en: "Override revision", ar: "مراجعة التجاوز" },
+  amountMinor: { en: "Amount in minor units", ar: "المبلغ بالوحدات الصغرى" },
+  currency: { en: "Currency code", ar: "رمز العملة" },
+  SetOverride: { en: "Review Set override", ar: "مراجعة تعيين التجاوز" },
+  ClearOverride: { en: "Review Clear override", ar: "مراجعة مسح التجاوز" },
+  noActions: { en: "No override changes are available.", ar: "لا تتوفر تغييرات للتجاوز." },
+  confirmTitle: { en: "Review branch override change", ar: "مراجعة تغيير تجاوز الفرع" },
+  branch: { en: "Branch", ar: "الفرع" },
+  product: { en: "Product", ar: "المنتج" },
+  field: { en: "Pricing field", ar: "حقل التسعير" },
+  action: { en: "Action", ar: "الإجراء" },
+  confirm: { en: "Confirm change", ar: "تأكيد التغيير" },
+  cancel: { en: "Cancel", ar: "إلغاء" },
+  saving: { en: "Saving this override and refreshing authoritative state…", ar: "جارٍ حفظ هذا التجاوز وتحديث الحالة الموثوقة…" },
+  saved: { en: "Override saved and authoritative state refreshed.", ar: "حُفظ التجاوز وحُدثت الحالة الموثوقة." },
+  savedRefreshFailed: { en: "The change was accepted, but authoritative state could not be refreshed. Retry the read before another change.",
+    ar: "قُبل التغيير، لكن تعذر تحديث الحالة الموثوقة. أعد القراءة قبل تغيير آخر." },
+  reviewRequired: { en: "The authoritative state changed or the outcome was uncertain. Your safe draft is preserved; review the latest values before confirming again.",
+    ar: "تغيرت الحالة الموثوقة أو كانت النتيجة غير مؤكدة. حُفظت مسودتك الآمنة؛ راجع أحدث القيم قبل التأكيد مجددًا." },
+  reviewed: { en: "I reviewed the latest values", ar: "راجعت أحدث القيم" },
+  resumeReview: { en: "Review preserved draft", ar: "مراجعة المسودة المحفوظة" },
+  invalidAmount: { en: "Enter canonical integer minor units from 0 through the safe integer limit.",
+    ar: "أدخل وحدات صغرى صحيحة بالصيغة القياسية من 0 حتى حد العدد الصحيح الآمن." },
+  invalidCurrency: { en: "Enter a three-letter uppercase currency code.", ar: "أدخل رمز عملة من ثلاثة أحرف إنجليزية كبيرة." },
+} as const;
+
+const failures: Record<BranchPricingFailure, { en: string; ar: string }> = {
+  AuthenticationRequired: { en: "Your session expired. Returning to sign in…", ar: "انتهت جلستك. جارٍ العودة إلى تسجيل الدخول…" },
+  ForbiddenForRestrictedSession: { en: "Branch pricing is unavailable in this restricted session.", ar: "تسعير الفرع غير متاح في هذه الجلسة المقيدة." },
+  OriginNotAllowed: { en: "This request origin is not allowed. Reload before retrying.", ar: "مصدر الطلب غير مسموح. أعد التحميل قبل المحاولة." },
+  Forbidden: { en: "Access to this branch pricing resource was denied.", ar: "رُفض الوصول إلى مورد تسعير الفرع هذا." },
+  BranchNotFound: { en: "This Branch is no longer available.", ar: "لم يعد هذا الفرع متاحًا." },
+  ProductNotFound: { en: "This Product is no longer available.", ar: "لم يعد هذا المنتج متاحًا." },
+  BranchInactive: { en: "This Branch is inactive. Review the refreshed inspection-only state.", ar: "هذا الفرع غير نشط. راجع الحالة المحدثة المخصصة للفحص فقط." },
+  ProductArchived: { en: "This Product is archived and is no longer available for override changes.", ar: "هذا المنتج مؤرشف ولم يعد متاحًا لتغييرات التجاوز." },
+  InvalidInput: { en: "The override request was not accepted. Review the submitted values.", ar: "لم يُقبل طلب التجاوز. راجع القيم المرسلة." },
+  CurrencyNotAllowed: { en: "The currency is invalid or unavailable for this Workspace.", ar: "العملة غير صالحة أو غير متاحة لمساحة العمل هذه." },
+  Conflict: { en: "This field changed on the server. Review the refreshed values before confirming again.", ar: "تغير هذا الحقل على الخادم. راجع القيم المحدثة قبل التأكيد مجددًا." },
+  BranchProductServiceUnavailable: { en: "The branch pricing service is unavailable. Please retry.", ar: "خدمة تسعير الفرع غير متاحة. يرجى إعادة المحاولة." },
+  NetworkFailure: { en: "The branch pricing service could not be reached. The change was not replayed.", ar: "تعذر الاتصال بخدمة تسعير الفرع. لم يُعَد إرسال التغيير." },
+  MalformedResponse: { en: "The branch pricing response could not be read safely. The change was not replayed.", ar: "تعذرت قراءة استجابة تسعير الفرع بأمان. لم يُعَد إرسال التغيير." },
+  UnexpectedResponse: { en: "The branch pricing service returned an unexpected response. The change was not replayed.", ar: "أعادت خدمة تسعير الفرع استجابة غير متوقعة. لم يُعَد إرسال التغيير." },
+};
+
+export type BranchPricingTextKey = keyof typeof messages;
+export const branchPricingText = (locale: Locale, key: BranchPricingTextKey): string => messages[key][locale];
+export const branchPricingFieldText = (locale: Locale, field: BranchPricingField): string => messages[field][locale];
+export const branchPricingFailureText = (locale: Locale, failure: BranchPricingFailure): string => failures[failure][locale];
