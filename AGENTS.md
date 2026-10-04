@@ -45,14 +45,14 @@ public/
 ## Catalog Domain Structure
 
 domains/catalog/
-├── components/
-├── hooks/
-├── mock/
-├── repositories/
-├── schemas/
-├── services/
-├── types/
-└── utils/
++-- components/
++-- hooks/
++-- mock/
++-- repositories/
++-- schemas/
++-- services/
++-- types/
+\-- utils/
 
 ## Current Rules
 
@@ -74,10 +74,6 @@ Before modifying code:
 3. Fix only the requested issue.
 4. Do not rename folders unless requested.
 5. Do not introduce new libraries without approval.
-
-## Current Task
-
-Fix build errors while preserving the architecture.
 
 ## Root Cause Analysis
 
@@ -128,15 +124,70 @@ After every approved implementation task:
 
 The review tool may clean temporary artifacts created by its own failed invocation. It must never delete project source, user data, prior review evidence, or Git content.
 
-## graphify
+## Tool Selection Policy
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+Do not run every tool for every task.
 
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+### Tool Selection Order
 
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Known literal/key/route/file -> rg.
+- Semantic symbol/reference -> Serena when available.
+- Dependency/architecture relationship -> Graphify.
+- JSON/API structured output -> jq.
+- Repeatable API scenario -> bru.
+- PR/CI/GitHub state -> gh.
+
+### Serena
+
+- When available, use for semantic symbol navigation, references, implementations, callers, and bounded code understanding.
+- Do not use for simple known-literal searches when rg is sufficient.
+- Never modify `.serena/project.yml` unless explicitly requested.
+
+### rg
+
+- Use for known literals, exact symbols, permission keys, routes, filenames, errors, and bounded directory searches.
+- Respect `.gitignore` and avoid unrelated or generated directories.
+
+### Graphify
+
+- Use for cross-module dependencies, caller/callee relationships, architecture exploration, and graph questions.
+- Prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, and `graphify explain "<concept>"`.
+- Do not use Graphify for simple searches that rg can answer.
+- Use `graphify-out/wiki/index.md` for broad navigation when useful.
+- Read `graphify-out/GRAPH_REPORT.md` only when scoped Graphify commands are insufficient.
+- Run `graphify update .` after code changes when required.
+- When the user explicitly types `/graphify`, use the installed Graphify workflow/instructions before other codebase-discovery tools unless the user explicitly asks otherwise.
+- Dirty files under `graphify-out/` are expected after hooks or incremental graph updates and are not, by themselves, a reason to skip Graphify.
+- `graphify update .` is AST-only and has no API cost.
+
+### jq
+
+- Use for focused JSON, API, and structured-output inspection.
+- Extract only needed fields.
+- Never expose secrets.
+
+### Bruno / bru
+
+- Bruno Desktop and the bru CLI are available.
+- Use for repeatable API reproduction and relevant API regression scenarios.
+- Do not create large collections without task justification.
+- Keep API tests aligned with existing server contracts.
+- Never commit secrets.
+
+### gh
+
+- GitHub CLI is installed and authenticated.
+- Use for PR status, CI checks, repository metadata, and GitHub operations when relevant.
+- Never push, create a PR, merge, close, or otherwise mutate GitHub state without explicit authorization.
+- Never expose credentials.
+
+### Verification Efficiency
+
+- Run targeted tests before broader regression suites.
+- Run full suites only when the task's completion gate requires them.
+
+## Windows Execution Fallbacks
+
+- On Windows, if the PowerShell `bru` shim is blocked, use `bru.cmd`.
+- If `jq` is installed but execution is denied by the active agent sandbox, use native PowerShell JSON tooling such as `ConvertFrom-Json` / `ConvertTo-Json` instead of repeatedly retrying.
+- If `gh` authentication works in the user's Windows terminal but is unavailable inside the active agent sandbox, do not modify, export, replace, or expose GitHub credentials. Report the limitation and leave GitHub mutation operations for an authorized environment.
