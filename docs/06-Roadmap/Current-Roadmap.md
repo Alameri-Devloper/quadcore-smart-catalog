@@ -1,8 +1,8 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-> **Current P7 closure — 2026-10-02 | حالة إغلاق P7 الحالية:** P1–P7 are **COMPLETE**. P7 Branch overrides implementation, user-confirmed Admin live-browser QA, and actual 4/4 PR CI checks are **PASS**; `P7CompletionGate: PASS`. P7 merged through [PR #50](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/50) at `031bb484633efb966976757d570db004e007bc86`. The documentation-only post-merge closure follows the established P6 branch/PR convention. P8 is **READY_FOR_PLANNING only**; no P8 planning or implementation started. The Branch helper text remains a non-blocking UX follow-up. | اكتملت P1–P7. نجح تنفيذ تجاوزات الفرع P7 والتحقق اليدوي بصلاحية Admin وفق تأكيد المستخدم وفحوص PR الفعلية الأربعة؛ `P7CompletionGate: PASS`. دُمجت P7 عبر #50 عند الالتزام المذكور، ويتبع إغلاق التوثيق بعد الدمج نمط فرع وطلب سحب P6 القائم. أصبحت P8 **جاهزة للتخطيط فقط** دون بدء تخطيط أو تنفيذ. يبقى النص الإرشادي للفرع متابعة غير مانعة. See the [P7 final report](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
+> **Current Task 3.22 closure — 2026-10-04 | حالة إغلاق المهمة 3.22 الحالية:** P1–P8, the Staff Permissions fix, and Task 3.22 are **COMPLETE** at final integration baseline `0bb593b586cd9aff2ec149c3d90add4c0c531514`. No authorized successor is currently defined. Existing workflow contracts and architecture remain unchanged. | اكتملت P1–P8 وإصلاح صلاحيات الموظف والمهمة 3.22 عند خط التكامل النهائي المذكور. لا توجد مهمة لاحقة محددة ومعتمدة. تبقى عقود سير العمل والمعمارية دون تغيير. P8.1 targeted acceptance: **626/626 PASS**; full suite: **1085 PASS, 0 failures, 1 Windows leaf-link platform skip**; TypeScript, ESLint, build, and manual QA Groups 1–5: **PASS**. [PR #54](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/54) and [PR #55](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/55) merged after **4/4 CI PASS** each. See the [P8 closure evidence](../05-Development/Reports/QSC-Task-3.22-P8-Closure-Final-Report.md) and [Staff Permissions fix evidence](../05-Development/Reports/QSC-Staff-Permissions-Validation-Final-Report.md). | نجح القبول المحدد 626/626، ونجح 1085 اختباراً دون إخفاق مع تخطي اختبار رابط ورقي واحد خاص بمنصة Windows. نجحت TypeScript وESLint والبناء ومجموعات القبول اليدوي 1–5، ودُمج طلبا السحب #54 و#55 بعد نجاح الفحوص الأربعة لكل منهما.
 
-**Status:** P1–P7 COMPLETE; P7Implementation PASS; P7ManualBrowserQA PASS; P7PRCI PASS; P7CompletionGate PASS; P8 READY_FOR_PLANNING only; P8Started NO · **Updated:** 2026-10-02
+**Status:** P1–P8 COMPLETE; Staff Permissions fix COMPLETE; Task 3.22 COMPLETE; authorized successor NONE · **Updated:** 2026-10-04
 
 ## English
 
@@ -19,6 +19,8 @@ This document is the current delivery authority. The original [project roadmap](
 
 ### Completed and merged baseline
 
+The table records historical boundaries at each task’s completion; later completed tasks supersede the relevant Presentation gaps. | يسجل الجدول الحدود التاريخية عند إكمال كل مهمة؛ وتعالج المهام اللاحقة المكتملة فجوات العرض ذات الصلة.
+
 | Task | Merged outcome                                                                                                                                                                                                                                                                                                                            | Boundary that remains                                                                                                                        |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 3.14 | Product lifecycle, Product Entry, local draft, media upload/workflow, and responsive entry foundations                                                                                                                                                                                                                                    | Approval workflow, version history, and broader workflow automation remain future work.                                                      |
@@ -30,7 +32,7 @@ This document is the current delivery authority. The original [project roadmap](
 | 3.20 | Canonical authenticated Catalog browsing and Product Details Presentation; Direct Device Sharing integration; canonical URL/query-state navigation; server-authorized Retail, Wholesale, and Inventory rendering; safe N.A. Money Presentation and semantic active-filter corrections from 3.20-R1; authenticated Catalog media transport | No public Product sharing, anonymous access, WhatsApp integration, Reference Data management, or Branch/Inventory/Pricing management exists. |
 | 3.21 | Authenticated bilingual Catalog Reference Data management Presentation, typed HTTP coordination, conflict recovery, native accessible deactivation confirmation, and exact focus restoration                                                                                                                                              | No Branch, Inventory, or Pricing management Presentation was added.                                                                          |
 
-The current implementation integration baseline is `031bb484633efb966976757d570db004e007bc86`, merging Task 3.22-P7 through PR #50 into `feature/product-entry-engine`. P1–P7 are complete; `P7CompletionGate: PASS`. P8 is READY_FOR_PLANNING only and requires separate planning and approval. The documentation-only closure uses its own PR. Prior P1–P6 and A1–A6 baselines remain historical evidence.
+P1–P8, the Staff Permissions fix, and Task 3.22 are **COMPLETE** at final integration baseline `0bb593b586cd9aff2ec149c3d90add4c0c531514`. No authorized successor is currently defined. Existing workflow contracts and architecture remain unchanged. | اكتملت P1–P8 وإصلاح صلاحيات الموظف والمهمة 3.22 عند خط التكامل النهائي المذكور. لا توجد مهمة لاحقة محددة ومعتمدة. تبقى عقود سير العمل والمعمارية دون تغيير.
 
 ### Task 3.22-P1 — Complete
 
@@ -40,7 +42,7 @@ Composition is A1 semantic navigation → A6 exact-purpose Branch discovery → 
 
 A6 returns Active + Inactive for all five purposes; fresh Branch-scoped A2 discovery requires Active. P1 must distinguish/disable inactive choices for new workflows while preserving existing-resource inspection that its server contract permits. Status and allowedActions are never mutation guarantees; Reservation actions may remain visible while mutation rejects BranchInactive. Transfer uses A6 Transfer for the same source/destination set and A2 Inventory with source branchId. A4 field disclosure and A5 numeric/semantic/minimal-success projection remain server-owned; raw permissions and branchScope never enter Presentation.
 
-The **P1 foundation and P2 Listing workflow** have passed their documented automated and live browser acceptance. P2 consumes the existing A6 Listing Branch selector and A2 Product selector, reads authoritative Listing state/actions, submits explicit revision-based Listed/Unlisted changes, refetches authoritative state after writes, and requires explicit review/retry after conflicts with no automatic replay. Known-resource inspection after Branch deactivation and fresh inactive-Branch discovery blocking were verified. **P2 is COMPLETE. P3 is READY_FOR_PLANNING only** and requires its own bounded scope and approval before implementation. Cosmetic, non-blocking UI ordering feedback remains deferred as a UX follow-up. No Domain/repository/database/migration/dependency/permission or architecture change was required.
+**Historical P1/P2 checkpoint:** The **P1 foundation and P2 Listing workflow** have passed their documented automated and live browser acceptance. P2 consumes the existing A6 Listing Branch selector and A2 Product selector, reads authoritative Listing state/actions, submits explicit revision-based Listed/Unlisted changes, refetches authoritative state after writes, and requires explicit review/retry after conflicts with no automatic replay. Known-resource inspection after Branch deactivation and fresh inactive-Branch discovery blocking were verified. **P2 is COMPLETE. P3 is READY_FOR_PLANNING only** and requires its own bounded scope and approval before implementation. Cosmetic, non-blocking UI ordering feedback remains deferred as a UX follow-up. No Domain/repository/database/migration/dependency/permission or architecture change was required.
 
 ### Task 3.22-P2 — Complete
 
@@ -66,7 +68,21 @@ Live browser acceptance verified Reserve, Release, partial and final Fulfill, ac
 
 ### Task 3.22-P7 — Complete
 
-P1–P7 are **COMPLETE**. P7 Branch overrides implementation, user-confirmed Admin live-browser QA, and actual 4/4 PR CI checks are **PASS**; `P7CompletionGate: PASS`. P7 merged through [PR #50](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/50) at `031bb484633efb966976757d570db004e007bc86`. The documentation-only post-merge closure follows the established P6 branch/PR convention. P8 is **READY_FOR_PLANNING only**; no P8 planning or implementation started. The Branch helper text remains a non-blocking UX follow-up. See the [P7 final report](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
+P7 is **COMPLETE**, merged through PR #50 at historical baseline `031bb484633efb966976757d570db004e007bc86`; `P7CompletionGate: PASS`. See the [P7 final report](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
+
+### Task 3.22-P8 and Task 3.22 — Complete
+
+P1–P8, the Staff Permissions fix, and Task 3.22 are **COMPLETE** at final integration baseline `0bb593b586cd9aff2ec149c3d90add4c0c531514`. No authorized successor is currently defined. Existing workflow contracts and architecture remain unchanged. | اكتملت P1–P8 وإصلاح صلاحيات الموظف والمهمة 3.22 عند خط التكامل النهائي المذكور. لا توجد مهمة لاحقة محددة ومعتمدة. تبقى عقود سير العمل والمعمارية دون تغيير.
+
+### Deferred non-blocking follow-ups | متابعات مؤجلة غير مانعة
+
+1. Raw Branch UUID shown in Permissions UI instead of Branch name. | عرض معرف UUID الخام للفرع بدلاً من اسمه في واجهة الصلاحيات.
+2. Persistent Branch guidance. | استمرار النص الإرشادي للفرع.
+3. Reservation feedback/ordering. | التغذية الراجعة وترتيب الحجوزات.
+4. Cross-tab freshness/source-label observations. | ملاحظات حداثة البيانات بين علامات التبويب وتسمية المصدر.
+5. View-only Staff can open a Create-Branch draft form; server writes remain protected. | يستطيع الموظف صاحب صلاحية العرض فقط فتح مسودة إنشاء فرع، مع استمرار حماية الكتابة على الخادم.
+
+These remain deferred, non-blocking follow-ups only; none is an authorized successor task. | تبقى هذه البنود متابعات مؤجلة غير مانعة فقط، ولا يمثل أي منها مهمة لاحقة معتمدة.
 
 ### Task 3.22-A1–A5 — Completed / merged
 
@@ -96,6 +112,8 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 ### خط الأساس المكتمل والمدمج
 
+يسجل الجدول الحدود التاريخية عند إكمال كل مهمة؛ وتعالج المهام اللاحقة المكتملة فجوات العرض ذات الصلة.
+
 | المهمة | النتيجة المدمجة                                                                                                                                                                                                                                                                    | الحد المتبقي                                                                                                           |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 3.14   | دورة حياة المنتج، وإدخال المنتج، والمسودة المحلية، ورفع الوسائط وسير عملها، وأساس واجهة الإدخال المتجاوبة                                                                                                                                                                          | تبقى الموافقات وتاريخ الإصدارات والأتمتة الأوسع قدرات مستقبلية.                                                        |
@@ -111,16 +129,16 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 ### المهمة 3.22-P1 — مكتملة
 
-**P1CompletionGate: PASS — اكتمل التنفيذ وينتظر مراجعة مستقلة؛ لا يعني الدمج أو اعتماد P2.** يصالح [تقرير إغلاق P1.6](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) الشرائح P1.1–P1.5 ويوثق نجاح الفحوص الآلية الآمنة. لم يتوفر متصفح، لذلك يبقى تحقق الأحجام واللغتين واللمس والفأرة ولوحة المفاتيح دين تحقق صريحاً لقبول P1. تتوقف P1 بعد اختيار المنتج. **تبقى A6 مكتملة ومدمجة عبر #35**، ويحفظ [تقرير البوابة](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) الاعتماد التاريخي لبدء P1.
+**نقطة تحقق P1 التاريخية:** **P1CompletionGate: PASS — اكتمل التنفيذ وينتظر مراجعة مستقلة؛ لا يعني الدمج أو اعتماد P2.** يصالح [تقرير إغلاق P1.6](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) الشرائح P1.1–P1.5 ويوثق نجاح الفحوص الآلية الآمنة. لم يتوفر متصفح، لذلك يبقى تحقق الأحجام واللغتين واللمس والفأرة ولوحة المفاتيح دين تحقق صريحاً لقبول P1. تتوقف P1 بعد اختيار المنتج. **تبقى A6 مكتملة ومدمجة عبر #35**، ويحفظ [تقرير البوابة](../05-Development/Reports/QSC-Task-3.22-Presentation-Gate-Reconciliation-Report.md) الاعتماد التاريخي لبدء P1.
 
 **P1CompletionGate: PASS؛ P1 مكتملة.** اكتمل تنفيذ P1 والتحقق الآلي والقبول اليدوي في المتصفح، وتبقى A6 مكتملة ومدمجة عبر #35. يحفظ [تقرير إغلاق P1.6](../05-Development/Reports/QSC-Task-3.22-P1.6-Final-Report.md) أدلة الإغلاق.
 تعيد A6 النشط وغير النشط للأغراض الخمسة، بينما يتطلب اكتشاف A2 الجديد فرعاً نشطاً. تميز P1 الخيارات غير النشطة وتعطلها للتدفق الجديد مع حفظ فحص المورد القائم المسموح بعقده. ليست الحالة ولا allowedActions ضمان طفرة؛ قد تظهر أفعال الحجز مع رفض BranchInactive. يستخدم التحويل A6 Transfer بمجموعة واحدة للفرعين ثم A2 Inventory ومعرف المصدر. يبقى كشف الحقول في A4 والكشف الرقمي أو الدلالي أو نجاح العملية الأدنى في A5 ملك الخادم، ولا تدخل الصلاحيات الخام أو branchScope العرض.
 
-راجع **P1 المكتملة: الغلاف والأنواع والعملاء الصارمة وقدرات A1 وحالة URL والمنسق وإدارة الفروع العامة ومحدد A6 ومحدد منتجات A2**، ثم أكمل تحقق المتصفح الموثق. **تبقى P2–P8 مخططة وتتطلب اعتماداً مستقلاً** دون تصريح مجمع. لم يلزم تغيير مجال أو عقد مستودع أو قاعدة أو ترحيل أو اعتماد أو صلاحية أو ADR جديد. التوقف لمراجعة P1.6.
+**توصية P1 التاريخية:** راجع **P1 المكتملة: الغلاف والأنواع والعملاء الصارمة وقدرات A1 وحالة URL والمنسق وإدارة الفروع العامة ومحدد A6 ومحدد منتجات A2**، ثم أكمل تحقق المتصفح الموثق. **تبقى P2–P8 مخططة وتتطلب اعتماداً مستقلاً** دون تصريح مجمع. لم يلزم تغيير مجال أو عقد مستودع أو قاعدة أو ترحيل أو اعتماد أو صلاحية أو ADR جديد. التوقف لمراجعة P1.6.
 
 ### المهمة 3.22-P2 — مكتملة
 
-**نجح القبول اليدوي لـP2؛ `P2CompletionGate: PASS`؛ P2 مكتملة.** نُفذ مسار الإدراج المحدود في commit `13b3bbafcd5724b55838fe8d5ca0f44476014af4` ودُمج عبر PR #41 عند دمج التكامل `6e3205c`. نجحت 104/104 من الاختبارات المستهدفة مع TypeScript وESLint والبناء. تحقق القبول اليدوي من الإدراج وإلغائه، إعادة القراءة الموثوقة، تعارض 409 دون إعادة تلقائية، إعادة المحاولة الصريحة، فحص المورد المعروف بعد تعطيل الفرع، منع الاكتشاف الجديد على الفرع غير النشط، لوحة المفاتيح والتركيز، والعربية/RTL والاستجابة على الجوال واللوحي وسطح المكتب. أصبحت P3 جاهزة للتخطيط المستقل فقط، ولم يبدأ تنفيذها.
+**نجح القبول اليدوي لـP2؛ `P2CompletionGate: PASS`؛ P2 مكتملة.** نُفذ مسار الإدراج المحدود في commit `13b3bbafcd5724b55838fe8d5ca0f44476014af4` ودُمج عبر PR #41 عند دمج التكامل `6e3205c`. نجحت 104/104 من الاختبارات المستهدفة مع TypeScript وESLint والبناء. تحقق القبول اليدوي من الإدراج وإلغائه، إعادة القراءة الموثوقة، تعارض 409 دون إعادة تلقائية، إعادة المحاولة الصريحة، فحص المورد المعروف بعد تعطيل الفرع، منع الاكتشاف الجديد على الفرع غير النشط، لوحة المفاتيح والتركيز، والعربية/RTL والاستجابة على الجوال واللوحي وسطح المكتب. عند نقطة الإغلاق التاريخية هذه أصبحت P3 جاهزة للتخطيط فقط؛ اكتملت P3 لاحقاً كما هو موثق أدناه.
 
 ### المهمة 3.22-P3 — مكتملة
 
@@ -142,7 +160,11 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 
 ### المهمة 3.22-P7 — مكتملة
 
-اكتملت P1–P7. نجح تنفيذ تجاوزات الفرع P7 والتحقق اليدوي بصلاحية Admin وفق تأكيد المستخدم وفحوص PR الفعلية الأربعة؛ `P7CompletionGate: PASS`. دُمجت P7 عبر #50 عند الالتزام المذكور، ويتبع إغلاق التوثيق بعد الدمج نمط فرع وطلب سحب P6 القائم. أصبحت P8 **جاهزة للتخطيط فقط** دون بدء تخطيط أو تنفيذ. يبقى النص الإرشادي للفرع متابعة غير مانعة. راجع [التقرير النهائي لـP7](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
+اكتملت P7 ودُمجت عبر #50 عند خط الأساس التاريخي `031bb484633efb966976757d570db004e007bc86`؛ `P7CompletionGate: PASS`. راجع [التقرير النهائي لـP7](../05-Development/Reports/QSC-Task-3.22-P7-Final-Report.md).
+
+### المهمة 3.22-P8 والمهمة 3.22 — مكتملتان
+
+اكتملت P8 وإصلاح صلاحيات الموظف والمهمة 3.22 وفق أدلة الإغلاق والبوابات المذكورة أعلاه. لا توجد مهمة لاحقة محددة ومعتمدة. تبقى المتابعات الخمس المذكورة أعلاه مؤجلة وغير مانعة.
 
 ### المهمة 3.22-A1–A5 — مكتملة / مدمجة
 
