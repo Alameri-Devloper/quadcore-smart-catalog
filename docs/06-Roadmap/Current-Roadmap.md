@@ -1,8 +1,26 @@
 # Current Roadmap | خارطة الطريق الحالية
 
-> **Current Task 3.22 closure — 2026-10-04 | حالة إغلاق المهمة 3.22 الحالية:** P1–P8, the Staff Permissions fix, and Task 3.22 are **COMPLETE** at final integration baseline `0bb593b586cd9aff2ec149c3d90add4c0c531514`. No authorized successor is currently defined. Existing workflow contracts and architecture remain unchanged. | اكتملت P1–P8 وإصلاح صلاحيات الموظف والمهمة 3.22 عند خط التكامل النهائي المذكور. لا توجد مهمة لاحقة محددة ومعتمدة. تبقى عقود سير العمل والمعمارية دون تغيير. P8.1 targeted acceptance: **626/626 PASS**; full suite: **1085 PASS, 0 failures, 1 Windows leaf-link platform skip**; TypeScript, ESLint, build, and manual QA Groups 1–5: **PASS**. [PR #54](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/54) and [PR #55](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/55) merged after **4/4 CI PASS** each. See the [P8 closure evidence](../05-Development/Reports/QSC-Task-3.22-P8-Closure-Final-Report.md) and [Staff Permissions fix evidence](../05-Development/Reports/QSC-Staff-Permissions-Validation-Final-Report.md). | نجح القبول المحدد 626/626، ونجح 1085 اختباراً دون إخفاق مع تخطي اختبار رابط ورقي واحد خاص بمنصة Windows. نجحت TypeScript وESLint والبناء ومجموعات القبول اليدوي 1–5، ودُمج طلبا السحب #54 و#55 بعد نجاح الفحوص الأربعة لكل منهما.
+> **Current Task 3.23 planning authority — 2026-10-05 | مرجعية تخطيط المهمة 3.23 الحالية:** Task 3.22 remains **COMPLETE**. **Task 3.23 — Public Product Share Link V1** is the authorized successor for planning only: **PLANNING APPROVED; IMPLEMENTATION NOT STARTED**. Task 3.23-P1 is **READY_FOR_PLANNING only**; Task 3.23-P2–P7 are **GATED / NOT STARTED**, each separately gated. Production code, migrations, deployment and new dependencies are not authorized. | تبقى المهمة 3.22 **مكتملة**. **المهمة 3.23 — رابط مشاركة المنتج العام V1** هي المهمة اللاحقة المعتمدة للتخطيط فقط: **التخطيط معتمد؛ التنفيذ لم يبدأ**. الشريحة 3.23-P1 **جاهزة للتخطيط فقط**؛ الشرائح 3.23-P2–P7 **مشروطة باعتماد مستقل ولم تبدأ**. لا تصريح لكود الإنتاج أو الترحيلات أو النشر أو مكتبات جديدة.
 
-**Status:** P1–P8 COMPLETE; Staff Permissions fix COMPLETE; Task 3.22 COMPLETE; authorized successor NONE · **Updated:** 2026-10-04
+**Status:** Task 3.22 COMPLETE; Task 3.23 PLANNING APPROVED; IMPLEMENTATION NOT STARTED · **Updated:** 2026-10-05
+
+Governing documents: accepted [ADR-013](../01-Architecture/ADR/ADR-013-Public-Product-Share-Link.md) and the approved [Task 3.23 implementation contract](Task-3.23-Public-Product-Share-Link-V1-Implementation-Contract.md). No slice is READY_FOR_IMPLEMENTATION; each later slice requires separate authorization and review. | الوثائق الحاكمة: ADR-013 المعتمد وعقد المهمة 3.23 المعتمد للتخطيط. لا شريحة جاهزة للتنفيذ؛ تحتاج كل شريحة لاحقة اعتماداً ومراجعة مستقلين.
+
+| Official slice / الشريحة الرسمية | Current status / الحالة الحالية |
+| --- | --- |
+| Task 3.23-P1 — Metadata and Domain Contracts / البيانات الوصفية وعقود المجال | READY_FOR_PLANNING only / جاهزة للتخطيط فقط |
+| Task 3.23-P2 — Visibility Transport and Editor / نقل ومحرر الرؤية | GATED / NOT STARTED / مشروطة ولم تبدأ |
+| Task 3.23-P3 — Crypto and Runtime / التشفير والتشغيل | GATED / NOT STARTED / مشروطة ولم تبدأ |
+| Task 3.23-P4 — Grant Persistence and Lifecycle / حفظ ودورة التفويض | GATED / NOT STARTED / مشروطة ولم تبدأ |
+| Task 3.23-P5 — Management API/UI / API وواجهة الإدارة | GATED / NOT STARTED / مشروطة ولم تبدأ |
+| Task 3.23-P6 — Public Resolution and Media Transport / الحل العام ونقل الصورة | GATED / NOT STARTED / مشروطة ولم تبدأ |
+| Task 3.23-P7 — SSR Presentation and Release Integration / العرض وتكامل الإصدار | GATED / NOT STARTED / مشروطة ولم تبدأ |
+
+Earlier closure, candidate-analysis and slice-status statements below are preserved historical checkpoints. Their no-successor/deferred/ADR-pending statements do not override this current Task 3.23 planning authority. Task 3.22 completion evidence and technical contracts remain unchanged. | تُحفظ عبارات الإغلاق وتحليل المرشحين وحالات الشرائح أدناه كنقاط تحقق تاريخية. لا تتجاوز عبارات غياب المهمة اللاحقة أو التأجيل أو انتظار ADR مرجعية تخطيط 3.23 الحالية. تبقى أدلة إكمال 3.22 وعقودها التقنية دون تغيير.
+
+> **Historical Task 3.22 closure — 2026-10-04 | حالة إغلاق المهمة 3.22 التاريخية:** P1–P8, the Staff Permissions fix, and Task 3.22 are **COMPLETE** at final integration baseline `0bb593b586cd9aff2ec149c3d90add4c0c531514`. No authorized successor is currently defined. Existing workflow contracts and architecture remain unchanged. | اكتملت P1–P8 وإصلاح صلاحيات الموظف والمهمة 3.22 عند خط التكامل النهائي المذكور. لا توجد مهمة لاحقة محددة ومعتمدة. تبقى عقود سير العمل والمعمارية دون تغيير. P8.1 targeted acceptance: **626/626 PASS**; full suite: **1085 PASS, 0 failures, 1 Windows leaf-link platform skip**; TypeScript, ESLint, build, and manual QA Groups 1–5: **PASS**. [PR #54](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/54) and [PR #55](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/55) merged after **4/4 CI PASS** each. See the [P8 closure evidence](../05-Development/Reports/QSC-Task-3.22-P8-Closure-Final-Report.md) and [Staff Permissions fix evidence](../05-Development/Reports/QSC-Staff-Permissions-Validation-Final-Report.md). | نجح القبول المحدد 626/626، ونجح 1085 اختباراً دون إخفاق مع تخطي اختبار رابط ورقي واحد خاص بمنصة Windows. نجحت TypeScript وESLint والبناء ومجموعات القبول اليدوي 1–5، ودُمج طلبا السحب #54 و#55 بعد نجاح الفحوص الأربعة لكل منهما.
+
+**Historical status (Task 3.22 closure) | الحالة التاريخية عند إغلاق 3.22:** P1–P8 COMPLETE; Staff Permissions fix COMPLETE; Task 3.22 COMPLETE; authorized successor NONE · **Updated:** 2026-10-04
 
 ## English
 
@@ -180,6 +198,9 @@ Task 3.21 is **Completed / merged** through PR #24 at baseline `4f1115d2ac98fc44
 - تتطلب الأسئلة غير المحسومة في [القرارات المؤجلة](Deferred-Decisions.md) القرارات المحددة قبل التنفيذ.
 
 ## Related Documents | الوثائق المرتبطة
+
+- [ADR-013 — Public Product Share Link](../01-Architecture/ADR/ADR-013-Public-Product-Share-Link.md)
+- [Task 3.23 — Public Product Share Link V1 Implementation Contract](Task-3.23-Public-Product-Share-Link-V1-Implementation-Contract.md)
 
 - [Sprint 03 Continuation](Sprint-03-Continuation.md)
 - [Task 3.21 Implementation Contract](Task-3.21-Implementation-Contract.md)
