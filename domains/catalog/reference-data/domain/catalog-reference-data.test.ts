@@ -12,7 +12,18 @@ import {
   normalizeReferenceCode,
   validateSortOrder,
   validateSpecificationValueType,
+  validatePublicSpecificationVisibility,
 } from "./catalog-reference-data";
+
+describe("Public specification visibility literal", () => {
+  it("accepts exactly internal and public without inferring a default", () => {
+    assert.equal(validatePublicSpecificationVisibility("internal"), "internal");
+    assert.equal(validatePublicSpecificationVisibility("public"), "public");
+    for (const invalid of [null, undefined, true, false, 0, {}, [], "", "PUBLIC", "Internal", " public", "public "]) {
+      assert.throws(() => validatePublicSpecificationVisibility(invalid), { message: "InvalidPublicSpecificationVisibility" });
+    }
+  });
+});
 
 describe("Catalog Reference Data policy", () => {
   it("normalizes stable codes without deriving them from display names", () => {

@@ -1,16 +1,16 @@
 # Task 3.23-P1 — Metadata and Domain Contracts Planning | تخطيط البيانات الوصفية وعقود المجال
 
-**Status:** P1 planning review PASS; P1 READY_FOR_IMPLEMENTATION; P1 implementation NOT STARTED. P1 implementation only is authorized. **Date:** 2026-10-05. **Parent:** Task 3.23 — PLANNING APPROVED; IMPLEMENTATION NOT STARTED; not complete. **P2–P7:** GATED / NOT STARTED, separately gated.
+**Status:** P1 planning PASS; independent implementation review PASS; P1CompletionGate PASS; P1 COMPLETE at implementation commit `43b99c6`. **Date:** 2026-10-05. **Parent:** Task 3.23 — IN PROGRESS. **P2:** READY_FOR_PLANNING only; production implementation not authorized. **P3–P7:** GATED / NOT STARTED.
 
-**الحالة:** مراجعة تخطيط P1 ناجحة (PASS)؛ P1 جاهزة للتنفيذ (READY_FOR_IMPLEMENTATION)؛ تنفيذ P1 لم يبدأ. الاعتماد لتنفيذ P1 فقط. **التاريخ:** 2026-10-05. **المهمة الأصلية:** 3.23 — التخطيط معتمد؛ التنفيذ لم يبدأ؛ غير مكتملة. **P2–P7:** مشروطة باعتماد مستقل ولم تبدأ.
+**الحالة:** نجح تخطيط P1 ومراجعة تنفيذها المستقلة وبوابة إكمالها (PASS)؛ P1 مكتملة (COMPLETE) عند التزام التنفيذ `43b99c6`. **التاريخ:** 2026-10-05. **المهمة الأصلية:** 3.23 — قيد التنفيذ (IN PROGRESS). **P2:** جاهزة للتخطيط فقط (READY_FOR_PLANNING)؛ التنفيذ الإنتاجي غير معتمد. **P3–P7:** مشروطة باعتماد مستقل ولم تبدأ.
 
 ## 1. Authority and deliverable | المرجعية والمخرج
 
-[ADR-013](../01-Architecture/ADR/ADR-013-Public-Product-Share-Link.md) and the approved [Task 3.23 implementation contract](Task-3.23-Public-Product-Share-Link-V1-Implementation-Contract.md) govern. P1 planning review has passed; implementation approval is limited to the approved P1 technical plan. P1 is READY_FOR_IMPLEMENTATION but implementation has not started. P2–P7 remain separately gated. This reconciliation changes status documentation only; production code, migrations, tests, dependencies, deployment and Git mutations are outside this request.
+[ADR-013](../01-Architecture/ADR/ADR-013-Public-Product-Share-Link.md) and the approved [Task 3.23 implementation contract](Task-3.23-Public-Product-Share-Link-V1-Implementation-Contract.md) govern. P1 planning, independent implementation review and completion gate are PASS; P1 is COMPLETE at implementation commit `43b99c6`. The approved technical plan below is preserved as historical authority. P2 is READY_FOR_PLANNING only; P3–P7 remain GATED / NOT STARTED. No later slice implementation is authorized. This reconciliation changes status documentation only; production code, migrations, tests, dependencies, deployment and Git mutations are outside this request.
 
 This approved plan addresses the complete A–J P1 planning scope and the approved parent contract. Planning review of the file names, method signatures and bounded P1 scope below has passed; no implementation is performed by this status reconciliation.
 
-يحكم ADR-013 وعقد 3.23 المعتمد هذه الخطة. نجحت مراجعة التخطيط للأسماء والتواقيع ونطاق P1 الكامل من A إلى J، واعتمد تنفيذ خطة P1 التقنية فقط. P1 جاهزة للتنفيذ لكنه لم يبدأ؛ تبقى P2–P7 مشروطة باعتماد مستقل. تقتصر هذه المصالحة على وثائق الحالة، دون كود إنتاج أو ترحيلات أو اختبارات أو مكتبات أو نشر أو عمليات Git.
+يحكم ADR-013 وعقد 3.23 المعتمد هذه الخطة. نجح التخطيط ومراجعة التنفيذ المستقلة وبوابة الإكمال؛ اكتملت P1 عند التزام التنفيذ `43b99c6`. تُحفظ الخطة التقنية المعتمدة أدناه كمرجعية تاريخية. P2 جاهزة للتخطيط فقط؛ تبقى P3–P7 مشروطة باعتماد مستقل ولم تبدأ. لا تصريح لتنفيذ شريحة لاحقة. تقتصر هذه المصالحة على وثائق الحالة، دون كود إنتاج أو ترحيلات أو اختبارات أو مكتبات أو نشر أو عمليات Git.
 
 ## 2. Bounded repository findings | نتائج فحص المستودع المحدود
 
@@ -31,7 +31,7 @@ Serena was used first for semantic symbols/references; rg confirmed exact litera
 
 ## 3. Specification visibility Domain contract | عقد رؤية المواصفات
 
-P1 implementation may introduce the visibility type and strict canonical validator in the existing reference-data Domain file, preserving ownership. It **must not add a required `publicVisibility` field to the current `SpecificationTemplateEntry` yet**. P1 may also introduce Public Share Grant/value contracts and approved Application-facing port/type declarations. These P1 changes are authorized within this approved plan, but implementation has not started; this reconciliation performs no implementation.
+P1 implementation may introduce the visibility type and strict canonical validator in the existing reference-data Domain file, preserving ownership. It **must not add a required `publicVisibility` field to the current `SpecificationTemplateEntry` yet**. P1 may also introduce Public Share Grant/value contracts and approved Application-facing port/type declarations. These approved P1 changes are accepted at implementation commit `43b99c6`; this closure reconciliation performs no implementation.
 
 The following is the **final post-P2 canonical shape**, not a P1 entry-model change:
 
@@ -50,7 +50,7 @@ export interface SpecificationTemplateEntry {
 
 Plan a strict `validatePublicSpecificationVisibility(value: unknown): PublicSpecificationVisibility` beside the existing validators. Accept exactly the two lowercase literals; reject null, undefined, booleans, numbers, whitespace/case aliases and objects. Use a fixed safe error identifier `InvalidPublicSpecificationVisibility`, consistent with the validators' throw-and-Application-map pattern. Do not include supplied values in errors. Omission is an input compatibility rule, not a valid canonical Domain value.
 
-يمكن لتنفيذ P1 المعتمد إضافة نوع الرؤية ومدققها القانوني الصارم وعقود التفويض والقيم ومنافذ وأنواع Application المعتمدة فقط. **لا يضيف بعد حقل publicVisibility الإلزامي إلى SpecificationTemplateEntry الحالي**؛ الشكل أعلاه هو الشكل القانوني النهائي بعد P2 لا تغيير نموذج P1. اعتمدت تغييرات P1 ضمن هذه الخطة لكنه لم يبدأ، ولا تنفذ هذه المصالحة أي كود. يحتفظ القالب بنوع الإدخالات وترتيبها ولا نموذج مكرر أو رؤية عامة للتعريف. لا تستنتج الرؤية من required أو الترتيب أو النشاط أو المشاركة المباشرة، ولا تتغير جاهزية نشر المنتج أو قيمه. يفحص المدقق المقترح unknown ويقبل الحرفيين الصغيرين فقط، ويرفض الغياب والقيم الأخرى دون تضمينها في الخطأ؛ يعالج غياب الإدخال عند حدود التوافق لا داخل الحالة القانونية للمجال.
+يمكن لتنفيذ P1 المعتمد إضافة نوع الرؤية ومدققها القانوني الصارم وعقود التفويض والقيم ومنافذ وأنواع Application المعتمدة فقط. **لا يضيف بعد حقل publicVisibility الإلزامي إلى SpecificationTemplateEntry الحالي**؛ الشكل أعلاه هو الشكل القانوني النهائي بعد P2 لا تغيير نموذج P1. قُبلت تغييرات P1 المعتمدة عند التزام التنفيذ `43b99c6`، ولا تنفذ مصالحة الإغلاق هذه أي كود. يحتفظ القالب بنوع الإدخالات وترتيبها ولا نموذج مكرر أو رؤية عامة للتعريف. لا تستنتج الرؤية من required أو الترتيب أو النشاط أو المشاركة المباشرة، ولا تتغير جاهزية نشر المنتج أو قيمه. يفحص المدقق المقترح unknown ويقبل الحرفيين الصغيرين فقط، ويرفض الغياب والقيم الأخرى دون تضمينها في الخطأ؛ يعالج غياب الإدخال عند حدود التوافق لا داخل الحالة القانونية للمجال.
 
 ## 4. Write input and compatibility handoff | الإدخال الكتابي وتسليم التوافق
 
@@ -221,9 +221,9 @@ After separately authorized P1 code work, run explicit new paths with existing `
 
 ## 10. Review gate and later-slice handoff | بوابة المراجعة وتسليم الشرائح
 
-P1 planning review is PASS; P1 is READY_FOR_IMPLEMENTATION, with implementation NOT STARTED. Approval covers the existing bounded P1 plan only. P2 atomically integrates required canonical visibility, its schema/migration, compatible read/write/transport and editor; P3 supplies exact crypto adapters/readiness; P4 supplies protected grant persistence/UoW, atomic audit/clear/replace and its separate migration/schema tests; P5 manages explicit authorized retrieval only; P6 resolves live typed eligibility/media and defensive projection limits; P7 renders safe localized strings. P2–P7 scopes/order are unchanged and remain GATED / NOT STARTED, each separately gated. No later slice is authorized; Task 3.23 is not complete.
+P1 planning, independent implementation review and P1CompletionGate are PASS; P1 is COMPLETE at implementation commit `43b99c6`. The approved bounded P1 technical plan remains historical authority. P2 atomically integrates required canonical visibility, its schema/migration, compatible read/write/transport and editor; P3 supplies exact crypto adapters/readiness; P4 supplies protected grant persistence/UoW, atomic audit/clear/replace and its separate migration/schema tests; P5 manages explicit authorized retrieval only; P6 resolves live typed eligibility/media and defensive projection limits; P7 renders safe localized strings. P2–P7 scopes/order are unchanged. P2 is READY_FOR_PLANNING only, permitting planning/research/review but no production implementation; P3–P7 remain GATED / NOT STARTED. No later slice implementation is authorized; Task 3.23 remains IN PROGRESS.
 
-نجحت مراجعة تخطيط P1؛ أصبحت جاهزة للتنفيذ لكنه لم يبدأ، والاعتماد لخطة P1 المحددة فقط. تدمج P2 الرؤية القانونية الإلزامية ومخططها وترحيلها والقراءة والكتابة والنقل والمحرر المتوافقين، وتتسلم P3 التشفير والجاهزية، وP4 الحفظ والمعاملة والتدقيق والمحو والاستبدال وترحيلها المستقل واختبارات المخطط، وP5 الإدارة بتفاعل صريح، وP6 الحل الحي والوسائط وحدود الإسقاط الدفاعية، وP7 العرض الآمن المعرب. لا تغيير لترتيب P2–P7 أو نطاقها؛ تبقى مشروطة باعتماد مستقل ولم تبدأ. لا تصريح لشريحة لاحقة والمهمة 3.23 غير مكتملة.
+نجح تخطيط P1 ومراجعة تنفيذها المستقلة وبوابة إكمالها؛ اكتملت P1 عند التزام التنفيذ `43b99c6`. تبقى خطة P1 التقنية المعتمدة مرجعية تاريخية. تدمج P2 الرؤية القانونية الإلزامية ومخططها وترحيلها والقراءة والكتابة والنقل والمحرر المتوافقين، وتتسلم P3 التشفير والجاهزية، وP4 الحفظ والمعاملة والتدقيق والمحو والاستبدال وترحيلها المستقل واختبارات المخطط، وP5 الإدارة بتفاعل صريح، وP6 الحل الحي والوسائط وحدود الإسقاط الدفاعية، وP7 العرض الآمن المعرب. لا تغيير لترتيب P2–P7 أو نطاقها؛ P2 جاهزة للتخطيط والبحث والمراجعة فقط دون تنفيذ إنتاجي، وتبقى P3–P7 مشروطة باعتماد مستقل ولم تبدأ. لا تصريح لتنفيذ شريحة لاحقة والمهمة 3.23 قيد التنفيذ.
 
 ## Source evidence | أدلة المصدر
 
