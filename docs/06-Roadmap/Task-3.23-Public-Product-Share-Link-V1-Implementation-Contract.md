@@ -1,8 +1,8 @@
 # Public Product Share Link V1 — Implementation Contract | عقد تنفيذ رابط مشاركة المنتج العام V1
 
-**Status:** Approved for Task 3.23 planning; production implementation not yet authorized. **Date:** 2026-10-05. **Task number:** 3.23.
+**Status:** Approved for Task 3.23 planning; P1 planning review PASS; P1 READY_FOR_IMPLEMENTATION, implementation NOT STARTED; implementation authorized for P1 only; P2–P7 GATED / NOT STARTED. **Date:** 2026-10-05. **Task number:** 3.23.
 
-**الحالة:** معتمد لتخطيط المهمة 3.23؛ تنفيذ الإنتاج غير مصرح به بعد. **التاريخ:** 2026-10-05. **رقم المهمة:** 3.23.
+**الحالة:** معتمد لتخطيط المهمة 3.23؛ مراجعة تخطيط P1 ناجحة؛ P1 جاهزة للتنفيذ لكنه لم يبدأ؛ الاعتماد لتنفيذ P1 فقط؛ P2–P7 مشروطة باعتماد مستقل ولم تبدأ. **التاريخ:** 2026-10-05. **رقم المهمة:** 3.23.
 
 ## 1. Scope and authority | النطاق والمرجعية
 
@@ -434,13 +434,13 @@ For implementation slices: use existing `tsx --test` with explicit new test-file
 | Disclosure | Inspect source/DOM/RSC payload/network/metadata/storage/logs/errors: approved fields only; no rich Product preview. |
 | Operations | Limiter/database/key failure, partial migration rollback, no silent URL replacement; deployment logs redact synthetic tokens. |
 
-Each gate records commands, environment/synthetic fixture, observed results, and unresolved limitations. Do not claim manual QA from static tests. Failed required gates block progression/release. For authorized implementation tasks, existing report/review-bundle rules apply; Task 3.23 is assigned for planning only, and production implementation is not yet authorized.
+Each gate records commands, environment/synthetic fixture, observed results, and unresolved limitations. Do not claim manual QA from static tests. Failed required gates block progression/release. For authorized implementation tasks, existing report/review-bundle rules apply; Task 3.23 is not complete; P1 planning review has passed and implementation is authorized for P1 only, but has not started; P2–P7 remain separately gated.
 
-تستخدم شرائح التنفيذ اختبارات tsx والمسارات الصريحة والأوامر الحالية ذات الصلة، وفحص الأنواع والlint والبناء والفراغات، ثم الانحدار الكامل والتكامل المحمي عند الدمج المعتمد. لا يفترض أمر اختبارات غير موجود أو بيانات إنتاج أو اعتماد مكتبة. الجدولان بوابات تنفيذية يُسجل لكل منها الأمر والبيئة والبيانات الاصطناعية والنتيجة والقيود. لا تثبت الاختبارات الساكنة QA يدوياً. فشل المطلوب يمنع التقدم والإصدار. تتبع مهام التنفيذ المعتمدة قواعد التقرير والحزمة الحالية؛ أُسندت المهمة 3.23 للتخطيط فقط ولم يُصرح بتنفيذ الإنتاج بعد.
+تستخدم شرائح التنفيذ اختبارات tsx والمسارات الصريحة والأوامر الحالية ذات الصلة، وفحص الأنواع والlint والبناء والفراغات، ثم الانحدار الكامل والتكامل المحمي عند الدمج المعتمد. لا يفترض أمر اختبارات غير موجود أو بيانات إنتاج أو اعتماد مكتبة. الجدولان بوابات تنفيذية يُسجل لكل منها الأمر والبيئة والبيانات الاصطناعية والنتيجة والقيود. لا تثبت الاختبارات الساكنة QA يدوياً. فشل المطلوب يمنع التقدم والإصدار. تتبع مهام التنفيذ المعتمدة قواعد التقرير والحزمة الحالية؛ المهمة 3.23 غير مكتملة؛ نجحت مراجعة تخطيط P1 واعتمد تنفيذها فقط لكنه لم يبدأ؛ تبقى P2–P7 مشروطة باعتماد مستقل.
 
 ## 29. Bounded implementation slices and deployment handoff | شرائح التنفيذ وتسليم النشر
 
-Official assignment: **Task 3.23 — Public Product Share Link V1**. Status: **PLANNING APPROVED; IMPLEMENTATION NOT STARTED**. **Task 3.23-P1: READY_FOR_PLANNING only**; **Task 3.23-P2–P7: GATED / NOT STARTED**, each separately gated. No slice is READY_FOR_IMPLEMENTATION. Each slice needs explicit authorization and review before progressing; this planning approval does not authorize production code, migrations, deployment, or new dependencies.
+Official assignment: **Task 3.23 — Public Product Share Link V1**. Status: **PLANNING APPROVED; IMPLEMENTATION NOT STARTED**. **Task 3.23-P1 planning review: PASS; P1: READY_FOR_IMPLEMENTATION; P1 implementation: NOT STARTED**; **Task 3.23-P2–P7: GATED / NOT STARTED**, each separately gated. Implementation approval covers the approved P1 plan only; Task 3.23 is not complete. No later slice, migration, deployment or new dependency is authorized. Each later slice needs explicit authorization and review before progressing.
 
 | Proposed slice / الشريحة المقترحة | Dependencies, tests and manual review / التبعيات والتحقق |
 | --- | --- |
@@ -454,7 +454,7 @@ Official assignment: **Task 3.23 — Public Product Share Link V1**. Status: **P
 
 Unresolved deployment choices: distributed limiter backend/thresholds/expiry/bandwidth limits and trusted proxy topology; secret provisioning/backups/key-rotation operator procedure and batch size; actual public origin; upstream/access/error-reporting redaction configuration; proxy/CDN bypass and header enforcement; TLS/HSTS ownership; stronger CSP nonce/asset policy beyond compatible baseline. None authorizes expiry, plaintext storage, extra capabilities, fallback keys, or production exposure before evidence. Numeric specification/retry/key-ring bounds and routes are resolved by this contract; deployment-specific rate thresholds remain configurable.
 
-الإسناد الرسمي هو **المهمة 3.23 — رابط مشاركة المنتج العام V1**؛ **التخطيط معتمد والتنفيذ لم يبدأ**. **3.23-P1 جاهزة للتخطيط فقط (READY_FOR_PLANNING)**؛ **3.23-P2–P7 مشروطة باعتماد مستقل ولم تبدأ (GATED / NOT STARTED)**. لا شريحة جاهزة للتنفيذ. كل شريحة تحتاج اعتماداً ومراجعة مستقلة قبل التالية؛ لا اعتماد لكود الإنتاج أو الترحيلات أو النشر أو مكتبات جديدة. تبدأ بالبيانات والعقود ثم محرر الرؤية والتشفير والحفظ والإدارة، ثم الحل العام والعرض مع الاختبارات والQA المحددين. تبقى خيارات النشر المذكورة حقيقية: خلفية المحدد وحدوده، أسرار ومشغل التدوير، الأصل، حجب السجلات، الوكيل والتخزين وTLS وCSP الأقوى. لا تبيح انتهاء أو نصاً صريحاً أو قدرات إضافية أو مفاتيح بديلة أو تعريضاً عاماً قبل الأدلة. حدود المواصفات والمحاولات والحلقات والمسارات محسومة هنا؛ حدود المعدل إعداد نشر.
+الإسناد الرسمي هو **المهمة 3.23 — رابط مشاركة المنتج العام V1**؛ **التخطيط معتمد والتنفيذ لم يبدأ**. **مراجعة تخطيط 3.23-P1 ناجحة؛ P1 جاهزة للتنفيذ (READY_FOR_IMPLEMENTATION)؛ تنفيذ P1 لم يبدأ**؛ **3.23-P2–P7 مشروطة باعتماد مستقل ولم تبدأ (GATED / NOT STARTED)**. الاعتماد لخطة تنفيذ P1 فقط والمهمة 3.23 غير مكتملة. لا تصريح لشريحة لاحقة أو ترحيلات أو نشر أو مكتبات جديدة؛ تحتاج كل شريحة لاحقة اعتماداً ومراجعة مستقلين. تبدأ بالبيانات والعقود ثم محرر الرؤية والتشفير والحفظ والإدارة، ثم الحل العام والعرض مع الاختبارات والQA المحددين. تبقى خيارات النشر المذكورة حقيقية: خلفية المحدد وحدوده، أسرار ومشغل التدوير، الأصل، حجب السجلات، الوكيل والتخزين وTLS وCSP الأقوى. لا تبيح انتهاء أو نصاً صريحاً أو قدرات إضافية أو مفاتيح بديلة أو تعريضاً عاماً قبل الأدلة. حدود المواصفات والمحاولات والحلقات والمسارات محسومة هنا؛ حدود المعدل إعداد نشر.
 
 ## Source evidence | أدلة المصدر
 
