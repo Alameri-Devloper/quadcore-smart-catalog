@@ -1,5 +1,6 @@
 export type CatalogReferenceStatus = "Active" | "Inactive";
 export type SpecificationValueType = "Text" | "Number" | "Boolean";
+export type PublicSpecificationVisibility = "internal" | "public";
 
 export interface CatalogReferenceRecord {
   readonly workspaceId: string;
@@ -171,6 +172,11 @@ export const validateStatus = (value: string): CatalogReferenceStatus => {
 
 export const validateSpecificationValueType = (value: string): SpecificationValueType => {
   if (value !== "Text" && value !== "Number" && value !== "Boolean") throw new Error("InvalidSpecificationValueType");
+  return value;
+};
+
+export const validatePublicSpecificationVisibility = (value: unknown): PublicSpecificationVisibility => {
+  if (value !== "internal" && value !== "public") throw new Error("InvalidPublicSpecificationVisibility");
   return value;
 };
 
