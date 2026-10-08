@@ -47,7 +47,7 @@ test("dirty registry extraction sends only changed codes", () => {
 });
 
 test("inactive or missing template Definitions block a newly valid save", () => {
-  const entries = [{ specificationDefinitionId: "inactive", sortOrder: 0, required: false }];
+  const entries = [{ specificationDefinitionId: "inactive", sortOrder: 0, required: false, publicVisibility: "internal" as const }];
   const definitions = [{ id: "inactive", status: "Inactive" }, { id: "active", status: "Active" }] as never;
   assert.equal(templateHasInactiveEntries(entries, definitions), true); assert.equal(templateHasInactiveEntries([{ ...entries[0], specificationDefinitionId: "active" }], definitions), false);
 });

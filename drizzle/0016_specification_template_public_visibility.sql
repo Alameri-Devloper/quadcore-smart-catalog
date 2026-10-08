@@ -1,0 +1,2 @@
+ALTER TABLE "catalog_specification_template_entries" ADD COLUMN "public_visibility" text DEFAULT 'internal' NOT NULL;--> statement-breakpoint
+ALTER TABLE "catalog_specification_template_entries" ADD CONSTRAINT "catalog_specification_template_entries_public_visibility" CHECK ("catalog_specification_template_entries"."public_visibility" IN ('internal', 'public'));

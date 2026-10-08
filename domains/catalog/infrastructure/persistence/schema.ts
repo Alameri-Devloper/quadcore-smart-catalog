@@ -133,12 +133,14 @@ export const catalogSpecificationTemplates = pgTable("catalog_specification_temp
 
 export const catalogSpecificationTemplateEntries = pgTable("catalog_specification_template_entries", {
   workspaceId: text("workspace_id").notNull(), specificationTemplateId: text("specification_template_id").notNull(), specificationDefinitionId: text("specification_definition_id").notNull(), sortOrder: integer("sort_order").notNull(), required: boolean("required").notNull().default(false),
+  publicVisibility: text("public_visibility").notNull().default("internal"),
 }, (table) => [
   primaryKey({ name: "catalog_specification_template_entries_pk", columns: [table.workspaceId, table.specificationTemplateId, table.specificationDefinitionId] }),
   foreignKey({ name: "catalog_specification_template_entries_template_fk", columns: [table.workspaceId, table.specificationTemplateId], foreignColumns: [catalogSpecificationTemplates.workspaceId, catalogSpecificationTemplates.specificationTemplateId] }).onDelete("cascade"),
   foreignKey({ name: "catalog_specification_template_entries_definition_fk", columns: [table.workspaceId, table.specificationDefinitionId], foreignColumns: [catalogSpecificationDefinitions.workspaceId, catalogSpecificationDefinitions.specificationDefinitionId] }).onDelete("restrict"),
   uniqueIndex("catalog_specification_template_entries_order_uq").on(table.workspaceId, table.specificationTemplateId, table.sortOrder),
   check("catalog_specification_template_entries_sort", sql`${table.sortOrder} BETWEEN 0 AND 1000000`),
+  check("catalog_specification_template_entries_public_visibility", sql`${table.publicVisibility} IN ('internal', 'public')`),
 ]);
 
 export const catalogProducts = pgTable(

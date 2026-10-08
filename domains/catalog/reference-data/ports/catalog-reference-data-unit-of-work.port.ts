@@ -59,6 +59,8 @@ export interface CatalogReferenceDataRepository {
   updateSpecificationDefinition(workspaceId: string, id: string, patch: ReferenceRecordPatch & { readonly valueType?: "Text" | "Number" | "Boolean"; readonly unit?: string | null }): Promise<SpecificationDefinition | null>;
   configureConditions(workspaceId: string, values: readonly WorkspaceRegistryAvailability[]): Promise<void>;
   configureCurrencies(workspaceId: string, values: readonly WorkspaceRegistryAvailability[]): Promise<void>;
+  // Mutation preimage; use only inside this UoW's transaction and hold through commit.
+  lockSpecificationTemplate(workspaceId: string, productTypeId: string): Promise<SpecificationTemplate | null>;
   configureTemplate(input: { readonly workspaceId: string; readonly id: string; readonly productTypeId: string; readonly entries: SpecificationTemplate["entries"]; readonly expectedVersion?: number; readonly now: Date }): Promise<SpecificationTemplate | null>;
 }
 

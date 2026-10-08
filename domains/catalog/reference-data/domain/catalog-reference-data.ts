@@ -35,6 +35,7 @@ export interface SpecificationTemplateEntry {
   readonly specificationDefinitionId: string;
   readonly sortOrder: number;
   readonly required: boolean;
+  readonly publicVisibility: PublicSpecificationVisibility;
 }
 
 export interface SpecificationTemplate {

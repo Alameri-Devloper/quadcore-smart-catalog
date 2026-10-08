@@ -1,3 +1,6 @@
+import type { PublicSpecificationVisibility } from "../domain/catalog-reference-data";
+import type { ConfigureSpecificationTemplateEntryInput } from "../application/catalog-reference-data-template.types";
+
 export const CATALOG_REFERENCE_SECTIONS = [
   "hierarchy",
   "brands",
@@ -39,6 +42,7 @@ export interface SpecificationTemplateEntryView {
   readonly specificationDefinitionId: string;
   readonly sortOrder: number;
   readonly required: boolean;
+  readonly publicVisibility: PublicSpecificationVisibility;
 }
 
 export interface SpecificationTemplateView {
@@ -110,6 +114,6 @@ export interface UpdateDynamicReferenceInput {
 }
 
 export interface TemplateMutationInput {
-  readonly entries: readonly SpecificationTemplateEntryView[];
+  readonly entries: readonly ConfigureSpecificationTemplateEntryInput[];
   readonly expectedVersion?: number;
 }

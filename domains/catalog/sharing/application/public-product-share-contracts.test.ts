@@ -37,11 +37,14 @@ it("distinguishes insert collisions from expected-revision save conflicts at the
   void arbitraryUniqueViolation;
 });
 
-it("keeps canonical template entries unchanged and omission distinct from explicit visibility", () => {
-  const existing = { specificationDefinitionId: "definition-a", sortOrder: 0, required: false } satisfies SpecificationTemplateEntry;
+it("requires canonical visibility after P2 while configure omission stays compatible", () => {
+  const existing = { specificationDefinitionId: "definition-a", sortOrder: 0, required: false, publicVisibility: "internal" } satisfies SpecificationTemplateEntry;
+  // @ts-expect-error P2 canonical entries cannot omit visibility.
+  const invalidCanonical: SpecificationTemplateEntry = { specificationDefinitionId: "definition-a", sortOrder: 0, required: false };
+  void invalidCanonical;
   const omitted = { specificationDefinitionId: "definition-a", sortOrder: 0 } satisfies ConfigureSpecificationTemplateEntryInput;
   const explicit = { ...omitted, publicVisibility: "public" } satisfies ConfigureSpecificationTemplateEntryInput;
-  assert.equal("publicVisibility" in existing, false);
+  assert.equal(existing.publicVisibility, "internal");
   assert.equal("publicVisibility" in omitted, false);
   assert.equal(explicit.publicVisibility, "public");
 });

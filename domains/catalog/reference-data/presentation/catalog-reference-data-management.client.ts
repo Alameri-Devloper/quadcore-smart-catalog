@@ -8,6 +8,7 @@ import type {
   RegistryAvailabilityView,
   SpecificationDefinitionView,
   SpecificationTemplateView,
+  SpecificationTemplateEntryView,
   TemplateMutationInput,
   UpdateDynamicReferenceInput,
 } from "./catalog-reference-data-management.types";
@@ -76,11 +77,12 @@ const currencyRegistry = (value: unknown): { readonly code: string; readonly min
 const template = (value: unknown): SpecificationTemplateView | null => {
   if (!object(value)) return null;
   const id = string(value, "id"); const productTypeId = string(value, "productTypeId"); const version = number(value, "version");
-  const entries = list(array(value, "entries"), (entry) => {
+  const entries = list<SpecificationTemplateEntryView>(array(value, "entries"), (entry) => {
     if (!object(entry)) return null;
     const specificationDefinitionId = string(entry, "specificationDefinitionId"); const sortOrder = number(entry, "sortOrder");
-    return specificationDefinitionId && sortOrder !== null && typeof entry.required === "boolean"
-      ? { specificationDefinitionId, sortOrder, required: entry.required }
+    const publicVisibility = entry.publicVisibility;
+    return specificationDefinitionId && sortOrder !== null && typeof entry.required === "boolean" && (publicVisibility === "internal" || publicVisibility === "public")
+      ? { specificationDefinitionId, sortOrder, required: entry.required, publicVisibility }
       : null;
   });
   return id && productTypeId && version !== null && entries ? { id, productTypeId, version, entries } : null;
