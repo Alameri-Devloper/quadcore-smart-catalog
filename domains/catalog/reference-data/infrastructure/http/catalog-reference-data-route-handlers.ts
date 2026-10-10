@@ -2,6 +2,7 @@ import { AuthenticatedContextUnavailableError, RestrictedSessionContextError, ty
 import type { CatalogReferenceDataResult } from "../../application/catalog-reference-data-result";
 import type { CatalogReferenceDataServerApplication } from "../catalog-reference-data-server-runtime";
 import { CatalogReferencePersistenceConflictError } from "../persistence/postgresql-catalog-reference-data-unit-of-work";
+import { parseConfigureSpecificationTemplateEntries } from "../../application/catalog-reference-data-template.types";
 
 type OpenApplication = () => CatalogReferenceDataServerApplication;
 type Body = Record<string, unknown>;
@@ -60,5 +61,14 @@ export const createCatalogReferenceDataRouteHandlers = (open: OpenApplication) =
   updateSpecificationDefinition: (request: Request, id: string) => withApplication(open, request, true, async (application, context) => { const body = await bodyOf(request); const command = body && updateCommand(context, id, body); const unit = body && (body.unit === null ? null : string(body, "unit")); return command ? resultResponse(await application.updateSpecificationDefinition.execute({ ...command, ...(body && string(body, "valueType") !== undefined ? { valueType: string(body, "valueType") } : {}), ...(unit !== undefined ? { unit } : {}) })) : json({ type: "InvalidInput" }, 400); }),
   configureConditions: (request: Request) => withApplication(open, request, true, async (application, context) => { const body = await bodyOf(request); return body && Array.isArray(body.values) ? resultResponse(await application.configureConditions.execute({ context, values: body.values as { code: string; enabled: boolean; sortOrder: number }[] })) : json({ type: "InvalidInput" }, 400); }),
   configureCurrencies: (request: Request) => withApplication(open, request, true, async (application, context) => { const body = await bodyOf(request); return body && Array.isArray(body.values) ? resultResponse(await application.configureCurrencies.execute({ context, values: body.values as { code: string; enabled: boolean; sortOrder: number }[] })) : json({ type: "InvalidInput" }, 400); }),
-  configureTemplate: (request: Request, productTypeId: string) => withApplication(open, request, true, async (application, context) => { const body = await bodyOf(request); return body && Array.isArray(body.entries) ? resultResponse(await application.configureTemplate.execute({ context, productTypeId, entries: body.entries as { specificationDefinitionId: string; sortOrder: number; required?: boolean }[], ...(number(body, "expectedVersion") !== undefined ? { expectedVersion: number(body, "expectedVersion") } : {}) })) : json({ type: "InvalidInput" }, 400); }),
+  configureTemplate: (request: Request, productTypeId: string) => withApplication(open, request, true, async (application, context) => {
+    const body = await bodyOf(request);
+    if (!body) return json({ type: "InvalidInput" }, 400);
+    const expectedVersion = body.expectedVersion;
+    if (Object.hasOwn(body, "expectedVersion") && (typeof expectedVersion !== "number" || !Number.isSafeInteger(expectedVersion) || expectedVersion < 1)) return json({ type: "InvalidInput" }, 400);
+    let entries: ReturnType<typeof parseConfigureSpecificationTemplateEntries>;
+    try { entries = parseConfigureSpecificationTemplateEntries(body.entries); }
+    catch { return json({ type: "InvalidInput" }, 400); }
+    return resultResponse(await application.configureTemplate.execute({ context, productTypeId, entries, ...(typeof expectedVersion === "number" ? { expectedVersion } : {}) }));
+  }),
 });

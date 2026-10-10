@@ -11,9 +11,11 @@ import {
   normalizeReferenceCode,
   validateSortOrder,
   validateSpecificationValueType,
+  validatePublicSpecificationVisibility,
   validateStatus,
   type CatalogReferenceRecord,
   type SpecificationDefinition,
+  type SpecificationTemplate,
   type WorkspaceRegistryAvailability,
 } from "../domain/catalog-reference-data";
 import type {
@@ -25,6 +27,7 @@ import type {
   ReferenceRecordPatch,
 } from "../ports/catalog-reference-data-unit-of-work.port";
 import { referenceFailure, referenceSuccess, type CatalogReferenceDataResult } from "./catalog-reference-data-result";
+import { parseConfigureSpecificationTemplateEntries, type ConfigureSpecificationTemplateEntryInput } from "./catalog-reference-data-template.types";
 
 export const CATALOG_REFERENCE_PERMISSIONS = Object.freeze({
   view: "catalog.referenceData.view",
@@ -266,13 +269,14 @@ export class ConfigureWorkspaceCurrenciesUseCase extends ConfigureAvailabilityUs
 
 export class ConfigureProductTypeSpecificationTemplateUseCase {
   constructor(private readonly dependencies: Dependencies) {}
-  async execute(command: { readonly context: TrustedActorContext; readonly productTypeId: string; readonly expectedVersion?: number; readonly entries: readonly { readonly specificationDefinitionId: string; readonly sortOrder: number; readonly required?: boolean }[] }) {
+  async execute(command: { readonly context: TrustedActorContext; readonly productTypeId: string; readonly expectedVersion?: number; readonly entries: readonly ConfigureSpecificationTemplateEntryInput[] }) {
     if (!can(command.context, CATALOG_REFERENCE_PERMISSIONS.manage)) return referenceFailure("Forbidden");
     const parsed = invalid(() => {
-      if (new Set(command.entries.map(({ specificationDefinitionId }) => specificationDefinitionId)).size !== command.entries.length) throw new Error("DuplicateDefinition");
-      if (new Set(command.entries.map(({ sortOrder }) => sortOrder)).size !== command.entries.length) throw new Error("DuplicateSortOrder");
+      const entries = parseConfigureSpecificationTemplateEntries(command.entries);
+      if (new Set(entries.map(({ specificationDefinitionId }) => specificationDefinitionId)).size !== entries.length) throw new Error("DuplicateDefinition");
+      if (new Set(entries.map(({ sortOrder }) => sortOrder)).size !== entries.length) throw new Error("DuplicateSortOrder");
       if (command.expectedVersion !== undefined && (!Number.isSafeInteger(command.expectedVersion) || command.expectedVersion < 1)) throw new Error("InvalidVersion");
-      return command.entries.map((entry) => Object.freeze({ specificationDefinitionId: entry.specificationDefinitionId, sortOrder: validateSortOrder(entry.sortOrder), required: entry.required ?? false }));
+      return entries;
     });
     if (!parsed.ok) return parsed;
     return this.dependencies.unitOfWork.execute(async ({ references, audit }) => {
@@ -282,10 +286,28 @@ export class ConfigureProductTypeSpecificationTemplateUseCase {
         const definition = await references.findSpecificationDefinition(command.context.workspaceId, entry.specificationDefinitionId);
         if (!definition || definition.status !== "Active") return referenceFailure("NotFound");
       }
+      const current = await references.lockSpecificationTemplate(command.context.workspaceId, productType.id);
+      if (current ? command.expectedVersion !== current.version : command.expectedVersion !== undefined) return referenceFailure("Conflict");
+      const byId = new Map(current?.entries.map((entry) => [entry.specificationDefinitionId, entry]) ?? []);
+      const entries: SpecificationTemplate["entries"] = parsed.value.map((entry) => {
+        const retained = byId.get(entry.specificationDefinitionId);
+        return Object.freeze({
+          specificationDefinitionId: entry.specificationDefinitionId, sortOrder: entry.sortOrder, required: entry.required ?? false,
+          publicVisibility: entry.publicVisibility !== undefined ? entry.publicVisibility : retained ? validatePublicSpecificationVisibility(retained.publicVisibility) : "internal",
+        });
+      });
       const now = this.dependencies.clock.now();
-      const configured = await references.configureTemplate({ workspaceId: command.context.workspaceId, id: this.dependencies.identifiers.next(), productTypeId: productType.id, entries: parsed.value, expectedVersion: command.expectedVersion, now });
+      const configured = await references.configureTemplate({ workspaceId: command.context.workspaceId, id: this.dependencies.identifiers.next(), productTypeId: productType.id, entries, expectedVersion: command.expectedVersion, now });
       if (!configured) return referenceFailure("Conflict");
-      await audit.append({ workspaceId: command.context.workspaceId, actorId: command.context.actorId, eventType: "SpecificationTemplateConfigured", referenceId: configured.id, metadata: { productTypeId: productType.id, entryCount: configured.entries.length, version: configured.version }, occurredAt: now });
+      const nextById = new Map(entries.map((entry) => [entry.specificationDefinitionId, entry]));
+      const visibilityTransitions = [...new Set([...byId.keys(), ...nextById.keys()])].sort().flatMap((specificationDefinitionId) => {
+        const from = byId.get(specificationDefinitionId)?.publicVisibility ?? null;
+        const to = nextById.get(specificationDefinitionId)?.publicVisibility ?? null;
+        return from === to ? [] : [{ specificationDefinitionId, from, to }];
+      });
+      const toPublicCount = visibilityTransitions.filter(({ to }) => to === "public").length;
+      const fromPublicCount = visibilityTransitions.filter(({ from }) => from === "public").length;
+      await audit.append({ workspaceId: command.context.workspaceId, actorId: command.context.actorId, eventType: "SpecificationTemplateConfigured", referenceId: configured.id, metadata: { productTypeId: productType.id, entryCount: configured.entries.length, version: configured.version, toPublicCount, fromPublicCount, visibilityTransitions: JSON.stringify(visibilityTransitions) }, occurredAt: now });
       return referenceSuccess(configured);
     });
   }

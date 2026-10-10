@@ -1,4 +1,5 @@
 import type { PlatformDatabase } from "../../../../../shared/infrastructure/persistence/database";
+import { DrizzleQueryError } from "drizzle-orm";
 import type { CatalogReferenceDataTransactionContext, CatalogReferenceDataUnitOfWork } from "../../ports/catalog-reference-data-unit-of-work.port";
 import { PostgreSqlCatalogReferenceAuditRepository, PostgreSqlCatalogReferenceDataRepository } from "./postgresql-catalog-reference-data.repository";
 
@@ -15,7 +16,8 @@ export class PostgreSqlCatalogReferenceDataUnitOfWork implements CatalogReferenc
         audit: new PostgreSqlCatalogReferenceAuditRepository(transaction as unknown as PlatformDatabase),
       })));
     } catch (error) {
-      if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") throw new CatalogReferencePersistenceConflictError();
+      const databaseError = error instanceof DrizzleQueryError ? error.cause : error;
+      if (typeof databaseError === "object" && databaseError !== null && "code" in databaseError && databaseError.code === "23505") throw new CatalogReferencePersistenceConflictError();
       throw error;
     }
   }

@@ -24,6 +24,7 @@ import type {
   SupplyStatus,
   WorkspaceRegistryAvailability,
 } from "../../domain/catalog-reference-data";
+import { validatePublicSpecificationVisibility } from "../../domain/catalog-reference-data";
 import type {
   CatalogReferenceAuditRecord,
   CatalogReferenceAuditRepository,
@@ -45,6 +46,7 @@ const mapProductType = (row: typeof catalogProductTypes.$inferSelect): ProductTy
 const mapBrand = (row: typeof catalogBrands.$inferSelect): Brand => base(row, row.brandId);
 const mapSupplyStatus = (row: typeof catalogSupplyStatuses.$inferSelect): SupplyStatus => base(row, row.supplyStatusId);
 const mapDefinition = (row: typeof catalogSpecificationDefinitions.$inferSelect): SpecificationDefinition => ({ ...base(row, row.specificationDefinitionId), valueType: row.valueType as SpecificationDefinition["valueType"], unit: row.unit });
+const mapTemplateEntry = (row: typeof catalogSpecificationTemplateEntries.$inferSelect) => Object.freeze({ specificationDefinitionId: row.specificationDefinitionId, sortOrder: row.sortOrder, required: row.required, publicVisibility: validatePublicSpecificationVisibility(row.publicVisibility) });
 const insertBase = (record: NewReferenceRecord) => ({
   workspaceId: record.workspaceId, code: record.code, displayName: record.displayName, status: "Active" as const,
   sortOrder: record.sortOrder, version: 1, createdAt: record.createdAt, updatedAt: record.createdAt,
@@ -75,7 +77,7 @@ export class PostgreSqlCatalogReferenceDataRepository implements CatalogReferenc
     const entriesByTemplate = new Map<string, SpecificationTemplate["entries"]>();
     for (const row of entries) {
       const current = entriesByTemplate.get(row.specificationTemplateId) ?? [];
-      entriesByTemplate.set(row.specificationTemplateId, [...current, Object.freeze({ specificationDefinitionId: row.specificationDefinitionId, sortOrder: row.sortOrder, required: row.required })]);
+      entriesByTemplate.set(row.specificationTemplateId, [...current, mapTemplateEntry(row)]);
     }
     return Object.freeze({
       departments: departments.map(mapDepartment), categories: categories.map(mapCategory), productTypes: productTypes.map(mapProductType),
@@ -118,6 +120,13 @@ export class PostgreSqlCatalogReferenceDataRepository implements CatalogReferenc
   async configureConditions(workspaceId: string, values: readonly WorkspaceRegistryAvailability[]): Promise<void> { for (const value of values) await this.database.insert(workspaceConditionAvailability).values({ workspaceId, conditionCode: value.code, enabled: value.enabled, sortOrder: value.sortOrder }).onConflictDoUpdate({ target: [workspaceConditionAvailability.workspaceId, workspaceConditionAvailability.conditionCode], set: { enabled: value.enabled, sortOrder: value.sortOrder } }); }
   async configureCurrencies(workspaceId: string, values: readonly WorkspaceRegistryAvailability[]): Promise<void> { for (const value of values) await this.database.insert(workspaceCurrencyAvailability).values({ workspaceId, currencyCode: value.code, enabled: value.enabled, sortOrder: value.sortOrder }).onConflictDoUpdate({ target: [workspaceCurrencyAvailability.workspaceId, workspaceCurrencyAvailability.currencyCode], set: { enabled: value.enabled, sortOrder: value.sortOrder } }); }
 
+  async lockSpecificationTemplate(workspaceId: string, productTypeId: string): Promise<SpecificationTemplate | null> {
+    const [header] = await this.database.select().from(catalogSpecificationTemplates).where(and(eq(catalogSpecificationTemplates.workspaceId, workspaceId), eq(catalogSpecificationTemplates.productTypeId, productTypeId))).limit(1).for("update");
+    if (!header) return null;
+    const rows = await this.database.select().from(catalogSpecificationTemplateEntries).where(and(eq(catalogSpecificationTemplateEntries.workspaceId, workspaceId), eq(catalogSpecificationTemplateEntries.specificationTemplateId, header.specificationTemplateId))).orderBy(asc(catalogSpecificationTemplateEntries.sortOrder), asc(catalogSpecificationTemplateEntries.specificationDefinitionId));
+    return Object.freeze({ workspaceId, id: header.specificationTemplateId, productTypeId: header.productTypeId, version: header.version, createdAt: header.createdAt, updatedAt: header.updatedAt, entries: rows.map(mapTemplateEntry) });
+  }
+
   async configureTemplate(input: { readonly workspaceId: string; readonly id: string; readonly productTypeId: string; readonly entries: SpecificationTemplate["entries"]; readonly expectedVersion?: number; readonly now: Date }): Promise<SpecificationTemplate | null> {
     const [existing] = await this.database.select().from(catalogSpecificationTemplates).where(and(eq(catalogSpecificationTemplates.workspaceId, input.workspaceId), eq(catalogSpecificationTemplates.productTypeId, input.productTypeId))).limit(1);
     let templateId: string;
@@ -134,7 +143,7 @@ export class PostgreSqlCatalogReferenceDataRepository implements CatalogReferenc
       const [created] = await this.database.insert(catalogSpecificationTemplates).values({ workspaceId: input.workspaceId, specificationTemplateId: input.id, productTypeId: input.productTypeId, version: 1, createdAt: input.now, updatedAt: input.now }).returning();
       templateId = created.specificationTemplateId; version = created.version; createdAt = created.createdAt;
     }
-    if (input.entries.length > 0) await this.database.insert(catalogSpecificationTemplateEntries).values(input.entries.map((entry) => ({ workspaceId: input.workspaceId, specificationTemplateId: templateId, specificationDefinitionId: entry.specificationDefinitionId, sortOrder: entry.sortOrder, required: entry.required })));
+    if (input.entries.length > 0) await this.database.insert(catalogSpecificationTemplateEntries).values(input.entries.map((entry) => ({ workspaceId: input.workspaceId, specificationTemplateId: templateId, specificationDefinitionId: entry.specificationDefinitionId, sortOrder: entry.sortOrder, required: entry.required, publicVisibility: validatePublicSpecificationVisibility(entry.publicVisibility) })));
     return Object.freeze({ workspaceId: input.workspaceId, id: templateId, productTypeId: input.productTypeId, version, entries: input.entries, createdAt, updatedAt: input.now });
   }
 }

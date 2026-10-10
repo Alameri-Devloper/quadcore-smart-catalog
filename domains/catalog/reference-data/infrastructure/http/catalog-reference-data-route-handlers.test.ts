@@ -5,6 +5,9 @@ import { AuthenticatedContextUnavailableError, RestrictedSessionContextError, ty
 import type { CatalogReferenceDataServerApplication } from "../catalog-reference-data-server-runtime";
 import { CatalogReferencePersistenceConflictError } from "../persistence/postgresql-catalog-reference-data-unit-of-work";
 import { createCatalogReferenceDataRouteHandlers } from "./catalog-reference-data-route-handlers";
+import { ConfigureProductTypeSpecificationTemplateUseCase } from "../../application/catalog-reference-data.use-cases";
+import type { SpecificationTemplate } from "../../domain/catalog-reference-data";
+import type { CatalogReferenceDataRepository } from "../../ports/catalog-reference-data-unit-of-work.port";
 
 const context: TrustedActorContext = {
   workspaceId: "workspace-a",
@@ -107,4 +110,34 @@ test("successful create, update, read, and configuration results preserve status
   assert.deepEqual([created.status, updated.status, configured.status, read.status], [201, 200, 200, 200]);
   assert.equal((await body(created)).type, "Success");
   assert.equal(commands.length, 4);
+});
+
+test("P2 HTTP preserves omission and validates runtime entries/versions before Application", async () => {
+  let invoked = 0; let command: unknown;
+  const handlers = createCatalogReferenceDataRouteHandlers(() => application({ capture: (value) => { invoked++; command = value; } }));
+  const valid = { specificationDefinitionId: "def-a", sortOrder: 0 };
+  assert.equal((await handlers.configureTemplate(post({ entries: [valid] }), "type-a")).status, 200);
+  assert.deepEqual(command, { context, productTypeId: "type-a", entries: [{ ...valid, required: false }] });
+  for (const visibility of [null, "Public", " public", "internal ", 1, false, {}]) assert.equal((await handlers.configureTemplate(post({ entries: [{ ...valid, publicVisibility: visibility }] }), "type-a")).status, 400);
+  for (const entries of [null, {}, [null], [[]], [{ ...valid, extra: "unexpected" }], [{ ...valid, required: null }], [{ ...valid, required: "false" }], [{ ...valid, specificationDefinitionId: 1 }], [{ ...valid, sortOrder: "0" }]]) assert.equal((await handlers.configureTemplate(post({ entries }), "type-a")).status, 400);
+  for (const expectedVersion of [null, "1", 0, -1, 1.5, true, {}]) assert.equal((await handlers.configureTemplate(post({ entries: [valid], expectedVersion }), "type-a")).status, 400);
+  assert.equal(invoked, 1);
+});
+
+test("P2 legacy HTTP omission runs through real Application against the latest persisted visibility", async () => {
+  const now = new Date("2026-10-06T10:00:00Z");
+  let current: SpecificationTemplate = { id: "template-a", workspaceId: context.workspaceId, productTypeId: "type-a", version: 2, createdAt: now, updatedAt: now, entries: [{ specificationDefinitionId: "def-a", sortOrder: 0, required: false, publicVisibility: "public" }] };
+  let writes = 0; let audits = 0;
+  const record = { workspaceId: context.workspaceId, code: "a", displayName: "A", status: "Active" as const, sortOrder: 0, version: 1, createdAt: now, updatedAt: now };
+  const references: Partial<CatalogReferenceDataRepository> = { findProductType: async () => ({ ...record, id: "type-a", categoryId: "category-a" }), findSpecificationDefinition: async () => ({ ...record, id: "def-a", valueType: "Text", unit: null }), lockSpecificationTemplate: async () => current, configureTemplate: async (input) => { writes++; current = { ...current, version: current.version + 1, entries: input.entries }; return current; } };
+  const configureTemplate = new ConfigureProductTypeSpecificationTemplateUseCase({ unitOfWork: { execute: async (work) => work({ references: references as CatalogReferenceDataRepository, audit: { append: async () => { audits++; } } }) }, identifiers: { next: () => "unused" }, clock: { now: () => now } });
+  const handlers = createCatalogReferenceDataRouteHandlers(() => ({ ...application(), configureTemplate }));
+  const entries = [{ specificationDefinitionId: "def-a", sortOrder: 0 }];
+  assert.equal((await handlers.configureTemplate(post({ entries }), "type-a")).status, 409);
+  assert.equal((await handlers.configureTemplate(post({ entries, expectedVersion: 1 }), "type-a")).status, 409);
+  assert.equal(writes, 0); assert.equal(audits, 0);
+  const response = await handlers.configureTemplate(post({ entries, expectedVersion: 2 }), "type-a");
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { type: "Success", value: { ...current, createdAt: now.toISOString(), updatedAt: now.toISOString() } });
+  assert.equal(current.entries[0].publicVisibility, "public"); assert.equal(writes, 1); assert.equal(audits, 1);
 });

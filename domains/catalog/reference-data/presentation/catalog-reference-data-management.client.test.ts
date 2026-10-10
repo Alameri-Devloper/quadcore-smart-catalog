@@ -9,7 +9,7 @@ const rawSnapshot = () => ({
   conditions: [{ workspaceId: "ws-secret", code: "new", enabled: true, sortOrder: 0 }], conditionRegistry: [{ code: "new", labels: { en: "New", ar: "جديد" } }],
   currencies: [{ workspaceId: "ws-secret", code: "YER", enabled: true, sortOrder: 0 }], currencyRegistry: [{ code: "YER", minorUnitDigits: 2 }, { code: "XAU", minorUnitDigits: null }],
   specificationDefinitions: [record({ id: "def-1", valueType: "Text", unit: null })],
-  specificationTemplates: [{ workspaceId: "ws-secret", id: "template-1", productTypeId: "type-1", version: 3, entries: [{ specificationDefinitionId: "def-1", sortOrder: 0, required: true }] }],
+  specificationTemplates: [{ workspaceId: "ws-secret", id: "template-1", productTypeId: "type-1", version: 3, entries: [{ specificationDefinitionId: "def-1", sortOrder: 0, required: true, publicVisibility: "internal" }] }],
 });
 const response = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
 const success = (value: unknown) => response({ type: "Success", value });
@@ -114,4 +114,28 @@ test("template creation omits expectedVersion while update includes it", async (
   const entries = [{ specificationDefinitionId: "def-1", sortOrder: 0, required: true }];
   await client.configureTemplate("type-1", { entries }); await client.configureTemplate("type-1", { entries, expectedVersion: 3 });
   assert.equal(bodies[0].expectedVersion, undefined); assert.equal(bodies[1].expectedVersion, 3);
+});
+
+test("P2 canonical visibility survives load/save response and explicit serialization", async () => {
+  const snapshot = rawSnapshot(); snapshot.specificationTemplates[0].entries[0].publicVisibility = "public";
+  const reconstructed = reconstructCatalogReferenceSnapshot(snapshot);
+  assert.equal(reconstructed?.specificationTemplates[0].entries[0].publicVisibility, "public");
+  let submitted: unknown;
+  const client = new CatalogReferenceDataManagementClient(async (_url, init) => { submitted = JSON.parse(String(init?.body)); return success(snapshot.specificationTemplates[0]); });
+  const entries = [{ specificationDefinitionId: "def-1", sortOrder: 0, required: true, publicVisibility: "public" as const }];
+  const saved = await client.configureTemplate("type-1", { entries, expectedVersion: 3 });
+  assert.deepEqual(submitted, { entries, expectedVersion: 3 });
+  assert.equal(saved.ok && saved.value.entries[0].publicVisibility, "public");
+});
+
+test("P2 missing/invalid canonical visibility fails closed on GET and PUT", async () => {
+  for (const value of [undefined, null, "Public", " public", false, 1, {}]) {
+    const snapshot = rawSnapshot();
+    const badEntry = { specificationDefinitionId: "def-1", sortOrder: 0, required: true, ...(value === undefined ? {} : { publicVisibility: value }) };
+    const invalid = { ...snapshot, specificationTemplates: [{ ...snapshot.specificationTemplates[0], entries: [badEntry] }] };
+    assert.equal(reconstructCatalogReferenceSnapshot(invalid), null);
+    const client = new CatalogReferenceDataManagementClient(async (_url, init) => success(init?.method === "GET" ? invalid : invalid.specificationTemplates[0]));
+    assert.deepEqual(await client.load(true), { ok: false, kind: "Unavailable" });
+    assert.deepEqual(await client.configureTemplate("type-1", { entries: [] }), { ok: false, kind: "Unavailable" });
+  }
 });

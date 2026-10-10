@@ -114,3 +114,32 @@ test("keyboard and touch controls have native buttons, labels, focus hooks, and 
 test("dynamic status actions never use a hard-delete action label", () => {
   assert.doesNotMatch(dynamic, /referenceText\(locale, "delete"\)|>Delete<|>حذف</);
 });
+
+test("P2 visibility uses native labeled controls with explicit hint binding and localized read-only text", () => {
+  assert.match(template, /<FormField id=\{visibilityId\}/);
+  assert.match(template, /<select id=\{visibilityId\} aria-describedby=\{`\$\{visibilityId\}-hint`\}/);
+  assert.match(template, /encodeURIComponent\(entry\.specificationDefinitionId\)/);
+  assert.match(template, /publicVisibility: "internal"/);
+  assert.match(template, /<option value="internal">[\s\S]*<option value="public">/);
+  assert.match(template, /<dl className="labeled-value"><dt>\{referenceText\(locale, "publicVisibility"\)/);
+  for (const locale of ["en", "ar"] as const) for (const key of ["publicVisibility", "visibilityInternal", "visibilityPublic", "visibilityHelp", "useLatestVisibility", "keepDraftVisibility"] as const) assert.ok(referenceText(locale, key));
+  assert.equal(referenceText("ar", "publicVisibility"), "رؤية المشاركة العامة");
+});
+
+test("P2 editor wires fresh conflict reads and explicit per-entry decisions before Save", () => {
+  assert.match(template, /catalogReferenceDataManagementClient\.load\(true\)/);
+  assert.match(template, /beginTemplateConflictReview\(entries,/);
+  assert.match(template, /completeTemplateConflictReview\(conflictReview\)/);
+  assert.match(template, /if \(!completed\) return/);
+  assert.match(template, /decideVisibility\(entry\.specificationDefinitionId, "latest"\)/);
+  assert.match(template, /decideVisibility\(entry\.specificationDefinitionId, "draft"\)/);
+  assert.match(template, /setExpectedVersion\(completed\.expectedVersion\)/);
+  assert.match(template, /conflictReview\.conflicts\.some\(\(\{ decision \}\) => decision === null\)/);
+});
+
+test("P2 layout wraps long labels and stacks conflict decisions across responsive widths", () => {
+  assert.match(css, /\.template-entry label, \.template-entry \.field-hint \{ overflow-wrap: anywhere; \}/);
+  assert.match(css, /\.template-visibility-conflict__actions \{ display: flex; flex-wrap: wrap;/);
+  assert.match(css, /\.template-visibility-conflict__actions \.button \{ min-height: 44px; white-space: normal;/);
+  assert.match(css, /\.template-entry \{ grid-template-columns: minmax\(0, 1\.3fr\).*minmax\(0, 1\.2fr\) auto;/);
+});

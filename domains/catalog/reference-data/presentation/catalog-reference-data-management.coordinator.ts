@@ -1,4 +1,4 @@
-import { CATALOG_REFERENCE_SECTIONS, type CatalogReferenceAccess, type CatalogReferenceApiResult, type CatalogReferenceManagementSnapshot, type CatalogReferenceSection, type RegistryAvailabilityView, type SpecificationTemplateEntryView, type TemplateMutationInput } from "./catalog-reference-data-management.types";
+import { CATALOG_REFERENCE_SECTIONS, type CatalogReferenceAccess, type CatalogReferenceApiResult, type CatalogReferenceManagementSnapshot, type CatalogReferenceSection, type RegistryAvailabilityView, type SpecificationTemplateEntryView, type SpecificationTemplateView, type TemplateMutationInput } from "./catalog-reference-data-management.types";
 
 interface LoadPort {
   load(includeInactive: boolean, signal?: AbortSignal): Promise<CatalogReferenceApiResult<CatalogReferenceManagementSnapshot>>;
@@ -47,6 +47,36 @@ export const templateMutationInput = (
   entries: readonly SpecificationTemplateEntryView[],
   expectedVersion: number | null,
 ): TemplateMutationInput => expectedVersion === null ? { entries } : { entries, expectedVersion };
+
+export interface TemplateConflictReview {
+  readonly latestVersion: number | null;
+  readonly conflicts: readonly {
+    readonly specificationDefinitionId: string;
+    readonly draftVisibility: SpecificationTemplateEntryView["publicVisibility"];
+    readonly latestVisibility: SpecificationTemplateEntryView["publicVisibility"];
+    readonly decision: "latest" | "draft" | null;
+  }[];
+}
+
+export const beginTemplateConflictReview = (draft: readonly SpecificationTemplateEntryView[], latest: SpecificationTemplateView | null): TemplateConflictReview => {
+  const latestById = new Map(latest?.entries.map((entry) => [entry.specificationDefinitionId, entry]) ?? []);
+  return { latestVersion: latest?.version ?? null, conflicts: draft.flatMap((entry) => {
+    const retained = latestById.get(entry.specificationDefinitionId);
+    return retained && retained.publicVisibility !== entry.publicVisibility ? [{ specificationDefinitionId: entry.specificationDefinitionId, draftVisibility: entry.publicVisibility, latestVisibility: retained.publicVisibility, decision: null }] : [];
+  }) };
+};
+
+export const completeTemplateConflictReview = (review: TemplateConflictReview): { readonly expectedVersion: number | null } | null =>
+  review.conflicts.some(({ decision }) => decision === null) ? null : { expectedVersion: review.latestVersion };
+
+export const resolveTemplateVisibilityConflict = (entries: readonly SpecificationTemplateEntryView[], review: TemplateConflictReview, definitionId: string, decision: "latest" | "draft"): { readonly entries: readonly SpecificationTemplateEntryView[]; readonly review: TemplateConflictReview } => {
+  const conflict = review.conflicts.find((item) => item.specificationDefinitionId === definitionId);
+  if (!conflict) return { entries, review };
+  return {
+    entries: entries.map((entry) => entry.specificationDefinitionId === definitionId ? { ...entry, publicVisibility: decision === "latest" ? conflict.latestVisibility : conflict.draftVisibility } : entry),
+    review: { ...review, conflicts: review.conflicts.map((item) => item.specificationDefinitionId === definitionId ? { ...item, decision } : item) },
+  };
+};
 
 export const dirtyRegistryValues = (
   draft: ReadonlyMap<string, RegistryAvailabilityView>,
