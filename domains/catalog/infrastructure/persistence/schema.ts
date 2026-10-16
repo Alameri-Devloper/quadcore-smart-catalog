@@ -628,3 +628,51 @@ export const catalogProductBranchPriceOverrides = pgTable("catalog_product_branc
   check("catalog_product_branch_price_overrides_revision", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
   check("catalog_product_branch_price_overrides_timestamps", sql`${table.createdAt} <= ${table.updatedAt}`),
 ]);
+
+export const catalogPublicProductShareGrants = pgTable("catalog_public_product_share_grants", {
+  workspaceId: text("workspace_id").notNull(),
+  grantId: text("grant_id").notNull(),
+  productId: text("product_id").notNull(),
+  branchId: text("branch_id").notNull(),
+  lookupKeyVersion: bigint("lookup_key_version", { mode: "number" }).notNull(),
+  lookupDigest: text("lookup_digest").notNull(),
+  envelopeFormatVersion: integer("envelope_format_version"),
+  encryptionKeyVersion: bigint("encryption_key_version", { mode: "number" }),
+  bearerIv: text("bearer_iv"),
+  bearerCiphertext: text("bearer_ciphertext"),
+  bearerAuthTag: text("bearer_auth_tag"),
+  issuedByActorId: text("issued_by_actor_id").notNull(),
+  // Preserve raw precision for strict P4 mapping; timestamp(3) would silently round input.
+  issuedAt: timestamp("issued_at", { withTimezone: true, mode: "string" }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "string" }),
+  revokedByActorId: text("revoked_by_actor_id"),
+  revision: bigint("revision", { mode: "number" }).notNull().default(1),
+}, (table) => [
+  primaryKey({ name: "catalog_public_product_share_grants_pk", columns: [table.workspaceId, table.grantId] }),
+  foreignKey({ name: "catalog_public_product_share_grants_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  foreignKey({ name: "catalog_public_product_share_grants_product_fk", columns: [table.workspaceId, table.productId], foreignColumns: [catalogProducts.workspaceId, catalogProducts.productId] }).onDelete("restrict"),
+  foreignKey({ name: "catalog_public_product_share_grants_branch_fk", columns: [table.workspaceId, table.branchId], foreignColumns: [workspaceBranchReferences.workspaceId, workspaceBranchReferences.branchId] }).onDelete("restrict"),
+  uniqueIndex("catalog_public_product_share_grants_active_uq").on(table.workspaceId, table.productId, table.branchId).where(sql`${table.revokedAt} IS NULL`),
+  uniqueIndex("catalog_public_product_share_grants_digest_uq").on(table.lookupDigest),
+  index("catalog_public_product_share_grants_lookup_idx").on(table.lookupKeyVersion, table.lookupDigest),
+  index("catalog_public_product_share_grants_history_idx").on(table.workspaceId, table.productId, table.branchId, table.issuedAt),
+  check("catalog_public_product_share_grants_identities_nonblank", sql`btrim(${table.workspaceId}) <> '' AND btrim(${table.productId}) <> '' AND btrim(${table.branchId}) <> '' AND btrim(${table.issuedByActorId}) <> '' AND (${table.revokedByActorId} IS NULL OR btrim(${table.revokedByActorId}) <> '')`),
+  check("catalog_public_product_share_grants_grant_id_uuid", sql`${table.grantId} ~ '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'`),
+  check("catalog_public_product_share_grants_lookup_key_version_safe", sql`${table.lookupKeyVersion} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_public_product_share_grants_lookup_digest_shape", sql`${table.lookupDigest} ~ '^[a-f0-9]{64}$'`),
+  check("catalog_public_product_share_grants_envelope_format_v1", sql`${table.envelopeFormatVersion} IS NULL OR ${table.envelopeFormatVersion} = 1`),
+  check("catalog_public_product_share_grants_encryption_key_version_safe", sql`${table.encryptionKeyVersion} IS NULL OR ${table.encryptionKeyVersion} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_public_product_share_grants_envelope_encoding_shape", sql`(${table.bearerIv} IS NULL OR ${table.bearerIv} ~ '^[A-Za-z0-9_-]{16}$') AND (${table.bearerCiphertext} IS NULL OR ${table.bearerCiphertext} ~ '^[A-Za-z0-9_-]{58}$') AND (${table.bearerAuthTag} IS NULL OR ${table.bearerAuthTag} ~ '^[A-Za-z0-9_-]{22}$')`),
+  check("catalog_public_product_share_grants_revision_safe", sql`${table.revision} BETWEEN 1 AND 9007199254740991`),
+  check("catalog_public_product_share_grants_revocation_timestamps", sql`${table.revokedAt} IS NULL OR ${table.revokedAt} >= ${table.issuedAt}`),
+  check("catalog_public_product_share_grants_timestamp_precision", sql`isfinite(${table.issuedAt}) AND ${table.issuedAt} = date_trunc('milliseconds', ${table.issuedAt}) AND (${table.revokedAt} IS NULL OR (isfinite(${table.revokedAt}) AND ${table.revokedAt} = date_trunc('milliseconds', ${table.revokedAt})))`),
+  check("catalog_public_product_share_grants_envelope_lifecycle", sql`(
+    ${table.revokedAt} IS NULL AND ${table.revokedByActorId} IS NULL
+    AND ${table.envelopeFormatVersion} IS NOT NULL AND ${table.encryptionKeyVersion} IS NOT NULL
+    AND ${table.bearerIv} IS NOT NULL AND ${table.bearerCiphertext} IS NOT NULL AND ${table.bearerAuthTag} IS NOT NULL
+  ) OR (
+    ${table.revokedAt} IS NOT NULL AND ${table.revokedByActorId} IS NOT NULL
+    AND ${table.envelopeFormatVersion} IS NULL AND ${table.encryptionKeyVersion} IS NULL
+    AND ${table.bearerIv} IS NULL AND ${table.bearerCiphertext} IS NULL AND ${table.bearerAuthTag} IS NULL
+  )`),
+]);

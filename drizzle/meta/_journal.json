@@ -120,6 +120,13 @@
       "when": 1791267658601,
       "tag": "0016_specification_template_public_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791807782584,
+      "tag": "0017_public_product_share_grants",
+      "breakpoints": true
     }
   ]
 }
