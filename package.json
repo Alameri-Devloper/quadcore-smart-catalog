@@ -19,6 +19,8 @@
     "test:catalog-query": "tsx --test domains/catalog/query/application/*.test.ts domains/catalog/query/infrastructure/http/*.test.ts",
     "test:catalog-presentation": "tsx --test domains/catalog/query/presentation/*.test.ts domains/catalog/query/presentation/*.test.tsx",
     "test:direct-sharing": "tsx --test domains/catalog/sharing/application/*.test.ts domains/catalog/sharing/infrastructure/http/*.test.ts domains/catalog/sharing/infrastructure/media/*.test.ts domains/catalog/sharing/presentation/*.test.ts",
+    "test:public-sharing": "tsx --test domains/catalog/sharing/domain/*.test.ts domains/catalog/sharing/application/public-product-share*.test.ts domains/catalog/sharing/infrastructure/crypto/*.test.ts domains/catalog/sharing/infrastructure/public-share-crypto-runtime.test.ts domains/catalog/sharing/infrastructure/public-product-share-lifecycle-runtime.test.ts domains/catalog/sharing/infrastructure/persistence/public-share-persistence.test.ts",
+    "test:public-sharing:integration": "tsc --project tsconfig.integration.json && npm run test:integration:prepare && node --test --test-concurrency=1 .next/integration-tests/domains/catalog/sharing/infrastructure/persistence/postgresql-public-product-share.integration.test.js .next/integration-tests/domains/catalog/sharing/infrastructure/persistence/postgresql-public-product-share-concurrency.integration.test.js",
     "review:bundle": "tsx scripts/task-review/create-task-review-bundle.ts",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",

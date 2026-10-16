@@ -1,20 +1,11 @@
 import type { PublicProductShareGrantRepository, PublicProductShareTuple } from "./public-product-share-grant-repository.port";
-import type { SpecificationDefinition, SpecificationTemplate } from "../../reference-data/domain/catalog-reference-data";
-import type { ProductSpecificationValue } from "../../types/product-specification-value.value-object";
+import type { PublicShareEligibilityResource } from "../domain/public-product-share-eligibility";
 
-export interface PublicProductShareResourceState {
-  readonly productName: string | null;
-  readonly productLifecycle: "Draft" | "Published" | "Archived";
-  readonly branchStatus: "Active" | "Inactive";
-  readonly listed: boolean;
-  readonly workspaceRetail: { readonly amountMinor: bigint; readonly currency: string } | null;
-  readonly branchRetail: { readonly amountMinor: bigint; readonly currency: string } | null;
-  readonly template: SpecificationTemplate | null;
-  readonly definitions: readonly SpecificationDefinition[];
-  readonly specificationValues: readonly ProductSpecificationValue[];
-}
+export type PublicProductShareResourceState = PublicShareEligibilityResource;
 export interface PublicProductShareResourcePort {
   lockProductParent(workspaceId: string, productId: string): Promise<boolean>;
+  existsInScope(tuple: PublicProductShareTuple): Promise<boolean>;
+  // Full issuance eligibility; never needed for existing-link retrieval.
   readCurrent(tuple: PublicProductShareTuple): Promise<PublicProductShareResourceState | null>;
 }
 export interface PublicProductShareAuditRecord {
