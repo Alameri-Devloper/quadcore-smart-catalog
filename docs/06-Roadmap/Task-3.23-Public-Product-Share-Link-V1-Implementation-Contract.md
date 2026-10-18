@@ -1,5 +1,19 @@
 # Public Product Share Link V1 — Implementation Contract | عقد تنفيذ رابط مشاركة المنتج العام V1
 
+## Current delivery-status closure — 2026-10-18 | إغلاق حالة التسليم الحالية
+
+**P4: IMPLEMENTED, VERIFIED & INTEGRATED; PR #63: MERGED** at `fbf02da1e4bed75763fc6cc247172a6ef5f82f79` into `feature/public-product-share-planning`. See [Current Roadmap](Current-Roadmap.md) and the [central closure evidence](../05-Development/Reports/QSC-Task-3.23-P4-Documentation-Reconciliation-and-CI-Assessment-Final-Report.md#p4-final-closure-2026-10-18). This addendum changes delivery status only: all endpoints, permissions, business/security requirements, architecture and approved P5–P7 definitions remain unchanged. Section 29's earlier delivery checkpoints remain historical evidence.
+
+**P4: منفذة ومتحقق منها ومدمجة؛ PR #63: مدمج** عند الالتزام وفي فرع التكامل المذكورين. تُراجع خارطة الطريق وأدلة الإغلاق المركزية. تتناول الإضافة حالة التسليم فقط؛ تبقى المسارات والصلاحيات وقواعد العمل والأمن والمعمارية وتعريفات P5–P7 المعتمدة دون تغيير، وتُحفظ نقاط التسليم السابقة في القسم 29 كتاريخ.
+
+**Task 3.23: IN PROGRESS. P5: READY FOR PLANNING ONLY; P5 implementation: NOT STARTED / GATED. P6 and P7: NOT STARTED / GATED. Production deployment: NOT COMPLETED. DurableCoverage: UNCHECKED.** A separate owner-approved bounded P5 plan is required before any separately authorized P5 implementation; planning readiness grants no implementation authority.
+
+**المهمة 3.23: قيد التنفيذ. P5: جاهزة للتخطيط فقط؛ تنفيذ P5: لم يبدأ / مشروط بالاعتماد. P6 وP7: لم تبدآ / مشروطتان بالاعتماد. النشر الإنتاجي: غير مكتمل. DurableCoverage: UNCHECKED.** يلزم تخطيط محدود لـP5 يوافق عليه المالك قبل اعتماد تنفيذها بصورة منفصلة؛ الجاهزية للتخطيط ليست تصريحاً بالتنفيذ.
+
+This 2026-10-18 addendum supersedes only earlier delivery-status and authorization-stage wording, including the 2026-10-15 CI-related HOLD. All earlier HOLD decisions, review findings, test counts and technical requirements remain preserved as dated history. This documentation candidate remains subject to independent review; it authorizes no further Git, database, deployment or later-phase work.
+
+تحل إضافة 2026-10-18 محل عبارات حالة التسليم ومرحلة التصريح السابقة فقط، بما فيها تعليق الاعتماد المرتبط بـCI في 2026-10-15. تُحفظ قرارات HOLD والنتائج وأعداد الاختبارات والمتطلبات التقنية السابقة كتاريخ مؤرخ. يبقى مرشح التوثيق خاضعاً للمراجعة المستقلة، ولا يصرح بعمليات Git أو قاعدة بيانات أو نشر أو عمل في المراحل اللاحقة.
+
 ## Current P4 authority — 2026-10-15 | مرجعية P4 الحالية
 
 **F1–F6 remediation: COMPLETED. Independent re-review: PASS under reconstructed fallback criteria. P4 Final Approval: HOLD pending dedicated P4 PostgreSQL/concurrency CI coverage being implemented and verified, or explicitly accepted by the project owner.** This documentation reconciliation does not resolve that CI requirement or authorize staging, commit, push, a Pull Request, merge or deployment.
