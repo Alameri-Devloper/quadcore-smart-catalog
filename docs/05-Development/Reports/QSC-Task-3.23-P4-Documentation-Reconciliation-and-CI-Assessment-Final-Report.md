@@ -115,3 +115,110 @@ Protected Serena SHA-256 remains `3efc30be05fdf94fbfc3d9bdd3e4fe7fb122d465903ca2
 **Retain HOLD.** Obtain separate authorization to apply the proposed CI patch, then verify the resulting exact candidate and existing required checks, or obtain explicit project-owner acceptance of the coverage gap. Review focused-unit CI coverage separately. Reassess final approval afterward; do not claim READY_FOR_COMMIT_APPROVAL now. P4 remains unmerged; P5–P7 remain gated. Stop for review.
 
 **يبقى القرار HOLD.** يلزم تصريح منفصل لتطبيق تعديل CI المقترح ثم التحقق من المرشح الناتج وفحوصه، أو قبول مالك المشروع للفجوة صراحة. تُراجع تغطية الوحدة المركزة بصورة منفصلة، ثم يعاد تقييم الاعتماد النهائي؛ لا اعتماد للالتزام الآن. لم تُدمج P4 وتبقى P5–P7 مشروطة. التوقف للمراجعة.
+
+<a id="p4-final-closure-2026-10-18"></a>
+
+## Final P4 closure evidence — 2026-10-18 | أدلة الإغلاق النهائي لـP4
+
+**P4: IMPLEMENTED, VERIFIED & INTEGRATED. PR #63: MERGED.** This is the central durable closure-evidence addendum for the documentation candidate. The earlier 2026-10-15 HOLD, proposed CI patch, findings and historical counts above remain unchanged. Their delivery-status implications are superseded by the verified implementation, security remediation, hosted CI, final merge-readiness review and explicit owner-authorized integration merge recorded below. Independent review of this documentation candidate remains pending.
+
+**P4: منفذة ومتحقق منها ومدمجة. PR #63: مدمج.** تمثل هذه الإضافة سجل أدلة الإغلاق المركزي لمرشح التوثيق. تُحفظ دون تغيير قرارات HOLD ومقترح CI والنتائج والأعداد التاريخية في 2026-10-15 أعلاه. تتجاوز الأدلة التالية دلالات حالة التسليم السابقة بعد التنفيذ والمعالجة الأمنية وCI المستضافة ومراجعة جاهزية الدمج والدمج المعتمد صراحة من المالك. تبقى مراجعة مرشح التوثيق المستقلة معلقة.
+
+### Integration and source identity | التكامل وهوية المصدر
+
+| Verified item / البند المتحقق | Exact evidence / الدليل الدقيق |
+| --- | --- |
+| Repository / المستودع | `Alameri-Devloper/quadcore-smart-catalog` |
+| Integration PR / طلب دمج التكامل | [#63 — MERGED](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/63) |
+| Integration branch / فرع التكامل | `feature/public-product-share-planning` |
+| Integration merge commit / التزام دمج التكامل | `fbf02da1e4bed75763fc6cc247172a6ef5f82f79` |
+| Parent 1: approved prior base / الأب الأول: الأساس السابق المعتمد | `ac272123bd3ea9ee522283e97a4e3adffec239f0` |
+| Parent 2: tested source/security HEAD / الأب الثاني: رأس المصدر والمعالجة المختبر | `6af3a274f3dc329977693a374c7100d212906a7b` |
+| P4 implementation commit / التزام تنفيذ P4 | `d299f13eb825fd8788900b6abd8a105cbfac1321` |
+| Approved source AND integrated merge tree / شجرة المصدر المعتمد والدمج | `d7031786a0b77a3c331224e69049f1942627bb6c` |
+| Integrated inventory / قائمة التكامل | 36 files: 24 added, 12 modified, 0 deleted / 36 ملفاً: 24 مضافاً و12 معدلاً دون حذف |
+
+One normal GitHub merge commit preserved both approved commits; no squash/rebase was used. The complete approved source tree and integrated merge tree are identical, including tracked paths, contents and modes. Main was unchanged by the integration task; the source branch was retained. These are the 2026-10-18 verified integration facts, not a guarantee that remote refs cannot change later.
+
+حافظ دمج GitHub عادي واحد على الالتزامين المعتمدين دون squash أو rebase. تتطابق شجرتا المصدر المعتمد والدمج بالكامل، بما يشمل المسارات والمحتوى وأنماط الملفات. لم تغير مهمة التكامل فرع main وحُفظ فرع المصدر. هذه حقائق تحقق بتاريخ 2026-10-18 وليست ضماناً لثبات الفروع مستقبلاً.
+
+### Hosted verification | التحقق المستضاف
+
+Both existing workflows ran with `workflow_dispatch` on source HEAD `6af3a274f3dc329977693a374c7100d212906a7b` and completed successfully on attempt 1. They were manually dispatched branch runs, not PR-triggered checks. They did not directly test merge commit `fbf02da...`; exact complete-tree equality connects their tested source contents to the integrated result. The earlier dedicated-CI coverage HOLD is resolved by actual execution of `npm run test:public-sharing` and `npm run test:public-sharing:integration`, not by accepting an untested gap.
+
+نُفذ مسارا العمل الحاليان يدوياً بحدث `workflow_dispatch` على رأس المصدر المذكور، ونجحا من المحاولة الأولى. لم يكونا فحوصاً ناتجة عن PR ولم يختبرا التزام الدمج مباشرة؛ يربط تطابق الشجرة الكامل المحتوى المختبر بنتيجة التكامل. أُغلق تعليق التغطية السابقة بتنفيذ أمري الاختبار المخصصين فعلياً، لا بقبول فجوة غير مختبرة.
+
+| Workflow / مسار العمل | Workflow ID / معرفه | Run / التشغيل | Required jobs / المهام المطلوبة |
+| --- | --- | --- | --- |
+| QSC CI Quality Gate | `318646305` | [39089866533](https://github.com/Alameri-Devloper/quadcore-smart-catalog/actions/runs/39089866533) | Quality: SUCCESS; PostgreSQL Integration: SUCCESS |
+| Product Media Compatibility | `320049866` | [39089887321](https://github.com/Alameri-Devloper/quadcore-smart-catalog/actions/runs/39089887321) | Ubuntu/Linux: SUCCESS; Windows: SUCCESS |
+
+| Actual hosted suite / مجموعة الاختبار المستضافة | Result / النتيجة |
+| --- | --- |
+| Broad regression / الانحدار الشامل | 1163 PASS |
+| Dedicated Public Sharing / المشاركة العامة المخصصة | 192 PASS |
+| Generic PostgreSQL integration / تكامل PostgreSQL العام | 146 PASS |
+| Dedicated P4 PostgreSQL / PostgreSQL المخصص لـP4 | 89 PASS |
+| Concurrency cases, INCLUDED in the 89 / حالات التزامن المشمولة ضمن 89 | 13 PASS |
+| Product Media Ubuntu / وسائط المنتج على Ubuntu | 109 PASS |
+| Product Media Windows / وسائط المنتج على Windows | 109 PASS |
+
+All reported suite summaries had zero failures, cancellations and skips. Counts overlap and MUST NOT be added as a count of unique tests. TypeScript, ESLint, production build, migration metadata and migration application passed. PostgreSQL integration used disposable PostgreSQL 17 CI infrastructure and isolated CI databases, not production or shared manual-QA databases. P4 schema/lifecycle/security/coverage and deterministic lock/concurrency/rollback evidence support the accepted plan; no new technical test or database execution is claimed for this documentation-only task.
+
+لم تسجل ملخصات المجموعات إخفاقاً أو إلغاءً أو تخطياً. الأعداد متداخلة ولا يجوز جمعها كعدد اختبارات فريدة. نجحت TypeScript وESLint وبناء الإنتاج وفحوص بيانات الترحيل وتطبيقه. استخدم التكامل PostgreSQL 17 وقواعد CI مؤقتة ومعزولة دون الإنتاج أو القبول اليدوي المشترك. تدعم أدلة المخطط ودورة الحياة والأمن والتغطية والأقفال والتزامن والتراجع الخطة المقبولة؛ لا تدعي مهمة التوثيق تشغيل اختبارات تقنية أو قواعد بيانات جديدة.
+
+The PR check rollup was empty and the integration branch was unprotected with no effective required checks/rules at review time. Manual branch evidence is recorded separately; no configured required check or PR-triggered run is invented. The owner-authorized merge relied on the exact approved revisions, four successful jobs and complete-tree equality.
+
+كان ملخص فحوص PR فارغاً وفرع التكامل غير محمي دون فحوص أو قواعد إلزامية فعالة وقت المراجعة. تُسجل أدلة تشغيل الفرع اليدوي منفصلة دون اختلاق فحص إلزامي أو تشغيل ناتج عن PR. استند الدمج المعتمد إلى المراجعات الدقيقة والمهام الأربع الناجحة وتطابق الشجرة الكامل.
+
+### Security remediation and bounded residual risk | المعالجة الأمنية والمخاطر المتبقية المحدودة
+
+Security commit `6af3a274f3dc329977693a374c7100d212906a7b` changed dependency manifests only; application source, migrations, workflow and package scripts were unchanged by that remediation.
+
+اقتصر الالتزام الأمني المذكور على ملفي الاعتماديات؛ لم تغير المعالجة مصادر التطبيق أو الترحيلات أو مسار CI أو أوامر الحزمة.
+
+| Approved direct dependency / الاعتمادية المباشرة المعتمدة | Version / النسخة |
+| --- | --- |
+| Next.js | `16.4.2` |
+| eslint-config-next | `16.4.2` |
+| Sharp | `0.35.5` |
+
+The reviewed hosted runtime audit reported **0 vulnerabilities**. The full audit retained **5 High affected package entries and 4 Moderate affected package entries**, corresponding to two reviewed development-only advisories: [Braces — High](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) and [esbuild — Moderate](https://github.com/advisories/GHSA-67mh-4wv8-2f99). The full-audit exit code 1 was assessed against those accepted residual findings; its nonblocking workflow setting alone did not establish acceptance. This is bounded historical hosted audit evidence, not a claim of a vulnerability-free full dependency tree or permanent security clearance. No fresh audit or dependency update was performed by this documentation task.
+
+أبلغ تدقيق التشغيل المستضاف المراجع عن **صفر ثغرات تشغيلية**. أبقى التدقيق الكامل **خمسة إدخالات حزم متأثرة عالية الخطورة وأربعة متوسطة** مرتبطة بإرشادي Braces العالي وesbuild المتوسط المراجعين ضمن اعتماديات التطوير فقط. قُيّم خروج التدقيق الكامل بالرمز 1 وفق هذه المخاطر المقبولة، وليس لمجرد أن خطوته غير مانعة. الدليل مستضاف وتاريخي ومحدود، ولا يعني خلو كامل شجرة الاعتماديات أو اعتماداً أمنياً دائماً. لم تُشغل هذه المهمة تدقيقاً جديداً أو تحديث اعتماديات.
+
+### Review provenance and acceptance boundary | مصدر المراجعة وحدود القبول
+
+The accepted implementation/security/concurrency re-review of F1–F6 was PASS under **reconstructed fallback criteria**, with retained independent adversarial, tenant/concurrency, audit and migration probes. The original standalone independent review report remains unavailable and was not recovered or examined. Fallback assessment is not an exact reproduction of unavailable original criteria. The [implementation candidate report](QSC-Task-3.23-P4-Implementation-Candidate-Report.md) and [remediation report](QSC-Task-3.23-P4-Remediation-Candidate-Report.md) remain unchanged; their dated HOLD decisions and earlier counts retain their original provenance. Ignored machine-local probes support the review but are not a portable substitute for the missing original review.
+
+نجحت إعادة مراجعة التنفيذ والأمن والتزامن لـF1–F6 وفق **معايير بديلة معاد بناؤها**، مع أدلة مستقلة محفوظة للحالات العدائية وعزل المستأجرين والتزامن والتدقيق والترحيل. ما زال التقرير الأصلي المستقل المنفصل غير متاح، ولم يُستعد أو يُفحص؛ لا تمثل المراجعة البديلة استنساخاً دقيقاً لمعاييره غير المتاحة. يبقى تقرارا المرشح والمعالجة المرتبطان دون تغيير مع قرارات HOLD وأعدادهما ومصادرهما الأصلية. تدعم الأدلة المحلية المتجاهلة المراجعة، ولا تحل كتقرير قابل للنقل محل التقرير الأصلي المفقود.
+
+### Migration, precision and deployment | الترحيل والدقة والنشر
+
+Migration `0017_public_product_share_grants.sql` was generated and verified by application to disposable PostgreSQL, including hosted CI. Predecessor journal entries and snapshot lineage were checked. Migration 0017 MUST be applied before enabling runtime writers that depend on the new grant table. This documentation task applied no migration and changed no database; it did not apply 0017 to production.
+
+وُلد الترحيل 0017 وتحقق تطبيقه في PostgreSQL مؤقتة ومعزولة، بما فيها CI المستضافة، وفُحص سجل الترحيلات السابقة وتسلسل اللقطات. يجب تطبيقه قبل تفعيل الكتّاب المعتمدين على جدول التفويض الجديد. لم تطبق مهمة التوثيق ترحيلاً ولم تغير قاعدة بيانات، ولم تطبق 0017 في الإنتاج.
+
+The known timestamp boundary remains: PostgreSQL checks finite millisecond **stored timestamps after native microsecond conversion**. Some overprecise original SQL inputs, including `.1230004` or `.1229996`, may round to stored `.123` before constraint evaluation. Strict raw-text readers reject unsupported nonzero fractional digits beyond milliseconds before Date conversion; `.123000` is supported and `.123456` is rejected. Do not interpret the stored-instant constraint as rejecting every overprecise original SQL input. Stored revocation ordering and immutable timestamp CAS remain enforced; inspection time has its separate statement-evidence boundary.
+
+يبقى حد الدقة المعروف: تفحص PostgreSQL الأزمنة المخزنة المنتهية بدقة الملليثانية بعد تحويلها الأصلي إلى الميكروثانية. قد تُقرب المدخلات الأصلية المذكورة إلى `.123` قبل تقييم القيد. يرفض قارئ النص الخام الأرقام غير الصفرية غير المدعومة بعد الملليثانية قبل Date؛ تُقبل `.123000` وتُرفض `.123456`. لا يعني قيد الزمن المخزن رفض كل إدخال SQL أصلي زائد الدقة. يبقى ترتيب الإلغاء وCAS محفوظين، ولوقت الفحص حد أدلة العبارة المنفصل.
+
+### Residual risks and handoff | المخاطر المتبقية وتسليم المرحلة
+
+Maintenance follow-ups remain for GitHub Actions Node-runtime deprecations/forced Node 24 execution, Ubuntu runner-image migration, `punycode`/`url.parse()` and esbuild-kit warnings. Disposable PostgreSQL locale/local-auth warnings were confined to CI; expected constraint/synthetic errors belonged to passing negative tests. No tooling update or production-configuration guarantee is implied. Upstream token-log redaction, distributed admission, production key operations and rollout remain later release gates.
+
+تبقى متابعة صيانة تحذيرات تشغيل إجراءات GitHub والتشغيل المفروض على Node 24 وانتقال صورة Ubuntu وتحذيرات `punycode` و`url.parse()` وesbuild-kit. اقتصرت تحذيرات اللغة والمصادقة المحلية لـPostgreSQL على CI المؤقتة؛ ارتبطت أخطاء القيود والأعطال الاصطناعية المتوقعة باختبارات سلبية ناجحة. لا يعني ذلك تحديث أدوات أو ضمان إعداد إنتاجي. تبقى حماية السجلات من الرمز والقبول الموزع وعمليات مفاتيح الإنتاج والنشر ضمن بوابات الإصدار اللاحقة.
+
+**Task 3.23: IN PROGRESS. P5: READY FOR PLANNING ONLY; P5 implementation: NOT STARTED / GATED. P6 and P7: NOT STARTED / GATED. Production deployment: NOT COMPLETED. DurableCoverage: UNCHECKED.** A separate owner-approved bounded P5 plan is required before any separately authorized P5 implementation; planning readiness grants no implementation authority.
+
+**المهمة 3.23: قيد التنفيذ. P5: جاهزة للتخطيط فقط؛ تنفيذ P5: لم يبدأ / مشروط بالاعتماد. P6 وP7: لم تبدآ / مشروطتان بالاعتماد. النشر الإنتاجي: غير مكتمل. DurableCoverage: UNCHECKED.** يلزم تخطيط محدود لـP5 يوافق عليه المالك قبل اعتماد تنفيذها بصورة منفصلة؛ الجاهزية للتخطيط ليست تصريحاً بالتنفيذ.
+
+P4 excludes management HTTP/UI activation, anonymous resolution/media, SSR release integration, production rotation jobs and permanent durable-coverage certification. P4 integration does not complete Task 3.23 or a production deployment. No P5 plan or implementation is created by this closeout.
+
+تستبعد P4 تفعيل HTTP/UI الإداري والحل المجهول والوسائط وتكامل إصدار SSR ووظائف تدوير الإنتاج والاعتماد الدائم للتغطية. لا يكمل دمج P4 المهمة 3.23 أو النشر الإنتاجي، ولا ينشئ هذا الإغلاق خطة P5 أو تنفيذها.
+
+**Documentation candidate scope / نطاق مرشح التوثيق:** Only the four current-authority documents and this existing report are modified. Files created: NONE; files deleted: NONE; architecture changes: NONE. All earlier report bodies and approved technical requirements remain preserved. No staging, commit, push, PR, merge, deployment, migration, dependency/workflow/source change or later-phase implementation is authorized by this documentation candidate.
+
+**نطاق مرشح التوثيق:** تقتصر التعديلات على وثائق المرجعية الأربع وهذا التقرير الحالي. لا ملفات منشأة أو محذوفة ولا تغييرات معمارية. تُحفظ متون التقارير والمتطلبات التقنية السابقة. لا يصرح المرشح بالتجهيز أو الالتزام أو الدفع أو PR أو الدمج أو النشر أو الترحيل أو تغيير الاعتماديات أو CI أو المصادر أو تنفيذ مراحل لاحقة.
+
+**Next recommendation / التوصية التالية:** Independently review the five-file closure diff and documentation verification, then obtain explicit owner approval before staging/committing and any later Git action. P5 requires a separate owner-approved bounded plan before separate implementation authorization; P6/P7 remain gated. / تُراجع مستقلاً فروق الوثائق الخمس وفحوصها، ثم يُطلب اعتماد المالك الصريح قبل التجهيز أو الالتزام وأي عملية Git لاحقة. تتطلب P5 خطة محدودة يعتمدها المالك قبل تصريح تنفيذ منفصل، وتبقى P6 وP7 مشروطتين.

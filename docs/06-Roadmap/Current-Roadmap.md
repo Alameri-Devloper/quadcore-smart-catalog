@@ -1,5 +1,19 @@
 # Current Roadmap | خارطة الطريق الحالية
 
+## Current P4 closure authority — 2026-10-18 | مرجعية إغلاق P4 الحالية
+
+**P4: IMPLEMENTED, VERIFIED & INTEGRATED.** [PR #63](https://github.com/Alameri-Devloper/quadcore-smart-catalog/pull/63) is MERGED into `feature/public-product-share-planning` at `fbf02da1e4bed75763fc6cc247172a6ef5f82f79`. The [central closure evidence](../05-Development/Reports/QSC-Task-3.23-P4-Documentation-Reconciliation-and-CI-Assessment-Final-Report.md#p4-final-closure-2026-10-18) records the approved implementation/security commits, exact source/merge tree equality, hosted CI, security disposition and retained limitations.
+
+**P4: منفذة ومتحقق منها ومدمجة.** دُمج PR #63 في فرع التكامل المذكور عند الالتزام أعلاه. تسجل أدلة الإغلاق المركزية التزامي التنفيذ والمعالجة الأمنية وتطابق شجرتي المصدر والدمج ونتائج CI والأمن والقيود المحفوظة.
+
+**Task 3.23: IN PROGRESS. P5: READY FOR PLANNING ONLY; P5 implementation: NOT STARTED / GATED. P6 and P7: NOT STARTED / GATED. Production deployment: NOT COMPLETED. DurableCoverage: UNCHECKED.** A separate owner-approved bounded P5 plan is required before any separately authorized P5 implementation; planning readiness grants no implementation authority.
+
+**المهمة 3.23: قيد التنفيذ. P5: جاهزة للتخطيط فقط؛ تنفيذ P5: لم يبدأ / مشروط بالاعتماد. P6 وP7: لم تبدآ / مشروطتان بالاعتماد. النشر الإنتاجي: غير مكتمل. DurableCoverage: UNCHECKED.** يلزم تخطيط محدود لـP5 يوافق عليه المالك قبل اعتماد تنفيذها بصورة منفصلة؛ الجاهزية للتخطيط ليست تصريحاً بالتنفيذ.
+
+This 2026-10-18 addendum supersedes only earlier delivery-status and authorization-stage wording, including the 2026-10-15 CI-related HOLD. All earlier HOLD decisions, review findings, test counts and technical requirements remain preserved as dated history. This documentation candidate remains subject to independent review; it authorizes no further Git, database, deployment or later-phase work.
+
+تحل إضافة 2026-10-18 محل عبارات حالة التسليم ومرحلة التصريح السابقة فقط، بما فيها تعليق الاعتماد المرتبط بـCI في 2026-10-15. تُحفظ قرارات HOLD والنتائج وأعداد الاختبارات والمتطلبات التقنية السابقة كتاريخ مؤرخ. يبقى مرشح التوثيق خاضعاً للمراجعة المستقلة، ولا يصرح بعمليات Git أو قاعدة بيانات أو نشر أو عمل في المراحل اللاحقة.
+
 ## Current P4 authority — 2026-10-15 | مرجعية P4 الحالية
 
 **F1–F6 remediation: COMPLETED. Independent re-review: PASS under reconstructed fallback criteria. P4 Final Approval: HOLD pending dedicated P4 PostgreSQL/concurrency CI coverage being implemented and verified, or explicitly accepted by the project owner.** This documentation reconciliation does not resolve that CI requirement or authorize staging, commit, push, a Pull Request, merge or deployment.

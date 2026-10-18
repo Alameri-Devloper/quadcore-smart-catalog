@@ -1,5 +1,23 @@
 # Task 3.23-P4 — Grant Persistence and Lifecycle Planning | تخطيط حفظ التفويض ودورة حياته
 
+## Final P4 closure and handoff — 2026-10-18 | إغلاق P4 النهائي وتسليم المرحلة
+
+**P4: IMPLEMENTED, VERIFIED & INTEGRATED; PR #63: MERGED** into `feature/public-product-share-planning` at `fbf02da1e4bed75763fc6cc247172a6ef5f82f79`. The [central closure evidence](../05-Development/Reports/QSC-Task-3.23-P4-Documentation-Reconciliation-and-CI-Assessment-Final-Report.md#p4-final-closure-2026-10-18) maps completion to this plan's schema, lifecycle, scoped authorization, transaction/CAS/audit, inspection, migration and real PostgreSQL/concurrency requirements. Accepted implementation/security/concurrency re-review used reconstructed fallback criteria and retained independent probes; the original standalone review remains unavailable, and no exact reproduction of its unavailable criteria is claimed.
+
+**P4: منفذة ومتحقق منها ومدمجة؛ PR #63: مدمج** في فرع التكامل وعند الالتزام المذكورين. توثق الأدلة المركزية إكمال متطلبات المخطط ودورة الحياة والتفويض المقيد والمعاملات وCAS والتدقيق والفحص والترحيل واختبارات PostgreSQL والتزامن الفعلية. استخدمت إعادة مراجعة التنفيذ والأمن والتزامن المقبولة معايير بديلة معاد بناؤها وأدلة مستقلة محفوظة؛ التقرير الأصلي المنفصل غير متاح، ولا يُدّعى استنساخ معاييره غير المتاحة.
+
+Migration 0017 was test-applied in disposable PostgreSQL; it must precede activation of dependent runtime writers. The stored-timestamp/native-conversion precision boundary below remains unchanged. Section 2 exclusions remain: HTTP/UI activation, anonymous serving, production rollout, rotation jobs and permanent durable-coverage certification are not P4 completion claims. Browser QA was not a P4 gate because P4 adds no Presentation.
+
+طُبق الترحيل 0017 اختبارياً في PostgreSQL مؤقتة ومعزولة، ويجب تطبيقه قبل تفعيل الكتّاب المعتمدين عليه. يبقى حد دقة الزمن المخزن بعد التحويل الأصلي كما هو موضح أدناه. تُحفظ استبعادات القسم 2؛ لا يشمل إكمال P4 تفعيل HTTP/UI أو الخدمة المجهولة أو النشر الإنتاجي أو وظائف التدوير أو اعتماداً دائماً للتغطية. لم يكن قبول المتصفح بوابة لـP4 لعدم إضافة واجهة عرض.
+
+**Task 3.23: IN PROGRESS. P5: READY FOR PLANNING ONLY; P5 implementation: NOT STARTED / GATED. P6 and P7: NOT STARTED / GATED. Production deployment: NOT COMPLETED. DurableCoverage: UNCHECKED.** A separate owner-approved bounded P5 plan is required before any separately authorized P5 implementation; planning readiness grants no implementation authority.
+
+**المهمة 3.23: قيد التنفيذ. P5: جاهزة للتخطيط فقط؛ تنفيذ P5: لم يبدأ / مشروط بالاعتماد. P6 وP7: لم تبدآ / مشروطتان بالاعتماد. النشر الإنتاجي: غير مكتمل. DurableCoverage: UNCHECKED.** يلزم تخطيط محدود لـP5 يوافق عليه المالك قبل اعتماد تنفيذها بصورة منفصلة؛ الجاهزية للتخطيط ليست تصريحاً بالتنفيذ.
+
+This 2026-10-18 addendum supersedes only earlier delivery-status and authorization-stage wording, including the 2026-10-15 CI-related HOLD. All earlier HOLD decisions, review findings, test counts and technical requirements remain preserved as dated history. This documentation candidate remains subject to independent review; it authorizes no further Git, database, deployment or later-phase work.
+
+تحل إضافة 2026-10-18 محل عبارات حالة التسليم ومرحلة التصريح السابقة فقط، بما فيها تعليق الاعتماد المرتبط بـCI في 2026-10-15. تُحفظ قرارات HOLD والنتائج وأعداد الاختبارات والمتطلبات التقنية السابقة كتاريخ مؤرخ. يبقى مرشح التوثيق خاضعاً للمراجعة المستقلة، ولا يصرح بعمليات Git أو قاعدة بيانات أو نشر أو عمل في المراحل اللاحقة.
+
 ## Current P4 authority — 2026-10-15 | مرجعية P4 الحالية
 
 **F1–F6 remediation: COMPLETED. Independent re-review: PASS under reconstructed fallback criteria. P4 Final Approval: HOLD pending dedicated P4 PostgreSQL/concurrency CI coverage being implemented and verified, or explicitly accepted by the project owner.** This documentation reconciliation does not resolve that CI requirement or authorize staging, commit, push, a Pull Request, merge or deployment.
