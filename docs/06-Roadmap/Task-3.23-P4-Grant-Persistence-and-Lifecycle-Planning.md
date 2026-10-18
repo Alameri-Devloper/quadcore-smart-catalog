@@ -1,10 +1,37 @@
 # Task 3.23-P4 — Grant Persistence and Lifecycle Planning | تخطيط حفظ التفويض ودورة حياته
 
-**Status / الحالة:** P4 READY_FOR_IMPLEMENTATION; Planning COMPLETE / REVIEWED; PlanningReview PASS; PlanningGate PASS; implementation NOT STARTED / NOT AUTHORIZED YET / تخطيط P4 مكتمل ومراجع؛ نجحت المراجعة وبوابة التخطيط؛ P4 جاهزة للتنفيذ؛ التنفيذ لم يبدأ ولم يُعتمد بعد.
-**Date / التاريخ:** 2026-10-12.
-**Branch / الفرع:** `feature/task-3.23-p4-grant-lifecycle-planning`.
-**Required baseline / خط الأساس المطلوب:** `74c8a9ca878638dd8ed340633a9c5306b1235a23`.
-**Milestones / المراحل:** P1/P2/P3 COMPLETE / MERGED; P4 planning only; P5–P7 GATED / NOT STARTED / P1 وP2 وP3 مكتملة ومدمجة؛ P4 تخطيط فقط؛ P5–P7 مشروطة ولم تبدأ.
+## Current P4 authority — 2026-10-15 | مرجعية P4 الحالية
+
+**F1–F6 remediation: COMPLETED. Independent re-review: PASS under reconstructed fallback criteria. P4 Final Approval: HOLD pending dedicated P4 PostgreSQL/concurrency CI coverage being implemented and verified, or explicitly accepted by the project owner.** This documentation reconciliation does not resolve that CI requirement or authorize staging, commit, push, a Pull Request, merge or deployment.
+
+**اكتملت معالجة F1–F6، ونجحت إعادة المراجعة المستقلة وفق معايير بديلة معاد بناؤها. يبقى الاعتماد النهائي لـP4 معلقاً (HOLD) حتى تنفيذ تغطية CI المخصصة لاختبارات PostgreSQL والتزامن والتحقق منها، أو قبول مالك المشروع لهذه الفجوة صراحة.** لا تمنح مصالحة التوثيق تصريحاً بالتجهيز أو الالتزام أو الدفع أو طلب سحب أو الدمج أو النشر.
+
+**Current delivery status / حالة التسليم الحالية:** P1/P2/P3 COMPLETE / MERGED; P4 remediation COMPLETED; IndependentReReview PASS (reconstructed fallback criteria); P4 UNMERGED / NOT COMPLETE; P4FinalApproval HOLD; P5–P7 GATED / NOT STARTED; DurableCoverage UNCHECKED. P4 implementation baseline: `ac272123bd3ea9ee522283e97a4e3adffec239f0`; branch: `feature/task-3.23-p4-grant-lifecycle`. / اكتملت P1 وP2 وP3 ودُمجت؛ اكتملت معالجة P4 ونجحت إعادة مراجعتها ضمن المعايير البديلة فقط؛ لم تكتمل P4 ولم تُدمج واعتمادها النهائي معلق؛ تبقى P5–P7 مشروطة ولم تبدأ، والتغطية الدائمة UNCHECKED.
+
+**Review chronology and provenance / تسلسل المراجعات ومصدر الأدلة:** Initial implementation candidate (2026-10-12) → independent review HOLD → F1–F6 remediation and local verification (2026-10-15) → independent fallback re-review PASS → final approval HOLD → this documentation reconciliation and CI recommendation. The original standalone review remains unavailable and was not examined; the original criteria are distinct from reconstructed fallback criteria and independently verified implementation/probe evidence. The independent evidence is retained locally under `artifacts/task-reviews/3.23-P4-independent-re-review/`; those ignored machine-local files are not a portable standalone report. No historical test result is relabelled as a fresh run.
+
+تُحفظ مراحل المرشح الأول ثم تعليق المراجعة ثم المعالجة والتحقق المحلي ثم نجاح إعادة المراجعة البديلة ثم تعليق الاعتماد النهائي، وصولاً إلى مصالحة التوثيق الحالية. تقرير المراجعة الأصلي المنفصل غير متاح ولم يُفحص؛ معاييره الأصلية منفصلة عن المعايير البديلة والأدلة التنفيذية المستقلة. الأدلة المحلية المتجاهلة من Git ليست تقريراً مستقلاً قابلاً للنقل، ولا تُعرض الاختبارات السابقة كتشغيل جديد.
+
+**PostgreSQL precision boundary / حد دقة PostgreSQL:** The P4 constraint guarantees finite millisecond **stored instants after PostgreSQL native timestamp conversion**. Native microsecond conversion may round `.1230004` or `.1229996` to stored `.123` before the CHECK; an originally earlier revoked input may become equal to the issued stored instant. Strict raw-text readers reject nonzero digits beyond milliseconds before Date conversion; `.123000` is supported and `.123456` is rejected. Stored revocation ordering and immutable timestamp CAS remain enforced. Inspection `inspectedAt` uses the separate database-statement Date evidence boundary. No timestamp type, constraint, reader, ADR-013 decision or implementation is changed by this clarification.
+
+يضمن القيد قيماً مخزنة منتهية بدقة الملليثانية بعد تحويل PostgreSQL الأصلي؛ قد يقرب التحويل إلى الميكروثانية المدخلين المذكورين إلى `.123` قبل القيد، وقد يصبح وقت إلغاء أسبق مساوياً لوقت الإصدار المخزن. يرفض قارئ النص الصارم الأرقام غير الصفرية بعد الملليثانية قبل Date؛ تُقبل `.123000` وتُرفض `.123456`. يبقى ترتيب الأوقات المخزنة وCAS محفوظين، ولوقت أدلة الفحص حد Date منفصل. هذا توضيح للتوثيق فقط دون تغيير المعمارية أو التنفيذ.
+
+Current authority is this dated update and [Current Roadmap](Current-Roadmap.md). The [implementation candidate report](../05-Development/Reports/QSC-Task-3.23-P4-Implementation-Candidate-Report.md) and [remediation report](../05-Development/Reports/QSC-Task-3.23-P4-Remediation-Candidate-Report.md) preserve their exact historical snapshots with dated addenda. / تحكم هذه الإضافة المؤرخة وخارطة الطريق الحالة الحالية، ويحفظ التقريران لقطتيهما التاريخيتين مع إضافات مؤرخة.
+
+## Preserved review history and unchanged technical content | تاريخ المراجعة المحفوظ والمحتوى التقني دون تغيير
+
+All earlier P4 delivery/review/authorization wording below, including HOLD, RE-REVIEW REQUIRED, NOT STARTED and NOT AUTHORIZED YET, records its historical checkpoint and is superseded for current status by the dated authority above. The explicit P4 implementation handoff already superseded planning-only execution restrictions. Technical requirements, prior evidence, other slice history and ADR-013 architecture decisions remain unchanged. / تصف عبارات حالة P4 ومراجعتها والتصريح بها أدناه نقاطها التاريخية، وتحل المرجعية المؤرخة أعلاه محلها للحالة الحالية فقط؛ سبق أن تجاوز تسليم التنفيذ قيود مهمة التخطيط. تبقى المتطلبات التقنية والأدلة السابقة وتاريخ الشرائح الأخرى وقرارات ADR-013 دون تغيير.
+
+
+> **Independent Review: HOLD.** F1–F6 remediation candidate only; independent re-review required. Initial candidate evidence is retained in the [P4 implementation report](../05-Development/Reports/QSC-Task-3.23-P4-Implementation-Candidate-Report.md). P5–P7 remain GATED / NOT STARTED. | المراجعة المستقلة معلقة؛ معالجة F1–F6 مرشحة لإعادة المراجعة دون اعتماد الإكمال؛ تُحفظ الأدلة السابقة وتبقى P5–P7 مشروطة ولم تبدأ.
+
+**Current status / الحالة الحالية:** P4 REMEDIATION_CANDIDATE / INDEPENDENT RE-REVIEW REQUIRED; Planning COMPLETE / MERGED through PR #62; PlanningReview PASS; PlanningGate PASS; independent implementation/security/concurrency RE-REVIEW REQUIRED / تخطيط P4 مكتمل ومدمج؛ نجحت بوابات التخطيط؛ التنفيذ مرشح معالجة لإعادة المراجعة المستقلة ولم يكتمل.
+**Date / التاريخ:** 2026-10-15.
+**Historical planning branch / فرع التخطيط التاريخي:** `feature/task-3.23-p4-grant-lifecycle-planning`.
+**Historical planning baseline / أساس التخطيط التاريخي:** `74c8a9ca878638dd8ed340633a9c5306b1235a23`.
+**Milestones / المراحل:** P1/P2/P3 COMPLETE / MERGED; P4 REMEDIATION_CANDIDATE / INDEPENDENT RE-REVIEW REQUIRED; P5–P7 GATED / NOT STARTED / P1 وP2 وP3 مكتملة ومدمجة؛ P4 مرشحة للمراجعة؛ P5–P7 مشروطة ولم تبدأ.
+
+**Implementation handoff / تسليم التنفيذ:** Explicit P4 implementation authorization supersedes this plan's historical planning-only execution restrictions. Implementation baseline: `ac272123bd3ea9ee522283e97a4e3adffec239f0`; branch: `feature/task-3.23-p4-grant-lifecycle`. The accepted technical requirements below remain unchanged. See the [remediation candidate report](../05-Development/Reports/QSC-Task-3.23-P4-Implementation-Candidate-Report.md). P4 is not COMPLETE; P5–P7 remain gated. | يحل تصريح تنفيذ P4 الصريح محل القيود التاريخية الخاصة بتنفيذ مهمة التخطيط فقط. يُحفظ الأساس والفرع والعقد التقني، ويوضح التقرير المرشح. لم تكتمل P4 وتبقى الشرائح اللاحقة مشروطة.
 
 ## 1. Authority, evidence and approval boundary | المرجعية والأدلة وحد الاعتماد
 

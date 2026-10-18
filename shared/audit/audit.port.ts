@@ -1,6 +1,9 @@
 import type { ActorId, WorkspaceId } from "../domain/scoped-identity";
 
 export const SECURITY_AUDIT_EVENT_TYPES = {
+  publicProductShareIssued: "PublicProductShareIssued",
+  publicProductShareRevoked: "PublicProductShareRevoked",
+  publicProductShareReplaced: "PublicProductShareReplaced",
   workspaceBootstrapped: "WorkspaceBootstrapped",
   identityAccountCreated: "IdentityAccountCreated",
   identityAccountActivated: "IdentityAccountActivated",
