@@ -32,6 +32,7 @@ const authorize = (context: TrustedActorContext, needsView: boolean): PublicProd
   if (!can(context, PUBLIC_SHARE_MANAGE_PERMISSION) || (needsView && (!can(context, 'catalog.products.view') || !can(context, 'pricing.view')))) return 'PermissionDenied';
   return null;
 };
+export const authorizePublicShareManagement = authorize;
 const tupleFor = (command: TupleCommand): PublicProductShareTuple => ({ workspaceId: command.context.workspaceId, productId: command.productId, branchId: command.branchId });
 const sameTuple = (grant: PublicProductShareTuple, tuple: PublicProductShareTuple) => grant.workspaceId === tuple.workspaceId && grant.productId === tuple.productId && grant.branchId === tuple.branchId;
 const safeFailure = (error: unknown) => failure(error instanceof PublicSharePersistenceFailure && error.kind === 'IntegrityFailure' ? 'IntegrityFailure' : 'ServiceUnavailable');

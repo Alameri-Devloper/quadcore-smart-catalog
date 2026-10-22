@@ -26,12 +26,14 @@ const boolean = (value: JsonObject, key: string): boolean => {
 export const parseOperationalManagementCapabilities = (payload: unknown): OperationalManagementCapabilitiesView | null => {
   try {
     const value = object(payload);
+    const publicSharing = object(own(value, "publicSharing"));
     const branches = object(own(value, "branches"));
     const listing = object(own(value, "listing"));
     const inventory = object(own(value, "inventory"));
     const pricing = object(own(value, "pricing"));
     const referenceCost = object(own(value, "referenceCost"));
     return Object.freeze({
+      publicSharing: Object.freeze({ canRetrieve: boolean(publicSharing, "canRetrieve"), canRevoke: boolean(publicSharing, "canRevoke") }),
       branches: Object.freeze({ canView: boolean(branches, "canView"), canManage: boolean(branches, "canManage") }),
       listing: Object.freeze({ canManage: boolean(listing, "canManage") }),
       inventory: Object.freeze({

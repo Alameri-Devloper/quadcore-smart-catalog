@@ -193,3 +193,19 @@ describe("Identity authentication HTTP boundary", () => {
     );
   });
 });
+
+it("session infrastructure failure remains non-authentication failure for management HTTP",async()=>{
+  const { createPublicProductShareRouteHandlers } = await import("../../../catalog/sharing/infrastructure/http/public-product-share-route-handlers");
+  const { publicShareMemoryFixture }=await import("../../../catalog/sharing/mock/public-share-lifecycle.fixture");
+  const { publicShareManagementAdmissionFixture }=await import("../../../catalog/sharing/mock/public-share-management-admission.fixture");
+  const { PublicProductShareManagementService }=await import("../../../catalog/sharing/application/public-product-share-management.service");
+  const f=publicShareMemoryFixture();
+  for (const [error,status] of [["InfrastructureUnavailable",503],["SessionExpired",401],["SessionNotFound",401],["SessionRevoked",401],["ForbiddenForRestrictedSession",403]] as const) {
+    let closed=0;const resolver=new IdentityAuthenticatedRequestContextResolver(()=>application({resolve:{execute:async()=>({ok:false,error})},close:async()=>{closed++;}}));
+    const admission=publicShareManagementAdmissionFixture();
+    const handler=createPublicProductShareRouteHandlers(()=>({context:resolver,origin:new SameOriginRequestPolicy(),management:new PublicProductShareManagementService(f.lifecycle,{check:async()=>"Ready"},admission),close:async()=>undefined}));
+    const response=await handler.copy(new Request("https://qsc.example/api/catalog",{headers:{cookie:"qsc_session=synthetic"}}),"p","b");
+    assert.equal(response.status,status);assert.deepEqual(await response.json(),{type:status===503?"ServiceUnavailable":status===401?"AuthenticationRequired":"ForbiddenForRestrictedSession"});
+    assert.equal(admission.calls.length,0);assert.equal(closed,1);assert.equal(response.headers.get("cache-control"),"private, no-store");
+  }
+});

@@ -24,8 +24,10 @@ export interface IdentityServerApplication {
 
 export type IdentityServerApplicationFactory = () => IdentityServerApplication;
 
-export const openIdentityServerApplication: IdentityServerApplicationFactory = () => {
-  const connection = createPlatformDatabaseConnection();
+export const openIdentityServerApplication = (
+  connectionOptions: Readonly<{ connectionTimeoutMillis?: number }> = {},
+): IdentityServerApplication => {
+  const connection = createPlatformDatabaseConnection(undefined, connectionOptions);
   try {
     const unitOfWork = new PostgreSqlIdentityUnitOfWork(connection.database);
     const hasher = new Argon2idPasswordHasher();
@@ -63,6 +65,7 @@ export class IdentityAuthenticatedRequestContextResolver implements Authenticate
       if (!rawSessionValue) throw new AuthenticatedContextUnavailableError();
       const resolved = await application.resolve.execute({ rawSessionValue, requiredClass: "Full" });
       if (!resolved.ok) {
+        if (resolved.error === "InfrastructureUnavailable") throw new Error("IdentityContextInfrastructureUnavailable");
         if (resolved.error === "ForbiddenForRestrictedSession") throw new RestrictedSessionContextError();
         throw new AuthenticatedContextUnavailableError();
       }
