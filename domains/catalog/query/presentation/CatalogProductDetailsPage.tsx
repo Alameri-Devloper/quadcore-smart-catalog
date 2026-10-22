@@ -1,4 +1,5 @@
 "use client";
+import { PublicProductShareManagement } from "../../sharing/presentation/PublicProductShareManagement";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -27,5 +28,6 @@ export function CatalogProductDetailsPage({ productId, branchId, returnTo }: { r
     {state.type === "Loading" ? <><PageHeading eyebrow={catalogText(i18n.locale, "eyebrow")} title={catalogText(i18n.locale, "details")} /><StatusMessage kind="info">{catalogText(i18n.locale, "loadingDetails")}</StatusMessage></> : null}
     {state.type === "Failed" ? <><PageHeading eyebrow={catalogText(i18n.locale, "eyebrow")} title={catalogText(i18n.locale, "details")} actions={<Link className="button button--secondary" href={safeReturnTo}>{catalogText(i18n.locale, "backToCatalog")}</Link>} /><StatusMessage kind={state.result.kind === "Forbidden" || state.result.kind === "NotFound" ? "warning" : "error"}>{state.result.kind === "Forbidden" ? catalogText(i18n.locale, "forbidden") : state.result.kind === "NotFound" ? catalogText(i18n.locale, "notFound") : catalogText(i18n.locale, "unavailable")} <button className="text-button" type="button" onClick={() => setRevision((value) => value + 1)}>{catalogText(i18n.locale, "retry")}</button></StatusMessage></> : null}
     {state.type === "Ready" ? <CatalogProductDetailsContent product={state.value} locale={i18n.locale} returnTo={safeReturnTo} /> : null}
+    <PublicProductShareManagement productId={productId} branchId={branchId} locale={i18n.locale} />
   </PresentationShell>}</ProtectedPage>;
 }

@@ -28,7 +28,7 @@
 
 * { box-sizing: border-box; }
 html { background: var(--canvas); color: var(--ink); }
-body { margin: 0; min-width: 320px; background: var(--canvas); color: var(--ink); font-family: Arial, "Noto Sans Arabic", sans-serif; }
+body { margin: 0; min-width: min(320px, 100%); background: var(--canvas); color: var(--ink); font-family: Arial, "Noto Sans Arabic", sans-serif; }
 button, input, select, textarea { font: inherit; }
 button, a, summary, input, select { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
@@ -411,3 +411,12 @@ a.header-link--operations { display: inline-flex; min-height: 44px; align-items:
 .operational-product-option:has(input:checked) { outline: 2px solid currentColor; outline-offset: 2px; }
 @media (min-width: 481px) { .operational-product-selector .button { width: auto; } }
 @media (min-width: 1025px) { .operational-product-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.public-share-management { min-width: 0; display: grid; gap: .85rem; }
+.public-share-management__actions, .public-share-management__confirmation { display: flex; flex-wrap: wrap; gap: .65rem; }
+.public-share-management .button, .public-share-management input { min-height: 44px; }
+.public-share-management textarea, .public-share-management input { width: 100%; min-width: 0; padding: .7rem; border: 1px solid #77877d; border-radius: 8px; }
+.public-share-management textarea { overflow-wrap: anywhere; resize: vertical; }
+.public-share-management__confirmation { padding: 1rem; border: 1px solid var(--line); }
+.public-share-management :focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+@media (max-width: 480px) { .public-share-management__actions { flex-direction: column; } .public-share-management__actions .button { width: 100%; } }

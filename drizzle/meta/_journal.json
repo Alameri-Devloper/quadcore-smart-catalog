@@ -127,6 +127,20 @@
       "when": 1791807782584,
       "tag": "0017_public_product_share_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792366617122,
+      "tag": "0018_public_share_manage_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792376212138,
+      "tag": "0019_public_share_management_admission",
+      "breakpoints": true
     }
   ]
 }

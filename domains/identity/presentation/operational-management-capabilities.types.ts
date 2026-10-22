@@ -1,5 +1,7 @@
 /** Navigation hints only. Resource endpoints retain all authorization decisions. */
 export interface OperationalManagementCapabilitiesView {
+  readonly publicSharing: { readonly canRetrieve: boolean; readonly canRevoke: boolean };
+
   readonly branches: { readonly canView: boolean; readonly canManage: boolean };
   readonly listing: { readonly canManage: boolean };
   readonly inventory: {

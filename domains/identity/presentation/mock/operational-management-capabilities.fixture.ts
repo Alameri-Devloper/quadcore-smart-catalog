@@ -1,4 +1,5 @@
 export const operationalManagementCapabilitiesFixture = () => ({
+  publicSharing: { canRetrieve: false, canRevoke: false },
   branches: { canView: false, canManage: false },
   listing: { canManage: false },
   inventory: {
