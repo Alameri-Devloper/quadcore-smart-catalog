@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "brand": "QUADCORE FOR TECHNOLOGY | كوادكور للتكنولوجيا",
+    "version": "1.0",
+    "approval": "مقترح - بانتظار اعتماد المالك",
+    "derivedFrom": "الصورة الأصلية المرفوعة للشعار بصيغة RGBA"
+  },
+  "color": {
+    "purple": {
+      "$type": "color",
+      "$value": "#4C1B74",
+      "description": "البنفسجي الأساسي"
+    },
+    "orange": {
+      "$type": "color",
+      "$value": "#F8450D",
+      "description": "البرتقالي الأساسي"
+    },
+    "orangeSecondaryObserved": {
+      "$type": "color",
+      "$value": "#F04824",
+      "note": "يرجى التأكد أن اختلاف لون النص السفلي مقصود"
+    },
+    "white": {
+      "$type": "color",
+      "$value": "#FFFFFF",
+      "description": "الأبيض داخل الشعار"
+    }
+  },
+  "typography": {
+    "headingLatin": "Montserrat",
+    "headingArabic": "Cairo",
+    "bodyLatin": "Inter",
+    "bodyArabic": "IBM Plex Sans Arabic"
+  }
+}

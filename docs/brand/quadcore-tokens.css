@@ -1,0 +1,22 @@
+/* QUADCORE | متغيرات الهوية البصرية - الإصدار 1.0 | مقترحة للاعتماد.
+   ألوان مرصودة من الشعار: #4C1B74 و #F8450D و #F04824.
+   الكتابات في الشعار الأصلي جزء من العمل الفني ولا تُستبدل بالخطوط المقترحة. */
+:root {
+  --quadcore-purple: #4C1B74;
+  --quadcore-orange: #F8450D;
+  --quadcore-orange-secondary-observed: #F04824;
+  --quadcore-white: #FFFFFF;
+  --quadcore-font-heading-en: "Montserrat", Arial, sans-serif;
+  --quadcore-font-heading-ar: "Cairo", "Noto Sans Arabic", sans-serif;
+  --quadcore-font-body-en: "Inter", Arial, sans-serif;
+  --quadcore-font-body-ar: "IBM Plex Sans Arabic", "Noto Sans Arabic", sans-serif;
+}
+:lang(en) { font-family: var(--quadcore-font-body-en); direction: ltr; }
+:lang(ar) { font-family: var(--quadcore-font-body-ar); direction: rtl; }
+.quadcore-heading:lang(en) { font-family: var(--quadcore-font-heading-en); }
+.quadcore-heading:lang(ar) { font-family: var(--quadcore-font-heading-ar); }
+.quadcore-button-primary { background: var(--quadcore-purple); color: #fff; }
+.quadcore-text-primary { color: var(--quadcore-purple); }
+.quadcore-accent { color: var(--quadcore-orange); }
+/* البرتقالي بحجم النص العادي على الأبيض لا يحقق حد التباين WCAG AA البالغ 4.5:1. */
+.quadcore-logo { display: block; max-width: 100%; height: auto; object-fit: contain; }
