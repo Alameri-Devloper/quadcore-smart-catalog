@@ -70,3 +70,45 @@ describe("Catalog Presentation API client", () => {
     assert.equal(observed.includes("workspaceId"), false); assert.equal(observed.includes("permission"), false);
   });
 });
+
+describe("Phase 1 specification DTO validation", () => {
+  const spec = { specificationDefinitionId: "outdoor", displayName: "Outdoor / خارجي", valueType: "Boolean", unit: null, value: false, sortOrder: 0 };
+  it("retains false and rejects excessive or duplicate Card values", async () => {
+    for (const entries of [[spec], [spec, spec], Array.from({ length: 4 }, (_, index) => ({ ...spec, specificationDefinitionId: String(index) }))]) {
+      const client = new CatalogQueryApiClient(async () => success({ items: [{ ...card, cardSpecifications: entries }], nextCursor: null }));
+      const result = await client.search(query);
+      assert.equal(result.ok, entries.length === 1);
+      if (result.ok) assert.equal(result.value.items[0]!.cardSpecifications![0]!.value, false);
+    }
+  });
+  it("rejects lost historical values, unknown group references and excessive missing rows", async () => {
+    const validGroup = { id: "camera", label: { en: "Camera", ar: "الكاميرا" }, specificationDefinitionIds: ["outdoor"], missingSpecifications: [] };
+    for (const [groups, expected] of [
+      [[validGroup], true],
+      [[{ ...validGroup, specificationDefinitionIds: [] }], false],
+      [[{ ...validGroup, specificationDefinitionIds: ["foreign"] }], false],
+      [[{ ...validGroup, missingSpecifications: Array.from({ length: 5 }, (_, index) => ({ specificationDefinitionId: "missing-" + index, displayName: "Missing", valueType: "Text", unit: null, sortOrder: index })) }], false],
+      [[validGroup, validGroup], false],
+    ] as const) {
+      const client = new CatalogQueryApiClient(async () => success({ ...card, media: [], specifications: [spec], capabilities: { directSharePriceModes: [] }, specificationGroups: groups }));
+      const result = await client.productDetails("product-a");
+      assert.equal(result.ok, expected);
+      if (result.ok) assert.equal(result.value.specifications[0]!.value, false);
+    }
+  });
+});
+
+describe("Specification composition DTO boundary",()=>{
+  const capacity={specificationDefinitionId:"ram",displayName:"Memory (RAM)",valueType:"Number",unit:"GB",value:"16",sortOrder:0};
+  const ddr={specificationDefinitionId:"ddr",displayName:"DDR",valueType:"Text",unit:null,value:"DDR5",sortOrder:1};
+  it("retains independent components and scoped model identity in valid Details",async()=>{
+    const client=new CatalogQueryApiClient(async()=>success({...card,modelName:"ThinkPad T14 Gen 3",media:[],specifications:[{...capacity,presentation:{component:ddr,separator:" "}},ddr],capabilities:{directSharePriceModes:[]}}));
+    const result=await client.productDetails("product-a");assert.ok(result.ok);if(result.ok){assert.equal(result.value.modelName,"ThinkPad T14 Gen 3");assert.equal(result.value.specifications.length,2);assert.equal(result.value.specifications[0].presentation?.component?.value,"DDR5");}
+  });
+  it("rejects dangling, altered and recursive component references",async()=>{
+    for(const component of [{...ddr,specificationDefinitionId:"foreign"},{...ddr,value:"DDR4"},{...ddr,presentation:{component:capacity,separator:" "}}]){
+      const client=new CatalogQueryApiClient(async()=>success({...card,media:[],specifications:[{...capacity,presentation:{component,separator:" "}},ddr],capabilities:{directSharePriceModes:[]}}));
+      assert.equal((await client.productDetails("product-a")).ok,false);
+    }
+  });
+});

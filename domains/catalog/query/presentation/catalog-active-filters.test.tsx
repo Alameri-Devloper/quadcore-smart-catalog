@@ -38,7 +38,8 @@ describe("Catalog semantic active filters", () => {
     assert.equal(arabic.find((value) => value.key === "listing")?.value, catalogText("ar", "unlisted"));
     assert.equal(arabic.find((value) => value.key === "stock")?.value, catalogText("ar", "inStock"));
     const html = renderToStaticMarkup(<CatalogActiveState items={catalogActiveFilterItems(state, options, "en")} branchDisplayName={branch} locale="en" onReset={() => undefined} />);
-    assert.match(html, /Branch context/u); assert.match(html, /Main Branch/u); assert.match(html, /Department: أجهزة الحاسوب/u); assert.match(html, /Minimum retail \(minor units\): 750 USD/u);
+    const visible=html.replace(/<[^>]*>/g,"");
+    assert.match(html, /Branch context/u); assert.match(html, /Main Branch/u); assert.match(visible, /Department: أجهزة الحاسوب/u); assert.match(visible, /Minimum retail \(minor units\): 750 USD/u);
     assert.doesNotMatch(html, /department-internal-id|branch-internal-id/u);
   });
 

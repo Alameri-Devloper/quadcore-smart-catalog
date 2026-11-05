@@ -15,11 +15,15 @@ export const PresentationShell = ({
   actor,
   i18n,
   compact = false,
+  brandContent,
+  headerControls,
 }: {
   readonly children: ReactNode;
   readonly actor?: SafeActorView;
   readonly i18n: IdentityI18n;
   readonly compact?: boolean;
+  readonly brandContent?: ReactNode;
+  readonly headerControls?: ReactNode;
 }) => {
   const router = useRouter();
   const capabilities = useOperationalManagementCapabilities();
@@ -46,8 +50,7 @@ export const PresentationShell = ({
       <header className="app-header">
         <div className="app-header__inner">
           <Link href="/catalog" className="brand-link" aria-label={i18n.t("brand")}>
-            <span className="brand-mark" aria-hidden="true">Q</span>
-            <span>{i18n.t("brand")}</span>
+            {brandContent ?? <><span className="brand-mark" aria-hidden="true">Q</span><span>{i18n.t("brand")}</span></>}
           </Link>
           <div className="app-header__actions">
             {actor ? <Link className="header-link" href="/catalog">{i18n.t("catalog")}</Link> : null}
@@ -58,6 +61,7 @@ export const PresentationShell = ({
             <button className="button button--quiet button--small" type="button" onClick={() => i18n.setLocale(i18n.locale === "ar" ? "en" : "ar")}>
               {i18n.t("language")}
             </button>
+            {headerControls}
             {actor ? <button className="button button--quiet button--small" type="button" disabled={logoutSubmitting} aria-busy={logoutSubmitting} onClick={logout}>{i18n.t("signOut")}</button> : null}
           </div>
         </div>

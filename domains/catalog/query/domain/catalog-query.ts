@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type {TypedSpecificationFilter} from "./catalog-specification-filters";
 
 export const CATALOG_PAGE_SIZE_DEFAULT = 24;
 export const CATALOG_PAGE_SIZE_MAX = 60;
@@ -21,6 +22,8 @@ export type CatalogDeviceClass = (typeof CATALOG_DEVICE_CLASSES)[number];
 export type CatalogCondition = (typeof CATALOG_CONDITIONS)[number];
 
 export interface CatalogSearchFilters {
+  readonly brandIds?: readonly string[];
+  readonly specificationFilters?: readonly TypedSpecificationFilter[];
   readonly departmentId?: string;
   readonly categoryId?: string;
   readonly productTypeId?: string;
@@ -49,6 +52,7 @@ interface CursorPayload extends CatalogCursorPosition {
 }
 
 export interface CatalogSearchShape {
+  readonly structuredQuery?: string;
   readonly searchText: string;
   readonly branchId: string | null;
   readonly filters: CatalogSearchFilters;
@@ -113,6 +117,7 @@ export interface CatalogProductProjection {
 export interface CatalogProductSearchRow { readonly product: CatalogProductProjection; readonly cursor: CatalogCursorPosition }
 
 export interface CatalogSpecificationProjection {
+  readonly presentation?: { readonly format?: "generation"; readonly component?: Omit<CatalogSpecificationProjection, "presentation">; readonly separator?: " " | " — " };
   readonly specificationDefinitionId: string;
   readonly displayName: string;
   readonly valueType: "Text" | "Number" | "Boolean";
@@ -159,6 +164,7 @@ export const parseCatalogMoney = (value: string | undefined): bigint | undefined
 };
 
 export const catalogQueryFingerprint = (shape: CatalogSearchShape): string => createHash("sha256").update(JSON.stringify({
+  ...(shape.structuredQuery===undefined?{}:{structuredQuery:shape.structuredQuery}),
   q: shape.searchText,
   branchId: shape.branchId,
   filters: { ...shape.filters, minRetailPrice: shape.filters.minRetailPrice?.toString(), maxRetailPrice: shape.filters.maxRetailPrice?.toString() },

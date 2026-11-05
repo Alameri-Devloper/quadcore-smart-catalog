@@ -8,7 +8,11 @@ import { DownloadCatalogProductMediaUseCase, GetCatalogFilterOptionsUseCase, Get
 
 const actor=(permissions:readonly string[]=[],role:"Owner"|"Staff"="Staff",workspaceId="workspace-a"):TrustedActorContext=>({workspaceId,actorId:"actor-a",role,permissions,branchScope:{type:"SelectedBranches",branchIds:["branch-a"]},authorizationVersion:1});
 const projection=(id:string):CatalogProductDetailsProjection=>({productId:id,productCode:"QSC-1",productName:"ThinkPad X1",lifecycle:"Published",createdAt:new Date("2026-01-01T00:00:00Z"),updatedAt:new Date("2026-01-02T00:00:00Z"),classification:{department:{id:"d",displayName:"Computers"},category:{id:"c",displayName:"Laptops"},productType:{id:"t",displayName:"Business laptop"},brand:{id:"b",displayName:"Lenovo"},deviceClass:"business",condition:"new",supplyStatus:{id:"s",displayName:"Available"}},mainMedia:{mediaId:"m",altText:"Front",position:0,isMain:true},listingStatus:"Listed",inventory:{available:BigInt(7),onHand:BigInt(10),reserved:BigInt(2),damaged:BigInt(1)},retail:{amountMinor:BigInt(125000),currency:"USD",source:"BranchOverride"},wholesale:{amountMinor:BigInt(110000),currency:"USD",source:"WorkspaceBase"},referenceCost:{amountMinor:BigInt(90000),currency:"USD",source:"WorkspaceBase"},media:[{mediaId:"m",altText:"Front",position:0,isMain:true}],specifications:[{specificationDefinitionId:"ram",displayName:"RAM",valueType:"Number",unit:"GB",value:"16",sortOrder:0}]});
-class MemoryRepository implements CatalogQueryRepository { lastSearch?:CatalogSearchRepositoryQuery; lastAllowedBranchIds?:readonly string[]|null; rows:CatalogProductSearchRow[]=[{product:projection("p1"),cursor:{productId:"p1",value:"1000"}},{product:projection("p2"),cursor:{productId:"p2",value:"900"}}]; details:CatalogProductDetailsProjection|null=projection("p1"); media:CatalogMediaStorageProjection|null=null; branch=true; hierarchy=true; invocations=0;
+class MemoryRepository implements CatalogQueryRepository {
+async getSpecificationFilterDefinitions(){return [];}
+async getSpecificationFilterValues(){return [];}
+ lastSearch?:CatalogSearchRepositoryQuery; lastAllowedBranchIds?:readonly string[]|null; rows:CatalogProductSearchRow[]=[{product:projection("p1"),cursor:{productId:"p1",value:"1000"}},{product:projection("p2"),cursor:{productId:"p2",value:"900"}}]; details:CatalogProductDetailsProjection|null=projection("p1"); media:CatalogMediaStorageProjection|null=null; branch=true; hierarchy=true; invocations=0;
+  async getSpecificationPresentation() { return []; }
   async branchExists(){this.invocations+=1;return this.branch} async hierarchyIsValid(){this.invocations+=1;return this.hierarchy} async search(query:CatalogSearchRepositoryQuery):Promise<readonly CatalogProductSearchRow[]>{this.invocations+=1;this.lastSearch=query;return this.rows.map((row,index)=>({...row,cursor:query.sort==="relevance"?row.cursor:query.sort==="newest"?{productId:row.product.productId,value:row.product.createdAt.toISOString()}:query.sort.startsWith("name")?{productId:row.product.productId,value:(row.product.productName??"").toLowerCase()}:{productId:row.product.productId,value:String(125000+index),nullRank:0 as const}}))} async getDetails(){this.invocations+=1;return this.details} async getFilterOptions(_workspaceId:string,allowedBranchIds:readonly string[]|null):Promise<CatalogFilterOptionsProjection>{this.invocations+=1;this.lastAllowedBranchIds=allowedBranchIds;return {departments:[],categories:[],productTypes:[],brands:[],supplyStatuses:[],branches:[{id:"branch-a",displayName:"Main"}],enabledConditions:[],enabledCurrencies:["USD"]}} async getMedia(){return this.media}
 }
 const tamperedCursor=(sort:CatalogSort,position:CatalogCursorPosition,retail=false)=>{const visibility={retail,wholesale:false,availability:false,quantity:false,referenceCost:false};const queryFingerprint=catalogQueryFingerprint({searchText:sort==="relevance"?"x":"",branchId:null,filters:{lifecycle:"Published",...(retail?{retailCurrency:"USD"}:{})},sort,visibility});return Buffer.from(JSON.stringify({version:1,sort,queryFingerprint,...position}),"utf8").toString("base64url")};
@@ -30,6 +34,38 @@ describe("Catalog query application",()=>{
     {sort:"name-asc",position:{productId:"p1",value:"thinkpad",nullRank:0}},{sort:"name-desc",position:{productId:"p1",value:"ThinkPad"}},{sort:"name-asc",position:{productId:"p1",value:"x".repeat(513)}},{sort:"name-desc",position:{productId:" p1",value:"thinkpad"}},
   ];for(const testCase of cases){const repo=new MemoryRepository();const result=await new SearchCatalogProductsUseCase(repo).execute({context:actor(["catalog.products.view",...(testCase.retail?["pricing.view"]:[])]),input:{q:testCase.sort==="relevance"?"x":undefined,sort:testCase.sort,retailCurrency:testCase.retail?"USD":undefined,cursor:tamperedCursor(testCase.sort,testCase.position,testCase.retail)}});assert.deepEqual(result,{ok:false,error:"InvalidCursor"},`${testCase.sort}:${testCase.position.value}`);assert.equal(repo.invocations,0);}});
   it("does not project Branch availability or quantities without Branch context",async()=>{const result=await new SearchCatalogProductsUseCase(new MemoryRepository()).execute({context:actor(["catalog.products.view","inventory.quantity.view"]),input:{}});assert.ok(result.ok);if(result.ok){assert.equal("availability" in result.value.items[0]!,false);assert.equal("inventory" in result.value.items[0]!,false);}});
+  it("rejects an existing page cursor after each disclosure permission is revoked", async () => {
+    for (const permission of ["pricing.view", "pricing.wholesale.view", "inventory.availability.view", "inventory.quantity.view", "referenceCost.view"]) {
+      const input = { branchId: "branch-a", limit: 1 };
+      const first = await new SearchCatalogProductsUseCase(new MemoryRepository()).execute({
+        context: actor(["catalog.products.view", permission]), input,
+      });
+      assert.ok(first.ok, permission);
+      if (!first.ok) continue;
+      assert.ok(first.value.nextCursor, permission);
+      const afterRevocation = new MemoryRepository();
+      const result = await new SearchCatalogProductsUseCase(afterRevocation).execute({
+        context: actor(["catalog.products.view"]), input: { ...input, cursor: first.value.nextCursor! },
+      });
+      assert.deepEqual(result, { ok: false, error: "InvalidCursor" }, permission);
+      assert.equal(afterRevocation.invocations, 0, permission);
+    }
+  });
+  it("rechecks Branch scope before reading another page with a previously valid cursor", async () => {
+    const context = actor(["catalog.products.view", "pricing.view"]);
+    const input = { branchId: "branch-a", limit: 1 };
+    const first = await new SearchCatalogProductsUseCase(new MemoryRepository()).execute({ context, input });
+    assert.ok(first.ok);
+    if (!first.ok) return;
+    assert.ok(first.value.nextCursor);
+    const afterRevocation = new MemoryRepository();
+    const result = await new SearchCatalogProductsUseCase(afterRevocation).execute({
+      context: { ...context, authorizationVersion: 2, branchScope: { type: "SelectedBranches", branchIds: ["branch-b"] } },
+      input: { ...input, cursor: first.value.nextCursor! },
+    });
+    assert.deepEqual(result, { ok: false, error: "BranchNotFound" });
+    assert.equal(afterRevocation.invocations, 0);
+  });
   it("keeps Owner inventory behavior fully authorized",async()=>{const result=await new GetCatalogProductDetailsUseCase(new MemoryRepository()).execute({context:actor([],"Owner"),productId:"p1",branchId:"branch-a"});assert.ok(result.ok);if(result.ok){assert.equal(result.value.availability,"InStock");assert.equal(result.value.inventory?.available,"7");}});
   it("returns scoped filter options and safe capabilities only through the repository boundary",async()=>{const repo=new MemoryRepository();const result=await new GetCatalogFilterOptionsUseCase(repo).execute({context:actor(["catalog.products.view","pricing.view","inventory.availability.view"])});assert.ok(result.ok);if(!result.ok)return;assert.deepEqual(repo.lastAllowedBranchIds,["branch-a"]);assert.deepEqual(result.value.capabilities.lifecycles,["Published"]);assert.deepEqual(result.value.capabilities.listingFilters,["Listed"]);assert.deepEqual(result.value.capabilities.stockFilters,["InStock","OutOfStock"]);assert.equal(result.value.capabilities.retailPrice,true);});
   it("derives independent direct-share modes only from trusted server authority",async()=>{for(const testCase of [{permissions:["catalog.products.view","catalog.sharing.create","pricing.view"],expected:["Retail"]},{permissions:["catalog.products.view","catalog.sharing.create","pricing.wholesale.view"],expected:["Wholesale"]},{permissions:["catalog.products.view","catalog.sharing.create","pricing.view","pricing.wholesale.view"],expected:["Retail","Wholesale"]},{permissions:["catalog.products.view","pricing.view","pricing.wholesale.view"],expected:[]}] as const){const result=await new GetCatalogProductDetailsUseCase(new MemoryRepository()).execute({context:actor(testCase.permissions),productId:"p1",branchId:"branch-a"});assert.ok(result.ok);if(result.ok)assert.deepEqual(result.value.capabilities.directSharePriceModes,testCase.expected);}});

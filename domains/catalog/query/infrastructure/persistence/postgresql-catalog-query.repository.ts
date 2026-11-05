@@ -1,3 +1,5 @@
+import type {SpecificationFilterDefinition,SpecificationFilterOption} from "../../domain/catalog-specification-filters";
+import type { CatalogSpecificationPresentationContext, CatalogSpecificationDefinitionProjection } from "../../domain/catalog-specification-presentation";
 import { sql, type SQL } from "drizzle-orm";
 import type { PlatformDatabase } from "../../../../../shared/infrastructure/persistence/database";
 import type {
@@ -79,8 +81,54 @@ const lifecyclePredicate = (scope: CatalogLifecycleScope): SQL => scope.type ===
     : sql`(lifecycle_state IN (${sql.join(scope.lifecycles.map((lifecycle) => sql`${lifecycle}`), sql`, `)}))`;
 const searchMatch = (q: string) => q ? sql`(lower(COALESCE(product_code,''))=${q.toLowerCase()} OR left(lower(COALESCE(product_code,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(product_name,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(brand_name,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(category_name,'')),length(${q}))=${q.toLowerCase()} OR left(lower(COALESCE(product_type_name,'')),length(${q}))=${q.toLowerCase()} OR to_tsvector('simple',COALESCE(product_name,'') || ' ' || COALESCE(product_code,'')) @@ plainto_tsquery('simple',${q}) OR to_tsvector('simple',concat_ws(' ',brand_name,category_name,product_type_name)) @@ plainto_tsquery('simple',${q}) OR similarity(lower(COALESCE(product_name,'')),${q.toLowerCase()}) >= 0.2 OR similarity(lower(COALESCE(product_code,'')),${q.toLowerCase()}) >= 0.2)` : sql`true`;
 
+const catalogPredicates=(query:CatalogSearchRepositoryQuery):SQL[]=>{
+    const f=query.filters, predicates: SQL[]=[lifecyclePredicate(query.lifecycleScope), searchMatch(query.searchText)];
+    if(f.departmentId)predicates.push(sql`department_id=${f.departmentId}`); if(f.categoryId)predicates.push(sql`category_id=${f.categoryId}`); if(f.productTypeId)predicates.push(sql`product_type_id=${f.productTypeId}`); if(f.brandId)predicates.push(sql`brand_id=${f.brandId}`);
+    if(f.deviceClass)predicates.push(sql`device_class_id=${f.deviceClass}`); if(f.condition)predicates.push(sql`condition_id=${f.condition}`); if(f.supplyStatusId)predicates.push(sql`supply_status_id=${f.supplyStatusId}`);
+    if(f.listing && f.listing!=="Any")predicates.push(sql`listing_status=${f.listing}`); if(f.stock)predicates.push(f.stock==="InStock"?sql`available_quantity::bigint>0`:sql`available_quantity::bigint=0`);
+    if(f.retailCurrency)predicates.push(query.sort.startsWith("retail-price")&&f.minRetailPrice===undefined&&f.maxRetailPrice===undefined?sql`(retail_currency=${f.retailCurrency} OR retail_minor IS NULL)`:sql`retail_currency=${f.retailCurrency}`); if(f.minRetailPrice!==undefined)predicates.push(sql`retail_minor::bigint>=${f.minRetailPrice}`); if(f.maxRetailPrice!==undefined)predicates.push(sql`retail_minor::bigint<=${f.maxRetailPrice}`);
+
+    if(f.brandIds?.length)predicates.push(sql`brand_id IN (${sql.join(f.brandIds.map(id=>sql`${id}`),sql`,`)})`);
+    for(const filter of f.specificationFilters ?? []){
+      const values=sql.join(filter.values.map(v=>sql`${v}`),sql`,`);
+      const match=filter.valueType==="Number" ? sql`(CASE WHEN v.value_type='number' AND v.number_value ~ '^-?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]{1,3})?$' THEN v.number_value::numeric END) IN (${sql.join(filter.values.map(v=>sql`${v}::numeric`),sql`,`)})` : filter.valueType==="Boolean" ? sql`v.value_type='boolean' AND v.boolean_value IN (${values})` : sql`v.value_type='string' AND v.text_value COLLATE "C" IN (${values})`;
+      predicates.push(sql`EXISTS(SELECT 1 FROM catalog_product_specification_values v JOIN catalog_products sp ON sp.workspace_id=v.workspace_id AND sp.product_id=v.product_id WHERE v.workspace_id=${query.workspaceId} AND v.product_id=projected.product_id AND sp.product_type_id=${f.productTypeId} AND v.specification_field_id=${filter.specificationDefinitionId} AND ${match})`);
+    }
+return predicates;
+};
+
 export class PostgreSqlCatalogQueryRepository implements CatalogQueryRepository {
   constructor(private readonly database: PlatformDatabase) {}
+  async getSpecificationFilterDefinitions(workspaceId:string,productTypeId:string,allowedIds:readonly string[]):Promise<readonly SpecificationFilterDefinition[]> {
+    if(!allowedIds.length)return [];
+    const rows=await this.database.execute<Row>(sql`SELECT d.specification_definition_id,d.display_name,d.value_type,d.unit,e.sort_order
+      FROM catalog_product_types pt
+      JOIN catalog_categories c ON c.workspace_id=pt.workspace_id AND c.category_id=pt.category_id AND c.status='Active'
+      JOIN catalog_departments dept ON dept.workspace_id=c.workspace_id AND dept.department_id=c.department_id AND dept.status='Active'
+      JOIN catalog_specification_templates t ON t.workspace_id=pt.workspace_id AND t.product_type_id=pt.product_type_id
+      JOIN catalog_specification_template_entries e ON e.workspace_id=t.workspace_id AND e.specification_template_id=t.specification_template_id
+      JOIN catalog_specification_definitions d ON d.workspace_id=e.workspace_id AND d.specification_definition_id=e.specification_definition_id AND d.status='Active'
+      WHERE pt.workspace_id=${workspaceId} AND pt.product_type_id=${productTypeId} AND pt.status='Active' AND d.specification_definition_id IN (${sql.join(allowedIds.map(id=>sql`${id}`),sql`,`)})
+      ORDER BY e.sort_order,d.specification_definition_id`);
+    return Object.freeze(rows.rows.map(r=>Object.freeze({specificationDefinitionId:String(r.specification_definition_id),displayName:String(r.display_name),valueType:String(r.value_type) as SpecificationFilterDefinition["valueType"],unit:text(r,"unit"),sortOrder:Number(r.sort_order)})));
+  }
+  async getSpecificationFilterValues(query:CatalogSearchRepositoryQuery,definitions:readonly SpecificationFilterDefinition[]):Promise<readonly SpecificationFilterOption[]> {
+    if(!definitions.length)return [];
+    const base=projected(query.workspaceId,query.branchId,query.searchText,{...query.visibility,referenceCost:false});
+    const predicates=catalogPredicates({...query,filters:{...query.filters,specificationFilters:undefined}});
+    const result=await this.database.execute<Row>(sql`WITH projected AS (${base}), authorized AS (SELECT product_id FROM projected WHERE true${and(predicates)}),
+      distinct_values AS (
+        SELECT DISTINCT v.specification_field_id,v.value_type,CASE v.value_type WHEN 'boolean' THEN v.boolean_value::text WHEN 'number' THEN (CASE WHEN v.number_value ~ '^-?[0-9]+([.][0-9]+)?([eE][+-]?[0-9]{1,3})?$' THEN v.number_value::numeric END)::text ELSE v.text_value END AS value
+        FROM authorized a JOIN catalog_product_specification_values v ON v.workspace_id=${query.workspaceId} AND v.product_id=a.product_id
+        WHERE v.specification_field_id IN (${sql.join(definitions.map(d=>sql`${d.specificationDefinitionId}`),sql`,`)})
+      ), ranked AS (SELECT *,row_number() OVER(PARTITION BY specification_field_id ORDER BY value COLLATE "C") AS n FROM distinct_values WHERE value IS NOT NULL AND value<>'')
+      SELECT * FROM ranked WHERE n<=101 ORDER BY specification_field_id,n`);
+    return Object.freeze(definitions.map(d=>{
+      const rows=result.rows.filter(r=>r.specification_field_id===d.specificationDefinitionId && r.value_type===(d.valueType==="Number"?"number":d.valueType==="Boolean"?"boolean":"string"));
+      return Object.freeze({...d,values:Object.freeze(rows.slice(0,100).map(r=>d.valueType==="Boolean"?r.value==="true":String(r.value))),truncated:rows.length>100});
+    }));
+  }
+
   async branchExists(workspaceId: string, branchId: string): Promise<boolean> {
     const rows = await this.database.execute<{ found: boolean }>(sql`SELECT EXISTS(SELECT 1 FROM workspace_branch_references WHERE workspace_id=${workspaceId} AND branch_id=${branchId} AND status='Active') AS found`); return rows.rows[0]?.found === true;
   }
@@ -94,16 +142,37 @@ export class PostgreSqlCatalogQueryRepository implements CatalogQueryRepository 
       (${filter.supplyStatusId ?? null}::text IS NULL OR EXISTS(SELECT 1 FROM catalog_supply_statuses s WHERE s.workspace_id=${workspaceId} AND s.supply_status_id=${filter.supplyStatusId ?? null} AND s.status='Active')) AS valid`); return rows.rows[0]?.valid === true;
   }
   async search(query: CatalogSearchRepositoryQuery): Promise<readonly CatalogProductSearchRow[]> {
-    const f=query.filters, predicates: SQL[]=[lifecyclePredicate(query.lifecycleScope), searchMatch(query.searchText)];
-    if(f.departmentId)predicates.push(sql`department_id=${f.departmentId}`); if(f.categoryId)predicates.push(sql`category_id=${f.categoryId}`); if(f.productTypeId)predicates.push(sql`product_type_id=${f.productTypeId}`); if(f.brandId)predicates.push(sql`brand_id=${f.brandId}`);
-    if(f.deviceClass)predicates.push(sql`device_class_id=${f.deviceClass}`); if(f.condition)predicates.push(sql`condition_id=${f.condition}`); if(f.supplyStatusId)predicates.push(sql`supply_status_id=${f.supplyStatusId}`);
-    if(f.listing && f.listing!=="Any")predicates.push(sql`listing_status=${f.listing}`); if(f.stock)predicates.push(f.stock==="InStock"?sql`available_quantity::bigint>0`:sql`available_quantity::bigint=0`);
-    if(f.retailCurrency)predicates.push(query.sort.startsWith("retail-price")&&f.minRetailPrice===undefined&&f.maxRetailPrice===undefined?sql`(retail_currency=${f.retailCurrency} OR retail_minor IS NULL)`:sql`retail_currency=${f.retailCurrency}`); if(f.minRetailPrice!==undefined)predicates.push(sql`retail_minor::bigint>=${f.minRetailPrice}`); if(f.maxRetailPrice!==undefined)predicates.push(sql`retail_minor::bigint<=${f.maxRetailPrice}`);
+    const predicates=catalogPredicates(query);
     const asc=query.sort==="name-asc"||query.sort==="retail-price-asc"; const value = query.cursor?.value;
     if(query.cursor){ const id=query.cursor.productId; if(query.sort==="relevance")predicates.push(sql`(relevance_score<${Number(value)} OR (relevance_score=${Number(value)} AND product_id>${id}))`); else if(query.sort==="newest")predicates.push(sql`(created_at<${value}::timestamptz OR (created_at=${value}::timestamptz AND product_id>${id}))`); else if(query.sort.startsWith("name"))predicates.push(asc?sql`(lower(COALESCE(product_name,''))>${value} OR (lower(COALESCE(product_name,''))=${value} AND product_id>${id}))`:sql`(lower(COALESCE(product_name,''))<${value} OR (lower(COALESCE(product_name,''))=${value} AND product_id>${id}))`); else if(query.cursor.nullRank===1)predicates.push(sql`retail_minor IS NULL AND product_id>${id}`);else predicates.push(asc?sql`(retail_minor IS NULL OR retail_minor::bigint>${value}::bigint OR (retail_minor::bigint=${value}::bigint AND product_id>${id}))`:sql`(retail_minor IS NULL OR retail_minor::bigint<${value}::bigint OR (retail_minor::bigint=${value}::bigint AND product_id>${id}))`); }
     const order=query.sort==="relevance"?sql`relevance_score DESC,product_id ASC`:query.sort==="newest"?sql`created_at DESC,product_id ASC`:query.sort==="name-asc"?sql`lower(COALESCE(product_name,'')) ASC,product_id ASC`:query.sort==="name-desc"?sql`lower(COALESCE(product_name,'')) DESC,product_id ASC`:query.sort==="retail-price-asc"?sql`retail_minor::bigint ASC NULLS LAST,product_id ASC`:sql`retail_minor::bigint DESC NULLS LAST,product_id ASC`;
     const base=projected(query.workspaceId,query.branchId,query.searchText,{...query.visibility,referenceCost:false}); const statement=sql`WITH projected AS (${base}) SELECT * FROM projected WHERE true${and(predicates)} ORDER BY ${order} LIMIT ${query.limit}`;
     const result=await this.database.execute<Row>(statement); return Object.freeze(result.rows.map((row)=>{const p=product(row); const cursor=query.sort==="relevance"?{productId:p.productId,value:String(row.relevance_score)}:query.sort==="newest"?{productId:p.productId,value:p.createdAt.toISOString()}:query.sort.startsWith("name")?{productId:p.productId,value:(p.productName??"").toLowerCase()}:{productId:p.productId,value:text(row,"retail_minor")??"0",nullRank:(text(row,"retail_minor")===null?1:0) as 0|1}; return Object.freeze({product:p,cursor:Object.freeze(cursor)}); }));
+  }
+  async getSpecificationPresentation(workspaceId: string, productIds: readonly string[]): Promise<readonly CatalogSpecificationPresentationContext[]> {
+    if (!productIds.length) return Object.freeze([]);
+    const ids = sql.join(productIds.map((id) => sql`${id}`), sql`, `);
+    const values = await this.database.execute<Row>(sql`SELECT p.product_id,p.product_type_id,v.specification_field_id,COALESCE(d.display_name,v.specification_field_id) AS display_name,CASE v.value_type WHEN 'string' THEN 'Text' WHEN 'number' THEN 'Number' ELSE 'Boolean' END AS value_type,d.unit,COALESCE(v.text_value,v.number_value,v.boolean_value::text) AS value,v.boolean_value,v.position AS sort_order
+      FROM catalog_products p LEFT JOIN catalog_product_specification_values v ON v.workspace_id=p.workspace_id AND v.product_id=p.product_id
+      LEFT JOIN catalog_specification_definitions d ON d.workspace_id=v.workspace_id AND d.specification_definition_id=v.specification_field_id
+      WHERE p.workspace_id=${workspaceId} AND p.product_id IN (${ids}) ORDER BY p.product_id,v.position,v.specification_field_id`);
+    const metadata = await this.database.execute<Row>(sql`SELECT p.product_id,d.specification_definition_id,d.display_name,d.value_type,d.unit,e.sort_order
+      FROM catalog_products p JOIN catalog_product_types pt ON pt.workspace_id=p.workspace_id AND pt.product_type_id=p.product_type_id AND pt.status='Active'
+      JOIN catalog_categories c ON c.workspace_id=pt.workspace_id AND c.category_id=pt.category_id AND c.status='Active'
+      JOIN catalog_departments dept ON dept.workspace_id=c.workspace_id AND dept.department_id=c.department_id AND dept.status='Active'
+      JOIN catalog_specification_templates t ON t.workspace_id=p.workspace_id AND t.product_type_id=p.product_type_id
+      JOIN catalog_specification_template_entries e ON e.workspace_id=t.workspace_id AND e.specification_template_id=t.specification_template_id
+      JOIN catalog_specification_definitions d ON d.workspace_id=e.workspace_id AND d.specification_definition_id=e.specification_definition_id AND d.status='Active'
+      WHERE p.workspace_id=${workspaceId} AND p.product_id IN (${ids}) ORDER BY p.product_id,e.sort_order,d.specification_definition_id`);
+    const contexts = new Map<string, { productId: string; productTypeId: string | null; specifications: CatalogSpecificationProjection[]; definitions: CatalogSpecificationDefinitionProjection[] }>();
+    for (const row of values.rows) {
+      const productId = String(row.product_id);
+      let context = contexts.get(productId);
+      if (!context) { context = { productId, productTypeId: text(row, "product_type_id"), specifications: [], definitions: [] }; contexts.set(productId, context); }
+      if (row.specification_field_id !== null) context.specifications.push(Object.freeze({ specificationDefinitionId: String(row.specification_field_id), displayName: String(row.display_name), valueType: String(row.value_type) as CatalogSpecificationProjection["valueType"], unit: text(row, "unit"), value: String(row.value_type) === "Boolean" ? row.boolean_value === true : String(row.value), sortOrder: Number(row.sort_order) }));
+    }
+    for (const row of metadata.rows) contexts.get(String(row.product_id))?.definitions.push(Object.freeze({ specificationDefinitionId: String(row.specification_definition_id), displayName: String(row.display_name), valueType: String(row.value_type) as CatalogSpecificationProjection["valueType"], unit: text(row, "unit"), sortOrder: Number(row.sort_order) }));
+    return Object.freeze([...contexts.values()].map((context) => Object.freeze({ ...context, specifications: Object.freeze(context.specifications), definitions: Object.freeze(context.definitions) })));
   }
   async getDetails(query: CatalogDetailsRepositoryQuery): Promise<CatalogProductDetailsProjection|null> {
     const base=projected(query.workspaceId,query.branchId,"",query.visibility); const result=await this.database.execute<Row>(sql`WITH projected AS (${base}) SELECT * FROM projected WHERE product_id=${query.productId}`); if(!result.rows[0])return null;
