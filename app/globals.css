@@ -411,3 +411,92 @@ a.header-link--operations { display: inline-flex; min-height: 44px; align-items:
 .operational-product-option:has(input:checked) { outline: 2px solid currentColor; outline-offset: 2px; }
 @media (min-width: 481px) { .operational-product-selector .button { width: auto; } }
 @media (min-width: 1025px) { .operational-product-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Staff Catalog configured specification presentation. */
+.catalog-specifications--card { gap: .25rem; }
+.catalog-specifications--card > div { padding: .35rem 0; gap: .5rem; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+.catalog-specification-group { margin-block: 1rem; }
+.catalog-specification-group h3 { margin-block: 0 .5rem; font-size: 1rem; overflow-wrap: anywhere; }
+
+/* Phase 2 private Catalog controls */
+.catalog-choice-group { border:1px solid var(--border, #d5dbe3); border-radius:12px; padding:12px; margin-block:14px; min-width:0; }
+.catalog-choice { display:flex; align-items:center; gap:10px; min-height:44px; overflow-wrap:anywhere; }
+.catalog-choice input { width:20px; height:20px; flex-shrink:0; }
+.catalog-selected-value { display:block; min-height:44px; text-align:start; overflow-wrap:anywhere; }
+.catalog-typed-filters .catalog-filter-grid { grid-template-columns:minmax(0,1fr); }
+.catalog-typed-filters .catalog-filter-surface>summary { display:none; }
+.catalog-filter-dialog { width:min(92vw,440px); max-width:100%; height:100dvh; max-height:100dvh; margin:0; margin-inline-start:auto; padding:20px; overflow-y:auto; border:0; background:var(--surface,#fff); color:inherit; }
+.catalog-filter-dialog::backdrop { background:rgb(0 0 0 / 45%); }
+.catalog-browse-layout { display:grid; gap:20px; align-items:start; min-width:0; }
+.catalog-browse-layout>section { min-width:0; }
+@media(min-width:768px) {
+ .catalog-browse-layout { grid-template-columns:minmax(240px,300px) minmax(0,1fr); }
+ .catalog-browse-layout .catalog-search { display:flex; flex-direction:column; }
+ .catalog-browse-layout .catalog-grid { grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); }
+}
+
+/* Phase 4B: private Staff Catalog presentation only. */
+body:has(.catalog-browse-layout), body:has(.catalog-details-layout) { min-width: 0; }
+.catalog-browse-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "controls" "filters" "results"; gap: .85rem; }
+.catalog-browse-layout > .catalog-controls { grid-area: controls; margin: 0; gap: .65rem; padding: .85rem; }
+.catalog-browse-layout > .catalog-typed-filters { grid-area: filters; min-width: 0; }
+.catalog-browse-layout > .catalog-results { grid-area: results; min-width: 0; }
+.catalog-browse-layout .catalog-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; align-items: end; }
+.catalog-browse-layout .catalog-search .button { width: auto; }
+.catalog-search .catalog-clear-search { grid-column: 1 / -1; justify-self: start; }
+.catalog-search-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.catalog-search-settings .form-field, .catalog-search .form-field { min-width: 0; }
+.catalog-controls :is(input, select) { min-width: 0; max-width: 100%; }
+.catalog-search-help { font-size: .9rem; color: var(--muted); }
+.catalog-search-help summary { min-height: 44px; cursor: pointer; padding-block: .6rem; }
+.catalog-search-help p { margin-block: .25rem .5rem; line-height: 1.5; }
+.catalog-controls .catalog-active-filters { gap: .35rem; padding-top: .5rem; }
+.catalog-active-filters > .text-button { justify-self: start; }
+.catalog-browse-layout .text-button, .catalog-details-layout .text-button { min-height: 44px; white-space: normal; }
+.catalog-results .catalog-section-title { margin: .2rem 0; }
+.catalog-result-count { margin: .25rem 0 .75rem; color: var(--muted); font-size: .9rem; }
+.catalog-typed-filters .catalog-filter-grid { gap: .65rem; }
+.catalog-filter-group { min-width: 0; border-block-end: 1px solid var(--line); margin-block: .45rem; }
+.catalog-filter-group > summary { cursor: pointer; min-height: 44px; padding: .65rem .25rem; font-weight: 750; overflow-wrap: anywhere; }
+.catalog-filter-group > summary > span { margin-inline-start: .65rem; color: var(--muted); font-size: .85rem; }
+.catalog-filter-group .catalog-choice-group { border: 0; padding: .3rem .25rem; margin: 0; }
+.catalog-choice-options { max-height: 16rem; overflow-y: auto; overscroll-behavior: contain; }
+.catalog-choice bdi, .catalog-selected-value bdi { min-width: 0; overflow-wrap: anywhere; }
+.catalog-filter-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .85rem; flex: 1; }
+.catalog-filter-content > [aria-label] > h3 { font-size: 1rem; margin-block: 0 .4rem; }
+.catalog-filter-dialog { padding: 0; overflow: hidden; border-inline-end: 1px solid var(--line); }
+.catalog-filter-dialog[open] { display: flex; flex-direction: column; }
+.catalog-filter-dialog__header, .catalog-filter-dialog__footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; flex: 0 0 auto; padding: .75rem; background: var(--surface); }
+.catalog-filter-dialog__header { border-block-end: 1px solid var(--line); }
+.catalog-filter-dialog__header h2 { margin: 0; font-size: 1.1rem; }
+.catalog-filter-dialog__footer { border-block-start: 1px solid var(--line); }
+.catalog-filter-dialog__footer > span { color: var(--muted); font-size: .85rem; }
+.catalog-browse-layout .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); align-items: stretch; }
+.catalog-card { display: flex; flex-direction: column; }
+.catalog-card .catalog-media { min-height: 0; aspect-ratio: 4 / 3; max-height: 220px; }
+.catalog-card .catalog-media img, .catalog-details-layout .catalog-media img { min-height: 0; max-height: 100%; width: 100%; height: 100%; object-fit: contain; }
+.catalog-card__body { display: flex; flex-direction: column; flex: 1; gap: .65rem; padding: .85rem; }
+.catalog-card__body > .button:last-child { margin-block-start: auto; }
+.catalog-card h2 { font-size: 1.05rem; line-height: 1.4; }
+.catalog-card .catalog-chip { padding: .2rem .4rem; min-height: 26px; font-size: .75rem; }
+.catalog-card .catalog-specifications--card > div { grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); padding-block: .3rem; }
+.catalog-specifications bdi { overflow-wrap: anywhere; }
+.catalog-card .catalog-money { padding: .6rem; }
+.catalog-details-layout .catalog-media { min-height: 0; aspect-ratio: 4 / 3; max-height: 320px; }
+.catalog-details-layout .catalog-media-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.catalog-media-gallery > .catalog-media:first-child { grid-column: 1 / -1; }
+.catalog-media-gallery > .catalog-media:not(:first-child) { max-height: 140px; }
+.catalog-details-layout .catalog-specifications > div { padding: .65rem .25rem; }
+.catalog-details-layout .catalog-specification-group { margin-block: .85rem; }
+@media (min-width: 900px) {
+  .catalog-browse-layout { grid-template-columns: minmax(240px, 270px) minmax(0, 1fr); grid-template-areas: "controls controls" "filters results"; gap: 1rem; }
+  .catalog-browse-layout > .catalog-controls { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+  .catalog-controls > .catalog-search-help, .catalog-controls > .catalog-active-filters, .catalog-controls > .catalog-branch-context { grid-column: 1 / -1; }
+  .catalog-browse-layout > .catalog-typed-filters { position: sticky; top: 84px; }
+  .catalog-typed-filters > aside { max-height: calc(100dvh - 100px); display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; padding-bottom: .75rem; }
+  .catalog-typed-filters > aside > .button { margin-inline: .75rem; }
+  .catalog-details-summary { grid-column: 2; grid-row: 1; }
+  .catalog-details-layout .catalog-details-media { grid-column: 1; grid-row: 1 / span 2; }
+}
+
+.catalog-extra-context { grid-column: 1 / -1; min-width: 0; } .catalog-extra-context > summary { min-height: 44px; padding-block: .65rem; cursor: pointer; }

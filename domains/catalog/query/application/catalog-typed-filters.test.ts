@@ -1,0 +1,45 @@
+import assert from "node:assert/strict";
+import {describe,it} from "node:test";
+import {canonicalSpecificationNumber,parseSpecificationFilterInput,parseCatalogBrandIds,resolveTypedSpecificationFilters} from "../domain/catalog-specification-filters";
+import {parseCatalogSpecificationPresentationProfiles} from "../infrastructure/catalog-specification-presentation-config";
+import {SearchCatalogProductsUseCase,GetCatalogFilterOptionsUseCase} from "./catalog-query.use-cases";
+import type {CatalogQueryRepository,CatalogSearchRepositoryQuery} from "../ports/catalog-query-repository.port";
+import type {TrustedActorContext} from "../../../../shared/auth/trusted-actor-context";
+import {parseCatalogQueryState,catalogQuerySearchParams,updateCatalogQueryState,catalogDetailsHref,safeCatalogReturnPath} from "../presentation/catalog-query-state";
+const definition={specificationDefinitionId:"ram",displayName:"Memory",valueType:"Number" as const,unit:"GB",sortOrder:0};
+const request=(values:(string|boolean)[]= ["16"],unit:string|null="GB")=>JSON.stringify([{specificationDefinitionId:"ram",operator:"IN",values,unit}]);
+const context:TrustedActorContext={workspaceId:"ws",actorId:"staff",role:"Staff",permissions:["catalog.products.view"],branchScope:{type:"SelectedBranches",branchIds:["main"]},authorizationVersion:1};
+const profile=(filterable?:boolean)=>({workspaceId:"ws",productTypeId:"type",groups:[{id:"hardware",label:{en:"Hardware",ar:"العتاد"}}],fields:[{specificationDefinitionId:"ram",groupId:"hardware",importantInDetails:false,...(filterable===undefined?{}:{filterable})}]});
+const setup=(filterable?:boolean)=>{
+ let last:CatalogSearchRepositoryQuery|undefined,optionCalls=0;
+ const repo:CatalogQueryRepository={
+ branchExists:async()=>true,hierarchyIsValid:async()=>true,search:async q=>{last=q;return [];},
+ getSpecificationPresentation:async()=>[],getDetails:async()=>null,getMedia:async()=>null,
+ getFilterOptions:async()=>({departments:[],categories:[],productTypes:[],brands:[],supplyStatuses:[],branches:[],enabledConditions:[],enabledCurrencies:[]}),
+ getSpecificationFilterDefinitions:async(ws,type,ids)=>ws==="ws"&&type==="type"&&ids.includes("ram")?[definition]:[],
+ getSpecificationFilterValues:async()=>{optionCalls++;return [{...definition,values:["16"],truncated:false}];}
+ };
+ return {search:new SearchCatalogProductsUseCase(repo,[profile(filterable)]),options:new GetCatalogFilterOptionsUseCase(repo,[profile(filterable)]),last:()=>last,optionCalls:()=>optionCalls};
+};
+describe("Typed filter validation",()=>{
+ it("canonicalizes exact decimal and exponent values without IEEE rounding",()=>{for(const [value,expected]of [["16.00","16"],["-0.0","0"],["1e-7","0.0000001"],["1.25e2","125"],["9007199254740993","9007199254740993"],["5e-324","0."+"0".repeat(323)+"5"]])assert.equal(canonicalSpecificationNumber(value),expected);});
+ it("rejects display units, NaN, whitespace and malformed numeric input",()=>{for(const value of ["16 GB","NaN","Infinity"," 16","16 ","1e9999","01","0x10","1,2"])assert.throws(()=>canonicalSpecificationNumber(value));});
+ it("enforces 8 criteria and 10 values and strict operators/keys",()=>{const row={specificationDefinitionId:"ram",operator:"IN",values:["1"]};for(const rows of [Array.from({length:9},(_,i)=>({...row,specificationDefinitionId:"f"+i})),[{...row,values:Array.from({length:11},(_,i)=>String(i))}],[{...row,operator:"GT"}],[{...row,operator:["EQ"],values:["1","2"]}],[{...row,unapproved:true}],[row,row]])assert.throws(()=>parseSpecificationFilterInput(JSON.stringify(rows)));});
+ it("validates actual units and types; missing is never zero/false",()=>{assert.throws(()=>resolveTypedSpecificationFilters(parseSpecificationFilterInput(request(["16"],"TB")),[definition]));assert.throws(()=>resolveTypedSpecificationFilters(parseSpecificationFilterInput(request([false])),[definition]));assert.throws(()=>resolveTypedSpecificationFilters(parseSpecificationFilterInput(request()),[]));const bool={...definition,valueType:"Boolean" as const,unit:null};assert.deepEqual(resolveTypedSpecificationFilters(parseSpecificationFilterInput(request([false],null)),[bool])[0].values,[false]);});
+ it("retains zero and treats an empty approved selection as no constraint",()=>{assert.deepEqual(resolveTypedSpecificationFilters(parseSpecificationFilterInput(request(["0"])),[definition])[0].values,["0"]);assert.deepEqual(resolveTypedSpecificationFilters(parseSpecificationFilterInput(request([])),[definition]),[]);assert.throws(()=>resolveTypedSpecificationFilters(parseSpecificationFilterInput(request([])),[]));});
+ it("canonicalizes Brand sets and rejects duplicates/oversize/malformed IDs",()=>{assert.deepEqual(parseCatalogBrandIds('["b","a"]'),["a","b"]);for(const value of ['["a","a"]','[" "]','null',JSON.stringify(Array.from({length:11},(_,i)=>"b"+i))])assert.throws(()=>parseCatalogBrandIds(value));});
+ it("requires explicit boolean configuration and preserves default deny",()=>{const p=profile();assert.equal(parseCatalogSpecificationPresentationProfiles(JSON.stringify([p]))[0].fields[0].filterable,undefined);assert.equal(parseCatalogSpecificationPresentationProfiles(JSON.stringify([profile(false)]))[0].fields[0].filterable,false);assert.equal(parseCatalogSpecificationPresentationProfiles(JSON.stringify([profile(true)]))[0].fields[0].filterable,true);assert.throws(()=>parseCatalogSpecificationPresentationProfiles(JSON.stringify([{...p,fields:[{...p.fields[0],filterable:"true"}]}])));});
+});
+describe("Application filter authorization",()=>{
+ it("permits only filterable true and passes typed canonical predicates to repository",async()=>{const f=setup(true);assert.equal((await f.search.execute({context,input:{productTypeId:"type",specificationFilters:request(["16.00","32"])}})).ok,true);assert.deepEqual(f.last()?.filters.specificationFilters?.[0].values,["16","32"]);});
+ for(const mode of [undefined,false] as const)it("denies absent or false filterability: "+mode,async()=>{const f=setup(mode);assert.deepEqual(await f.search.execute({context,input:{productTypeId:"type",specificationFilters:request()}}),{ok:false,error:"InvalidQuery"});assert.equal(f.last(),undefined);});
+ it("denies unknown, off-template, cross-Workspace and no-type criteria",async()=>{const f=setup(true);for(const input of [{productTypeId:"other",specificationFilters:request()},{specificationFilters:request()}])assert.equal((await f.search.execute({context,input})).ok,false);assert.equal((await f.search.execute({context:{...context,workspaceId:"foreign"},input:{productTypeId:"type",specificationFilters:request()}})).ok,false);});
+ it("does not discover values for unauthorized Branch or unauthenticated roles",async()=>{const f=setup(true);assert.deepEqual(await f.options.execute({context,input:{productTypeId:"type",branchId:"foreign"}}),{ok:false,error:"BranchNotFound"});assert.deepEqual(await f.options.execute({context:{...context,permissions:[]},input:{productTypeId:"type"}}),{ok:false,error:"Forbidden"});assert.equal(f.optionCalls(),0);});
+ it("omits unscoped options and provides approved scoped options without counts",async()=>{const f=setup(true);const empty=await f.options.execute({context,input:{}});assert.ok(empty.ok);if(empty.ok)assert.deepEqual(empty.value.specificationFilters,[]);const scoped=await f.options.execute({context,input:{productTypeId:"type"}});assert.ok(scoped.ok);if(scoped.ok){assert.equal(scoped.value.specificationFilters?.length,1);assert.equal("totalCount" in scoped.value,false);}});
+});
+describe("Typed filter URL navigation",()=>{
+ const state={q:"Lenovo",lifecycle:"Published" as const,sort:"relevance" as const,productTypeId:"type",specificationFilters:request(),brandIds:'["brand"]'};
+ it("preserves selected filters through URL and Details/Back",()=>{const query=catalogQuerySearchParams(state);const parsed=parseCatalogQueryState(query);assert.ok(parsed.ok);if(parsed.ok){assert.equal(parsed.value.specificationFilters,state.specificationFilters);assert.equal(parsed.value.brandIds,state.brandIds);}const details=new URL(catalogDetailsHref("p",state),"http://localhost");assert.equal(safeCatalogReturnPath(details.searchParams.get("returnTo")),"/catalog?"+query);});
+ it("clears stale type selections and cursors, preserving page-only cursor changes",()=>{const selected={...state,cursor:"cursor"};assert.equal(updateCatalogQueryState(selected,{productTypeId:"other"}).specificationFilters,undefined);assert.equal(updateCatalogQueryState(selected,{brandIds:'["new"]'}).cursor,undefined);assert.equal(updateCatalogQueryState(selected,{cursor:"next"}).specificationFilters,state.specificationFilters);});
+ it("rejects invalid/conflicting/oversized URLs without broadening",()=>{for(const params of [new URLSearchParams({brandId:"a",brandIds:'["b"]'}),new URLSearchParams({specificationFilters:request()}),new URLSearchParams({productTypeId:"type",specificationFilters:"not-json"}),new URLSearchParams({q:"x".repeat(4001)})])assert.equal(parseCatalogQueryState(params).ok,false);});
+});

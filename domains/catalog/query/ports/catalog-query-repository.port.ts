@@ -1,3 +1,4 @@
+import type { CatalogSpecificationPresentationContext } from "../domain/catalog-specification-presentation";
 import type { CatalogCursorPosition, CatalogFilterOptionsProjection, CatalogLifecycle, CatalogMediaStorageProjection, CatalogProductDetailsProjection, CatalogProductSearchRow, CatalogQueryVisibility, CatalogSearchFilters, CatalogSort } from "../domain/catalog-query";
 
 export type CatalogLifecycleScope =
@@ -32,9 +33,12 @@ export interface CatalogHierarchyFilter {
 }
 
 export interface CatalogQueryRepository {
+  getSpecificationFilterDefinitions(workspaceId:string,productTypeId:string,allowedIds:readonly string[]):Promise<readonly import('../domain/catalog-specification-filters').SpecificationFilterDefinition[]>;
+  getSpecificationFilterValues(query:CatalogSearchRepositoryQuery,definitions:readonly import('../domain/catalog-specification-filters').SpecificationFilterDefinition[]):Promise<readonly import('../domain/catalog-specification-filters').SpecificationFilterOption[]>;
   branchExists(workspaceId: string, branchId: string): Promise<boolean>;
   hierarchyIsValid(workspaceId: string, filter: CatalogHierarchyFilter): Promise<boolean>;
   search(query: CatalogSearchRepositoryQuery): Promise<readonly CatalogProductSearchRow[]>;
+  getSpecificationPresentation(workspaceId: string, productIds: readonly string[]): Promise<readonly CatalogSpecificationPresentationContext[]>;
   getDetails(query: CatalogDetailsRepositoryQuery): Promise<CatalogProductDetailsProjection | null>;
   getFilterOptions(workspaceId: string, allowedBranchIds: readonly string[] | null): Promise<CatalogFilterOptionsProjection>;
   getMedia(workspaceId: string, productId: string, mediaId: string): Promise<CatalogMediaStorageProjection | null>;

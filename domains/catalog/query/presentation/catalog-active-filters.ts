@@ -1,3 +1,4 @@
+import {parseSpecificationFilterInput,parseCatalogBrandIds} from "../domain/catalog-specification-filters";
 import type { Locale } from "../../../identity/presentation/identity-presentation.types";
 import type { CatalogQueryState } from "./catalog-query-state";
 import { catalogText, type CatalogTextKey } from "./catalog-presentation.i18n";
@@ -37,13 +38,21 @@ export const catalogActiveFilterItems = (state: CatalogQueryState, options: Cata
   item("minRetailPrice", catalogText(locale, "minRetail"), state.minRetailPrice ? `${state.minRetailPrice}${state.retailCurrency ? ` ${state.retailCurrency}` : ""}` : undefined),
   item("maxRetailPrice", catalogText(locale, "maxRetail"), state.maxRetailPrice ? `${state.maxRetailPrice}${state.retailCurrency ? ` ${state.retailCurrency}` : ""}` : undefined),
   item("retailCurrency", catalogText(locale, "retailCurrency"), state.retailCurrency),
+  ...parseCatalogBrandIds(state.brandIds).map(id=>item("brand-"+id,catalogText(locale,"brand"),displayName(options.brands,id))),
+  ...parseSpecificationFilterInput(state.specificationFilters).flatMap(f=>{
+    const definition=options.specificationFilters?.find(d=>d.specificationDefinitionId===f.specificationDefinitionId);
+    if(!definition)return [];
+    const names=definition.displayName.split(" / "),name=names[locale==="ar"?1:0]??names[0]!;
+    return [item("spec-"+f.specificationDefinitionId,name,f.values.map(v=>typeof v==="boolean"?catalogText(locale,v?"yes":"no"):v).join(" / ")+(definition.unit?" "+definition.unit:""))];
+  }),
 ].filter((value): value is CatalogActiveFilterItem => value !== null));
 
-export const catalogHasActiveFilters = (state: CatalogQueryState): boolean => Boolean(state.departmentId || state.categoryId || state.productTypeId || state.brandId || state.deviceClass || state.condition || state.supplyStatusId || state.lifecycle !== "Published" || state.listing || state.stock || state.minRetailPrice || state.maxRetailPrice || state.retailCurrency);
+export const catalogHasActiveFilters = (state: CatalogQueryState): boolean => Boolean(state.specificationFilters || state.brandIds || state.departmentId || state.categoryId || state.productTypeId || state.brandId || state.deviceClass || state.condition || state.supplyStatusId || state.lifecycle !== "Published" || state.listing || state.stock || state.minRetailPrice || state.maxRetailPrice || state.retailCurrency);
 
 export const resetCatalogFilters = (state: CatalogQueryState): CatalogQueryState => Object.freeze({
   q: state.q,
+  ...(state.searchMode?{searchMode:state.searchMode}:{}),
   ...(state.branchId ? { branchId: state.branchId } : {}),
   lifecycle: "Published",
-  sort: state.sort.startsWith("retail-price") ? (state.q ? "relevance" : "newest") : state.sort,
+  sort: state.sort.startsWith("retail-price") ? (state.q && !state.searchMode ? "relevance" : "newest") : state.sort,
 });
