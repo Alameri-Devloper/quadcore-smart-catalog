@@ -17,7 +17,10 @@ const details = (overrides: Partial<CatalogProductDetailsView> = {}): CatalogPro
 describe("Catalog Presentation components", () => {
   it("renders only server-returned Card disclosure and preserves dynamic Workspace labels", () => {
     const html = renderToStaticMarkup(<CatalogProductCard product={card()} queryState={query} locale="ar" />);
-    assert.match(html, /حاسوب محمول/u); assert.match(html, /أجهزة الحاسوب/u); assert.match(html, /علامة العمل/u);
+    assert.match(html, /حاسوب محمول/u); assert.match(html, /علامة العمل/u);
+    // Approved 2026-11-05 contract: classification labels remain in Details and filters.
+    assert.doesNotMatch(html, /أجهزة الحاسوب|Laptops|متاح خصيصاً/u);
+    assert.match(html, /QSC-A/u); assert.match(html, /منشور/u);
     assert.match(html, /0\.00 USD/u); assert.match(html, /OutOfStock|غير متوفر|غير متاح/u);
     assert.doesNotMatch(html, /Wholesale|الجملة/u); assert.doesNotMatch(html, /Reference Cost|التكلفة المرجعية/u); assert.doesNotMatch(html, /On hand|المخزون الفعلي/u);
     assert.match(html, /returnTo=%2Fcatalog/u); assert.match(html, /branchId=branch-a/u);

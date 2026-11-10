@@ -3,7 +3,7 @@ import type { Locale } from "../../../identity/presentation/identity-presentatio
 const messages = {
   moneyDisplayUnsupported: { en: "Amount cannot be displayed safely for this currency.", ar: "لا يمكن عرض المبلغ بأمان لهذه العملة." },
   eyebrow: { en: "Sales catalog", ar: "كتالوج المبيعات" },
-  catalogTitle: { en: "Catalog", ar: "الكتالوج" },
+  catalogTitle: { en: "Sales catalog", ar: "كتالوج المبيعات" },
   catalogDescription: { en: "Browse authorized products in your current Workspace and Branch.", ar: "تصفح المنتجات المصرح بها ضمن مساحة العمل وسياق الفرع الحالي." },
   search: { en: "Search products", ar: "البحث عن المنتجات" },
   searchHint: { en: "Product name, code, brand, category, or product type", ar: "اسم المنتج أو رمزه أو علامته أو فئته أو نوعه" },

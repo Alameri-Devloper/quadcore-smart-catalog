@@ -73,8 +73,7 @@ export const CatalogProductCard = ({ product, queryState, locale }: { readonly p
   return <article className="catalog-card">
     <Link href={href} className="catalog-card__media-link" aria-label={`${catalogText(locale, "viewDetails")}: ${title}`}><CatalogMedia media={product.mainMedia} productTitle={title} locale={locale} /></Link>
     <div className="catalog-card__body">
-      <div className="catalog-card__heading"><div><p className="catalog-card__code" dir="ltr">{product.productCode ?? "—"}</p><h2><Link href={href}>{title}</Link></h2></div><span className={`catalog-status catalog-status--${product.lifecycle.toLowerCase()}`}>{label(locale, product.lifecycle)}</span></div>
-      <ClassificationBadges product={product} locale={locale} />
+      <div className="catalog-card__heading"><div>{product.productCode?.trim() ? <p className="catalog-card__code" dir="ltr">{product.productCode}</p> : null}<h2><Link href={href}>{title}</Link></h2></div><span className={`catalog-status catalog-status--${product.lifecycle.toLowerCase()}`}>{label(locale, product.lifecycle)}</span></div>
       {product.cardSpecifications?.length ? <SpecificationList values={product.cardSpecifications.slice(0, 3)} locale={locale} compact /> : null}
       <div className="catalog-price-grid">
         {product.retail ? <MoneyLine name={catalogText(locale, "retail")} value={product.retail} locale={locale} /> : null}

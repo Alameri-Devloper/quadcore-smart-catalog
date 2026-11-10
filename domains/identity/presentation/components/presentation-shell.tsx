@@ -17,6 +17,10 @@ export const PresentationShell = ({
   compact = false,
   brandContent,
   headerControls,
+  languageControl,
+  navigationLabel,
+  catalogLabel,
+  activePath,
 }: {
   readonly children: ReactNode;
   readonly actor?: SafeActorView;
@@ -24,6 +28,10 @@ export const PresentationShell = ({
   readonly compact?: boolean;
   readonly brandContent?: ReactNode;
   readonly headerControls?: ReactNode;
+  readonly languageControl?: ReactNode;
+  readonly navigationLabel?: string;
+  readonly catalogLabel?: string;
+  readonly activePath?: string;
 }) => {
   const router = useRouter();
   const capabilities = useOperationalManagementCapabilities();
@@ -44,6 +52,13 @@ export const PresentationShell = ({
     setLogoutError(true);
   };
 
+  const navigation = <>
+            {actor ? <Link className="header-link" href="/catalog" aria-current={activePath === "/catalog" ? "page" : undefined}>{catalogLabel ?? i18n.t("catalog")}</Link> : null}
+            {actor ? <Link className="header-link" href="/catalog/reference-data" aria-current={activePath === "/catalog/reference-data" ? "page" : undefined}>{i18n.locale === "ar" ? "البيانات المرجعية" : "Reference data"}</Link> : null}
+            {actor?.role === "Owner" ? <Link className="header-link" href="/members" aria-current={activePath === "/members" ? "page" : undefined}>{i18n.t("members")}</Link> : null}
+            {actor && operationalManagementNavigationStatus(capabilities.state) === "Available" ? <Link className="header-link header-link--operations" href="/operations" aria-current={activePath === "/operations" ? "page" : undefined}>{i18n.t("operations")}</Link> : null}
+  </>;
+
   return (
     <div className="identity-app" dir={i18n.dir}>
       <a className="skip-link" href="#main-content">{i18n.locale === "ar" ? "انتقل إلى المحتوى" : "Skip to content"}</a>
@@ -53,16 +68,14 @@ export const PresentationShell = ({
             {brandContent ?? <><span className="brand-mark" aria-hidden="true">Q</span><span>{i18n.t("brand")}</span></>}
           </Link>
           <div className="app-header__actions">
-            {actor ? <Link className="header-link" href="/catalog">{i18n.t("catalog")}</Link> : null}
-            {actor ? <Link className="header-link" href="/catalog/reference-data">{i18n.locale === "ar" ? "البيانات المرجعية" : "Reference data"}</Link> : null}
-            {actor?.role === "Owner" ? <Link className="header-link" href="/members">{i18n.t("members")}</Link> : null}
-            {actor && operationalManagementNavigationStatus(capabilities.state) === "Available" ? <Link className="header-link header-link--operations" href="/operations">{i18n.t("operations")}</Link> : null}
+            {navigationLabel ? <nav className="catalog-header-navigation" aria-label={navigationLabel}>{navigation}</nav> : navigation}
             {actor ? <span className="actor-name">{actor.displayName}</span> : null}
+            {languageControl ? <>{headerControls}{languageControl}</> : <>
             <button className="button button--quiet button--small" type="button" onClick={() => i18n.setLocale(i18n.locale === "ar" ? "en" : "ar")}>
               {i18n.t("language")}
             </button>
-            {headerControls}
-            {actor ? <button className="button button--quiet button--small" type="button" disabled={logoutSubmitting} aria-busy={logoutSubmitting} onClick={logout}>{i18n.t("signOut")}</button> : null}
+            {headerControls}</>}
+            {actor ? <button className="button button--quiet button--small header-sign-out" type="button" disabled={logoutSubmitting} aria-busy={logoutSubmitting} onClick={logout}>{i18n.t("signOut")}</button> : null}
           </div>
         </div>
       </header>
