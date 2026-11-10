@@ -1,3 +1,4 @@
+import {parseSpecificationFilterInput,parseCatalogBrandIds} from "../domain/catalog-specification-filters";
 import {
   CATALOG_PRESENTATION_CONDITIONS,
   CATALOG_PRESENTATION_DEVICE_CLASSES,
@@ -14,6 +15,9 @@ import {
 } from "./catalog-presentation.types";
 
 export interface CatalogQueryState {
+  readonly searchMode?: "structured";
+  readonly specificationFilters?: string;
+  readonly brandIds?: string;
   readonly q: string;
   readonly branchId?: string;
   readonly departmentId?: string;
@@ -34,7 +38,7 @@ export interface CatalogQueryState {
 }
 
 export type CatalogQueryStateResult = { readonly ok: true; readonly value: CatalogQueryState } | { readonly ok: false };
-const keys = new Set(["q", "branchId", "departmentId", "categoryId", "productTypeId", "brandId", "deviceClass", "condition", "supplyStatusId", "lifecycle", "listing", "stock", "minRetailPrice", "maxRetailPrice", "retailCurrency", "sort", "cursor"]);
+const keys = new Set(["searchMode","specificationFilters","brandIds","q", "branchId", "departmentId", "categoryId", "productTypeId", "brandId", "deviceClass", "condition", "supplyStatusId", "lifecycle", "listing", "stock", "minRetailPrice", "maxRetailPrice", "retailCurrency", "sort", "cursor"]);
 const has = <T extends readonly string[]>(values: T, value: string | undefined): value is T[number] => value !== undefined && values.includes(value as T[number]);
 const identifier = (value: string | undefined): string | undefined => value === undefined || value === "" ? undefined : value === value.trim() && value.length <= 160 && !/[\u0000-\u001f\u007f]/u.test(value) ? value : (() => { throw new Error("InvalidIdentifier"); })();
 const money = (value: string | undefined): string | undefined => value === undefined || value === "" ? undefined : /^(0|[1-9][0-9]{0,15})$/u.test(value) && BigInt(value) <= BigInt("9007199254740991") ? value : (() => { throw new Error("InvalidMoney"); })();
@@ -46,13 +50,21 @@ export const normalizeCatalogPresentationSearch = (value: string): string | null
 
 export const parseCatalogQueryState = (input: URLSearchParams): CatalogQueryStateResult => {
   try {
+    if(input.toString().length>4000)return {ok:false};
     for (const key of input.keys()) if (!keys.has(key) || input.getAll(key).length !== 1) return { ok: false };
     const raw = (key: string) => input.get(key) ?? undefined;
+    if(raw("searchMode")!==undefined && raw("searchMode")!=="ordinary" && raw("searchMode")!=="structured")return {ok:false};
+    const structured=raw("searchMode")==="structured";
     const q = normalizeCatalogPresentationSearch(raw("q") ?? "");
     if (q === null) return { ok: false };
+    const specificationFilters=parseSpecificationFilterInput(raw("specificationFilters"));
+    const brandIds=parseCatalogBrandIds(raw("brandIds"));
+    if(raw("brandIds")!==undefined && raw("brandId")!==undefined)return {ok:false};
+    if(specificationFilters.length && !identifier(raw("productTypeId")))return {ok:false};
     const branchId = identifier(raw("branchId"));
     const lifecycleRaw = raw("lifecycle") ?? "Published";
-    const sortRaw = raw("sort") ?? (q ? "relevance" : "newest");
+    const sortRaw = raw("sort") ?? (q && !structured ? "relevance" : "newest");
+    if(structured && sortRaw==="relevance")return {ok:false};
     if (!has(CATALOG_PRESENTATION_LIFECYCLES, lifecycleRaw) || !has(CATALOG_PRESENTATION_SORTS, sortRaw) || (!q && sortRaw === "relevance")) return { ok: false };
     const deviceClassRaw = raw("deviceClass"), conditionRaw = raw("condition"), listingRaw = raw("listing"), stockRaw = raw("stock");
     if ((deviceClassRaw && !has(CATALOG_PRESENTATION_DEVICE_CLASSES, deviceClassRaw)) || (conditionRaw && !has(CATALOG_PRESENTATION_CONDITIONS, conditionRaw)) || (listingRaw && !has(CATALOG_PRESENTATION_LISTING_FILTERS, listingRaw)) || (stockRaw && !has(CATALOG_PRESENTATION_STOCK_FILTERS, stockRaw))) return { ok: false };
@@ -66,6 +78,9 @@ export const parseCatalogQueryState = (input: URLSearchParams): CatalogQueryStat
     if (cursor !== undefined && !/^[A-Za-z0-9_-]{1,2048}$/u.test(cursor)) return { ok: false };
     return { ok: true, value: Object.freeze({
       q,
+      ...(structured?{searchMode:"structured" as const}:{}),
+      ...(specificationFilters.length ? {specificationFilters:JSON.stringify(specificationFilters)}:{}),
+      ...(brandIds.length ? {brandIds:JSON.stringify(brandIds)}:{}),
       ...(branchId ? { branchId } : {}),
       ...(identifier(raw("departmentId")) ? { departmentId: identifier(raw("departmentId")) } : {}),
       ...(identifier(raw("categoryId")) ? { categoryId: identifier(raw("categoryId")) } : {}),
@@ -89,10 +104,12 @@ export const parseCatalogQueryState = (input: URLSearchParams): CatalogQueryStat
 export const catalogQuerySearchParams = (state: CatalogQueryState): URLSearchParams => {
   const output = new URLSearchParams();
   const add = (key: string, value: string | undefined) => { if (value !== undefined && value !== "") output.set(key, value); };
+  add("searchMode",state.searchMode);
+  add("specificationFilters",state.specificationFilters); add("brandIds",state.brandIds);
   add("q", state.q); add("branchId", state.branchId); add("departmentId", state.departmentId); add("categoryId", state.categoryId); add("productTypeId", state.productTypeId); add("brandId", state.brandId); add("deviceClass", state.deviceClass); add("condition", state.condition); add("supplyStatusId", state.supplyStatusId);
   if (state.lifecycle !== "Published") add("lifecycle", state.lifecycle);
   add("listing", state.listing); add("stock", state.stock); add("minRetailPrice", state.minRetailPrice); add("maxRetailPrice", state.maxRetailPrice); add("retailCurrency", state.retailCurrency);
-  if (state.sort !== (state.q ? "relevance" : "newest")) add("sort", state.sort);
+  if (state.sort !== (state.q && !state.searchMode ? "relevance" : "newest")) add("sort", state.sort);
   add("cursor", state.cursor);
   return output;
 };
@@ -100,6 +117,7 @@ export const catalogQuerySearchParams = (state: CatalogQueryState): URLSearchPar
 export const updateCatalogQueryState = (state: CatalogQueryState, patch: Partial<CatalogQueryState>): CatalogQueryState => {
   const cursorOnly = Object.keys(patch).every((key) => key === "cursor");
   const next = { ...state, ...patch };
+  if(Object.hasOwn(patch,"productTypeId") && patch.productTypeId!==state.productTypeId)delete next.specificationFilters;
   if (!next.branchId) { delete next.listing; delete next.stock; }
   if (!cursorOnly) delete next.cursor;
   return Object.freeze(next);

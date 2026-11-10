@@ -1,3 +1,8 @@
+import type { CatalogSpecificationGroupProjection, CatalogSpecificationPresentationProfile } from "../domain/catalog-specification-presentation";
+import {interpretCatalogSearch} from "./interpret-catalog-search";
+import type {StructuredInterpretation} from "../domain/catalog-structured-search";
+import {parseSpecificationFilterInput,parseCatalogBrandIds,resolveTypedSpecificationFilters} from "../domain/catalog-specification-filters";
+import { projectCatalogSpecifications } from "./project-catalog-specifications";
 import type { TrustedActorContext } from "../../../../shared/auth/trusted-actor-context";
 import type { ProductMediaReaderPort } from "../../media/ports/product-media-reader.port";
 import type { PermissionCode } from "../../../identity/domain/permission";
@@ -30,6 +35,9 @@ import type { CatalogQueryRepository } from "../ports/catalog-query-repository.p
 import { catalogQueryFailure, catalogQuerySuccess, type CatalogQueryResult } from "./catalog-query-results";
 
 export interface CatalogSearchInput {
+  readonly searchMode?: string;
+  readonly specificationFilters?: string;
+  readonly brandIds?: string;
   readonly q?: string; readonly branchId?: string; readonly departmentId?: string; readonly categoryId?: string;
   readonly productTypeId?: string; readonly brandId?: string; readonly deviceClass?: string; readonly condition?: string;
   readonly supplyStatusId?: string; readonly lifecycle?: string; readonly listing?: string; readonly stock?: string;
@@ -66,14 +74,17 @@ interface ProductView {
   readonly branchId?: string;
   readonly createdAt: string; readonly updatedAt: string; readonly classification: CatalogProductProjection["classification"];
   readonly mainMedia: MediaView | null; readonly listingStatus: CatalogProductProjection["listingStatus"];
+  readonly modelName?: string;
+  readonly cardSpecifications?: CatalogProductDetailsProjection["specifications"];
   readonly availability?: "InStock" | "OutOfStock";
   readonly inventory?: { readonly available: string; readonly onHand: string; readonly reserved: string; readonly damaged: string };
   readonly retail?: MoneyView | null; readonly wholesale?: MoneyView | null; readonly referenceCost?: MoneyView | null;
 }
-export interface CatalogSearchView { readonly items: readonly ProductView[]; readonly nextCursor: string | null }
+export interface CatalogSearchView { readonly structuredInterpretation?: import("../domain/catalog-structured-search").StructuredInterpretation; readonly items: readonly ProductView[]; readonly nextCursor: string | null }
 export interface CatalogDetailsView extends ProductView {
   readonly media: readonly MediaView[];
   readonly specifications: CatalogProductDetailsProjection["specifications"];
+  readonly specificationGroups?: readonly CatalogSpecificationGroupProjection[];
   readonly capabilities: { readonly directSharePriceModes: readonly SharePriceMode[] };
 }
 export interface CatalogMediaFile { readonly bytes: Uint8Array; readonly contentType: "image/webp" }
@@ -121,6 +132,8 @@ const normalize = (input: CatalogSearchInput, visibility: CatalogQueryVisibility
     const searchText = normalizeCatalogSearchText(input.q);
     const branchId = validateCatalogId(input.branchId) ?? null;
     const departmentId = validateCatalogId(input.departmentId), categoryId = validateCatalogId(input.categoryId), productTypeId = validateCatalogId(input.productTypeId);
+    const brandIds = parseCatalogBrandIds(input.brandIds);
+    if(input.brandId !== undefined && input.brandIds !== undefined)return null;
     const brandId = validateCatalogId(input.brandId), supplyStatusId = validateCatalogId(input.supplyStatusId);
     const lifecycle = input.lifecycle ?? "Published"; if (!isCatalogLifecycle(lifecycle)) return null;
     const sort = input.sort ?? (searchText ? "relevance" : "newest"); if (!isCatalogSort(sort)) return null;
@@ -136,19 +149,32 @@ const normalize = (input: CatalogSearchInput, visibility: CatalogQueryVisibility
     if ((retailCurrency !== undefined && !/^[A-Z]{3}$/u.test(retailCurrency)) || (priceOperation && (!visibility.retail || !retailCurrency))) return null;
     if ((input.listing !== undefined || input.stock !== undefined) && !branchId) return null;
     const limit = input.limit ?? CATALOG_PAGE_SIZE_DEFAULT; if (!Number.isInteger(limit) || limit < 1 || limit > CATALOG_PAGE_SIZE_MAX) return null;
-    return { searchText, branchId, sort, limit, filters: Object.freeze({ departmentId, categoryId, productTypeId, brandId, deviceClass: input.deviceClass, condition: input.condition, supplyStatusId, lifecycle, listing: branchId ? input.listing ?? "Listed" : undefined, stock: input.stock, minRetailPrice, maxRetailPrice, retailCurrency }) };
+    return { searchText, branchId, sort, limit, filters: Object.freeze({ departmentId, categoryId, productTypeId, brandId, ...(brandIds.length ? {brandIds}:{}), deviceClass: input.deviceClass, condition: input.condition, supplyStatusId, lifecycle, listing: branchId ? input.listing ?? "Listed" : undefined, stock: input.stock, minRetailPrice, maxRetailPrice, retailCurrency }) };
   } catch { return null; }
 };
 
 export class SearchCatalogProductsUseCase {
-  constructor(private readonly repository: CatalogQueryRepository) {}
+  constructor(private readonly repository: CatalogQueryRepository, private readonly specificationProfiles: readonly CatalogSpecificationPresentationProfile[] = []) {}
   async execute(command: { readonly context: TrustedActorContext; readonly input: CatalogSearchInput }): Promise<CatalogQueryResult<CatalogSearchView>> {
     if (!can(command.context, "catalog.products.view")) return catalogQueryFailure("Forbidden");
-    const actorVisibility = visibilityOf(command.context), normalized = normalize(command.input, actorVisibility); if (!normalized) return invalid();
+    let input=command.input;
+    let structuredInterpretation:StructuredInterpretation|undefined;
+    if(input.searchMode!==undefined && input.searchMode!=="ordinary" && input.searchMode!=="structured")return invalid();
+    if(input.searchMode==="structured"){try{if(input.sort==="relevance")return invalid();const interpreted=await interpretCatalogSearch(input,command.context,this.repository,this.specificationProfiles);input=interpreted.input;structuredInterpretation=interpreted.interpretation;}catch{return invalid();}}
+    const actorVisibility = visibilityOf(command.context), normalized = normalize(input, actorVisibility); if (!normalized) return invalid();
     const visibility = Object.freeze({ ...actorVisibility, availability: actorVisibility.availability && normalized.branchId !== null, quantity: actorVisibility.quantity && normalized.branchId !== null });
-    const shape = { searchText: normalized.searchText, branchId: normalized.branchId, filters: normalized.filters, sort: normalized.sort, visibility } as const;
+    try {
+      const criteria=parseSpecificationFilterInput(input.specificationFilters);
+      if(criteria.length && !normalized.filters.productTypeId)return invalid();
+      const allowed=this.specificationProfiles.find(p=>p.workspaceId===command.context.workspaceId && p.productTypeId===normalized.filters.productTypeId)?.fields.filter(f=>f.filterable===true).map(f=>f.specificationDefinitionId) ?? [];
+      const definitions=criteria.length ? await this.repository.getSpecificationFilterDefinitions(command.context.workspaceId,normalized.filters.productTypeId!,allowed) : [];
+      const filters=resolveTypedSpecificationFilters(criteria,definitions);
+      if(filters.length)normalized.filters=Object.freeze({...normalized.filters,specificationFilters:filters});
+      for(const brandId of normalized.filters.brandIds ?? [])if(!await this.repository.hierarchyIsValid(command.context.workspaceId,{brandId}))return invalid();
+    } catch { return invalid(); }
+    const shape = { ...(structuredInterpretation?{structuredQuery:normalizeCatalogSearchText(command.input.q)}:{}), searchText: normalized.searchText, branchId: normalized.branchId, filters: normalized.filters, sort: normalized.sort, visibility } as const;
     const fingerprint = catalogQueryFingerprint(shape); let cursor = null;
-    if (command.input.cursor) { try { cursor = decodeCatalogCursor(command.input.cursor, normalized.sort, fingerprint); } catch { return catalogQueryFailure("InvalidCursor"); } }
+    if (input.cursor) { try { cursor = decodeCatalogCursor(input.cursor, normalized.sort, fingerprint); } catch { return catalogQueryFailure("InvalidCursor"); } }
     if (normalized.branchId && !inScope(command.context, normalized.branchId)) return catalogQueryFailure("BranchNotFound");
     if (normalized.filters.lifecycle !== "Published" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("Forbidden");
     if (normalized.filters.listing && normalized.filters.listing !== "Listed" && !can(command.context, "catalog.products.edit")) return catalogQueryFailure("Forbidden");
@@ -158,7 +184,16 @@ export class SearchCatalogProductsUseCase {
     const { lifecycle, ...repositoryFilters } = normalized.filters;
     const rows = await this.repository.search({ workspaceId: command.context.workspaceId, searchText: shape.searchText, branchId: shape.branchId, filters: repositoryFilters, lifecycleScope: Object.freeze({ type: "Exact", lifecycle }), sort: shape.sort, visibility: shape.visibility, cursor, limit: normalized.limit + 1 });
     const page = rows.slice(0, normalized.limit), last = page.at(-1);
-    return catalogQuerySuccess(Object.freeze({ items: Object.freeze(page.map((row) => productView(row.product, visibility, normalized.branchId))), nextCursor: rows.length > normalized.limit && last ? encodeCatalogCursor(normalized.sort, fingerprint, last.cursor) : null }));
+    const selectedIds = page.filter(({ product }) => this.specificationProfiles.some((profile) => profile.workspaceId === command.context.workspaceId && profile.productTypeId === product.classification.productType?.id)).map(({ product }) => product.productId);
+    const specificationContexts = selectedIds.length ? await this.repository.getSpecificationPresentation(command.context.workspaceId, selectedIds) : [];
+    const contexts = new Map(specificationContexts.map((context) => [context.productId, context]));
+    const items = page.map(({ product }) => {
+      const context = contexts.get(product.productId);
+      const presentation = context && context.productTypeId === product.classification.productType?.id
+        ? projectCatalogSpecifications({ workspaceId: command.context.workspaceId, productTypeId: context.productTypeId, specifications: context.specifications, definitions: context.definitions, profiles: this.specificationProfiles }) : null;
+      return Object.freeze({ ...productView(product, visibility, normalized.branchId), ...(presentation ? { cardSpecifications: presentation.cardSpecifications, ...(presentation.modelName ? {modelName:presentation.modelName}: {}) } : {}) });
+    });
+    return catalogQuerySuccess(Object.freeze({ ...(structuredInterpretation?{structuredInterpretation}:{}), items: Object.freeze(items), nextCursor: rows.length > normalized.limit && last ? encodeCatalogCursor(normalized.sort, fingerprint, last.cursor) : null }));
   }
 }
 
@@ -208,7 +243,7 @@ export class SearchOperationalProductsUseCase {
 }
 
 export class GetCatalogProductDetailsUseCase {
-  constructor(private readonly repository: CatalogQueryRepository) {}
+  constructor(private readonly repository: CatalogQueryRepository, private readonly specificationProfiles: readonly CatalogSpecificationPresentationProfile[] = []) {}
   async execute(command: { readonly context: TrustedActorContext; readonly productId: string; readonly branchId?: string }): Promise<CatalogQueryResult<CatalogDetailsView>> {
     if (!can(command.context, "catalog.products.view")) return catalogQueryFailure("Forbidden");
     let productId: string | undefined, branchId: string | null; try { productId = validateCatalogId(command.productId); branchId = validateCatalogId(command.branchId) ?? null; } catch { return invalid(); }
@@ -222,23 +257,45 @@ export class GetCatalogProductDetailsUseCase {
     const directSharePriceModes: SharePriceMode[] = [];
     if (shareEligible && can(command.context, "pricing.view")) directSharePriceModes.push("Retail");
     if (shareEligible && can(command.context, "pricing.wholesale.view")) directSharePriceModes.push("Wholesale");
+    const hasProfile = this.specificationProfiles.some((profile) => profile.workspaceId === command.context.workspaceId && profile.productTypeId === product.classification.productType?.id);
+    const specificationContext = hasProfile ? (await this.repository.getSpecificationPresentation(command.context.workspaceId, [product.productId]))[0] : undefined;
+    const presentation = specificationContext && specificationContext.productTypeId === product.classification.productType?.id
+      ? projectCatalogSpecifications({ workspaceId: command.context.workspaceId, productTypeId: specificationContext.productTypeId, specifications: product.specifications, definitions: specificationContext.definitions, profiles: this.specificationProfiles }) : null;
     return catalogQuerySuccess(Object.freeze({
       ...productView(product, visibility, branchId, true),
       media: Object.freeze(product.media.map((item) => media(product.productId, item)!)),
-      specifications: product.specifications,
+      specifications: presentation?.specifications ?? product.specifications,
+      ...(presentation ? { cardSpecifications: presentation.cardSpecifications, specificationGroups: presentation.specificationGroups, ...(presentation.modelName ? {modelName:presentation.modelName}: {}) } : {}),
       capabilities: Object.freeze({ directSharePriceModes: Object.freeze(directSharePriceModes) }),
     }));
   }
 }
 
 export class GetCatalogFilterOptionsUseCase {
-  constructor(private readonly repository: CatalogQueryRepository) {}
-  async execute(command: { readonly context: TrustedActorContext }) {
+  constructor(private readonly repository: CatalogQueryRepository, private readonly specificationProfiles: readonly CatalogSpecificationPresentationProfile[] = []) {}
+  async execute(command: { readonly context: TrustedActorContext; readonly input?: CatalogSearchInput }) {
     if (!can(command.context, "catalog.products.view")) return catalogQueryFailure("Forbidden");
+    if(command.input?.searchMode!==undefined && command.input.searchMode!=="ordinary")return invalid();
+    const normalized=normalize(command.input ?? {},visibilityOf(command.context));
+    if(!normalized)return invalid();
+    const visibility=Object.freeze({...visibilityOf(command.context),availability:visibilityOf(command.context).availability && normalized.branchId!==null,quantity:visibilityOf(command.context).quantity && normalized.branchId!==null});
+    if(normalized.branchId && !inScope(command.context,normalized.branchId))return catalogQueryFailure("BranchNotFound");
+    if(normalized.filters.lifecycle!=="Published" && !can(command.context,"catalog.products.edit"))return catalogQueryFailure("Forbidden");
+    if(normalized.filters.listing && normalized.filters.listing!=="Listed" && !can(command.context,"catalog.products.edit"))return catalogQueryFailure("Forbidden");
+    if(normalized.filters.stock && !visibility.availability)return catalogQueryFailure("Forbidden");
+    if(normalized.branchId && !await this.repository.branchExists(command.context.workspaceId,normalized.branchId))return catalogQueryFailure("BranchNotFound");
+    if(!await this.repository.hierarchyIsValid(command.context.workspaceId,normalized.filters))return invalid();
+    for(const brandId of normalized.filters.brandIds ?? [])if(!await this.repository.hierarchyIsValid(command.context.workspaceId,{brandId}))return invalid();
+    const allowed=this.specificationProfiles.find(p=>p.workspaceId===command.context.workspaceId && p.productTypeId===normalized.filters.productTypeId)?.fields.filter(f=>f.filterable===true).map(f=>f.specificationDefinitionId) ?? [];
+    const definitions=normalized.filters.productTypeId ? await this.repository.getSpecificationFilterDefinitions(command.context.workspaceId,normalized.filters.productTypeId,allowed) : [];
+    try {const input=parseSpecificationFilterInput(command.input?.specificationFilters);if(input.length && !normalized.filters.productTypeId)return invalid();resolveTypedSpecificationFilters(input,definitions);}catch{return invalid();}
+    const {lifecycle,...filters}=normalized.filters;
+    const specificationFilters=definitions.length ? await this.repository.getSpecificationFilterValues({workspaceId:command.context.workspaceId,searchText:normalized.searchText,branchId:normalized.branchId,filters,lifecycleScope:{type:"Exact",lifecycle},sort:normalized.sort,cursor:null,limit:1,visibility},definitions) : [];
     const allowedBranchIds = command.context.branchScope.type === "AllBranches" ? null : command.context.branchScope.branchIds;
     const options = await this.repository.getFilterOptions(command.context.workspaceId, allowedBranchIds);
     return catalogQuerySuccess(Object.freeze({
       ...options,
+      ...(command.input ? {specificationFilters:Object.freeze(specificationFilters)} : {}),
       capabilities: Object.freeze({
         lifecycles: Object.freeze(can(command.context, "catalog.products.edit") ? ["Published", "Draft", "Archived"] as const : ["Published"] as const),
         listingFilters: Object.freeze(can(command.context, "catalog.products.edit") ? ["Listed", "Unlisted", "NotConfigured", "Any"] as const : ["Listed"] as const),

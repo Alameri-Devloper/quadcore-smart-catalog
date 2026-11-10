@@ -3,8 +3,8 @@ import type { Locale } from "../../../identity/presentation/identity-presentatio
 const messages = {
   moneyDisplayUnsupported: { en: "Amount cannot be displayed safely for this currency.", ar: "لا يمكن عرض المبلغ بأمان لهذه العملة." },
   eyebrow: { en: "Sales catalog", ar: "كتالوج المبيعات" },
-  catalogTitle: { en: "Catalog", ar: "الكتالوج" },
-  catalogDescription: { en: "Find products, review current Branch context, and prepare an approved customer share.", ar: "ابحث عن المنتجات وراجع سياق الفرع وجهّز مشاركة معتمدة للعميل." },
+  catalogTitle: { en: "Sales catalog", ar: "كتالوج المبيعات" },
+  catalogDescription: { en: "Browse authorized products in your current Workspace and Branch.", ar: "تصفح المنتجات المصرح بها ضمن مساحة العمل وسياق الفرع الحالي." },
   search: { en: "Search products", ar: "البحث عن المنتجات" },
   searchHint: { en: "Product name, code, brand, category, or product type", ar: "اسم المنتج أو رمزه أو علامته أو فئته أو نوعه" },
   searchAction: { en: "Search", ar: "بحث" },
@@ -80,6 +80,7 @@ const messages = {
   reserved: { en: "Reserved", ar: "المحجوز" },
   damaged: { en: "Damaged", ar: "التالف" },
   specifications: { en: "Specifications", ar: "المواصفات" },
+  notSpecified: { en: "Not specified", ar: "غير محدد" },
   noSpecifications: { en: "No persisted specifications are available.", ar: "لا توجد مواصفات محفوظة متاحة." },
   media: { en: "Product media", ar: "وسائط المنتج" },
   details: { en: "Product details", ar: "تفاصيل المنتج" },

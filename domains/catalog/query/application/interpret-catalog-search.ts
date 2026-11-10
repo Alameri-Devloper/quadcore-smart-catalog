@@ -1,0 +1,23 @@
+import type {TrustedActorContext} from "../../../../shared/auth/trusted-actor-context";
+import {parseCatalogBrandIds} from "../domain/catalog-specification-filters";
+import {validateCatalogId,isCatalogDeviceClass} from "../domain/catalog-query";
+import {selectStructuredProductType,interpretStructuredSearch,mergeStructuredConstraints,describeStructuredSearch} from "../domain/catalog-structured-search";
+import type {CatalogSpecificationPresentationProfile} from "../domain/catalog-specification-presentation";
+import type {CatalogQueryRepository} from "../ports/catalog-query-repository.port";
+import type {CatalogSearchInput} from "./catalog-query.use-cases";
+export const interpretCatalogSearch=async(input:CatalogSearchInput,context:TrustedActorContext,repository:CatalogQueryRepository,profiles:readonly CatalogSpecificationPresentationProfile[])=>{
+  const options=await repository.getFilterOptions(context.workspaceId,context.branchScope.type==="AllBranches"?null:context.branchScope.branchIds);
+  const scoped=profiles.filter(p=>p.workspaceId===context.workspaceId && options.productTypes.some(t=>t.id===p.productTypeId));
+  const selected=validateCatalogId(input.productTypeId);
+  const productTypeId=selectStructuredProductType(input.q??"",selected,scoped,options.productTypes);
+  const profile=scoped.find(p=>p.productTypeId===productTypeId);
+  const allowed=profile?.fields.filter(f=>f.filterable===true).map(f=>f.specificationDefinitionId)??[];
+  const definitions=productTypeId ? await repository.getSpecificationFilterDefinitions(context.workspaceId,productTypeId,allowed) : [];
+  if(input.brandId!==undefined && input.brandIds!==undefined)throw new Error("ConflictingBrands");
+  const originalBrands=input.brandIds===undefined ? (input.brandId!==undefined?[validateCatalogId(input.brandId)!]:[]) : parseCatalogBrandIds(input.brandIds);
+  for(const id of originalBrands)if(!options.brands.some(b=>b.id===id))throw new Error("InvalidManualBrand");
+  if(input.deviceClass!==undefined&&!isCatalogDeviceClass(input.deviceClass))throw new Error("InvalidManualDeviceClass");
+  const parsed=interpretStructuredSearch({query:input.q??"",selectedProductTypeId:selected,profiles:scoped,productTypes:options.productTypes,brands:options.brands,definitions});
+  const merged=mergeStructuredConstraints(input,parsed,definitions);
+  return {input:{...input,...merged,q:"",sort:input.sort??"newest"},interpretation:describeStructuredSearch(parsed,definitions,options.productTypes,options.brands)};
+};

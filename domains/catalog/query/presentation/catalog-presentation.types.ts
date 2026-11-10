@@ -39,6 +39,8 @@ export interface CatalogProductCardView {
   readonly classification: CatalogClassificationView;
   readonly mainMedia: CatalogMediaView | null;
   readonly listingStatus: "Listed" | "Unlisted" | "NotConfigured";
+  readonly modelName?: string;
+  readonly cardSpecifications?: readonly CatalogSpecificationView[];
   readonly availability?: "InStock" | "OutOfStock";
   readonly inventory?: CatalogInventoryView;
   readonly retail?: CatalogMoneyView | null;
@@ -46,6 +48,7 @@ export interface CatalogProductCardView {
 }
 
 export interface CatalogSpecificationView {
+  readonly presentation?: { readonly format?: "generation"; readonly component?: Omit<CatalogSpecificationView, "presentation">; readonly separator?: " " | " — " };
   readonly specificationDefinitionId: string;
   readonly displayName: string;
   readonly valueType: "Text" | "Number" | "Boolean";
@@ -54,15 +57,23 @@ export interface CatalogSpecificationView {
   readonly sortOrder: number;
 }
 
+export interface CatalogSpecificationGroupView {
+  readonly id: string;
+  readonly label: { readonly en: string; readonly ar: string };
+  readonly specificationDefinitionIds: readonly string[];
+  readonly missingSpecifications: readonly Omit<CatalogSpecificationView, "value">[];
+}
 export interface CatalogProductDetailsView extends CatalogProductCardView {
   readonly media: readonly CatalogMediaView[];
   readonly specifications: readonly CatalogSpecificationView[];
+  readonly specificationGroups?: readonly CatalogSpecificationGroupView[];
   readonly referenceCost?: CatalogMoneyView | null;
   readonly capabilities: { readonly directSharePriceModes: readonly CatalogPresentationPriceMode[] };
 }
 
-export interface CatalogSearchView { readonly items: readonly CatalogProductCardView[]; readonly nextCursor: string | null }
+export interface CatalogSearchView { readonly structuredInterpretation?: import("../domain/catalog-structured-search").StructuredInterpretation; readonly items: readonly CatalogProductCardView[]; readonly nextCursor: string | null }
 export interface CatalogFilterOptionsView {
+  readonly specificationFilters?: readonly import("../domain/catalog-specification-filters").SpecificationFilterOption[];
   readonly departments: readonly CatalogFilterReferenceView[];
   readonly categories: readonly CatalogFilterReferenceView[];
   readonly productTypes: readonly CatalogFilterReferenceView[];

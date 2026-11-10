@@ -79,6 +79,8 @@ const product = (value: unknown): CatalogProductCardView => {
     classification: classification(item.classification),
     mainMedia: media(item.mainMedia, productId),
     listingStatus: listingStatus as CatalogProductCardView["listingStatus"],
+    ...(own(item, "modelName") ? {modelName:string(item.modelName)} : {}),
+    ...(own(item, "cardSpecifications") ? { cardSpecifications: cardSpecifications(item.cardSpecifications) } : {}),
     ...(own(item, "availability") ? { availability: member(["InStock", "OutOfStock"] as const, item.availability) } : {}),
     ...(own(item, "inventory") ? { inventory: inventory(item.inventory) } : {}),
     ...(own(item, "retail") ? { retail: money(item.retail) } : {}),
@@ -87,19 +89,68 @@ const product = (value: unknown): CatalogProductCardView => {
   return Object.freeze(output);
 };
 
-const specification = (value: unknown): CatalogSpecificationView => {
+const specification = (value: unknown, nested = false): CatalogSpecificationView => {
   const item = record(value), valueType = member(["Text", "Number", "Boolean"] as const, item.valueType);
   if ((valueType === "Boolean" && typeof item.value !== "boolean") || (valueType !== "Boolean" && typeof item.value !== "string")) throw new Error("InvalidResponse");
-  return Object.freeze({ specificationDefinitionId: string(item.specificationDefinitionId), displayName: string(item.displayName, true), valueType, unit: nullableString(item.unit), value: item.value as string | boolean, sortOrder: integer(item.sortOrder) });
+  const presentation = own(item,"presentation") ? record(item.presentation) : undefined;
+  if(nested && presentation) throw new Error("InvalidResponse");
+  const component = presentation && own(presentation,"component") ? specification(presentation.component,true) : undefined;
+  if(component && component.specificationDefinitionId===item.specificationDefinitionId) throw new Error("InvalidResponse");
+  if(presentation?.format !== undefined && (presentation.format!=="generation" || valueType!=="Number" || item.unit!==null)) throw new Error("InvalidResponse");
+  if(component && presentation?.separator!==" " && presentation?.separator!==" — ") throw new Error("InvalidResponse");
+  return Object.freeze({ ...(presentation ? {presentation:Object.freeze({...(component?{component,separator:presentation.separator as " " | " — "}:{}),...(presentation.format?{format:"generation" as const}:{})})}:{}), specificationDefinitionId: string(item.specificationDefinitionId), displayName: string(item.displayName, true), valueType, unit: nullableString(item.unit), value: item.value as string | boolean, sortOrder: integer(item.sortOrder) });
+};
+
+
+const cardSpecifications = (value: unknown): readonly CatalogSpecificationView[] => {
+  if (!Array.isArray(value) || value.length > 3) throw new Error("InvalidResponse");
+  const result = value.map((item) => specification(item));
+  if (new Set(result.map((item) => item.specificationDefinitionId)).size !== result.length || result.some((item) => typeof item.value === "string" && item.value.trim() === "")) throw new Error("InvalidResponse");
+  return Object.freeze(result);
+};
+
+const specificationGroups = (value: unknown, stored: readonly CatalogSpecificationView[]) => {
+  if (!Array.isArray(value)) throw new Error("InvalidResponse");
+  const storedIds = new Set(stored.map((item) => item.specificationDefinitionId));
+  const seen = new Set<string>(), groupIds = new Set<string>(), missingIds = new Set<string>();
+  let missingCount = 0;
+  const result = value.map((value) => {
+    const group = record(value), id = string(group.id), label = record(group.label);
+    if (groupIds.has(id) || !Array.isArray(group.specificationDefinitionIds) || !Array.isArray(group.missingSpecifications)) throw new Error("InvalidResponse");
+    groupIds.add(id);
+    const ids = group.specificationDefinitionIds.map((value) => {
+      const id = string(value);
+      if (!storedIds.has(id) || seen.has(id)) throw new Error("InvalidResponse");
+      seen.add(id); return id;
+    });
+    const missing = group.missingSpecifications.map((value) => {
+      const definition = record(value), id = string(definition.specificationDefinitionId);
+      if (storedIds.has(id) || missingIds.has(id) || ++missingCount > 4) throw new Error("InvalidResponse");
+      missingIds.add(id);
+      return Object.freeze({ specificationDefinitionId: id, displayName: string(definition.displayName, true), valueType: member(["Text", "Number", "Boolean"] as const, definition.valueType), unit: nullableString(definition.unit), sortOrder: integer(definition.sortOrder) });
+    });
+    return Object.freeze({ id, label: Object.freeze({ en: string(label.en), ar: string(label.ar) }), specificationDefinitionIds: Object.freeze(ids), missingSpecifications: Object.freeze(missing) });
+  });
+  if (storedIds.size !== stored.length || seen.size !== storedIds.size) throw new Error("InvalidResponse");
+  return Object.freeze(result);
 };
 
 const details = (value: unknown): CatalogProductDetailsView => {
   const item = record(value), base = product(item), capabilities = record(item.capabilities);
+  const stored = Object.freeze((Array.isArray(item.specifications) ? item.specifications : (() => { throw new Error("InvalidResponse"); })()).map((item) => specification(item)));
+  const byId = new Map(stored.map(s=>[s.specificationDefinitionId,s]));
+  const consumed = new Set<string>();
+  for(const s of stored)if(s.presentation?.component){
+    const c=s.presentation.component, actual=byId.get(c.specificationDefinitionId);
+    if(!actual || actual.presentation?.component || consumed.has(c.specificationDefinitionId) || actual.value!==c.value || actual.unit!==c.unit || actual.valueType!==c.valueType)throw new Error("InvalidResponse");
+    consumed.add(c.specificationDefinitionId);
+  }
   const modes = (Array.isArray(capabilities.directSharePriceModes) ? capabilities.directSharePriceModes : []).map((mode) => member(["Retail", "Wholesale"] as const, mode));
   return Object.freeze({
     ...base,
     media: Object.freeze((Array.isArray(item.media) ? item.media : (() => { throw new Error("InvalidResponse"); })()).map((entry) => media(entry, base.productId)!)),
-    specifications: Object.freeze((Array.isArray(item.specifications) ? item.specifications : (() => { throw new Error("InvalidResponse"); })()).map(specification)),
+    specifications: stored,
+    ...(own(item, "specificationGroups") ? { specificationGroups: specificationGroups(item.specificationGroups, stored) } : {}),
     ...(own(item, "referenceCost") ? { referenceCost: money(item.referenceCost) } : {}),
     capabilities: Object.freeze({ directSharePriceModes: Object.freeze([...new Set(modes)]) }),
   });
@@ -114,6 +165,7 @@ const filters = (value: unknown): CatalogFilterOptionsView => {
   return Object.freeze({
     departments: references("departments"), categories: references("categories"), productTypes: references("productTypes"), brands: references("brands"), supplyStatuses: references("supplyStatuses"), branches: references("branches"),
     enabledConditions: Object.freeze(conditions), enabledCurrencies: Object.freeze(currencies),
+    ...(item.specificationFilters === undefined ? {} : {specificationFilters:Object.freeze((Array.isArray(item.specificationFilters) ? item.specificationFilters : (()=>{throw new Error("InvalidResponse");})()).map((v:unknown)=>{const d=record(v),valueType=member(["Text","Number","Boolean"] as const,d.valueType);if(!Array.isArray(d.values)||d.values.length>100||typeof d.truncated!=="boolean"||d.values.some(v=>valueType==="Boolean"?typeof v!=="boolean":typeof v!=="string"))throw new Error("InvalidResponse");return Object.freeze({specificationDefinitionId:string(d.specificationDefinitionId),displayName:string(d.displayName),valueType,unit:nullableString(d.unit),sortOrder:integer(d.sortOrder),values:Object.freeze(d.values as (string|boolean)[]),truncated:d.truncated});}))}),
     capabilities: Object.freeze({
       lifecycles: Object.freeze((Array.isArray(capabilities.lifecycles) ? capabilities.lifecycles : []).map((entry) => member(CATALOG_PRESENTATION_LIFECYCLES, entry))),
       listingFilters: Object.freeze((Array.isArray(capabilities.listingFilters) ? capabilities.listingFilters : []).map((entry) => member(CATALOG_PRESENTATION_LISTING_FILTERS, entry))),
@@ -121,6 +173,17 @@ const filters = (value: unknown): CatalogFilterOptionsView => {
       retailPrice: capabilities.retailPrice,
     }),
   });
+};
+
+const structuredInterpretation=(value:unknown):import("../domain/catalog-structured-search").StructuredInterpretation=>{
+  const input=record(value);
+  if(!Array.isArray(input.rows)||input.rows.length>11)throw new Error("InvalidResponse");
+  const rows=input.rows.map((value:unknown)=>{
+    const row=record(value),kind=member(["ProductType","Brand","DeviceClass","Specification"] as const,row.kind);
+    if(!Array.isArray(row.values)||row.values.length<1||row.values.length>10||row.values.some(v=>typeof v!=="string"&&typeof v!=="boolean"))throw new Error("InvalidResponse");
+    return Object.freeze({kind,...(kind==="Specification"?{displayName:string(row.displayName)}:{}),values:Object.freeze(row.values as (string|boolean)[]),unit:nullableString(row.unit)});
+  });
+  return Object.freeze({...(input.productTypeId===undefined?{}:{productTypeId:string(input.productTypeId)}),rows:Object.freeze(rows)});
 };
 
 const failureKind = (status: number): CatalogApiFailureKind => status === 401 ? "Unauthorized" : status === 403 ? "Forbidden" : status === 404 ? "NotFound" : status === 400 ? "InvalidQuery" : status >= 500 || status === 0 ? "Unavailable" : "UnexpectedError";
@@ -146,7 +209,7 @@ export class CatalogQueryApiClient {
     return this.get(`/api/catalog/products${params.size ? `?${params}` : ""}`, (value) => {
       const item = record(value);
       if (!Array.isArray(item.items) || (item.nextCursor !== null && typeof item.nextCursor !== "string")) throw new Error("InvalidResponse");
-      return Object.freeze({ items: Object.freeze(item.items.map(product)), nextCursor: item.nextCursor as string | null });
+      return Object.freeze({ ...(item.structuredInterpretation===undefined?{}:{structuredInterpretation:structuredInterpretation(item.structuredInterpretation)}), items: Object.freeze(item.items.map(product)), nextCursor: item.nextCursor as string | null });
     });
   }
 
@@ -155,7 +218,7 @@ export class CatalogQueryApiClient {
     return this.get(`/api/catalog/products/${encodeURIComponent(productId)}${params.size ? `?${params}` : ""}`, details);
   }
 
-  filterOptions(): Promise<CatalogApiResult<CatalogFilterOptionsView>> { return this.get("/api/catalog/filters", filters); }
+  filterOptions(state?:CatalogQueryState): Promise<CatalogApiResult<CatalogFilterOptionsView>> { const params=state ? catalogQuerySearchParams({...state,cursor:undefined}) : new URLSearchParams(); return this.get("/api/catalog/filters"+(params.size?"?"+params:""), filters); }
 }
 
 export const catalogQueryApiClient = new CatalogQueryApiClient();
