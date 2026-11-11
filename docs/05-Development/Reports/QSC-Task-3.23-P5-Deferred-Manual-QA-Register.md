@@ -1,5 +1,20 @@
 # P5 deferred manual QA register | سجل الاختبار اليدوي المؤجل
 
+## Formal conditional owner acceptance / القبول المشروط الرسمي — 2026-11-11
+
+The owner has now approved **P5_CONDITIONALLY_ACCEPTED_FOR_INTEGRATION** for the verified P5 Management API/UI and its Staff integration. See [the formal acceptance record](QSC-Task-3.23-P5-Conditional-Owner-Acceptance-20261111.md). This later decision supersedes earlier pending-acceptance/recommendation wording as the current P5 disposition. Earlier dated records remain historical evidence.
+
+اعتمد المالك الآن **P5_CONDITIONALLY_ACCEPTED_FOR_INTEGRATION** لإدارة P5 وتكاملها المتحقق مع Staff. يوثق سجل القبول الرسمي القرار اللاحق، ويحل وضع القبول المشروط محل صياغة الانتظار أو التوصية السابقة بوصفه الحالة الحالية، مع حفظ النصوص المؤرخة السابقة تاريخياً.
+
+BROWSER-034 retains **RISK_ACCEPTED_WITH_LIMITATIONS** and underlying **INCONCLUSIVE / NOT PASSED** evidence. The five deferred cases and their original scheduling remain pending. Existing security/release gates remain in force. PR merging requires separate owner authorization. Production deployment, anonymous public-sharing activation and P6 work remain unauthorized by this decision.
+
+يبقى قرار مخاطر 034 ونتيجة اختبارها الأصلية كما هما، وتبقى الحالات الخمس المؤجلة معلقة وفق جدولتها الأصلية. تستمر بوابات الأمن والإصدار القائمة، ويحتاج الدمج تفويضاً منفصلاً. لا يصرح القرار بالنشر الإنتاجي أو تفعيل المشاركة العامة المجهولة أو أعمال P6.
+
+The earlier sections below are preserved as the historical record preceding this formal acceptance.
+
+تحفظ الأقسام السابقة أدناه بوصفها السجل التاريخي الذي سبق القبول الرسمي.
+
+
 2026-10-22 — owner-approved scheduling decision. Official status: **P5_IMPLEMENTED_PENDING_ACCEPTANCE**.
 
 قرار المالك يؤجل موعد التنفيذ فقط. الحالة الرسمية **P5_IMPLEMENTED_PENDING_ACCEPTANCE**.
@@ -7,6 +22,21 @@
 The immutable historical browser register remains 34 BROWSER_PASS / 6 PENDING. This scheduling overlay marks five cases DEFERRED_FOR_FINAL_SYSTEM_VERIFICATION, never PASS or cancelled. BROWSER-034 stays ACTIVE_INVESTIGATION / PENDING. Earlier failures and partial evidence remain preserved.
 
 يبقى سجل المتصفح التاريخي 34 نجاحاً و6 حالات معلقة. هذه طبقة تتبع لجدولة خمس حالات مؤجلة، دون نجاح أو إلغاء، وتبقى 034 قيد التحقيق ومعلقة.
+
+## Current risk disposition / قرار المخاطر الحالي — 2026-11-11
+
+BROWSER-034 — **RISK_ACCEPTED_WITH_LIMITATIONS**, following the owner's conditional decision and verification of existing controls on candidate 5ce004270259dcde2df5ff3346bafb766fe8c54c. Underlying native-write test evidence remains **INCONCLUSIVE / NOT PASSED**. The historical 34 BROWSER_PASS / 6 PENDING register and the five deferred cases are preserved.
+
+أُضيف قرار المالك المشروط لقبول مخاطر BROWSER-034 ضمن الحدود بعد التحقق من الضوابط القائمة. تبقى نتيجة اختبار الكتابة الأصلية **غير حاسمة ولم تنجح**، ويحفظ السجل التاريخي 34 نجاحاً و6 حالات معلقة والحالات الخمس المؤجلة.
+
+See [the risk decision record](QSC-Task-3.23-P5-BROWSER-034-Conditional-Risk-Acceptance-20261111.md) for verified controls, residual clipboard limitation, public-serving boundaries and follow-up conditions. This separate disposition leaves P5_IMPLEMENTED_PENDING_ACCEPTANCE and the existing merge/release gates in force. Formal conditional acceptance, merge and deployment require their separate decisions.
+
+راجع سجل القرار للضوابط والخطر المتبقي وحدود العرض العام وشروط المراجعة اللاحقة. تبقى P5 معلقة وتستمر بوابات الدمج والإصدار، ويحتاج القبول المشروط الرسمي والدمج والنشر قراراتها المنفصلة.
+
+The dated 2026-10-22 scheduling text below is retained as historical evidence.
+
+يحفظ النص المؤرخ في 2026-10-22 أدناه بوصفه دليلاً تاريخياً.
+
 
 ## Governance and milestone | الحوكمة والموعد
 
