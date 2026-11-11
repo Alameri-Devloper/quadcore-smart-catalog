@@ -1,5 +1,20 @@
 # P5 deferred manual QA register | سجل الاختبار اليدوي المؤجل
 
+## Limited P5 integration governance exception / استثناء حوكمة تكامل P5 المحدود — 2026-11-11
+
+**P5_INTEGRATION_GOVERNANCE_EXCEPTION_APPROVED.** The owner's [explicit exception](QSC-Task-3.23-P5-Integration-Governance-Exception-20261111.md) applies only to Task 3.23-P5, PR #65 and feature/public-product-share-planning. After publication, successful safety checks and separate owner merge authorization, the five deferred cases cease to block this integration-branch merge only.
+
+اعتمد المالك الاستثناء الصريح لمرحلة P5 وطلب السحب #65 وفرع التكامل المحدد فقط. بعد نشر القرار ونجاح فحوص السلامة وتفويض الدمج المنفصل، لا تمنع الحالات الخمس المؤجلة دمج التكامل المحدد وحده.
+
+BROWSER-026/029/030/033/036 remain DEFERRED and mandatory before production release. BROWSER-034 retains RISK_ACCEPTED_WITH_LIMITATIONS and INCONCLUSIVE / NOT PASSED, with its accepted scope unchanged. The exception does not authorize main integration, public-sharing activation, production deployment, security/lifecycle-policy changes, P6 recovery or P7 implementation. Push and merge each require separate explicit confirmation.
+
+تبقى الحالات الخمس مؤجلة وإلزامية قبل إصدار الإنتاج. يحفظ قرار مخاطر 034 ونتيجة اختبارها ونطاق قبولها. لا يصرح الاستثناء بالدمج في main أو تفعيل المشاركة العامة أو النشر أو تغيير سياسات الأمن ودورة الحياة أو استئناف P6 أو تنفيذ P7. يحتاج كل من Push وMerge تأكيداً صريحاً منفصلاً.
+
+This dated exception supersedes the earlier general merge prohibition only for that narrow deferred-case integration gate. Earlier decisions and test evidence below are retained as history. All remaining release/security obligations continue.
+
+يتجاوز الاستثناء المؤرخ حظر الدمج السابق في بوابة المؤجلات الخاصة بهذا التكامل المحدود فقط، مع حفظ القرارات والأدلة السابقة تاريخياً واستمرار سائر التزامات الإصدار والأمن.
+
+
 ## Formal conditional owner acceptance / القبول المشروط الرسمي — 2026-11-11
 
 The owner has now approved **P5_CONDITIONALLY_ACCEPTED_FOR_INTEGRATION** for the verified P5 Management API/UI and its Staff integration. See [the formal acceptance record](QSC-Task-3.23-P5-Conditional-Owner-Acceptance-20261111.md). This later decision supersedes earlier pending-acceptance/recommendation wording as the current P5 disposition. Earlier dated records remain historical evidence.
