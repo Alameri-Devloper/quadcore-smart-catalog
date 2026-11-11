@@ -19,9 +19,12 @@ const sslConfiguration = (): PoolConfig["ssl"] => {
 
 export const createPlatformDatabaseConnection = (
   connectionString = process.env.DATABASE_URL,
+  options: Readonly<{ connectionTimeoutMillis?: number }> = {},
 ): PlatformDatabaseConnection => {
   if (!connectionString) throw new Error("DATABASE_URL is required.");
-  const pool = new Pool({ connectionString, ssl: sslConfiguration() });
+  if (options.connectionTimeoutMillis !== undefined && (!Number.isSafeInteger(options.connectionTimeoutMillis)
+    || options.connectionTimeoutMillis < 1 || options.connectionTimeoutMillis > 30_000)) throw new Error("DatabaseConnectionTimeoutInvalid");
+  const pool = new Pool({ connectionString, ssl: sslConfiguration(), ...options });
   return {
     database: drizzle(pool, { schema }),
     close: () => pool.end(),

@@ -2,6 +2,8 @@ import type { TrustedActorContext } from "../../../shared/auth/trusted-actor-con
 import { operationalManagementAuthorizationPolicy as policy } from "./operational-management-authorization-policy";
 
 export interface OperationalManagementCapabilitiesView {
+  readonly publicSharing: { readonly canRetrieve: boolean; readonly canRevoke: boolean };
+
   readonly branches: {
     readonly canView: boolean;
     readonly canManage: boolean;
@@ -35,6 +37,10 @@ export interface OperationalManagementCapabilitiesView {
 export class GetOperationalManagementCapabilitiesUseCase {
   execute(context: TrustedActorContext): OperationalManagementCapabilitiesView {
     return Object.freeze({
+      publicSharing: Object.freeze({
+        canRetrieve: ["catalog.sharing.publicLink.manage", "catalog.products.view", "pricing.view"].every((code) => context.permissions.includes(code)),
+        canRevoke: context.permissions.includes("catalog.sharing.publicLink.manage"),
+      }),
       branches: Object.freeze({
         canView: policy.canViewBranches(context),
         canManage: policy.canManageBranches(context),

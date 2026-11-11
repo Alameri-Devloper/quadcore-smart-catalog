@@ -164,6 +164,7 @@ const permissionNames: Readonly<Record<string, Translation>> = {
   "catalog.productMedia.retry": { ar: "إعادة محاولة وسائط المنتج", en: "Retry product media" },
   "catalog.productMedia.reconciliation.manage": { ar: "إدارة مطابقة وسائط المنتج", en: "Manage media reconciliation" },
   "catalog.productMedia.source.replace": { ar: "استبدال مصدر وسائط المنتج", en: "Replace media source" },
+  "catalog.sharing.publicLink.manage": { ar: "إدارة روابط مشاركة المنتج العامة", en: "Manage public product share links" },
   "catalog.sharing.create": { ar: "إنشاء مشاركة", en: "Create sharing" },
   "catalog.sharing.aiRecommendation.generate": { ar: "إنشاء توصية مشاركة ذكية", en: "Generate sharing recommendation" },
   "pricing.view": { ar: "عرض الأسعار", en: "View pricing" },
@@ -205,7 +206,9 @@ export const translate = (locale: Locale, key: string, replacements?: Readonly<R
 
 export const permissionTranslation = (locale: Locale, definition: PermissionDefinitionView) => ({
   name: permissionNames[definition.code]?.[locale] ?? definition.code,
-  description: definition.sensitive
+  description: definition.code === "catalog.sharing.publicLink.manage"
+    ? (locale === "ar" ? "إصدار ونسخ وإلغاء واستبدال روابط المنتج العامة ضمن نطاق الفروع المصرح به. يتطلب الإصدار والنسخ والاستبدال عرض المنتجات والأسعار." : "Issue, copy, revoke and replace public product links within authorized branches. Issue, copy and replace also require product and pricing view permissions.")
+    : definition.sensitive
     ? translate(locale, "sensitivePermissionHint")
     : locale === "ar" ? `يسمح باستخدام هذه الإمكانية ضمن وحدة ${definition.module}.` : `Allows this capability in the ${definition.module} module.`,
 });
