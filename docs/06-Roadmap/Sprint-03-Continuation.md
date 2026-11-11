@@ -1,5 +1,25 @@
 # Sprint 03 Continuation — Post-Task 3.19 | استمرار Sprint 03 بعد المهمة 3.19
 
+## P5 deferred QA scheduling — 2026-10-22 | جدولة اختبار P5 المؤجل
+
+**P5_IMPLEMENTED_PENDING_ACCEPTANCE / QA-DEFERRED / NOT INTEGRATED.** The owner authorized final engineering verification and an open PR into `feature/public-product-share-planning` after engineering gates pass. BROWSER-026/029/030/033/036 are deferred to final system verification, never PASS or cancelled; BROWSER-034 remains active/PENDING. Historical results remain 34 genuine browser PASS / 6 PENDING. The [deferred register](../05-Development/Reports/QSC-Task-3.23-P5-Deferred-Manual-QA-Register.md) preserves every original requirement, role, evidence and release gate.
+
+**P5 منفذة بانتظار القبول / اختبار مؤجل / غير مدمجة.** أجاز المالك التحقق الهندسي وطلب سحب مفتوح بعد نجاح بواباته. تؤجل خمس حالات للجدولة دون نجاح أو إلغاء، وتبقى 034 نشطة ومعلقة. يحفظ السجل الشروط والأدوار والأدلة وبوابات الإصدار.
+
+No merge while mandatory acceptance or security-policy gates remain unresolved. No production readiness, deployment, production migration or Task 3.23 completion. P6/P7 remain NOT STARTED and require separate execution authorization. Earlier dated checkpoints below are historical; technical architecture/contracts are unchanged.
+
+لا دمج مع بقاء بوابات القبول أو سياسة الأمن معلقة، ولا جاهزية أو نشر أو ترحيل إنتاجي أو إكمال للمهمة. لم تبدأ P6/P7 وتحتاجان تصريح تنفيذ منفصلاً. تحفظ نقاط التحقق السابقة كتاريخ دون تغيير العقود أو المعمارية.
+
+## P5 approved admission checkpoint — 2026-10-19 | نقطة تحقق سياسة قبول P5 المعتمدة
+
+**P5: IMPLEMENTED / ACCEPTANCE HOLD / NOT INTEGRATED.** The owner approved PostgreSQL management admission. The isolated candidate enforces separate approved operation budgets, atomic user/Workspace accounting, post-lock database time, bounded cleanup and fail-closed Revoke. Mounted management routes are locally operational only with valid policy/schema/session configuration; missing configuration fails closed. See the [current admission final report](../05-Development/Reports/QSC-Task-3.23-P5-Approved-Admission-Final-Report.md) and [approved policy](../05-Development/Public-Share-Management-Admission.md).
+
+**P5: منفذة / القبول معلق / غير مدمجة.** اعتمد المالك قبول الإدارة باستخدام PostgreSQL. يفرض المرشح المعزول ميزانيات العمليات والاحتساب الذري وتوقيت القاعدة بعد الأقفال والتنظيف المحدود والرفض الآمن للإلغاء. تعمل المسارات محلياً فقط بإعداد سياسة ومخطط وجلسة صالح، ويُرفض غياب الإعداد. يوضح التقرير الحالي الأدلة والبوابات المتبقية.
+
+Mandatory genuine built-Next.js browser/accessibility acceptance remains pending because Computer Use could not verify the exposed Edge URL. Automated built-server HTTP checks and source/unit/PostgreSQL evidence do not replace browser acceptance. Delivery/hosted CI/integration remain gated; no merge or production release. This supersedes earlier inactive-pending-policy execution wording only; approved technical contracts and historical P4 findings remain unchanged. P4 FORMALLY CLOSED; Task 3.23 IN PROGRESS; P6/P7 NOT STARTED; DurableCoverage UNCHECKED.
+
+يبقى قبول المتصفح الفعلي وإمكانية الوصول معلقاً لتعذر تحقق Computer Use من رابط Edge المتاح. لا تستبدل اختبارات HTTP الآلية أو المصدر والوحدة والقاعدة قبول المتصفح. تبقى بوابات التسليم وCI والتكامل معلقة دون دمج أو إصدار إنتاجي. تُحدّث هذه النقطة حالة التنفيذ السابقة فقط وتحفظ العقود ونتائج P4 التاريخية؛ المهمة قيد التنفيذ وP6/P7 لم تبدآ والتغطية UNCHECKED.
+
 ## Current P4 closure status — 2026-10-18 | حالة إغلاق P4 الحالية
 
 **P4: IMPLEMENTED, VERIFIED & INTEGRATED; PR #63: MERGED.** The approved integration baseline is `fbf02da1e4bed75763fc6cc247172a6ef5f82f79` on `feature/public-product-share-planning`. [Current Roadmap](Current-Roadmap.md) governs current delivery status; the [central closure evidence](../05-Development/Reports/QSC-Task-3.23-P4-Documentation-Reconciliation-and-CI-Assessment-Final-Report.md#p4-final-closure-2026-10-18) contains the detailed merge, CI, security and review-provenance record.
@@ -51,7 +71,7 @@ Governing references: [ADR-013](../01-Architecture/ADR/ADR-013-Public-Product-Sh
 | Task 3.23-P2 — Visibility Transport and Editor / نقل ومحرر الرؤية | COMPLETE / MERGED through PR #59 at `057880a359687c60537afc39108f32d9ddd63e1b` / مكتملة ومدمجة عبر PR #59 عند خط الأساس المذكور |
 | Task 3.23-P3 — Crypto and Runtime / التشفير والتشغيل | Planning COMPLETE / MERGED through #60; implementation COMPLETE / MERGED through #61 at `74c8a9ca878638dd8ed340633a9c5306b1235a23`; independent/security/remediation/CI gates PASS / التخطيط والتنفيذ مكتملان ومدمجان ونجحت المراجعات وCI |
 | Task 3.23-P4 — Grant Persistence and Lifecycle / حفظ ودورة التفويض | REMEDIATION_CANDIDATE; Planning COMPLETE / MERGED; PlanningReview PASS; PlanningGate PASS; remediation candidate; independent implementation/security/concurrency RE-REVIEW REQUIRED / التخطيط مكتمل ومراجع؛ نجحت المراجعة وبوابة التخطيط؛ P4 مرشح معالجة؛ يلزم إعادة المراجعة المستقلة |
-| Task 3.23-P5 — Management API/UI / API وواجهة الإدارة | GATED / NOT STARTED / مشروطة ولم تبدأ |
+| Task 3.23-P5 — Management API/UI / API وواجهة الإدارة | IMPLEMENTED / ACCEPTANCE HOLD / منفذة والقبول معلق |
 | Task 3.23-P6 — Public Resolution and Media Transport / الحل العام ونقل الصورة | GATED / NOT STARTED / مشروطة ولم تبدأ |
 | Task 3.23-P7 — SSR Presentation and Release Integration / العرض وتكامل الإصدار | GATED / NOT STARTED / مشروطة ولم تبدأ |
 

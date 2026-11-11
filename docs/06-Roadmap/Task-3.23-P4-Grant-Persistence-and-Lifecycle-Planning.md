@@ -1,5 +1,15 @@
 # Task 3.23-P4 — Grant Persistence and Lifecycle Planning | تخطيط حفظ التفويض ودورة حياته
 
+## P5 approved admission checkpoint — 2026-10-19 | نقطة تحقق سياسة قبول P5 المعتمدة
+
+**P5: IMPLEMENTED / ACCEPTANCE HOLD / NOT INTEGRATED.** The owner approved PostgreSQL management admission. The isolated candidate enforces separate approved operation budgets, atomic user/Workspace accounting, post-lock database time, bounded cleanup and fail-closed Revoke. Mounted management routes are locally operational only with valid policy/schema/session configuration; missing configuration fails closed. See the [current admission final report](../05-Development/Reports/QSC-Task-3.23-P5-Approved-Admission-Final-Report.md) and [approved policy](../05-Development/Public-Share-Management-Admission.md).
+
+**P5: منفذة / القبول معلق / غير مدمجة.** اعتمد المالك قبول الإدارة باستخدام PostgreSQL. يفرض المرشح المعزول ميزانيات العمليات والاحتساب الذري وتوقيت القاعدة بعد الأقفال والتنظيف المحدود والرفض الآمن للإلغاء. تعمل المسارات محلياً فقط بإعداد سياسة ومخطط وجلسة صالح، ويُرفض غياب الإعداد. يوضح التقرير الحالي الأدلة والبوابات المتبقية.
+
+Mandatory genuine built-Next.js browser/accessibility acceptance remains pending because Computer Use could not verify the exposed Edge URL. Automated built-server HTTP checks and source/unit/PostgreSQL evidence do not replace browser acceptance. Delivery/hosted CI/integration remain gated; no merge or production release. This supersedes earlier inactive-pending-policy execution wording only; approved technical contracts and historical P4 findings remain unchanged. P4 FORMALLY CLOSED; Task 3.23 IN PROGRESS; P6/P7 NOT STARTED; DurableCoverage UNCHECKED.
+
+يبقى قبول المتصفح الفعلي وإمكانية الوصول معلقاً لتعذر تحقق Computer Use من رابط Edge المتاح. لا تستبدل اختبارات HTTP الآلية أو المصدر والوحدة والقاعدة قبول المتصفح. تبقى بوابات التسليم وCI والتكامل معلقة دون دمج أو إصدار إنتاجي. تُحدّث هذه النقطة حالة التنفيذ السابقة فقط وتحفظ العقود ونتائج P4 التاريخية؛ المهمة قيد التنفيذ وP6/P7 لم تبدآ والتغطية UNCHECKED.
+
 ## Final P4 closure and handoff — 2026-10-18 | إغلاق P4 النهائي وتسليم المرحلة
 
 **P4: IMPLEMENTED, VERIFIED & INTEGRATED; PR #63: MERGED** into `feature/public-product-share-planning` at `fbf02da1e4bed75763fc6cc247172a6ef5f82f79`. The [central closure evidence](../05-Development/Reports/QSC-Task-3.23-P4-Documentation-Reconciliation-and-CI-Assessment-Final-Report.md#p4-final-closure-2026-10-18) maps completion to this plan's schema, lifecycle, scoped authorization, transaction/CAS/audit, inspection, migration and real PostgreSQL/concurrency requirements. Accepted implementation/security/concurrency re-review used reconstructed fallback criteria and retained independent probes; the original standalone review remains unavailable, and no exact reproduction of its unavailable criteria is claimed.

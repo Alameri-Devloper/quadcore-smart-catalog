@@ -676,3 +676,22 @@ export const catalogPublicProductShareGrants = pgTable("catalog_public_product_s
     AND ${table.bearerIv} IS NULL AND ${table.bearerCiphertext} IS NULL AND ${table.bearerAuthTag} IS NULL
   )`),
 ]);
+
+export const catalogPublicShareManagementAdmission = pgTable("catalog_public_share_management_admission", {
+  workspaceId: text("workspace_id").notNull(),
+  operation: text("operation").notNull(),
+  scopeKind: text("scope_kind").notNull(),
+  subjectId: text("subject_id").notNull(),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true, mode: "string" }).notNull(),
+  usedCount: bigint("used_count", { mode: "number" }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+}, (table) => [
+  primaryKey({ name: "catalog_share_management_admission_pk", columns: [table.workspaceId, table.operation, table.scopeKind, table.subjectId] }),
+  foreignKey({ name: "catalog_share_management_admission_workspace_fk", columns: [table.workspaceId], foreignColumns: [workspaces.workspaceId] }).onDelete("restrict"),
+  index("catalog_share_management_admission_expiry_idx").on(table.expiresAt),
+  check("catalog_share_management_admission_operation", sql`${table.operation} IN ('Issue','Copy','Replace','Revoke')`),
+  check("catalog_share_management_admission_scope", sql`${table.scopeKind} IN ('Workspace','User') AND (${table.scopeKind} <> 'Workspace' OR ${table.subjectId} = ${table.workspaceId})`),
+  check("catalog_share_management_admission_nonblank", sql`btrim(${table.workspaceId}) <> '' AND btrim(${table.subjectId}) <> ''`),
+  check("catalog_share_management_admission_count", sql`${table.usedCount} BETWEEN 0 AND 9007199254740991`),
+  check("catalog_share_management_admission_time", sql`isfinite(${table.windowStartedAt}) AND isfinite(${table.expiresAt}) AND ${table.expiresAt} >= ${table.windowStartedAt} + interval '960 seconds'`),
+]);

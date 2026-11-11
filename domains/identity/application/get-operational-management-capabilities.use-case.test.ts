@@ -114,3 +114,10 @@ describe("GetOperationalManagementCapabilitiesUseCase", () => {
   });
 
 });
+
+it("Public Share hints do not grant URL retrieval to manage-only Staff or Direct Share authority", () => {
+  const execute = (permissions: readonly string[]) => new GetOperationalManagementCapabilitiesUseCase().execute(context(permissions));
+  assert.deepEqual(execute(["catalog.sharing.publicLink.manage"]).publicSharing, { canRetrieve: false, canRevoke: true });
+  assert.deepEqual(execute(["catalog.sharing.create", "catalog.products.view", "pricing.view"]).publicSharing, { canRetrieve: false, canRevoke: false });
+  assert.deepEqual(execute(["catalog.sharing.publicLink.manage", "catalog.products.view", "pricing.view"]).publicSharing, { canRetrieve: true, canRevoke: true });
+});

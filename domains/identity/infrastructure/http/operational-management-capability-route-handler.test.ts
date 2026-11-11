@@ -61,6 +61,7 @@ describe("Operational management capability HTTP route", () => {
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "private, no-store");
     assert.deepEqual(await response.json(), {
+      publicSharing: { canRetrieve: false, canRevoke: false },
       branches: { canView: false, canManage: false },
       listing: { canManage: true },
       inventory: {

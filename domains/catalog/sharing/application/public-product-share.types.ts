@@ -20,3 +20,7 @@ export type PublicProductShareError =
 export type PublicProductShareResult<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: PublicProductShareError };
+
+/** Admission extends management orchestration, not the P4 lifecycle contract. */
+export type PublicShareManagementResult<T> = PublicProductShareResult<T>
+  | { readonly ok: false; readonly error: "AdmissionDenied"; readonly retryAfterSeconds: number };
