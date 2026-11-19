@@ -4,7 +4,7 @@ import type { PublicShareKeyVersionInspectionPort, PublicShareKeyVersionInspecti
 import { exactPublicShareVersion } from "./public-share-persistence";
 
 export class PostgreSqlPublicShareKeyVersionInspector implements PublicShareKeyVersionInspectionPort {
-  constructor(private readonly database: PlatformDatabase) {}
+  constructor(private readonly database: Pick<PlatformDatabase, "execute">) {}
   async inspect(): Promise<PublicShareKeyVersionInspectionResult> {
     let result;
     try {

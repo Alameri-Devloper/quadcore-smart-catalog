@@ -39,9 +39,9 @@ export const publicSharePostgresFixture = (name: string) => {
         ('p4-workspace','p4-category','p4-department','p4-category','Category','Active',0,1,'2026-01-01','2026-01-01');
       INSERT INTO catalog_product_types(workspace_id,product_type_id,category_id,code,display_name,status,sort_order,version,created_at,updated_at) VALUES
         ('p4-workspace','p4-type','p4-category','p4-type','Type','Active',0,1,'2026-01-01','2026-01-01');
-      INSERT INTO catalog_products(workspace_id,product_id,catalog_id,lifecycle_state,revision,created_at,updated_at,has_classification,category_id,product_type_id,has_commercial_details,product_name,retail_price_minor,retail_price_currency) VALUES
-        ('p4-workspace','p4-product','p4-catalog','Published',1,'2026-01-01','2026-01-01',true,'p4-category','p4-type',true,'منتج Product',0,'USD'),
-        ('p4-foreign','p4-foreign-product','p4-catalog','Published',1,'2026-01-01','2026-01-01',false,NULL,NULL,true,'Foreign',1,'USD');
+      INSERT INTO catalog_products(workspace_id,product_id,catalog_id,lifecycle_state,revision,created_at,updated_at,has_classification,category_id,product_type_id,has_commercial_details,product_name,retail_price_minor,retail_price_currency,wholesale_price_minor,wholesale_price_currency) VALUES
+        ('p4-workspace','p4-product','p4-catalog','Published',1,'2026-01-01','2026-01-01',true,'p4-category','p4-type',true,'منتج Product',0,'USD',73129,'USD'),
+        ('p4-foreign','p4-foreign-product','p4-catalog','Published',1,'2026-01-01','2026-01-01',false,NULL,NULL,true,'Foreign',1,'USD',86421,'USD');
       INSERT INTO catalog_branch_product_listings(workspace_id,branch_id,product_id,listing_status,revision,created_at,updated_at) VALUES
         ('p4-workspace','p4-branch','p4-product','Listed',1,'2026-01-01','2026-01-01'),
         ('p4-workspace','p4-branch-2','p4-product','Listed',1,'2026-01-01','2026-01-01');

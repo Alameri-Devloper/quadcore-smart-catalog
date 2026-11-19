@@ -1,5 +1,19 @@
 # Current Roadmap | خارطة الطريق الحالية
 
+## P6 controlled integration alignment — 2026-11-11 | مواءمة تكامل P6 المضبوطة
+
+Staff Catalog is OWNER ACCEPTED — INTEGRATED. P5 is P5_CONDITIONALLY_ACCEPTED_AND_INTEGRATED through PR #65 at 056730487343315455ea1cc2f0377769e264d88a; PR #66 remains merged. P6 remains P6_ENGINEERING_CANDIDATE — Acceptance HOLD. P7 remains NOT STARTED.
+
+حُفظ قبول Staff وتكاملها ودمج P5 المشروط. تبقى P6 مرشحاً هندسياً والقبول HOLD، وP7 غير مبدوءة.
+
+The owner authorized only engineering alignment on the current integration tree, from the manifest-verified protected P6 candidate at 25e50dadc8097a8f1663253917847487e17bd497. Existing public resolution, Retail-only projection, admission, snapshots and gated native media are retained. The [approved admission package](../05-Development/Reports/QSC-Task-3.23-P6-Public-Admission-Decision-Package.md), [local operations](../05-Development/Reports/QSC-Task-3.23-P6-Local-QA-Admission-Operations.md) and implementation-contract section 25.1 retain I4-B/D-V1.
+
+أجاز المالك مواءمة هندسية فقط من المصدر المحمي المطابق للـmanifest. حُفظت حدود الحل العام وإسقاط Retail والقبول واللقطات والميديا المغلقة وعقد I4-B/D-V1.
+
+No QA recovery, pending/lease reconciliation, database/fixture change, public activation, P6 acceptance or deployment is authorized. Historical performance failures and the interrupted 900-second campaign remain unresolved in the original evidence. Earlier P5/P6 status checkpoints below retain their historical meaning.
+
+لا يصرح القرار بتعافي QA أو مصالحة pending والحجوزات أو تغيير البيانات أو تفعيل الخدمة أو قبول P6 أو النشر. تبقى إخفاقات الأداء والحملة الموقوفة موثقة وغير محلولة، وتحفظ الحالات السابقة كتاريخ.
+
 ## Limited P5 integration governance exception / استثناء حوكمة تكامل P5 المحدود — 2026-11-11
 
 **P5_INTEGRATION_GOVERNANCE_EXCEPTION_APPROVED.** The owner's [explicit exception](../05-Development/Reports/QSC-Task-3.23-P5-Integration-Governance-Exception-20261111.md) applies only to Task 3.23-P5, PR #65 and feature/public-product-share-planning. After publication, successful safety checks and separate owner merge authorization, the five deferred cases cease to block this integration-branch merge only.

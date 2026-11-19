@@ -1,5 +1,14 @@
 # Public Product Share Link V1 — Implementation Contract | عقد تنفيذ رابط مشاركة المنتج العام V1
 
+## P6 integration alignment checkpoint — 2026-11-11 | نقطة مواءمة تكامل P6
+
+P5 is P5_CONDITIONALLY_ACCEPTED_AND_INTEGRATED at 056730487343315455ea1cc2f0377769e264d88a. Staff Catalog remains owner-accepted and integrated. P6 remains P6_ENGINEERING_CANDIDATE — Acceptance HOLD; P7 remains NOT STARTED. This review imports the already approved P6 recovery wording without changing its algorithms, thresholds or public activation gates. Earlier dated delivery statements below are historical.
+
+دُمجت P5 بقبول مشروط عند الرأس المحدد، وحُفظ قبول Staff. تبقى P6 مرشحاً هندسياً والقبول معلقاً، وP7 غير مبدوءة. تنقل هذه المراجعة نص التعافي المعتمد سابقاً دون تغيير الخوارزميات أو الحدود أو بوابات التفعيل، وتحفظ حالات التسليم السابقة كتاريخ.
+
+> Owner decision 2026-10-24: **I4-B/D-V1 APPROVED for Public Admission recovery only; LOCAL-QA qualification authorized; P6_ENGINEERING_CANDIDATE — Acceptance HOLD.** See the dated recovery alignment below. Earlier strict universal-closure assurances are historical within this scope only.
+> قرار المالك2026-10-24: اعتماد I4-B/D-V1 لتعافي القبول العام فقط وتأهيل QA المحلي، مع بقاء القبول HOLD. العبارات الصارمة السابقة تاريخية ضمن هذا النطاق فقط.
+
 ## P5 approved admission checkpoint — 2026-10-19 | نقطة تحقق سياسة قبول P5 المعتمدة
 
 **P5: IMPLEMENTED / ACCEPTANCE HOLD / NOT INTEGRATED.** The owner approved PostgreSQL management admission. The isolated candidate enforces separate approved operation budgets, atomic user/Workspace accounting, post-lock database time, bounded cleanup and fail-closed Revoke. Mounted management routes are locally operational only with valid policy/schema/session configuration; missing configuration fails closed. See the [current admission final report](../05-Development/Reports/QSC-Task-3.23-P5-Approved-Admission-Final-Report.md) and [approved policy](../05-Development/Public-Share-Management-Admission.md).
@@ -439,6 +448,31 @@ Separate global/source/page/media budgets and media byte/concurrent-read protect
 
 منفذ القبول المحدد صغير ويعيد السماح أو المنع أو التعذر، بمدخل فئة المسار ومصدر مؤقت موثوق ومعرفات داخلية اختيارية بعد الحل. يسبق فحص المصدر التحليل والبحث وتفحص Application الميزانيات المحلولة قبل التسليم. تملك Infrastructure والوكيل العدادات، ولا محول سماح افتراضي. تفصل الميزانيات والبايتات والتزامن، بلا رموز أو تتبع أو بصمات أو ملفات ارتباط. العناوين المحولة موثوقة خلف وكلاء محددين فقط. الحدود والخلفية والانتهاء إعداد نشر، والمحلي ليس ضماناً موزعاً. العطل يغلق الوصول بـ503.
 
+### 25.1 Owner-approved I4-B/D-V1 — 2026-10-24 | قرار التعافي المعتمد
+
+Owner decision 2026-10-24: **I4-B/D-V1 APPROVED for Public Admission recovery only; LOCAL-QA qualification authorized; P6_ENGINEERING_CANDIDATE — Acceptance HOLD.**
+
+Section25's limiter outage means an affected admission path returnsUnavailable/503 with no fallback Allow. It does not require a reachable peer to reject its own definitive admission solely because another client cannot connect. Known unresolved shared intent or untrusted shared history still requires shared closure. This explicit owner-approved interpretation replaces strict universal closure only within Public Admission recovery.
+
+> **I4-B/D-V1 — Authoritative-state admission, operation fail-closed.**
+> An admission operation that observes timeout, transport ambiguity, invalid result, expired decision deadline or unmet authoritative prerequisites returns Unavailable; it shall never subsequently become Allowed or authorize new native I/O. A later read reporting a successful commit shall not upgrade, retry, refund or replay that original operation.
+>
+> A distinct later request, with a new operation ID on an adapter not quarantined by existing rules (including the same still-healthy adapter after an Acquire/Intent failure), another healthy adapter, or an independently started OS process, may receive Allowed only after its own normal admission completes definitively within the existing deadline, against the same validated authoritative PostgreSQL primary, unchanged approved policy/source-key context and complete trusted accounting history, under the existing session/policy/bucket serialization guards. It shall retain all existing charges and reservations. A cache, health probe, stage label, ready=true, missing pending marker or successful SQL row alone is insufficient.
+>
+> A durable unresolved pending operation, shared closed/invalid policy, or untrusted/unreconciled shared accounting shall prevent new admission for its entire shared authority domain. In this V1 schema that domain is the whole admission namespace, not an individually chosen tenant, source or grant. A client unable to establish its own authoritative prerequisites returns Unavailable; its connection failure alone does not establish that every reachable peer's primary state is corrupt.
+>
+> Preserve exact lease ownership. Unknown live-read reservations remain until actual native work completes or authorized recovery proves termination. Normal exact release after actual completion may commit despite a lost release ACK; do not recreate a deleted lease or refund byte/request credits. No automatic lease expiry, counter reset, recovery-driven clearing of a prior unresolved operation, original-operation replay or reopening is authorized. Existing successful normal Finalize may clear its OWN pending marker.
+>
+> Already definitively authorized work may finish under the existing snapshot semantics, retaining its reservation until actual completion. Source admission never substitutes for tenant/grant/visibility/current-main checks. Previously authorized Page text may remain available when later MediaRead fails, as the current contract permits.
+>
+> Shared-state distrust requires coordinated closed maintenance and verified reconciliation before reopening. This contract does not promise instantaneous propagation of an unreachable worker's private knowledge, proof of peer receipt, or automatic recovery from split brain/restore. If those stronger guarantees are required, this option is not sufficient.
+
+**التعديل المقترح I4-B/D-V1:** تعيد العملية الغامضة Unavailable نهائياً ولا تتحول لاحقاً إلى Allowed بقراءة نتيجة الالتزام. يجوز لطلب مستقل جديد بمعرف عملية جديد على محول غير معزول، بما فيه المحول نفسه بعد Acquire/Intent غير الموجب للعزل، السماح فقط بعد اكتمال قبوله الطبيعي المؤكد ضمن المهلة، على أولية PostgreSQL موثوقة واحدة وسياسة ومفتاح مصدر متطابقين وتاريخ محاسبة كامل، تحت الأقفال القائمة. لا تكفي مرحلة الخطأ أو فحص صحة أو غياب العلامة. تمنع النية المعلقة أو السياسة المشتركة المغلقة/غير الصحيحة أو الحسابات غير الموثوقة القبول على كامل مساحة القبول المشتركة. عطل اتصال عامل وحده لا يثبت فساد حالة العامل الآخر. تبقى الخصومات وحجوزات القراءات المجهولة؛ لا انتهاء آلي أو استرداد أو إعادة تشغيل للعملية الأصلية أو محو تعافٍ لنية سابقة غير محسومة؛ يبقى مسح النية الخاصة بالعملية في Finalize الطبيعي مسموحاً. يُسمح بالتحرير الدقيق بعد انتهاء القراءة الفعلية حتى لو فُقد إقراره. يبقى العمل المصرح به سابقاً وفق دلالات اللقطة. يتطلب عدم الثقة المشتركة صيانة مغلقة ومصالحة موثقة، دون وعد بانتشار لحظي لمعلومة لا يمكن إبلاغها.
+
+Before ANY independent Allowed: (E1) trusted single-primary/history/deployment preconditions, correct namespace/schema/migration lineage and reviewed code; (E2) canonical trusted source and matching approved policy/fingerprint; (E3) its own Prepare succeeds under session advisory + policy lock, checking ready and absence of prior pending, then durably establishes its own intent; (E4) its own atomic Decide validates that intent and lock ownership, all applicable budgets/ordered locks/capacity, and exact owner-bound lease for MediaRead; (E5) its own successful definitive Finalize response plus result/deadline validation; (E6) tenant/grant/visibility/pricing/current-main snapshot checks before protected publication/read, with release capability for native I/O. E1 cannot be inferred from E3–E5: a restored database can present matching rows while missing earlier charges.
+
+تُفسر عبارة عطل المحدد في25 بإغلاق مسار القبول المتعذر دون سماح بديل؛ لا تمنع بذاتها قبولاً مستقلاً مؤكداً لعامل متصل. يبقى الإغلاق المشترك إلزامياً للنية المعلقة أو التاريخ غير الموثوق. شروط E1–E6 كاملة وملزمة ولا تُستبدل بفحص جاهزية أو غياب علامة.
+
 ## 26. Freshness, caching and security headers | الحداثة والتخزين والرؤوس
 
 All public HTML/media/error responses: `Cache-Control: private, no-store`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, `X-Content-Type-Options: nosniff`. Management successes/errors use private/no-store/no-referrer/nosniff. No static generation, ISR, cross-request authorization/projection memoization, cached fetch, service-worker/offline persistence, token prefetch, image optimizer, CDN/proxy reuse, or eligibility-bypassing 304. Refresh/direct open always resolves live; restored browser snapshots must not be treated as fresh authority. Verify back-forward behavior and require revalidation on pageshow restoration as a progressive enhancement where supported; no claim that headers erase received DOM/images.
@@ -542,3 +576,19 @@ Static bounded confirmation; no application, database or browser acceptance exec
 - [Package scripts](../../package.json): existing verification commands; future share integration paths need explicit inclusion.
 
 تأكيد ساكن محدود فقط؛ لم تُشغّل اختبارات تطبيق أو قاعدة بيانات أو قبول متصفح في مهمة التوثيق. الأدلة أعلاه تسند الأسماء والحدود والطبقات الحالية ولا تجعل التوصيات تنفيذاً موجوداً.
+
+## Recovery contract alignment — owner-approved 2026-10-24 | مواءمة عقد التعافي المعتمد
+
+Owner decision 2026-10-24: **I4-B/D-V1 APPROVED for Public Admission recovery only; LOCAL-QA qualification authorized; P6_ENGINEERING_CANDIDATE — Acceptance HOLD.**
+
+The exact governing wording and E1–E6 are in implementation-contract section25.1 and the reviewed Recovery-Simplification-Decision-Proposal section2–3. The owner-approved attachment authorizes documentation and focused tests only. No algorithm/schema/port/composition, automatic recovery, dependency, threshold, production or acceptance change is authorized.
+
+Previous strict I4 universally forbade later Allow on any instance after a worker detected covered uncertainty until global proved recovery. New I4-B/D-V1 permits a DISTINCT operation to complete its OWN definitive guarded admission against trusted authoritative state, including on the same still-healthy adapter after non-sticky Acquire/Intent failure. Debit/Finalize quarantine stays. This supersedes the former strict guarantee for Prepare bootstrap and committed Finalize ACKloss, not just its label.
+
+I1/I2/I6/I10/I11 accounting/bounds/ownership/tenant/native-read/deadline/privacy remain. I3 uses own definitive normal admission under validated primary history. Formal R2 A-specific I5 epoch/membership, I7 epoch fencing and I8/I9 lifecycle/terminal-receipt machinery are not claimed implemented; existing shared policy/guard and closed maintenance apply. Previously authorized work may finish with its lease; reclamation requires actual completion or proven termination. No original-result upgrade/replay/refund, recovery-clearing of prior pending, unknown-live-lease expiry or quarantine bypass. Normal Finalize clears only its OWN marker.
+
+Known pending or closed/invalid SHARED state blocks the whole admission namespace, not a chosen tenant. Local inability to establish prerequisites returns503; it is not proof all reachable peers have corrupt state. E1 history/restore trust is not proved by readiness, SQL rows, a fresh UUID or normal guards. Untrusted history requires coordinated closed maintenance; instantaneous propagation of private/unreportable knowledge and automatic recovery are not guaranteed. Restore/OS-process/operator-restart/reopening qualification remains open.
+
+This is a dated contract decision, NOT a runtime fix, new PASS or performance resolution. Keep the previous strict-I4 owner decision, formal R2 DESIGN_BLOCKED report, MEDIUM finding and ACK reproduction as historical evidence. Its blanket-closure acceptance criterion is superseded only in this scope; do not erase or recast it as a repaired vulnerability. Focused tests must assess this approved contract. Existing p95>25ms and failed900s profiles remain FAIL; Nginx/VPS pending.
+
+النص الحاكم وشروط E1–E6 في25.1 من عقد التنفيذ والمقترح المراجع. يستبدل القرار ضمن تعافي القبول العام فقط حظر السماح الشامل بشرط قبول مستقل مؤكد على حالة مشتركة موثوقة. يبقى عزل محول Debit/Finalize، ويجوز طلب جديد على المحول السليم بعد Acquire/Intent. تبقى المحاسبة والحدود والملكية والعزل والقراءة والمهل والحجب، دون ادعاء تطبيق آليات العصر والعضوية والتسليم المقترحة سابقاً. تمنع النية المعلقة أو الحالة المشتركة المغلقة كامل مساحة القبول. لا تكفي إعادة محول أو معرف أو فحص صحة لإثبات التاريخ؛ ولا تحرير لحجز قراءة مجهولة أو إعادة محاولة صامتة أو ترقية العملية الأصلية. مسح النية الخاصة في Finalize الطبيعي محفوظ. تبقى الاستعادة والتعافي بعد إعادة المشغل والفتح وإثباتات النشر غير مؤهلة. القرار تعديل عقد مؤرخ لا إصلاح شيفرة أو نجاح اختبارات أو حل أداء؛ تُحفظ الأدلة والقرارات السابقة تاريخياً وتبقى HOLD وإخفاقات الحمل كما هي.
