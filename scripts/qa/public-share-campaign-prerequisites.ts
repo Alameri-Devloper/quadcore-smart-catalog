@@ -11,6 +11,23 @@ import { assertQaAdmissionEndpoint } from "../../domains/catalog/sharing/infrast
 import { assertTargetQaMode } from "./public-share-target-worker";
 
 const digest=(v:Buffer|string)=>createHash("sha256").update(v).digest("hex");
+export interface CampaignPricingRow {
+  readonly workspace_id:string; readonly product_id:string;
+  readonly retail_price_minor:string|null; readonly retail_price_currency:string|null;
+  readonly wholesale_price_minor:string|null; readonly wholesale_price_currency:string|null;
+}
+/** Synthetic fixture coverage only; never an application pricing decision. */
+export function assertCampaignPricingCoverage(rows:readonly CampaignPricingRow[],prefix:string) {
+  const expected=new Set(Array.from({length:5},(_,index)=>["text","image"].map(kind=>prefix+"-"+(index+1)+"/p6-campaign-"+kind)).flat());
+  if(rows.length!==expected.size)throw Error("CampaignPricingFixtureMismatch");
+  for(const row of rows){
+    const key=row.workspace_id+"/"+row.product_id;
+    if(!expected.delete(key)||row.retail_price_minor!=="0"||row.retail_price_currency!=="USD"
+      ||row.wholesale_price_minor!=="73129"||row.wholesale_price_currency!=="USD")throw Error("CampaignPricingFixtureMismatch");
+  }
+  if(expected.size!==0)throw Error("CampaignPricingFixtureMismatch");
+  return{products:rows.length,storedRetail:true,storedWholesale:true,distinctPrices:true} as const;
+}
 export interface CampaignFixturesInput {databaseUrl:string;primaryId:string;sourceFingerprint:string;directory:string;image:Buffer}
 export async function prepareCampaignFixtures(input:CampaignFixturesInput) {
   assertTargetQaMode();assertQaAdmissionEndpoint(input.databaseUrl);
@@ -26,6 +43,7 @@ export async function prepareCampaignFixtures(input:CampaignFixturesInput) {
   const fixture=publicSharePostgresFixture("qsc-p6-campaign-fixtures");
   try {
     const primary=(await pool.query("SELECT system_identifier::text AS id FROM pg_control_system()")).rows[0];if(primary.id!==input.primaryId)throw Error("CampaignPrimaryMismatch");
+    let pricing:ReturnType<typeof assertCampaignPricingCoverage>;
     await pool.query("BEGIN");
     try {
       const state=(await pool.query("SELECT ready,pending_operation IS NOT NULL AS pending,source_key_fingerprint,(SELECT count(*)::int FROM qsc_public_admission.leases) AS leases FROM qsc_public_admission.policy WHERE singleton FOR UPDATE")).rows[0];
@@ -55,6 +73,8 @@ export async function prepareCampaignFixtures(input:CampaignFixturesInput) {
         if(!images.length)await pool.query("INSERT INTO catalog_product_images(workspace_id,product_id,product_image_id,storage_key,position,is_main,checksum_sha256,mime_type,media_created_at,media_created_by)VALUES($1,$2,'campaign-main',$3,0,true,$4,'image/webp',clock_timestamp(),'synthetic-qa')",[workspaceId,productId,key,ownership.imageSha256]);
         else if(images.length!==1||images[0].storage_key!==key||images[0].checksum_sha256!==ownership.imageSha256||!images[0].is_main)throw Error("CampaignExistingImageMismatch");
       }
+      const prices=await pool.query<CampaignPricingRow>("SELECT workspace_id,product_id,retail_price_minor::text AS retail_price_minor,retail_price_currency,wholesale_price_minor::text AS wholesale_price_minor,wholesale_price_currency FROM catalog_products WHERE workspace_id LIKE $1 AND product_id IN ('p6-campaign-text','p6-campaign-image')",[ownership.prefix+"-%"]);
+      pricing=assertCampaignPricingCoverage(prices.rows,ownership.prefix);
       await pool.query("COMMIT");
     }catch{await pool.query("ROLLBACK");throw Error("CampaignFixturePreparationUnavailable");}
     const tokens:{text:string[];images:string[]}={text:[],images:[]};
@@ -68,7 +88,7 @@ export async function prepareCampaignFixtures(input:CampaignFixturesInput) {
     const textImages=Number((await pool.query("SELECT count(*) AS n FROM catalog_product_images WHERE workspace_id LIKE $1 AND product_id='p6-campaign-text'",[ownership.prefix+"-%"])).rows[0].n);if(textImages!==0)throw Error("CampaignTextHasImage");
     const privateFile=path.join(directory,"campaign-fixtures.private.json"),privateValue=JSON.stringify({ownership,tokens,mediaRoot:path.join(directory,"media")});
     if(fs.existsSync(privateFile)){if(fs.readFileSync(privateFile,"utf8")!==privateValue)throw Error("CampaignFixtureManifestMismatch");}else fs.writeFileSync(privateFile,privateValue,{flag:"wx",mode:0o600});
-    return{status:"PASS" as const,workspaces:5,textGrants:tokens.text.length,imageGrants:tokens.images.length,distinctGrants:20,textHasImages:false,imageBytes:input.image.length,ownership,privateManifestWritten:true};
+    return{status:"PASS" as const,workspaces:5,textGrants:tokens.text.length,imageGrants:tokens.images.length,distinctGrants:20,pricing,textHasImages:false,imageBytes:input.image.length,ownership,privateManifestWritten:true};
   }finally{await fixture.connection.close();await pool.end();if(prior===undefined)delete process.env.TEST_DATABASE_URL;else process.env.TEST_DATABASE_URL=prior;if(priorSsl===undefined)delete process.env.DATABASE_SSL;else process.env.DATABASE_SSL=priorSsl;}
 }
 

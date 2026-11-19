@@ -51,6 +51,27 @@ describe("P6 real PostgreSQL live anonymous resolution", { skip: !process.env.TE
     for (const field of ["workspaceId", "productId", "branchId", "grantId", "valueType", "storageRootKey", "wholesale", "referenceCost", "actorId"])
       assert.ok(!JSON.stringify(view).includes(field));
   });
+  it("keeps actual stored Wholesale prices private and independent of Retail", async () => {
+    const stored = async () => (await f.execute(sql`SELECT retail_price_minor::text AS retail,retail_price_currency AS retail_currency,
+      wholesale_price_minor::text AS wholesale,wholesale_price_currency AS wholesale_currency FROM catalog_products
+      WHERE workspace_id='p4-workspace' AND product_id='p4-product'`)).rows;
+    assert.deepEqual(await stored(), [{ retail:"0", retail_currency:"USD", wholesale:"73129", wholesale_currency:"USD" }]);
+    const token = await issue();
+    const verify = async () => {
+      const result = await resolver().resolvePage(token, "source"); assert.ok(result.ok);
+      assert.deepEqual(result.value.retail, {amount:"0.00",currency:"USD"});
+      for (const locale of ["en","ar"] as const) {
+        const view = publicShareView(result.value, token, locale); assert.ok(view);
+        assert.deepEqual(Object.keys(view).sort(), ["mainImage","productName","retail","specifications"]);
+        const serialized = JSON.stringify({projection:result.value,view});
+        for (const marker of ["wholesale","73129","731.29","95237","952.37","86421","864.21"]) assert.ok(!serialized.includes(marker));
+      }
+    };
+    await verify();
+    await f.execute(sql`UPDATE catalog_products SET wholesale_price_minor=95237 WHERE workspace_id='p4-workspace' AND product_id='p4-product'`);
+    assert.deepEqual(await stored(), [{ retail:"0", retail_currency:"USD", wholesale:"95237", wholesale_currency:"USD" }]);
+    await verify();
+  });
   it("observes current template visibility and restoration without replacing the grant", async () => {
     const token = await issue();
     await f.execute(sql`UPDATE catalog_specification_template_entries SET public_visibility='internal' WHERE workspace_id='p4-workspace'`);

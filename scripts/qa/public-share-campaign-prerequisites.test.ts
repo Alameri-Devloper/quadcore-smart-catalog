@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { campaignPreflightPass, type GuardConfiguration } from "./public-share-campaign-guard";
-import { campaignCpuDelta } from "./public-share-campaign-prerequisites";
+import { assertCampaignPricingCoverage, type CampaignPricingRow, campaignCpuDelta } from "./public-share-campaign-prerequisites";
 
 test("Campaign admission requires EVERY independent gate, including cold and restoration",()=>{
  const pass:GuardConfiguration["gates"]={fixtures:"PASS",resources:"PASS",cold:"PASS",restoration:"PASS"};assert.equal(campaignPreflightPass(pass),true);
@@ -25,4 +25,20 @@ test('Independent control preparation refuses open, uncertain, foreign or missin
   await assert.rejects(prepareCampaignControl(pool,config),/CampaignControlNotPreparedClosed/);
   assert.ok(destroyed);assert.ok(statements.every(sql=>sql.startsWith('SELECT ')));
  }
+});
+
+const pricingRows=():CampaignPricingRow[]=>Array.from({length:5},(_,index)=>["text","image"].map(kind=>({workspace_id:"synthetic-"+(index+1),product_id:"p6-campaign-"+kind,retail_price_minor:"0",retail_price_currency:"USD",wholesale_price_minor:"73129",wholesale_price_currency:"USD"}))).flat();
+
+test("Campaign fixtures require actual distinct Retail and Wholesale values for every scoped product",()=>{
+ assert.deepEqual(assertCampaignPricingCoverage(pricingRows(),"synthetic"),{products:10,storedRetail:true,storedWholesale:true,distinctPrices:true});
+ for(const patch of [{wholesale_price_minor:null},{wholesale_price_minor:"0"},{wholesale_price_minor:"86421"},{wholesale_price_currency:null},{wholesale_price_currency:"EUR"},{retail_price_minor:"73129"},{retail_price_currency:"EUR"}]){
+  const rows=pricingRows();rows[0]={...rows[0],...patch};assert.throws(()=>assertCampaignPricingCoverage(rows,"synthetic"),/CampaignPricingFixtureMismatch/);
+ }
+});
+
+test("Campaign pricing coverage rejects missing, duplicate, foreign and extra product scope",()=>{
+ const missing=pricingRows();missing.pop();assert.throws(()=>assertCampaignPricingCoverage(missing,"synthetic"),/CampaignPricingFixtureMismatch/);
+ const duplicate=pricingRows();duplicate[1]={...duplicate[0]};assert.throws(()=>assertCampaignPricingCoverage(duplicate,"synthetic"),/CampaignPricingFixtureMismatch/);
+ for(const patch of [{workspace_id:"foreign-1"},{workspace_id:"synthetic-6"},{product_id:"foreign-product"}]){const rows=pricingRows();rows[0]={...rows[0],...patch};assert.throws(()=>assertCampaignPricingCoverage(rows,"synthetic"),/CampaignPricingFixtureMismatch/);}
+ const extra=pricingRows();extra.push({...extra[0]});assert.throws(()=>assertCampaignPricingCoverage(extra,"synthetic"),/CampaignPricingFixtureMismatch/);
 });
